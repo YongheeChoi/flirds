@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flirds 연구 정리 — Federated Learning + In-Run Data Shapley</title>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  :root {
+    --bg: #fbfbf9;
+    --fg: #1f2328;
+    --muted: #6a737d;
+    --border: #e3e3df;
+    --card: #ffffff;
+    --accent-fact: #2f7d4f;
+    --accent-fact-bg: #eef7f1;
+    --accent-decide: #b5730f;
+    --accent-decide-bg: #fbf3e6;
+    --accent-reinforce: #2a5db0;
+    --accent-reinforce-bg: #eaf1fb;
+    --code-bg: #f2f2ee;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+                 "Malgun Gothic", "Noto Sans KR", Roboto, sans-serif;
+    line-height: 1.65;
+    font-size: 16px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 28px 96px; }
+  header.doc {
+    border-bottom: 2px solid var(--fg);
+    padding-bottom: 24px;
+    margin-bottom: 8px;
+  }
+  h1 { font-size: 1.9rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .subtitle { color: var(--muted); font-size: 1rem; margin: 0; }
+  .meta { color: var(--muted); font-size: 0.85rem; margin-top: 14px; }
+  .meta code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.82rem; }
+
+  .statement {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--fg);
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin: 28px 0;
+  }
+  .statement .label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); font-weight: 700; margin-bottom: 6px;
+  }
+  .statement p { margin: 6px 0; }
+
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 22px;
+    margin: 28px 0 40px;
+  }
+  nav.toc strong { display: block; margin-bottom: 8px; font-size: 0.9rem; }
+  nav.toc ol { margin: 0; padding-left: 20px; }
+  nav.toc a { color: var(--accent-reinforce); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  section.block { margin: 56px 0; scroll-margin-top: 20px; }
+  .sec-head {
+    display: flex; align-items: baseline; gap: 12px;
+    border-bottom: 2px solid currentColor;
+    padding-bottom: 8px; margin-bottom: 8px;
+  }
+  .sec-num {
+    font-size: 0.8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    color: #fff;
+  }
+  .sec-head h2 { font-size: 1.45rem; margin: 0; color: var(--fg); }
+  .sec-desc { color: var(--muted); font-size: 0.92rem; margin: 6px 0 26px; }
+
+  #fact      { color: var(--accent-fact); }
+  #fact .sec-num { background: var(--accent-fact); }
+  #decide    { color: var(--accent-decide); }
+  #decide .sec-num { background: var(--accent-decide); }
+  #reinforce { color: var(--accent-reinforce); }
+  #reinforce .sec-num { background: var(--accent-reinforce); }
+
+  h3 { color: var(--fg); font-size: 1.12rem; margin: 34px 0 10px; }
+  h4 { color: var(--fg); font-size: 0.98rem; margin: 22px 0 6px; }
+  p, li { color: var(--fg); }
+  ul, ol { padding-left: 22px; }
+  li { margin: 5px 0; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 0.9rem;
+    background: var(--card);
+  }
+  th, td { border: 1px solid var(--border); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); font-weight: 700; }
+  td code, p code, li code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+
+  .callout {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    background: var(--card);
+  }
+  .callout .tag {
+    display: inline-block; font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 2px 8px; border-radius: 4px; margin-bottom: 6px;
+  }
+  .callout.deferred { border-left: 4px solid var(--accent-decide); background: var(--accent-decide-bg); }
+  .callout.deferred .tag { background: var(--accent-decide); color: #fff; }
+  .callout.todo { border-left: 4px solid var(--accent-reinforce); background: var(--accent-reinforce-bg); }
+  .callout.todo .tag { background: var(--accent-reinforce); color: #fff; }
+  .callout.locked { border-left: 4px solid var(--accent-fact); background: var(--accent-fact-bg); }
+  .callout.locked .tag { background: var(--accent-fact); color: #fff; }
+  .callout p:first-of-type { margin-top: 0; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .checklist { list-style: none; padding-left: 4px; }
+  .checklist li { margin: 8px 0; padding-left: 28px; position: relative; }
+  .checklist li::before {
+    content: "☐"; position: absolute; left: 0; top: -1px;
+    font-size: 1.05rem; color: var(--accent-reinforce);
+  }
+  .checklist li.done::before { content: "☑"; color: var(--accent-fact); }
+  .checklist li.deferred-item::before { content: "⊘"; color: var(--accent-decide); }
+
+  .source-ref { color: var(--muted); font-size: 0.85em; }
+  mjx-container { overflow-x: auto; overflow-y: hidden; }
+  footer.doc { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--border);
+               color: var(--muted); font-size: 0.82rem; }
+  .pill { font-size: 0.72rem; font-weight: 700; padding: 1px 7px; border-radius: 4px; }
+  .pill.flirds { background: var(--accent-fact); color: #fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <h1>Flirds 연구 정리</h1>
+  <p class="subtitle">Federated Learning + In-Run Data Shapley — 프로젝트 현재 상태</p>
+  <p class="meta">
+    출처: <code>wiki/flirds.md</code> · <code>wiki/overview.md</code> (위키 갱신일 2026-05-19) ·
+    1차 기록: <code>raw/conversations/flirds/conversation{1..4}.md</code> ·
+    문서 생성일 2026-05-19
+  </p>
+</header>
+
+<div class="statement">
+  <div class="label">One-line method statement</div>
+  <p><strong>Flirds</strong>는 vanilla FedAvg에서 서버가 이미 받는 클라이언트 업데이트 $\{\Delta w_k\}$만으로,
+  매 FL 라운드의 validation loss 변화를 1차 + 2차 Taylor 전개로 닫힌 형태로 근사하여
+  <strong>클라이언트 단위 Shapley value</strong>를 계산한다 — <strong>추가 통신 비용 0</strong>.</p>
+  <div class="label" style="margin-top:14px;">Core formula (round $r$)</div>
+  <p>$$\phi_k^{(r)} \;\approx\; -\nabla\ell(w^r, z^{val}) \cdot \Delta w_k \;+\; \tfrac{1}{2}\, \Delta w_k^\top H^{(val)}(w^r) \cdot \Delta W^{(r)}, \qquad \Delta W^{(r)} = \sum_j \Delta w_j, \quad \phi_k = \sum_r \phi_k^{(r)}$$</p>
+  <p class="source-ref">2차 항이 클라이언트 간 상호작용을 포착. 라운드당 비용: HVP 1회로 $u := H^{(val)} \Delta W^{(r)}$ 계산 후 $N$개의 내적 $\Delta w_k^\top u$. LoRA 차원이 비용을 작게 유지.</p>
+</div>
+
+<nav class="toc">
+  <strong>구성</strong>
+  <ol>
+    <li><a href="#fact">지금까지 정해진 사실</a> — locked design decisions, 증명된 수학적 서사, 차별점</li>
+    <li><a href="#decide">결정이 필요한 부분</a> — open questions (method-side / experiment-side), scoop 방어</li>
+    <li><a href="#reinforce">보강이 필요한 부분</a> — next-step 체크리스트, 정량화 의무, 미수집 baseline</li>
+  </ol>
+</nav>
+
+<!-- ===================== SECTION 1 ===================== -->
+<section class="block" id="fact">
+  <div class="sec-head">
+    <span class="sec-num">1</span>
+    <h2>지금까지 정해진 사실</h2>
+  </div>
+  <p class="sec-desc">Conversation 4 (2026-05-05)에서 잠금된 설계 결정과, 그 뒤로 흔들리지 않은 수학적 서사. 이 항목들은 논문 작성 시 전제로 둘 수 있다.</p>
+
+  <h3>1.1 Locked design decisions</h3>
+  <table>
+    <thead><tr><th>결정 항목</th><th>선택</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td><strong>귀속 단위 (unit of attribution)</strong></td><td>클라이언트 단위</td><td>FL에서 가장 자연스러움. conversation 3은 이것이 "데이터 포인트 Shapley를 클라이언트로 합산한 값"과 다름을 유도 — 그 간극을 drift residual이 정량화.</td></tr>
+      <tr><td><strong>서버 입력</strong></td><td>$\Delta w_k$ (LoRA 파라미터)만</td><td>프라이버시 + 통신 비용. 추가 통계 없음, SCAFFOLD식 보정항 없음.</td></tr>
+      <tr><td><strong>근사 차수</strong></td><td>1차 <em>그리고</em> 2차 Taylor, 항상 둘 다</td><td>잠금. 세팅별로 토글하지 않음.</td></tr>
+      <tr><td><strong>Validation</strong></td><td>서버측, 기본은 균등 도메인 커버리지</td><td>공정성 + 악용 방지. 실험별 validation 선택은 별도 정당화.</td></tr>
+      <tr><td><strong>PEFT</strong></td><td>LoRA</td><td>통신·차원·HVP 비용 모두 작음.</td></tr>
+      <tr><td><strong>FL 세팅 목표</strong></td><td>cross-silo + cross-device 둘 다</td><td>알고리즘은 양쪽 모두에서 동작해야 함. 벤치마크 선택만 세팅별로 분기.</td></tr>
+      <tr><td><strong>프라이버시 프레이밍</strong></td><td>서버가 개별 $\Delta w_k$를 봐야 함</td><td>secure aggregation과 비호환임을 인정. 이는 클라이언트 단위 가치평가의 <em>본질적 한계</em>이지 고칠 결함이 아님.</td></tr>
+      <tr><td><strong>통신 오버헤드</strong></td><td>vanilla FedAvg 대비 0</td><td>GTG-Shapley / FedSV 대비 강력한 차별점.</td></tr>
+      <tr><td><strong>Drift residual</strong></td><td>보정하지 않고 측정만</td><td>$E$-민감도 연구로 보고. control variates 제외.</td></tr>
+      <tr><td><strong>참여 정규화</strong></td><td>기본 없음</td><td>방법은 그대로 동작해야 함. cross-device 실험에서 참여 tier 내 랭킹이 품질을 회복함을 보임.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.2 증명된 수학적 서사 (paper-ready)</h3>
+
+  <div class="callout locked">
+    <span class="tag">먼저 — Taylor 전개가 둘이다 (혼동 방지)</span>
+    <p><strong>IRDS의 Taylor 대상은 $\Delta w$가 아니라 utility(=validation loss) 변화 → 기여도 $\phi$</strong>이다
+    (<span class="source-ref"><code>sources/in-run-data-shapley.md:32</code> — "Taylor expansion of $U(\theta_{t+1})-U(\theta_t)$ as a function of the data points"</span>).
+    Centralized 1-step에선 $\delta = w_{t+1}-w_t = -\eta\sum_{z\in B}\nabla\ell(w_t,z)$가 <em>정확</em>하고 모든 gradient가 이미 anchor $w_t$에 있으므로
+    <strong>$\Delta w$를 Taylor 전개하는 단계 자체가 없다.</strong> Flirds는 이 전개(#1)를 그대로 상속하고, FL의 multi-step 때문에 별개의 전개(#2)를 <em>분석용으로만</em> 추가한다.</p>
+    <table>
+      <thead><tr><th>구분</th><th>전개 #1 — IRDS 상속 (추정기 본체)</th><th>전개 #2 — Flirds 신규 (증명 전용)</th></tr></thead>
+      <tbody>
+        <tr><td>Taylor 대상</td><td>validation loss $\ell(w^r+\delta,\,z^{val})$</td><td>client per-step gradient $\nabla\ell(w_k^{r,e},\,z)$</td></tr>
+        <tr><td>기준점 · 인자</td><td>$w^r$, 증분 $\delta=\Delta w_k$</td><td>$w^r$, 변위 $w_k^{r,e}-w^r$</td></tr>
+        <tr><td>산출물</td><td>core 공식 $\phi_k^{(r)}\approx-\nabla\ell^{val}\!\cdot\Delta w_k+\tfrac12\Delta w_k^\top H^{val}\Delta W^{(r)}$ (문서 상단 statement 박스)</td><td>$\Delta w_k$ 분해 → <strong>drift residual</strong> (아래 두 블록)</td></tr>
+        <tr><td>$\Delta w_k$ 취급</td><td>서버가 받은 값 <strong>그대로 대입</strong></td><td>그 자체를 $w^r$-anchored 데이터 gradient로 <strong>분해</strong></td></tr>
+        <tr><td>용도</td><td><strong>Flirds 추정기</strong> — 서버가 실제 계산</td><td><strong>Proposition 증명/특성화 전용</strong> — 서버는 계산하지 않음</td></tr>
+      </tbody>
+    </table>
+    <p>전개 #2가 추정기에 들어가지 않으므로 <strong>"통신 0 / $\Delta w_k$만"</strong> 및 <strong>"drift residual 측정만, 보정 안 함"</strong> locked decision과 일관된다.
+    아래 "중앙집중 baseline"·"FL 다단계 편차" 두 블록은 모두 전개 #2의 산물(= FL↔centralized 간극의 특성화)이지 추정기 정의가 아니다.</p>
+  </div>
+
+  <h4>중앙집중 baseline — granularity 불변성</h4>
+  <p>단일 SGD step (배치 $B$)에서는 <strong>클라이언트로 합산한 데이터 단위 Shapley = 클라이언트 단위 Shapley</strong>가 1차·2차 항 모두에서 성립한다 (conversation 3 §4 증명):</p>
+  <p>$$\sum_{z \in I_k} \phi_z^{\text{data}} \;=\; -\eta\, \nabla\ell^{val} \cdot G_k \;=\; \phi_k^{\text{client}}, \qquad G_k := \sum_{z \in I_k} \nabla\ell(w_t, z)$$</p>
+  <p>즉 중앙집중 1-step SGD에서 granularity 선택은 grouping-invariant.</p>
+
+  <h4>FL 다단계 편차 — drift residual <span class="source-ref">(전개 #2, 분석 전용 — 추정기 아님)</span></h4>
+  <p>클라이언트는 단일 step gradient가 아니라 $E$-step 궤적의 끝점 $\Delta w_k = -\eta \sum_{e=0}^{E-1} \sum_{z \in B_{k,e}} \nabla\ell(w_k^{r,e}, z)$를 보낸다. 여기서 각 gradient는 고정점 $w^r$이 아니라 움직이는 local 궤적 $w_k^{r,e}$에서 평가되므로, centralized data-level Shapley와 연결하려면 <strong>각 $\nabla\ell(w_k^{r,e},z)$를 $w^r$ 기준 1차 Taylor 전개</strong>(전개 #2)한다:</p>
+  <p>$$\Delta w_k \;\approx\; \underbrace{-\eta E \cdot \bar{G}_k(w^r)}_{\text{중앙집중 등가 기여}} \;\underbrace{-\;\eta \sum_{e,z} H_z(w^r)(w_k^{r,e} - w^r)}_{\text{client drift residual}}$$</p>
+  <p>Drift residual은 $O(\eta E |\bar{H}| \cdot \text{local-trajectory length})$ 차수. $E=1$에서 소멸하고, non-IID와 큰 local epoch에서 커진다.</p>
+  <div class="callout locked">
+    <span class="tag">Proposition (informal, planned)</span>
+    <p>Flirds의 클라이언트 단위 Shapley = 중앙집중 데이터 단위 Shapley를 클라이언트로 합산한 값 <em>+</em> FL이 중앙집중 IRDS에서 벗어난 정도를 정량화하는 drift residual. → 논문의 핵심 수학 기여 중 하나. 경험적으로 $E$를 바꿔 residual 크기와 가치평가 품질을 같이 그린다.</p>
+  </div>
+
+  <h3>1.3 기존 FL 가치평가 대비 차별점</h3>
+  <table>
+    <thead><tr><th>방법</th><th>Granularity</th><th>통신 오버헤드 (vs vanilla FedAvg)</th><th>In-run?</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>GTG-Shapley</td><td>client</td><td>0 (sub-model 재구성)</td><td>gradient log로 궤적 충실</td><td>guided MC; multi-round</td></tr>
+      <tr><td>S-FedAvg</td><td>client</td><td>0</td><td>per-round only</td><td>aggregation 재가중 (순수 가치평가 아님)</td></tr>
+      <tr><td>ShapleyFL</td><td>client</td><td>0</td><td>surrogate per-round</td><td>importance-sampling client selection</td></tr>
+      <tr><td>SPACE</td><td>client</td><td>+ distillation 라운드 추가</td><td>end-state</td><td>knowledge amalgamation + prototype eval</td></tr>
+      <tr><td>Ripple Shapley</td><td><strong>sample</strong></td><td>0 (logs)</td><td>yes (Jacobian 전파)</td><td>"in-run, single-run, FL"의 가장 직접적 경쟁자</td></tr>
+      <tr style="background:var(--accent-fact-bg);"><td><span class="pill flirds">Flirds</span></td><td><strong>client</strong></td><td><strong>0</strong></td><td><strong>yes</strong> (닫힌 형태 1차+2차 Taylor)</td><td>LoRA + 2차항 + 통신 오버헤드 0</td></tr>
+    </tbody>
+  </table>
+  <p class="source-ref">가장 가까운 비교 대상은 Ripple Shapley (sample-level FL in-run, Jacobian chain). Flirds의 차이: ① 의도적으로 클라이언트 단위 (sample-level 합산이 아님); ② 재귀적 Jacobian-chain 저차원 근사가 아니라 1차+2차 Taylor 닫힌 형태; ③ LoRA를 설계에 명시.</p>
+</section>
+
+<!-- ===================== SECTION 2 ===================== -->
+<section class="block" id="decide">
+  <div class="sec-head">
+    <span class="sec-num">2</span>
+    <h2>결정이 필요한 부분</h2>
+  </div>
+  <p class="sec-desc">논문 완성 전 해소해야 할 open question. 일부는 이미 "방향 결정"(deferral) 형태로 정리됐고, 일부는 미정.</p>
+
+  <h3>2.1 Method-side</h3>
+
+  <div class="callout deferred">
+    <span class="tag">Deferred — 2026-05-18</span>
+    <p><strong>① Noise vs OOD-good 구분.</strong> Yonghee: "알고리즘적으로 깔끔히 풀기엔 너무 모호하다 — 보류." 단일 라운드의 부호만으로는 둘을 구분 불가. 원래 계획(temporal consistency + cross-client agreement 결합)은 더 이상 두 번째 기여가 아니라 <strong>특성화된 한계(characterized limitation)</strong>로 재프레이밍 — IRDS가 자기 한계를 다루는 방식 그대로.</p>
+    <p><strong>보류의 결과:</strong></p>
+    <ul>
+      <li>서사: "기여 2개" → "기여 1개 + 특성화된 한계" (더 안전하고 좁은 scope).</li>
+      <li>실험 매트릭스 축소: pure-noise-vs-OOD-good 분리 / validation-expansion-flip / synthetic-shift 실험과 temporal-consistency·cross-client-agreement ablation 행 제거. <strong>Noisy-client·free-rider 탐지 벤치마크는 그대로 생존</strong> (OOD 기계장치 불필요).</li>
+      <li>이 separator는 drift-bias 보정 역할도 겸했음(conv 4 §4). 보류로 drift residual은 "측정만"으로 일관 유지되나, <strong>non-IID 가치평가 bias를 명시적 한계로 정량화할 새 의무</strong>가 생김 (→ 3절).</li>
+      <li>선행연구 backing: temporal consistency ≈ FLDetector (KDD'22), cross-client ≈ FoolsGold/FLTrust/clustered-FL. 어떤 FL 방법도 부호 있는 value 안에서 "bad-different"와 "good-different"를 분리하지 못함 (FLDetector조차 non-IID에서 붕괴) → 문제가 본질적으로 어렵다는 증거.</li>
+    </ul>
+  </div>
+
+  <table>
+    <thead><tr><th>#</th><th>Open question</th><th>상태</th></tr></thead>
+    <tbody>
+      <tr><td>②</td><td><strong>Cancellation effect</strong> (IRDS A.3 이슈, FL에서 증폭). non-IID에서 last-layer cancellation이 심함. Layer-wise 가중? 특정 layer 선택?</td><td>미정</td></tr>
+      <tr><td>③</td><td><strong>Magnitude vs alignment 혼동</strong> (IRDS 한계 (b)). 늦게 학습되는 데이터는 gradient 크기가 작아 체계적으로 저평가. FL에서 늦게 합류한 클라이언트는 이중 손해. Phase-normalization? cumulative-reduction tracking?</td><td>미정</td></tr>
+      <tr><td>④</td><td><strong>Trajectory dependence</strong> ("IRDS에선 feature, market 맥락에선 bug"). batch 순서가 다른 재실행에서 같은 클라이언트가 다르게 평가될 수 있음. 보상 용도라면 다중 실행 평균이 필요할 수도. <em>주 use case가 incentive design이냐 research-side 분석이냐에 따라 결정 — 보류.</em></td><td>조건부 보류</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 Experiment-side</h3>
+
+  <h4>⑤ FL에서 exact Shapley를 ground-truth로 — 어떤 정의? <span class="source-ref">(conversation 3 §2에서 정리됨)</span></h4>
+  <ul>
+    <li><strong>(a) Retraining 기반 exact Shapley</strong> ($U(S)=$ $S$의 클라이언트만으로 FL 학습): 자연스러운 ground truth, $N{=}10$ cross-silo + LoRA에서 실현 가능. <em>sanity check 전용.</em></li>
+    <li><strong>(b) In-run exact Shapley</strong> ($U_{\text{total}}(S) = \sum_r [\ell(w^r + \sum_{k\in S} p_k \Delta w_k, z^{val}) - \ell(w^r, z^{val})]$): Flirds에 맞는 <em>올바른</em> ground truth (둘 다 같은 궤적을 고정). <strong>정직한 비교 = Flirds vs Monte-Carlo (b).</strong> (a)와 (b)는 서로 다른 utility에 대한 Shapley라 일반적으로 다름 — Yonghee의 초기 가정(둘이 일치)을 conversation 3이 교정.</li>
+  </ul>
+  <div class="callout deferred">
+    <span class="tag">실현 방향 (잠정 결정, 3절에서 lock 필요)</span>
+    <p>(b) MC in-run을 <em>주</em> oracle로: forward-pass만, retraining 없음 ($N{=}10$에서 라운드당 $2^{10}$ 열거). (a) retraining은 "다른 utility" 단서를 달아 sanity 그림 1장만.</p>
+  </div>
+
+  <h4>⑥ 벤치마크 <span class="source-ref">(planned, conversation 3 §2)</span></h4>
+  <ul>
+    <li>Noisy client 탐지 (label corruption / random update)</li>
+    <li>Free-rider 탐지 (zero / fake update)</li>
+    <li>LLM domain attribution (클라이언트마다 다른 도메인 코퍼스, validation = 특정 도메인)</li>
+    <li>Client selection 수렴 (Flirds top-$K$ → 학습 → 속도/성능 측정)</li>
+    <li>Baseline 비교: GTG-Shapley, FedSV, ComFedSV, Federated Banzhaf, 단순 loss-heuristic</li>
+    <li>생존한 noisy/free-rider 벤치마크용 robustness baseline: FLDetector, FoolsGold/FLTrust, FedCorr-LID, STD-DAGMM. 프레이밍: Flirds는 <em>가치평가</em> 방법이지만 전용 탐지기와 경쟁력 있게 탐지하면서도 <strong>non-IID false-positive 페널티가 없음</strong> (hard-discard 대신 부호 있는 value를 down-weight).</li>
+  </ul>
+
+  <h4>⑦ LLM·데이터셋 선택</h4>
+  <p>Llama-3.2-1B/3B 후보 (LoRA finetuning 현실성). 멀티 도메인 데이터셋 후보: Flan / T0 / dolly subset 조합. <strong>미확정.</strong></p>
+
+  <h3>2.3 Scoop 방어 — Ripple Shapley 포지셔닝</h3>
+  <div class="callout deferred">
+    <span class="tag">Open — 논문에서 신중히 포지셔닝 필요</span>
+    <p>Ripple Shapley는 가장 유력한 "이미 선점됐다(scooped)" 리뷰어 우려. <strong>미해결 질문:</strong> Ripple Shapley의 drop+ripple 분해가 특정 LoRA + Taylor 가정 하에서 Flirds 공식으로 특수화되는가? — head-to-head 실험 + 이론적 reduction 둘 다 필요 (3절 체크리스트).</p>
+  </div>
+</section>
+
+<!-- ===================== SECTION 3 ===================== -->
+<section class="block" id="reinforce">
+  <div class="sec-head">
+    <span class="sec-num">3</span>
+    <h2>보강이 필요한 부분</h2>
+  </div>
+  <p class="sec-desc">방향은 정해졌지만 아직 실행/정량화/수집되지 않아 논문 전에 채워야 하는 항목. (next-step checklist, 2026-05-18 갱신)</p>
+
+  <h3>3.1 Next-step 체크리스트</h3>
+  <ul class="checklist">
+    <li class="deferred-item"><s>Noise-vs-OOD-good 컴포넌트 설계</s> — <strong>보류</strong>, 한계로 재프레이밍 (open question ①).</li>
+    <li><strong>non-IID 가치평가 bias를 한계로 정량화</strong> — 보류로 새로 생긴 의무 (parked separator가 drift-bias 보정도 겸했음). drift-residual 연구에 $E$-sweep과 나란히 non-IID $\alpha$-sweep 추가.</li>
+    <li><strong>실험 프로토콜 lock</strong>: Llama-3.2-1B 주(主) / 3B scale-check; 6–8 도메인 큐레이션 mix (Track B 규모는 Super-NaturalInstructions); $N{=}10$ cross-silo / $N{=}100,K{=}10$ cross-device.</li>
+    <li><strong>Ground-truth 실현</strong>: (b) MC in-run을 <em>주</em> oracle로 — forward-pass만, retraining 없음 ($N{=}10$, 라운드당 $2^{10}$ 열거); (a) retraining은 "different utility" 단서 달고 sanity 그림만.</li>
+    <li><strong>Baseline 세트</strong> (비용 매칭 tier): 필수 = GTG-Shapley, Ripple Shapley, loss-heuristic, Flirds-1st-only; 권장 = FedSV, Federated Banzhaf; cross-device = ComFedSV.</li>
+    <li><strong>Ripple Shapley head-to-head + 이론적 reduction</strong> (LoRA+Taylor 하에서 drop+ripple이 Flirds 1차+2차로 특수화되는가?) — scoop 방어.</li>
+    <li><strong>구현 skeleton</strong>: LoRA 파라미터 기반 HVP, $\Delta W^{(r)}$ 누적, 라운드당 $\phi_k^{(r)}$ 계산.</li>
+    <li><strong>Drift-residual 연구</strong>: $E\in\{1,3,5,10\}$ × non-IID $\alpha$ 값 전 범위.</li>
+  </ul>
+
+  <h3>3.2 계획된 ablation 세트 <span class="source-ref">(conversation 3 §3)</span></h3>
+  <p>① noise-vs-OOD-good 보류로 일부 행(temporal-consistency, cross-client-agreement)은 제거됨에 유의. 나머지는 유효.</p>
+  <table>
+    <thead><tr><th>Ablation</th><th>분리해내는 것</th><th>상태</th></tr></thead>
+    <tbody>
+      <tr><td>1st only vs 1st+2nd</td><td>2차 클라이언트 상호작용 가치</td><td>유효</td></tr>
+      <tr><td>Temporal-consistency 컴포넌트 on/off</td><td>noise vs OOD-good 신호</td><td><span style="color:var(--accent-decide);">제거 (① 보류)</span></td></tr>
+      <tr><td>Cross-client agreement 컴포넌트 on/off</td><td>동일</td><td><span style="color:var(--accent-decide);">제거 (① 보류)</span></td></tr>
+      <tr><td>Validation size (small/medium/large)</td><td>validation-noise 전파</td><td>유효</td></tr>
+      <tr><td>Validation distribution (uniform/biased)</td><td>분포 선택 prejudge</td><td>유효</td></tr>
+      <tr><td>LoRA rank (4/8/16/32)</td><td>PEFT 차원 효과</td><td>유효</td></tr>
+      <tr><td>Local epoch $E$ (1/3/5/10)</td><td>drift residual / Taylor error</td><td>유효 (핵심)</td></tr>
+      <tr><td>Aggregation (FedAvg / FedProx)</td><td>client-drift 보정 효과</td><td>유효</td></tr>
+      <tr><td>Participation rate</td><td>cross-device robustness</td><td>유효</td></tr>
+      <tr><td>Noise ratio (10/30/50%)</td><td>탐지 한계</td><td>유효</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 Baseline·선행연구 — ingest 완료 (2026-05-19)</h3>
+  <p>섹션 작성 시점에 미수집이던 baseline·선행연구 7편을 모두 <code>raw/</code>에 수집하고 위키에 ingest 완료. 소스 19 → 26개로 확장 (FedSV·ComFedSV + robustness 5종). 더 이상 gap 아님.</p>
+  <table>
+    <thead><tr><th>논문</th><th>역할</th><th>위키 소스</th></tr></thead>
+    <tbody>
+      <tr><td>FedSV (Wang et al. 2020)</td><td>federated Shapley의 <strong>기원</strong>, 정준 baseline</td><td><code>sources/principled-federated-data-valuation</code></td></tr>
+      <tr><td>ComFedSV (Fan et al., ICDE 2022)</td><td>FedSV + utility-matrix completion; cross-device fairness baseline</td><td><code>sources/comfedsv</code></td></tr>
+      <tr><td>FLDetector (KDD 2022)</td><td>temporal-consistency 탐지기; separator 부활 시 최대 scoop 위험</td><td><code>sources/fldetector</code></td></tr>
+      <tr><td>FedCorr (CVPR 2022)</td><td>LID 기반 noisy-client 탐지 + label correction</td><td><code>sources/fedcorr</code></td></tr>
+      <tr><td>FLTrust (NDSS 2021)</td><td>server-root trusted-cosine; server-side clean set이 Flirds validation과 평행</td><td><code>sources/fltrust</code></td></tr>
+      <tr><td>FoolsGold (RAID 2020)</td><td>cross-client gradient-similarity; non-IID false-positive가 한계 framing의 핵심 증거</td><td><code>sources/foolsgold</code></td></tr>
+      <tr><td>STD-DAGMM (Lin et al. 2019)</td><td>free-rider 공격 정의 + 탐지기; free-rider 벤치마크의 기원</td><td><code>sources/free-riders-fl-std-dagmm</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout locked">
+    <span class="tag">목록 교정 3건 (리서치로 확인 후 위키 반영)</span>
+    <p><strong>① FedSV = Wang et al. 2020.</strong> 별개 논문이 아니라 Wang et al. 2020 "A Principled Approach to Data Valuation for FL"의 후속 문헌 별칭 — 한 소스(<code>principled-federated-data-valuation</code>)로 통합. 이전 목록의 "Wang et al. Principled Federated Shapley" 중복 항목은 제거됨.</p>
+    <p><strong>② Federated Banzhaf는 미수집이 아니었음.</strong> 전용 FL-Banzhaf 논문은 존재하지 않음. 통용 레퍼런스는 Data Banzhaf (Wang &amp; Jia, AISTATS 2023) — 이미 <code>sources/data-banzhaf</code>로 위키에 보유 중. "FL에 적용하는 것은 우리 몫"으로 재분류 (flirds.md reading-list·next-step 반영).</p>
+    <p><strong>③ 함정 논문.</strong> 2025 arXiv:2502.17526 "FedSV: Byzantine-Robust FL via Shapley Value"는 robustness 방법 — baseline #1로 인용 금지. flirds.md·thread에 경고 명시.</p>
+  </div>
+
+  <div class="callout todo">
+    <span class="tag">정량화 의무 (잔존 — 진짜 보강 항목)</span>
+    <p>① 보류가 만든 핵심 후속 작업: <strong>non-IID 가치평가 bias의 명시적 정량화</strong>. drift residual은 "측정만" 결정과 일관되게 두되, separator가 겸하던 bias 보정이 사라졌으므로 이 bias 자체를 한계로 측정·보고해야 한다 ($E$-sweep × $\alpha$-sweep). <em>이 항목은 ingest로 해소되지 않음 — 실험 의무로 남음.</em></p>
+  </div>
+</section>
+
+<footer class="doc">
+  <p>이 문서는 위키의 큐레이션 결과를 읽기용으로 추출한 것이다. 설계 근거·수식 유도의 1차 기록은
+  <code>raw/conversations/flirds/conversation1–4.md</code>; 살아있는 프로젝트 상태는 <code>wiki/flirds.md</code>.
+  상충 시 raw가 source of truth.</p>
+  <p>Flirds = Federated Learning + In-Run Data Shapley · 위키 갱신 2026-05-19 (26 sources) · 문서 생성 2026-05-19</p>
+</footer>
+
+</div>
+</body>
+</html>
