@@ -26,37 +26,13 @@ last_updated: ""     # YYYY-MM-DD HH:mm — 스킬이 출력 시 자동 갱신
 
 ## 컴퓨팅 예산
 
-- (미정 — 추후 채워주세요)
+- Nvidia DGX B200 x4
 
-## Remote Server
-
-`/run-experiment` 와 `/experiment-queue` 가 SSH 로 붙어 실험을 돌리는 데 사용합니다. 원격 GPU 서버를 쓰지 않으면 이 섹션을 삭제하고 `## Local Environment` 만 남기세요.
-
-- gpu: remote               # 사전 등록된 SSH 서버 사용
-- SSH: `ssh my-gpu-server`  # ~/.ssh/config 의 Host alias
-- GPU: 4x A100 (80GB each)  # 참고용 (스킬이 직접 사용하진 않음)
-- Conda: `eval "$(/opt/conda/bin/conda shell.bash hook)" && conda activate research`
-- code_dir: codes           # 로컬 코드 디렉토리 (rsync source, 기본값: codes)
-- Code dir: `/home/user/experiments/`  # 원격 sync 대상 경로
-- code_sync: rsync          # 기본값. `git` 으로 두면 git push/pull 워크플로
-- wandb: false              # `true` 로 두면 학습 스크립트에 W&B 로깅 자동 삽입
-- wandb_project: my-project # wandb: true 일 때 필수 — W&B 프로젝트명
-- wandb_entity: my-team     # 선택 — W&B 팀/유저 (없으면 기본 entity 사용)
-
-> **W&B 셋업**: 원격 서버에서 `wandb login` 1회 (또는 `WANDB_API_KEY` 환경변수). 대시보드는 `https://wandb.ai/<entity>/<project>`.
-
-## Local Environment
-
-원격 서버 대신 로컬 GPU 로 실험을 돌릴 때 사용합니다.
-
-- gpu: local                 # 로컬 GPU 사용
-- Mac MPS / Linux CUDA       # 환경 참고용
-- Conda env: `ml` (Python 3.10 + PyTorch)
 <!-- KARIS:BEGIN -->
 ## KARIS Skill Scope
 KARIS skills installed in this project: 55 entries.
 Manifest: `.karis/installed-skills.txt` (lists every skill KARIS installed and its upstream target).
 For KARIS workflows, prefer the project-local skills under `.claude/skills/` over global skills.
-Do not modify or delete files inside any skill that is a symlink (symlinks point into `/c/Users/YH_Yonsei/Docs/Projects/karis`).
-Update with: `bash /c/Users/YH_Yonsei/Docs/Projects/karis/tools/install_karis.sh`  (re-runnable; reconciles new/removed skills).
+Do not modify or delete files inside any skill that is a symlink (symlinks point into `/NHNHOME/WORKSPACE/26msit001_A/edge_ai_lab/yonghee/karis`).
+Update with: `bash /NHNHOME/WORKSPACE/26msit001_A/edge_ai_lab/yonghee/karis/tools/install_karis.sh`  (re-runnable; reconciles new/removed skills).
 <!-- KARIS:END -->
