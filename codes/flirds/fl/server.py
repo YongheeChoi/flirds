@@ -61,8 +61,9 @@ def run_fedavg_logs(model_fn, client_loaders, test_loader, rounds, local_epochs,
                     lr, device="cuda", seed=0):
     """Run FedAvg once; return (eval_model, logs[(global_before, deltas_map)]).
 
-    The single trajectory shared by all in-run SV baselines (GTG/FedSV/Ripple)
-    and the exact reconstruction oracle, so they all value the same FL run.
+    The single trajectory shared by the reconstruction-utility baselines
+    (GTG/FedSV) and the exact reconstruction oracle, so they value the same FL
+    run. (Ripple runs its own loop because it additionally needs Hessian sketches.)
     """
     logs = []
     fedavg(model_fn, client_loaders, test_loader, rounds, local_epochs, lr,

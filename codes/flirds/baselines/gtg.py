@@ -28,11 +28,14 @@ def _aggregate_subset(global_before, deltas_map, subset, device):
 
 
 def _normalize(sv, marginal_gain):
-    """Efficiency normalization: scale SV so sum = marginal_gain (GTG eq.)."""
-    if marginal_gain >= 0:
-        s = sum(x for x in sv if x >= 0) or 1e-9
-    else:
-        s = sum(x for x in sv if x < 0) or -1e-9
+    """Efficiency normalization: scale SV so its same-sign mass = marginal_gain.
+
+    If there is no same-sign mass to scale, return SV unchanged (avoid the
+    1/1e-9 blow-up that would sign-flip and explode the values).
+    """
+    s = sum(x for x in sv if (x >= 0) == (marginal_gain >= 0))
+    if abs(s) < 1e-12:
+        return np.asarray(sv, dtype=float)
     return np.array([marginal_gain * x / s for x in sv])
 
 

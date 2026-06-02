@@ -23,11 +23,13 @@ def _flat(d, keys):
     return torch.cat([d[k].flatten() for k in keys])
 
 
-def client_drop_term(model, gstate, loader, epochs, lr, val_x, val_y, device):
-    """Sum of IRDS 1st-order drop terms over a client's samples (one round).
+def client_drop_term(model, gstate, loader, lr, val_x, val_y, device):
+    """Client-level IRDS 1st-order drop term at the fixed round-start w.
 
-    Returns the client-level local utility U_local = sum_z sum_t -lr*<g_val, g_z>;
-    multiply by alpha_k outside. Uses functional SGD so the trajectory matches.
+    Returns sum_z lr*<g_val, g_z> over the client's samples (influence
+    convention, good -> positive); multiply by alpha_k outside. Evaluated once
+    at w^r (no local SGD trajectory -- that diverges; cross-round effects are
+    the ripple term's job).
     """
     model.load_state_dict(gstate)
     model.to(device)
@@ -41,9 +43,6 @@ def client_drop_term(model, gstate, loader, epochs, lr, val_x, val_y, device):
     def sloss(p, xi, yi):
         out = functional_call(model, (p, buffers), (xi.unsqueeze(0),))
         return F.cross_entropy(out, yi.unsqueeze(0))
-
-    def bloss(p, x, y):
-        return F.cross_entropy(functional_call(model, (p, buffers), (x,)), y)
 
     # Evaluate at the fixed round-start w (no local SGD trajectory: that
     # diverges, and the cross-round effect is exactly the ripple term's job).
@@ -137,7 +136,7 @@ def ripple_shapley(model_fn, client_loaders, test_loader, rounds, local_epochs, 
         VG[r] = val_grad(gstate)
         for c in range(n):
             drop[r, c] = client_drop_term(model, gstate, client_loaders[c],
-                                          local_epochs, lr, val_x, val_y, device)
+                                          lr, val_x, val_y, device)
             d, nc = local_train(model, gstate, client_loaders[c],
                                 local_epochs, lr, device)
             DW[r, c] = _flat(d, keys).detach().cpu().numpy()
@@ -162,6 +161,8 @@ def ripple_shapley(model_fn, client_loaders, test_loader, rounds, local_epochs, 
     VGp = VG @ Q                                 # [rounds, m]
     DWp = DW @ Q                                 # [rounds, n, m]
     Bs = [Q.T @ Us[t] for t in range(rounds)]    # [m, k]
+    # M_t = I - lr*B Lam B^T is SYMMETRIC -> the chain's transpose trick below
+    # (dw @ (Plow.T @ vg)) equals the forward Jacobian product. Keep M symmetric.
     Ms = [np.eye(m) - lr * (Bs[t] * Lams[t]) @ Bs[t].T for t in range(rounds)]
 
     alpha = nsel / nsel.sum(axis=1, keepdims=True)
