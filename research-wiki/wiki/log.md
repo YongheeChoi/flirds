@@ -328,3 +328,11 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - built: FL simulator + exact-SV oracle + GTG/FedSV/ComFedSV/Ripple self-builds, all verified (cosine 0.99 / 0.998 / 0.993, Ripple noisy-detection AUROC 1.0); git commit `93bb8d0` on `feature/flirds-phase-0`.
 - review: math sound (ripple Jacobian chain numerically verified); fixed gtg `_normalize` div-0 + dead code; Phase 0.5 TODOs = ripple-term verify (needs backdoor), ripple `(rounds,n,P)` OOM at scale, eigsh convergence fallback.
 - distilled into: [[flirds-implementation-plan]] (Decisions resolved & corrections section), root `CLAUDE.md` (stage → implementation).
+
+## [2026-06-03] conv | Phase 0.5 — Flirds estimator + dual in-run oracle (CNN)
+
+- raw: [[raw/conversations/flirds/2026-06-03-phase05-estimator]]
+- built: (b) in-run SV oracle (`oracle/in_run_sv`, exact 2^N) + Flirds estimator (`core/flirds_estimator`, 1st/1st+2nd Taylor, Hessian-only, 1 HVP/round) + **faithful Ripple rewrite** (Eq 5-19: local-traj drop, per-client local Hessian, progressive subspace) — **fixed 2 latent ripple bugs** (term sign + α-weighting, masked by drop-dominated verify).
+- validated (all gates green): estimator≈(b) Spearman 1.000 / noisy AUROC 1.0; (a)retrain↔(b)in-run AUROC 1.0, fine-rank 0.66 (diff utilities); (b) Shapley efficiency=0, symmetry=0; HVP jvp-vs-double-backward 9.8e-6; E=1 noise-floor; N=2 3e-3; reproducibility bitwise-0 (needs `cudnn.deterministic`).
+- decided: **2nd-order curvature = true Hessian** (match IRDS; GGN tested + rejected, worse). IRDS's "2nd-order marginal-for-accuracy" is a *centralized per-step* artifact (Yonghee); FL per-round multi-step is where the 2nd-order is non-trivial → real test at FL-scale/LLM.
+- distilled into: [[flirds]] (Phase 0.5 findings), root `CLAUDE.md` (Phase 0.5 → done, next = Phase 1 LLM).

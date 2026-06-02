@@ -25,6 +25,16 @@ where $\Delta W^{(r)} = \sum_j \Delta w_j$ is the sum across all participating c
 
 The 2nd-order term captures client interactions. **Per-round cost: 1 HVP for $u := H^{(val)} \Delta W^{(r)}$, then $N$ dot products** $\Delta w_k^\top u$. LoRA dimension keeps it cheap.
 
+### Phase 0.5 findings — 2nd-order term & dual oracle (2026-06-03, CNN)
+
+Estimator (`core/flirds_estimator.py`) + (b) in-run oracle (`oracle/in_run_sv.py`) built and validated on the CNN track; all sanity gates green. See [[raw/conversations/flirds/2026-06-03-phase05-estimator]].
+
+- **Estimator ≈ (b) in-run oracle**: the per-round closed form (1 HVP + $N$ dots) tracks the exact $2^N$ in-run Shapley (Spearman 1.0 in-regime; noisy-client AUROC 1.0). HVP verified (jvp vs double-backward, 9.8e-6). (b) Shapley **efficiency** and **symmetry** exact to 0.
+- **2nd-order is regime-dependent**: helps the magnitude fit (relL2) where the val loss is curved and the per-round update is within the Taylor radius (CIFAR); marginal on near-flat MNIST; overshoots for large multi-step updates. Mirrors [[sources/in-run-data-shapley|IRDS]] Appx E.2.2 ("2nd-order does not notably improve accuracy") — **but IRDS is centralized per-SGD-step (tiny $\eta$); FL per-round multi-step is the regime where the 2nd-order is non-trivial**, so the decisive test is at FL-scale / LLM.
+- **Curvature = true Hessian** (locked): matches IRDS; a Gauss-Newton/Fisher (PSD) variant was tested and was generally *worse* than the true (indefinite) Hessian.
+- **(a) retrain SV vs (b) in-run SV**: agree on noisy-client detection (AUROC 1.0) but only moderately on fine ranking ($\rho\approx0.66$) — expected, different utilities (protocol 4.3 separation).
+- **Reproducibility** requires `torch.backends.cudnn.deterministic=True` (else conv nondeterminism drifts the trajectory ~4e-2 / 3 rounds; with it, bitwise-identical). → protocol §5 addition.
+
 ## Locked design decisions
 
 ### Original lock (conversation 4, 2026-05-05)

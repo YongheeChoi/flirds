@@ -6,14 +6,14 @@
 stage: implementation # idle | idea-discovery | implementation(/experiment-bridge) | training | review | paper
 idea: "client-level FL Shapley via 1st+2nd Taylor of validation loss (Flirds)"  # 현재 idea 한 줄 요약
 contract: "research-wiki/wiki/flirds-implementation-plan.md"  # operational plan (wiki 기반; 별도 research_contract 없음)
-current_branch: "feature/flirds-phase-0"   # 이 idea의 git 브랜치
+current_branch: "main"   # feature/flirds-phase-0 → main 병합 후 브랜치 삭제; main 직접 작업
 baseline: ""         # 비교용 baseline 숫자 — Phase 0 재현 후 기입 (예: ComFedSV Spearman {1.0,0.96,0.85,0.84})
 training_status: idle  # idle | running(위치/GPU 명시) | complete | failed
 language: 한국어      # 스킬 출력 언어 — english | 한국어 (값은 영어 유지). 자세히: shared-references/output-language.md
 code_dir: codes      # 로컬 코드 디렉토리; OpenFedLLM 은 codes/base_repo/ 로 clone(LLM phase). CNN track 은 자체 시뮬레이터
 active_tasks: []     # 백그라운드 작업
-next: "Phase 0 baseline 4종(GTG/FedSV/ComFedSV/Ripple) self-build+verify 완료 → Phase 0.5: Flirds estimator + dual oracle(CNN)"  # 다음 단계
-last_updated: "2026-06-02"  # YYYY-MM-DD
+next: "Phase 0.5 완료(CNN): (b)in-run oracle + Flirds estimator(Hessian 1st/2nd) + faithful ripple + dual-oracle, 전 게이트 green → Phase 1: LLM 이식(OpenFedLLM+LoRA)"  # 다음 단계
+last_updated: "2026-06-03"  # YYYY-MM-DD
 ```
 
 ## 프로젝트 제약
