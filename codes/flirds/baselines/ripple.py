@@ -1,177 +1,199 @@
-"""Ripple Shapley (Zeng et al., AAAI 2026) — sample-level FL attribution.
+"""Ripple Shapley (Zeng et al., AAAI 2026) — sample/client-level FL attribution.
 
-Reference: paper Alg.1 + Eq.5-19 (no public code). phi(z) = drop term + ripple term,
-summed over birth rounds, then aggregated sample->client for FL valuation.
+Faithful to Algorithm 1 + Eq 5-19 (no public code). phi_k = drop + ripple, summed
+over rounds; client-level via linearity of the per-round update direction.
 
-  - Drop term (Eq.4-7): IRDS 1st-order sample attribution -- per local SGD step,
-    -eta * <grad_val, grad_sample>, weighted by FedAvg alpha_k = n_k / n_s.
-  - Ripple term (Eq.8-19): cross-round Jacobian-chain propagation with per-round
-    Hessian eigen-sketch + progressive low-rank global subspace.  [added next]
+  - Drop term (Eq 4-7): IRDS 1st-order along the REALIZED local SGD trajectory.
+    Each local step adds  lr * <g_val(w_k^t), g_batch(w_k^t)>  at the current local
+    model (value = val-loss reduction; clean client -> positive), then weighted by
+    alpha_k = n_k / n_s.  (g_batch is the mean-reduction batch gradient, matching
+    fl.client.local_train, so drop and the realized Delta w_k share units.)
+  - Ripple term (Eq 8-19): cross-round propagation of that update direction. Each
+    client sketches the top-k eigenpairs of its LOCAL Hessian at w^r (Alg.1 L6);
+    the per-round sketches build a progressive global subspace Q (Eq 15); the
+    low-rank Jacobian chain (Eq 16-18) runs in the m-dim subspace; influence path
+    is Eq 19.  Sign and alpha-weighting match the drop term so the two reinforce.
+
+All curvature/Jacobian work stays in the m-dim subspace (the paper's efficiency
+claim). Param-only (named_parameters); buffers held fixed -> BatchNorm-safe.
 
 No ground-truth SV (paper rejects MSE/correlation); evaluated task-driven
-(robustness under poisoning, runtime).
+(noisy/poisoned-client detection, runtime).
+
+LLM-scale note: the per-round full-parameter DW/VG/U arrays below are a CNN-scale
+convenience. At LLM (LoRA) scale, project onto Q on the fly over protocol-logged
+deltas (build Q in one pass, stream-project in a second) instead of materializing
+(rounds, n, P).  [deferred to the LLM port]
 """
 from __future__ import annotations
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.func import functional_call, grad, jvp, vmap
+from torch.func import functional_call, grad, jvp
 
 
 def _flat(d, keys):
     return torch.cat([d[k].flatten() for k in keys])
 
 
-def client_drop_term(model, gstate, loader, lr, val_x, val_y, device):
-    """Client-level IRDS 1st-order drop term at the fixed round-start w.
+def _loader_xy(loader, device):
+    xs = torch.cat([x for x, _ in loader]).to(device)
+    ys = torch.cat([y for _, y in loader]).to(device)
+    return xs, ys
 
-    Returns sum_z lr*<g_val, g_z> over the client's samples (influence
-    convention, good -> positive); multiply by alpha_k outside. Evaluated once
-    at w^r (no local SGD trajectory -- that diverges; cross-round effects are
-    the ripple term's job).
+
+def client_drop_and_delta(model, gstate, loader, epochs, lr, val_x, val_y, device,
+                          momentum=0.9):
+    """Run local SGD (identical to fl.client.local_train) while accumulating the
+    IRDS drop term along the realized local trajectory.
+
+    Returns (drop, delta):
+      drop  = sum over local steps of  lr * <g_val(w_t), g_batch(w_t)>  (Eq 5-7,
+              client-level, value convention clean->+),
+      delta = w_local - w_global over trainable params only (named_parameters).
+    Val forward uses the round-start buffers (BN-safe; eval-mode is moot for the
+    BN-free CNN track).
     """
     model.load_state_dict(gstate)
-    model.to(device)
-    params = {k: v.detach().clone() for k, v in model.named_parameters()}
-    buffers = {k: v.detach().clone() for k, v in model.named_buffers()}
-    keys = list(params.keys())
+    model.to(device).train()
+    pkeys = [n for n, _ in model.named_parameters()]
+    w0 = {n: gstate[n].detach().clone().to(device) for n in pkeys}
+    buffers = {n: b.detach() for n, b in model.named_buffers()}
 
     def vloss(p):
         return F.cross_entropy(functional_call(model, (p, buffers), (val_x,)), val_y)
 
-    def sloss(p, xi, yi):
-        out = functional_call(model, (p, buffers), (xi.unsqueeze(0),))
-        return F.cross_entropy(out, yi.unsqueeze(0))
-
-    # Evaluate at the fixed round-start w (no local SGD trajectory: that
-    # diverges, and the cross-round effect is exactly the ripple term's job).
-    # IRDS 1st order at w^r, influence convention (good -> positive), same form
-    # as Flirds 1st order:  +eta * sum_z <g_val, g_z>.
-    vg = _flat(grad(vloss)(params), keys)                           # [P]
-    total = 0.0
-    for x, y in loader:
-        x, y = x.to(device), y.to(device)
-        psg = vmap(grad(sloss), (None, 0, 0))(params, x, y)         # dict[B,*]
-        psg_flat = torch.cat([psg[k].flatten(1) for k in keys], 1)  # [B, P]
-        total += float((lr * (psg_flat @ vg)).sum())
-    return total
+    opt = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum)
+    drop = 0.0
+    for _ in range(epochs):
+        for x, y in loader:
+            x, y = x.to(device), y.to(device)
+            opt.zero_grad()
+            F.cross_entropy(model(x), y).backward()                  # realized batch grad
+            gb = {n: p.grad.detach() for n, p in model.named_parameters()}
+            gv = grad(vloss)({n: p.detach() for n, p in model.named_parameters()})
+            drop += lr * float(sum((gv[n] * gb[n]).sum() for n in pkeys))
+            opt.step()
+    delta = {n: (p.detach() - w0[n]) for n, p in model.named_parameters()}
+    return drop, delta
 
 
-def hessian_topk(model, params, buffers, x, y, k, device):
-    """Top-k largest eigenpairs of the loss Hessian at `params` (Eq.14 sketch).
+def local_hessian_topk(model, gstate, x, y, k, device):
+    """Top-k eigenpairs of the LOCAL-data loss Hessian at w^r (Eq 14 sketch).
 
-    HVP via torch.func.jvp(grad(loss)); eigsh on a scipy LinearOperator.
-    Returns (eigvals[k], eigvecs[P, k]) as numpy arrays.
+    Per-client curvature on the client's own data (Alg.1 L6) -- not the global/val
+    Hessian.  HVP via jvp(grad(loss)); eigsh on a scipy LinearOperator.
+    Returns (eigvals[k], eigvecs[P, k]) over trainable params.
     """
     from scipy.sparse.linalg import LinearOperator, eigsh
 
-    keys = list(params.keys())
-    shapes = {kk: params[kk].shape for kk in keys}
-    sizes = {kk: params[kk].numel() for kk in keys}
+    model.load_state_dict(gstate)
+    model.to(device)
+    pkeys = [n for n, _ in model.named_parameters()]
+    params = {n: gstate[n].detach().to(device) for n in pkeys}
+    buffers = {n: b.detach() for n, b in model.named_buffers()}
+    sizes = {n: params[n].numel() for n in pkeys}
+    shapes = {n: params[n].shape for n in pkeys}
     P = sum(sizes.values())
 
     def loss_fn(p):
         return F.cross_entropy(functional_call(model, (p, buffers), (x,)), y)
-
     gfn = grad(loss_fn)
 
     def unflat(v):
         out, i = {}, 0
-        for kk in keys:
-            out[kk] = v[i:i + sizes[kk]].reshape(shapes[kk])
-            i += sizes[kk]
+        for n in pkeys:
+            out[n] = v[i:i + sizes[n]].reshape(shapes[n])
+            i += sizes[n]
         return out
 
     def matvec(vnp):
         v = torch.as_tensor(np.ascontiguousarray(vnp), dtype=torch.float32, device=device)
         _, hv = jvp(gfn, (params,), (unflat(v),))
-        return _flat(hv, keys).detach().cpu().numpy()
+        return _flat(hv, pkeys).detach().cpu().numpy()
 
     op = LinearOperator((P, P), matvec=matvec, dtype=np.float64)
+    # TODO(deferred): eigsh convergence fallback -- set maxiter/tol, retry with a
+    # larger ncv on ArpackNoConvergence, and assert ||H v - lam v|| is small.
     vals, vecs = eigsh(op, k=k, which="LA")
     return vals, vecs
 
 
 def _orthoproj(Q, U, m):
-    """Orthonormal basis of [Q, U] truncated to m columns (progressive subspace)."""
+    """Orthonormal basis of [Q, U] truncated to m columns (progressive subspace, Eq 15)."""
     A = U if Q is None else np.concatenate([Q, U], axis=1)
     Qn, _ = np.linalg.qr(A)
     return Qn[:, :m]
 
 
-def ripple_shapley(model_fn, client_loaders, test_loader, rounds, local_epochs, lr,
+def ripple_shapley(model_fn, client_loaders, rounds, local_epochs, lr,
                    val_x, val_y, device, seed=0, k=20, m=50, R=20):
-    """Full Ripple Shapley client values = drop + ripple, summed over rounds.
-
-    Client-level (sample->client via linearity of the drop direction Δw_k):
-      drop_k   = alpha_k * sum_t -<g_val, g_z> (IRDS 1st order, per local step)
-      ripple_k = sum_{t0} sum_{r=2..R} g_val(t0+r) . QP_low Q^T . Δw_k(t0)   (Eq.19)
-    Per-round global Hessian sketch (top-k at w^r on the val batch as curvature
-    proxy) builds the progressive subspace Q and the low-rank Jacobian chain.
-    """
-    from ..fl.client import local_train
-
+    """Client-level Ripple Shapley values = (drop + ripple), summed over rounds."""
+    torch.manual_seed(seed)
     model = model_fn().to(device)
-    gstate = {kk: v.detach().clone() for kk, v in model.state_dict().items()}
-    keys = list(gstate.keys())
-    buffers = {kk: v.detach().clone() for kk, v in model.named_buffers()}
+    gstate = {n: v.detach().clone() for n, v in model.state_dict().items()}
+    pkeys = [n for n, _ in model.named_parameters()]
+    buffers0 = {n: b.detach().clone() for n, b in model.named_buffers()}
     n = len(client_loaders)
-    P = sum(gstate[kk].numel() for kk in keys)
+    P = sum(p.numel() for _, p in model.named_parameters())
+    client_xy = [_loader_xy(ld, device) for ld in client_loaders]
 
-    def params_of(state):
-        return {kk: state[kk].detach().clone() for kk in keys}
-
-    def val_grad(state):
+    def val_grad_flat(state):
+        params = {nn: state[nn].detach().to(device) for nn in pkeys}
         g = grad(lambda p: F.cross_entropy(
-            functional_call(model, (p, buffers), (val_x,)), val_y))(params_of(state))
-        return _flat(g, keys).detach().cpu().numpy()
+            functional_call(model, (p, buffers0), (val_x,)), val_y))(params)
+        return _flat(g, pkeys).detach().cpu().numpy()
 
     drop = np.zeros((rounds, n))
     nsel = np.zeros((rounds, n))
-    DW = np.zeros((rounds, n, P))
-    VG = np.zeros((rounds, P))
-    Us, Lams = [], []
+    DW = np.zeros((rounds, n, P), dtype=np.float32)
+    VG = np.zeros((rounds, P), dtype=np.float32)
+    Us = []                                            # (U_r [P, n*k], Lam_r [n*k]) per round
+    Q = None
     for r in range(rounds):
-        VG[r] = val_grad(gstate)
+        VG[r] = val_grad_flat(gstate)
+        vecs_r, vals_r = [], []
         for c in range(n):
-            drop[r, c] = client_drop_term(model, gstate, client_loaders[c],
-                                          lr, val_x, val_y, device)
-            d, nc = local_train(model, gstate, client_loaders[c],
-                                local_epochs, lr, device)
-            DW[r, c] = _flat(d, keys).detach().cpu().numpy()
-            nsel[r, c] = nc
-        vals, vecs = hessian_topk(model, params_of(gstate), buffers,
-                                  val_x, val_y, k, device)
-        Us.append(vecs)
-        Lams.append(vals)
+            d_drop, delta = client_drop_and_delta(
+                model, gstate, client_loaders[c], local_epochs, lr, val_x, val_y, device)
+            drop[r, c] = d_drop
+            DW[r, c] = _flat(delta, pkeys).cpu().numpy()
+            nsel[r, c] = len(client_loaders[c].dataset)
+            xc, yc = client_xy[c]
+            vv, ee = local_hessian_topk(model, gstate, xc, yc, k, device)
+            vecs_r.append(ee)
+            vals_r.append(vv)
+        Ur = np.concatenate(vecs_r, axis=1)            # [P, n*k]
+        Us.append((Ur, np.concatenate(vals_r)))
+        Q = _orthoproj(Q, Ur, m)                       # progressive global subspace (Eq 15)
+        # FedAvg over trainable params (buffers held fixed -- param-only valuation)
         agg = sum((nsel[r, c] / nsel[r].sum()) * DW[r, c] for c in range(n))
         off = 0
-        for kk in keys:
-            sz = gstate[kk].numel()
-            gstate[kk] = gstate[kk] + torch.as_tensor(
-                agg[off:off + sz].reshape(gstate[kk].shape),
-                dtype=gstate[kk].dtype, device=device)
+        for key in pkeys:
+            sz = gstate[key].numel()
+            gstate[key] = gstate[key] + torch.as_tensor(
+                agg[off:off + sz].reshape(gstate[key].shape),
+                dtype=gstate[key].dtype, device=device)
             off += sz
 
-    Q = None
-    for vecs in Us:
-        Q = _orthoproj(Q, vecs, m)              # [P, <=m]
-    m = Q.shape[1]                               # actual subspace dim
-    VGp = VG @ Q                                 # [rounds, m]
-    DWp = DW @ Q                                 # [rounds, n, m]
-    Bs = [Q.T @ Us[t] for t in range(rounds)]    # [m, k]
-    # M_t = I - lr*B Lam B^T is SYMMETRIC -> the chain's transpose trick below
-    # (dw @ (Plow.T @ vg)) equals the forward Jacobian product. Keep M symmetric.
-    Ms = [np.eye(m) - lr * (Bs[t] * Lams[t]) @ Bs[t].T for t in range(rounds)]
+    m = Q.shape[1]
+    VGp = VG @ Q                                        # [rounds, m]
+    DWp = DW @ Q                                        # [rounds, n, m]
+    Bs = [Q.T @ Ur for Ur, _ in Us]                    # [m, n*k] per round (Eq 16)
+    Ls = [lam for _, lam in Us]
+    Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]  # Eq 18 factor
 
     alpha = nsel / nsel.sum(axis=1, keepdims=True)
-    ripple = np.zeros((rounds, n))
+    dphi = alpha * drop                                 # Eq 7
+    rphi = np.zeros((rounds, n))
     for t0 in range(rounds):
         Plow = np.eye(m)
         for r in range(2, R + 1):
             if t0 + r >= rounds:
                 break
-            Plow = Ms[t0 + r - 1] @ Plow         # prod_{l=1}^{r-1} M[t0+l]
-            ripple[t0] += DWp[t0] @ (Plow.T @ VGp[t0 + r])
-    return (alpha * drop + ripple).sum(axis=0)
+            Plow = Ms[t0 + r - 1] @ Plow                # prod_{l=1}^{r-1} M[t0+l] (Eq 18)
+            # value = -<alpha*Delta w^{t0}, Q Plow Q^T g_val^{t0+r}>  (Eq 19; sign and
+            # alpha match the drop term so drop and ripple reinforce, clean -> +).
+            rphi[t0] += -((alpha[t0][:, None] * DWp[t0]) @ (Plow.T @ VGp[t0 + r]))
+    return (dphi + rphi).sum(axis=0)

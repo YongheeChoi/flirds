@@ -38,7 +38,7 @@ def main():
     vx = torch.stack([test[i][0] for i in range(512)]).to(device)
     vy = torch.tensor([test[i][1] for i in range(512)]).to(device)
 
-    phi = ripple_shapley(LeNet5, loaders, None, rounds, E, lr, vx, vy, device,
+    phi = ripple_shapley(LeNet5, loaders, rounds, E, lr, vx, vy, device,
                          seed=seed, k=5, m=20, R=5)  # full: drop + ripple
     y = [1 if c in noisy else 0 for c in range(N)]
     auc = roc_auc_score(y, -np.asarray(phi))  # noisy -> low phi -> high -phi
