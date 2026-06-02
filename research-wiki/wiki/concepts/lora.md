@@ -2,8 +2,8 @@
 type: concept
 title: LoRA (Low-Rank Adaptation)
 created: 2026-05-05
-updated: 2026-05-05
-sources: [datainf, logix, feddqc, rfedlr]
+updated: 2026-05-22
+sources: [datainf, logix, feddqc, rfedlr, less]
 tags: [parameter-efficient-fine-tuning, peft, fine-tuning]
 ---
 
@@ -52,8 +52,10 @@ Train only $A, B$. At inference, $W_0 + BA$ can be merged for zero overhead.
 - [[sources/logix]] — LoGra's add-on architecture mirrors LoRA's structure.
 - [[sources/feddqc]] — federated instruction tuning uses LoRA on each client.
 - [[sources/rfedlr]] — federated LoRA with robustness focus.
+- [[sources/less]] — uses LoRA warmup training so that per-example gradient features fit a *reusable* 8192-dim datastore (JL-projected from LoRA dim) for instruction-tuning data selection at Llama-2-7B/13B and Mistral-7B scale.
 
 ## See also
 
 - [[concepts/influence-function]]
 - [[concepts/federated-learning]]
+- [[threads/data-selection-for-llms]]

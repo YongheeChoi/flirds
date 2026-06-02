@@ -2,8 +2,8 @@
 type: thread
 title: Retraining-based vs. in-run / single-run attribution
 created: 2026-05-05
-updated: 2026-05-05
-sources: [in-run-data-shapley, data-banzhaf, ripple-shapley, asymmetric-data-shapley, koh-liang-influence-functions, ghorbani-zou-data-shapley, trak]
+updated: 2026-05-22
+sources: [in-run-data-shapley, data-banzhaf, ripple-shapley, asymmetric-data-shapley, koh-liang-influence-functions, ghorbani-zou-data-shapley, trak, grosse-llm-influence, less, mates, dsdm]
 tags: [attribution, scalability, semantics, model-vs-algorithm]
 ---
 
@@ -54,6 +54,7 @@ These can differ substantially under stochastic training — see [[threads/robus
 - [[sources/data-banzhaf]] — sticks with retraining-based (algorithm-level) but optimizes the semivalue weighting for noise-robustness.
 - [[concepts/datamodels]] — gold-standard retraining-based; trains hundreds of models on subsets.
 - [[sources/trak]] — eNTK linearization is a closed-form approximation to Datamodels.
+- [[sources/dsdm]] — fits **linear datamodels via TRAK** at LLM scale, selects bottom-$k$ for training. Operationally retraining-based (the datamodels are themselves fit from many retrainings), with TRAK as the cost-amortizer.
 
 ### On the in-run side
 
@@ -61,6 +62,9 @@ These can differ substantially under stochastic training — see [[threads/robus
 - [[sources/ripple-shapley]] — extends in-run Shapley to **federated** trajectories with cross-round Jacobian-chain propagation. Sample-level, single-run.
 - [[sources/asymmetric-data-shapley]] — anchors evaluation to the realized model state, in the same spirit as in-run, even though it isn't gradient-based.
 - [[sources/koh-liang-influence-functions]] etc. — gradient-based methods are technically "single-trained-model" already, so they belong on this side too.
+- [[sources/less]] — explicitly trajectory-summed TracIn-style IF over LoRA-warmup checkpoints. The aggregation is over a *fixed* realized trajectory, not over algorithm randomness.
+- [[sources/mates]] — locally-probed oracle IF: one-step retraining-from-current-state probe. Sits between in-run (uses the current $\mathcal{M}_t$, not a final-trained model) and retraining-based (the probe is a one-step retraining). The BERT-base influence model then *interpolates* the oracle across the corpus. Closest cousin to [[sources/in-run-data-shapley|IRDS]]'s per-step utility framing among the new 2024 papers.
+- [[sources/grosse-llm-influence]] — explicit reframing of IF target as the **[[concepts/proximal-bregman-response|PBRF]]**: *local* response around $\theta^s$, neither global retraining nor pure in-run accumulation. Argues the entire deep-net IF literature lives in this local-but-not-trajectory-summed regime.
 
 ## Where they meet
 
@@ -102,6 +106,16 @@ Ripple Shapley (2026)      — sample-level FL attribution via per-step + cross-
 
 ## Sources to ingest next
 
-- Original Datamodels paper (Ilyas et al., 2022) — gold standard for the retraining-based side.
-- TracIn (Pruthi et al.) — bridges via per-checkpoint gradient dot products.
-- Bae et al., "If Influence Functions are the Answer..." — argues classical IF's actual quantity is a "proximal Bregman response," not the retraining counterfactual.
+- **Original Datamodels paper** (Ilyas et al., 2022) — gold standard for the retraining-based side. DsDm uses it but doesn't replace it.
+- **TracIn** (Pruthi et al.) — bridges via per-checkpoint gradient dot products. LESS's direct ancestor.
+- **Bae et al., "If Influence Functions are the Answer..."** — argues classical IF's actual quantity is the [[concepts/proximal-bregman-response|PBRF]] (already in the wiki via Grosse et al., but the originating paper would sharpen the concept page).
+
+## A 2026 vantage point: three "local" attribution regimes
+
+With the 4 new 2024 ingests, the in-run side is now more clearly differentiated into three flavors:
+
+1. **Trajectory-summed** ([[sources/in-run-data-shapley|IRDS]], [[sources/ripple-shapley|Ripple Shapley]], [[sources/less|LESS]]) — sum per-step / per-checkpoint contributions along the realized training path.
+2. **End-state local** ([[sources/grosse-llm-influence|Grosse]] EK-FAC, [[sources/datainf|DataInf]], [[sources/trak|TRAK]], [[sources/logix|LoGra]]) — evaluate at the trained $\theta^*$ / $\theta^s$ only, with the [[concepts/proximal-bregman-response|PBRF]] interpretation.
+3. **One-step probe** ([[sources/mates|MATES]] locally-probed oracle) — explicit one-step retraining from current state as a counterfactual proxy. Cheapest counterfactual yet introduced.
+
+All three approximate something *local* to the trained model — none are the true retraining counterfactual. They differ in *where* the locality is anchored (along the trajectory, at the end, or at a single step away).

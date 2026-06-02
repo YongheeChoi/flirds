@@ -2,8 +2,8 @@
 type: thread
 title: Utility-function design for data valuation
 created: 2026-05-05
-updated: 2026-05-05
-sources: [distributionally-robust-data-valuation, ghorbani-zou-data-shapley, data-banzhaf, in-run-data-shapley, asymmetric-data-shapley]
+updated: 2026-05-22
+sources: [distributionally-robust-data-valuation, ghorbani-zou-data-shapley, data-banzhaf, in-run-data-shapley, asymmetric-data-shapley, less, mates, dsdm]
 tags: [utility, validation-set, attribution, design-axis]
 ---
 
@@ -40,6 +40,9 @@ $U^{(t)}(S)$ defined per gradient step; total value $= \sum_t U^{(t)}$.
 - **Validation-free** (DRDV-style) vs. **prototype-based** ([[sources/space-participant-amalgamation|SPACE]]) — both eliminate held-out validation sets, but in different ways.
 - **Single-distribution accuracy** vs. **multi-task / personalized utility** — relevant for [[sources/ipfl-model-market|iPFL]] where each buyer wants a different model.
 - **Inference-loss-based** ([[sources/feddqc|FedDQC]]'s IRA) — measures alignment, not accuracy.
+- **Few-shot validation** ([[sources/less|LESS]]) — utility defined against a *handful* of target-capability examples rather than a held-out distribution. Cheaper to assemble and aligned with operator intent; introduces selection variance in low-shot regimes.
+- **Task-natural reference set** ([[sources/mates|MATES]]) — LAMBADA (autoregressive-aligned) as $\mathcal{D}_r$ rather than an i.i.d. validation slice. Picks a pre-existing task whose objective aligns with the training objective rather than constructing a new "validation set." Empirically MATES is robust to the choice (LAMBADA / ARC-E / FLAN all yield positive gains).
+- **Explicit target-task mix** ([[sources/dsdm|DsDm]]) — utility = loss on a chosen mix (SQuAD + LAMBADA + Jeopardy as a representative cross-section of LM problem categories). The framework explicitly accepts that *target task choice* shifts model behavior — a feature, not a bug.
 
 ## The three-axis decomposition
 

@@ -2,7 +2,7 @@
 type: index
 title: Index
 created: 2026-05-05
-updated: 2026-05-19
+updated: 2026-05-27
 ---
 
 # Index
@@ -17,9 +17,11 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 
 ## Project
 
-- [[flirds]] — Flirds (Federated Learning + In-Run Data Shapley) project state: locked design decisions, open questions, experiment plan
+- [[flirds]] — Flirds (Federated Learning + In-Run Data Shapley) project state: locked design decisions, resolved questions, experiment plan
+- [[flirds-protocol]] — implementation & reporting protocol (precision, seeds, statistical reporting, oracle separation, sanity gates, run logging, Phase 0)
+- [[flirds-implementation-plan]] — **session handoff document**: start here when beginning an implementation session. 4-phase task ordering (Phase 0 CNN reproduction → Phase 1 Flirds at 1B → Phase 2 full baseline + 3B/7B → Phase 3 matrix execution); 9 still-open implementation decisions with options + criteria + recommendations; pre-implementation checklist; pointer table
 
-## Sources (26)
+## Sources (30)
 
 ### Foundations
 - [[sources/koh-liang-influence-functions]] — Koh & Liang 2017; foundational influence functions for ML.
@@ -35,6 +37,12 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[sources/datainf]] — closed-form influence approximation for LoRA-tuned LLMs.
 - [[sources/trak]] — eNTK linearization + random projection; LDS benchmark.
 - [[sources/logix]] — Kronecker-structured low-rank projection + Logix software.
+- [[sources/grosse-llm-influence]] — **upper-bound anchor**: EK-FAC IF at 52B (Anthropic, 2023); TF-IDF + query batching; reframes target as [[concepts/proximal-bregman-response|PBRF]].
+
+### Centralized data selection for LLMs (2024)
+- [[sources/less]] — TracIn-trajectory IF + Adam-Γ + cosine + LoRA + JL projection; Llama-2-7B/13B + Mistral-7B instruction tuning; the **closest centralized comparator** to [[flirds|Flirds]].
+- [[sources/mates]] — locally-probed one-step Δloss + BERT-base data-influence model; Pythia 410M–1B pretraining; backs the 1B-primary decision.
+- [[sources/dsdm]] — linear datamodels via [[sources/trak|TRAK]] + bottom-$k$ selection; the **Datamodels → LLM bridge**.
 
 ### Federated learning — valuation
 - [[sources/principled-federated-data-valuation]] — **FedSV (Wang et al. 2020)**: the origin of federated Shapley; per-round, order-aware.
@@ -59,7 +67,7 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[sources/distributionally-robust-data-valuation]] — DRGE utility replaces validation-set dependence.
 - [[sources/ipfl-model-market]] — graphical-game model market for personalized FL.
 
-## Concepts (25)
+## Concepts (27)
 
 ### Foundational semivalue framework
 - [[concepts/shapley-value]] — the unique fair allocation; four axioms.
@@ -77,6 +85,8 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[concepts/trak]] — eNTK linearization + projection.
 - [[concepts/datamodels]] — retraining-based gold standard.
 - [[concepts/linear-datamodeling-score]] — the standard counterfactual benchmark.
+- [[concepts/ekfac]] — Eigenvalue-corrected Kronecker-factored Hessian; the IHVP backbone scaling IF to 52B.
+- [[concepts/proximal-bregman-response]] — what modern IF actually computes on deep nets (Bae 2022a → Grosse 2023 adoption).
 
 ### Federated / decentralized
 - [[concepts/federated-learning]] — distributed training with central server.
@@ -97,24 +107,25 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[concepts/data-quality-control]] — quality scoring distinct from valuation.
 - [[concepts/lora]] — parameter-efficient fine-tuning that recurs across many sources.
 
-## Threads (7)
+## Threads (11)
 
 > Cross-cutting research threads. The most valuable pages — they synthesize across multiple sources.
 
-- [[threads/retraining-vs-in-run-attribution]] — algorithm-level vs. model-level; when each matters.
+- [[threads/retraining-vs-in-run-attribution]] — algorithm-level vs. model-level; trajectory-summed / end-state-local / one-step-probe sub-flavors.
 - [[threads/robustness-to-stochastic-training]] — three responses to SGD noise (Banzhaf, in-run, DRDV).
 - [[threads/federated-and-decentralized-attribution]] — the big synthesis (9+ sources).
-- [[threads/influence-functions-at-llm-scale]] — DataInf, TRAK, LoGra, EKFAC; iHVP and per-sample-gradient bottlenecks.
+- [[threads/influence-functions-at-llm-scale]] — DataInf, TRAK, LoGra, EK-FAC at 52B, LESS, MATES; iHVP and per-sample-gradient bottlenecks; 2024 Hessian-free wave.
+- [[threads/data-selection-for-llms]] — LESS / MATES / DsDm synthesis: similarity ≠ value, 2× compute multiplier, reference-set choice.
 - [[threads/symmetry-and-asymmetry-axioms]] — when symmetry breaks, three responses.
 - [[threads/dataset-vs-data-point-valuation]] — granularity choice; why summing point values is wrong.
-- [[threads/utility-function-design]] — the third axis: per-step / DRGE / prototype / inference-loss-difference.
+- [[threads/utility-function-design]] — the third axis: per-step / DRGE / prototype / few-shot / task-natural / target-mix.
 - [[threads/data-and-model-markets]] — IR/IC/replication-robustness in commercial contexts.
-- [[threads/data-quality-vs-data-value]] — quality scoring vs. attribution; why distinct.
+- [[threads/data-quality-vs-data-value]] — quality scoring vs. attribution; why distinct; DsDm's "similarity ≠ value" finding.
 - [[threads/noise-ood-malicious-client-separation]] — FL robustness-side prior art (FLDetector, FoolsGold, FLTrust, FedCorr, STD-DAGMM); backs Flirds' deferred-limitation recast + surviving detection benchmarks.
 
 ## Raw materials inventory
 
-Snapshot of `raw/`. Last refreshed: 2026-05-19.
+Snapshot of `raw/`. Last refreshed: 2026-05-22.
 
 ### Papers — `raw/papers/flirds/`
 
@@ -124,6 +135,10 @@ Snapshot of `raw/`. Last refreshed: 2026-05-19.
 | `1904.02868v2.pdf` | **ingested** → [[sources/ghorbani-zou-data-shapley]] |
 | `2109.02053v1.pdf` | **ingested** → [[sources/gtg-shapley]] |
 | `2303.14186v2.pdf` | **ingested** → [[sources/trak]] |
+| `2308.03296v1.pdf` | **ingested** → [[sources/grosse-llm-influence]] |
+| `2401.12926v1.pdf` | **ingested** → [[sources/dsdm]] |
+| `2402.04333v3.pdf` | **ingested** → [[sources/less]] |
+| `2406.06046v2.pdf` | **ingested** → [[sources/mates]] |
 | `2009.06192v1.pdf` | **ingested** → [[sources/principled-federated-data-valuation]] |
 | `2109.09046v3.pdf` | **ingested** → [[sources/comfedsv]] |
 | `2207.09209v4.pdf` | **ingested** → [[sources/fldetector]] |
@@ -148,7 +163,7 @@ Snapshot of `raw/`. Last refreshed: 2026-05-19.
 | `Rethinking Data Value_ Asymmetric Data Shapley_…md` | **ingested** → [[sources/asymmetric-data-shapley]] |
 | `What is Your Data Worth to GPT_…md` | **ingested** → [[sources/logix]] |
 
-26 of 27 raw papers ingested (+7 on 2026-05-19: FedSV, ComFedSV, FLDetector, FedCorr, FLTrust, FoolsGold, STD-DAGMM). ICA3PP book skipped as a non-source (per-chapter ingestion possible if Yonghee identifies a relevant chapter).
+30 of 31 raw papers ingested (+4 on 2026-05-22: Grosse et al. 2023, LESS, MATES, DsDm). ICA3PP book skipped as a non-source (per-chapter ingestion possible if Yonghee identifies a relevant chapter).
 
 ### Conversations — `raw/conversations/`
 
@@ -157,5 +172,7 @@ Snapshot of `raw/`. Last refreshed: 2026-05-19.
 - `flirds/conversation2.md` — benchmark/metric discussion; (a) retraining-based vs (b) in-run exact Shapley distinction; round-delta-as-1-step caveats.
 - `flirds/conversation3.md` — cross-device design; (a) vs (b) clarification (different utilities); noise-vs-OOD-good algorithm sketch; ablation matrix; centralized data-level = client-level proof + FL drift residual.
 - `flirds/conversation4.md` — final design lock: client-level / 1st+2nd Taylor / Δw_k only / server-side validation / 0 communication overhead / drift residual measured-not-corrected.
+- `flirds/2026-05-19-section23-walkthrough.md` — **raw transcript** of the Section 2 / Section 3 walkthrough conversation (2026-05-19 → 2026-05-22), restored from Claude Desktop JSONL after session interruption. Tool calls / results / thinking blocks stripped; 2 Yonghee turns + 16 Claude turns preserved.
+- `flirds/2026-05-27-section-23-lock.md` — **distilled** record of the Section 2 / Section 3 lock: Q1–Q3 + N1–N4 + model choice (Llama-3.2-1B/3B + Llama-2-7B) + baseline reduction (SPACE/S-FedAvg/FedCorr excluded; vanilla FedAvg added) + Phase 0 sanity reproduction task + 7B full matrix + protocol document. Spans 2026-05-19 / 2026-05-22 / 2026-05-27.
 
 These are the **primary record** of the Flirds project. The wiki page [[flirds]] is the distilled landing — for design rationale and math details, read the raw conversations.

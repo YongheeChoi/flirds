@@ -13,7 +13,7 @@ tags: [federated-learning, shapley, single-round, knowledge-distillation, protot
 
 Yi-Chung Chen, Hsi-Wen Chen, Shun-Gui Wang, Ming-Syan Chen (NTU Taiwan). *SPACE: Single-round Participant Amalgamation for Contribution Evaluation in Federated Learning*. NeurIPS 2023.
 
-Raw: `raw/papers/flirds/NeurIPS-2023-space-single-round-participant-amalgamation-for-contribution-evaluation-in-federated-learning-Paper-Conference.pdf`
+Raw: `raw/papers/flirds/NeurIPS-2023-space-single-round-participant-amalgamation-for-contribution-evaluation-in-federated-learning-Paper-Conference.pdf`. Code: `https://github.com/culiver/SPACE`. (Excluded from [[flirds]] baseline set — prototype-based evaluation requires discrete class labels, not transferable to LLM generative tasks.)
 
 ## TL;DR
 

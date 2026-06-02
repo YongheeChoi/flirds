@@ -13,7 +13,7 @@ tags: [federated-learning, shapley, robustness, importance-sampling, surrogate-s
 
 Qiheng Sun, Xiang Li, Jiayao Zhang, Li Xiong, Weiran Liu, Jinfei Liu, Zhan Qin, Kui Ren (Zhejiang U / Emory / Alibaba). *ShapleyFL: Robust Federated Learning Based on Shapley Value*. KDD 2023.
 
-Raw: `raw/papers/flirds/3580305.3599500.pdf`
+Raw: `raw/papers/flirds/3580305.3599500.pdf`. Code: `https://github.com/ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value` (image classification: MNIST / Fashion MNIST / CIFAR-10; cross-silo healthcare Fed-ISIC2019).
 
 ## TL;DR
 

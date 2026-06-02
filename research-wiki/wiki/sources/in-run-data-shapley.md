@@ -10,9 +10,9 @@ tags: [shapley, in-run, llm-scale, attribution, copyright]
 
 ## Citation
 
-Jiachen T. Wang, Prateek Mittal, Dawn Song, Ruoxi Jia. *Data Shapley in One Training Run*. arXiv:2406.11011 (v3).
+Jiachen T. Wang, Prateek Mittal, Dawn Song, Ruoxi Jia. *Data Shapley in One Training Run*. ICML 2024; ICLR 2025 Outstanding Paper Runner-up. arXiv:2406.11011 (v3).
 
-Raw: `raw/papers/flirds/Data Shapley in One Training Run.md`
+Raw: `raw/papers/flirds/Data Shapley in One Training Run.md`. Code: `https://github.com/Jiachen-T-Wang/GhostSuite` (GhostSuite — "ghost"-based per-sample-gradient implementation; centralized only, not FL).
 
 ## TL;DR
 

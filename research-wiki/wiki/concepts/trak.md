@@ -2,8 +2,8 @@
 type: concept
 title: TRAK
 created: 2026-05-05
-updated: 2026-05-05
-sources: [trak]
+updated: 2026-05-22
+sources: [trak, dsdm]
 tags: [attribution, ntk, random-projection, datamodels, llm-scale]
 ---
 
@@ -17,9 +17,14 @@ The Linear Datamodeling Score (LDS) introduced alongside TRAK is now the standar
 
 See [[sources/trak]] for full details.
 
+## Downstream consumers
+
+- [[sources/dsdm]] uses TRAK as the linear-datamodel estimator for **DsDm**'s LLM-pretraining dataset selection — the first work to push TRAK-as-selector to billion-parameter LM training. TRAK delivers the cheap datamodel coefficients that DsDm's argbot-$k$ then consumes.
+
 ## See also
 
 - [[concepts/datamodels]]
 - [[concepts/influence-function]]
 - [[concepts/linear-datamodeling-score]]
 - [[threads/influence-functions-at-llm-scale]]
+- [[threads/data-selection-for-llms]]

@@ -2,8 +2,8 @@
 type: overview
 title: Overview
 created: 2026-05-05
-updated: 2026-05-19
-sources: [data-banzhaf, in-run-data-shapley, dice, datainf, du-shapley, asymmetric-data-shapley, logix, feddqc, koh-liang-influence-functions, ghorbani-zou-data-shapley, gtg-shapley, trak, game-of-gradients-sfedavg, shapleyfl, ripple-shapley, distributionally-robust-data-valuation, ipfl-model-market, space-participant-amalgamation, principled-federated-data-valuation, comfedsv, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm]
+updated: 2026-05-22
+sources: [data-banzhaf, in-run-data-shapley, dice, datainf, du-shapley, asymmetric-data-shapley, logix, feddqc, koh-liang-influence-functions, ghorbani-zou-data-shapley, gtg-shapley, trak, game-of-gradients-sfedavg, shapleyfl, ripple-shapley, distributionally-robust-data-valuation, ipfl-model-market, space-participant-amalgamation, principled-federated-data-valuation, comfedsv, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, grosse-llm-influence, less, mates, dsdm]
 tags: [synthesis]
 ---
 
@@ -11,7 +11,7 @@ tags: [synthesis]
 
 This wiki is the durable knowledge substrate for the **Flirds project** (*Federated Learning + In-Run Data Shapley*). Project-specific design state lives in [[flirds]]; this page is the broader field synthesis the project draws on. See [[index]] for the full catalog and [[log]] for chronological history.
 
-> **Coverage as of 2026-05-19**: 26 sources ingested. Added 2026-05-19 — the federated-Shapley origin [[sources/principled-federated-data-valuation|FedSV (Wang et al. 2020)]] + [[sources/comfedsv|ComFedSV]], and the robustness-side Flirds baselines FLDetector / FedCorr / FLTrust / FoolsGold / STD-DAGMM.
+> **Coverage as of 2026-05-22**: 30 sources ingested. Added 2026-05-22 — the **upper-bound IF anchor** [[sources/grosse-llm-influence|Grosse et al. 2023]] (EK-FAC at 52B), the **closest centralized comparator to Flirds** [[sources/less|LESS]] (Xia et al. ICML'24), the **1B-pretraining backing** [[sources/mates|MATES]] (Yu et al. NeurIPS'24), and the **Datamodels → LLM bridge** [[sources/dsdm|DsDm]] (Engstrom et al. ICML'24). New threads: [[threads/data-selection-for-llms]]; new concepts: [[concepts/ekfac]], [[concepts/proximal-bregman-response]].
 
 ## What problem are we solving?
 
@@ -44,7 +44,7 @@ The [[concepts/semivalue|semivalue page]] diagrams the family and its axiom trad
 
 ### Influence functions — gradient calculus instead of retraining
 
-Define influence as $-H^{-1} \nabla_\theta \ell_k$ — what would happen if you up-weighted point $k$ infinitesimally. Avoids retraining but needs the inverse Hessian; that is the dominant cost.
+Define influence as $-H^{-1} \nabla_\theta \ell_k$ — what would happen if you up-weighted point $k$ infinitesimally. Avoids retraining but needs the inverse Hessian; that is the dominant cost. What modern IF methods actually estimate on deep nets is the [[concepts/proximal-bregman-response|proximal Bregman response function]], not the classical counterfactual.
 
 Methods (chronological):
 
@@ -52,9 +52,11 @@ Methods (chronological):
 - [[sources/datainf|DataInf]] — closed-form approximation tuned for LoRA; $O(nDL)$ compute.
 - [[sources/trak|TRAK]] — eNTK linearization + random projection; matches Datamodels' counterfactual fidelity.
 - [[sources/logix|LoGra/Logix]] — Kronecker-structured projection; ~6,500× throughput vs. EKFAC at Llama3-8B scale.
-- **EKFAC** — Kronecker-factored Hessian baseline; runnable but slow at billion-parameter scale.
+- [[sources/grosse-llm-influence|Grosse et al. 2023]] — **upper-bound anchor**: [[concepts/ekfac|EK-FAC]] + TF-IDF + query batching scale IF to **52B** Anthropic LLM; reframes target as [[concepts/proximal-bregman-response|PBRF]]. Generalization findings include scale-emergent abstraction and word-ordering brittleness.
+- [[sources/less|LESS]] (2024) — **TracIn-trajectory IF + Adam-Γ + cosine + LoRA + JL projection**; ditches the Hessian; Llama-2-7B/13B + Mistral-7B instruction tuning. The closest centralized analog of Flirds.
+- [[sources/mates|MATES]] (2024) — **locally-probed one-step Δloss** as oracle IF + BERT-base distilled influence model; Pythia 410M–1B pretraining.
 
-Detailed comparison: [[threads/influence-functions-at-llm-scale]].
+Detailed comparison: [[threads/influence-functions-at-llm-scale]]. Synthesis of the 2024 centralized-LLM-selection wave: [[threads/data-selection-for-llms]].
 
 ## The federated / decentralized layer (where Flirds lives)
 
@@ -110,15 +112,17 @@ These are the most load-bearing unknowns the wiki currently tracks. Each links t
 
 ## Sources to ingest next
 
-The 12-PDF triage already brought in the bulk of the federated-Shapley line plus the foundations. Biggest remaining gaps:
+Remaining gaps after the 2026-05-22 ingest pass:
 
-- **Original Datamodels paper** (Ilyas et al., 2022) — referenced everywhere, not yet in raw.
-- **Bae et al., "If Influence Functions are the Answer..."** — challenges classical IF on deep nets.
-- **TracIn** (Pruthi et al.) — bridges classical IF and In-Run Shapley.
-- **Original EKFAC paper** (Grosse et al.) — currently in the wiki only as a baseline.
+- **Original Datamodels paper** (Ilyas et al., 2022) — DsDm uses it but doesn't replace it; still the gold-standard counterfactual baseline.
+- **Bae et al., "If Influence Functions are the Answer..."** — the originating [[concepts/proximal-bregman-response|PBRF]] paper. Grosse 2023 inherits its framing; the original would tighten the concept page.
+- **TracIn** (Pruthi et al. 2020) — LESS's direct ancestor; bridges classical IF and In-Run Shapley.
 - **Beta-Shapley, CS-Shapley** original papers.
 - **VFL data valuation** (Han 2025) — vertical federated learning angle.
 - **Sharded Shapley for unlearning** (cited in [[sources/asymmetric-data-shapley|ADS]]).
 - **Clustered FL** (Sattler et al.) and **AUM** (Pleiss et al., NeurIPS 2020) — remaining robustness / centralized-ancestry refs for [[threads/noise-ood-malicious-client-separation]].
+- **QuRating, DSIR** — selection-method baselines mentioned across [[sources/less|LESS]], [[sources/mates|MATES]], [[sources/dsdm|DsDm]]; would close the similarity-vs-influence-vs-rating picture but not urgent.
+
+> **Ingested 2026-05-22** (no longer gaps): [[sources/grosse-llm-influence|Grosse et al. 2023]] — also obsoletes "Original EKFAC paper" as a gap (Grosse paper inherits and extends the EKFAC framing for influence). [[sources/less|LESS]], [[sources/mates|MATES]], [[sources/dsdm|DsDm]] — close the centralized-LLM-data-selection picture as of NeurIPS'24.
 
 > **Ingested 2026-05-19** (no longer gaps): Wang et al. 2020 FedSV → [[sources/principled-federated-data-valuation]], ComFedSV → [[sources/comfedsv]], "Federated Banzhaf" = [[sources/data-banzhaf|Data Banzhaf]] applied in FL (no dedicated paper exists; already in the wiki), [[sources/fldetector|FLDetector]], [[sources/fedcorr|FedCorr]], [[sources/fltrust|FLTrust]], [[sources/foolsgold|FoolsGold]], [[sources/free-riders-fl-std-dagmm|STD-DAGMM]].

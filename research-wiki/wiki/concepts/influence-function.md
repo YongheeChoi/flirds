@@ -2,8 +2,8 @@
 type: concept
 title: Influence function
 created: 2026-05-05
-updated: 2026-05-05
-sources: [koh-liang-influence-functions, datainf, logix, in-run-data-shapley, dice, trak, ghorbani-zou-data-shapley]
+updated: 2026-05-22
+sources: [koh-liang-influence-functions, datainf, logix, in-run-data-shapley, dice, trak, ghorbani-zou-data-shapley, grosse-llm-influence, less, mates]
 tags: [attribution, gradient-based, hessian]
 ---
 
@@ -34,12 +34,16 @@ If $z$ "looks like" $z_{\text{te}}$ in the curvature-aware geometry $H^{-1}$, re
 | TracIn | sums of per-checkpoint gradient dot products (no Hessian) | (TODO ingest) |
 | Hessian-free | pure gradient dot product | baseline in [[sources/datainf]] |
 | **DataInf** | swap inverse and average → closed form via Sherman–Morrison | [[sources/datainf]] |
-| **EKFAC** | Kronecker-factored Hessian approximation | baseline in [[sources/logix]] |
+| **EK-FAC** | Eigenvalue-corrected Kronecker-factored Hessian | [[sources/grosse-llm-influence]] (52B); baseline in [[sources/logix]] |
 | Arnoldi IF | Arnoldi iteration for eigendecomp + projection | baseline in [[sources/logix]] |
 | **TRAK** | eNTK linearization + random gradient projection | [[sources/trak]] |
 | **LoGra / Logix** | Kronecker-structured projection ($O(\sqrt{nk})$) | [[sources/logix]] |
+| **LESS** | TracIn-style trajectory IF + **Adam preconditioner** + **cosine** + LoRA + JL projection | [[sources/less]] |
+| **MATES** | Locally probed one-step Δloss ($\propto -\mathcal{L}_r + \mathcal{L}_r$ after one-step update); distilled into BERT-base | [[sources/mates]] |
 
-The trajectory: 2017 → "make the inverse-Hessian-vector product cheap"; 2023+ → "make per-sample gradient computation cheap *too*" (via projection / closed form), because at LLM scale the gradient bottleneck dominates.
+The trajectory: 2017 → "make the inverse-Hessian-vector product cheap"; 2023 → "make per-sample gradient computation cheap *too*" (via projection / closed form), because at LLM scale the gradient bottleneck dominates; 2024 → "**ditch the Hessian entirely** for trajectory-style or local-probing alternatives" (LESS, MATES), because IHVP-free signals are good enough for selection at LLM scale.
+
+What modern IF approximates is **not** the classical retraining counterfactual but the [[concepts/proximal-bregman-response|proximal Bregman response function]] (Bae et al. 2022a, adopted by [[sources/grosse-llm-influence|Grosse et al. 2023]]) — a local quantity around the trained $\theta^s$.
 
 ## Strengths
 
@@ -60,6 +64,9 @@ The trajectory: 2017 → "make the inverse-Hessian-vector product cheap"; 2023+ 
 - [[sources/datainf]] — closed-form approximation specialized for LoRA.
 - [[sources/logix]] — Kronecker-structured projection at LLM scale.
 - [[sources/trak]] — eNTK + random-projection variant.
+- [[sources/grosse-llm-influence]] — **upper-bound anchor**: EK-FAC IHVP at 52B parameters; reframes the target as [[concepts/proximal-bregman-response|PBRF]] rather than classical counterfactual.
+- [[sources/less]] — TracIn-trajectory IF adapted for Adam + variable-length instruction data + LoRA; centralized instruction-tuning selection.
+- [[sources/mates]] — locally-probed one-step Δloss as oracle IF, distilled into BERT-base for pretraining-corpus-scale prediction.
 - [[sources/dice]] — extends the framework to decentralized settings with cascade dynamics.
 - [[sources/in-run-data-shapley]] — uses gradient calculus in the same spirit but reframes the target as Shapley.
 - [[sources/feddqc]] — uses [[sources/datainf|DataInf]] as a baseline and reports it failing on real-world FL data.
@@ -68,5 +75,8 @@ The trajectory: 2017 → "make the inverse-Hessian-vector product cheap"; 2023+ 
 
 - [[concepts/shapley-value]] — competing axiomatic framework for attribution.
 - [[concepts/datamodels]] — closely related counterfactual-fidelity benchmark.
+- [[concepts/ekfac]] — the Hessian approximation that scales IF to 52B.
+- [[concepts/proximal-bregman-response]] — what IF actually computes on deep nets.
 - [[threads/retraining-vs-in-run-attribution]]
 - [[threads/influence-functions-at-llm-scale]]
+- [[threads/data-selection-for-llms]]

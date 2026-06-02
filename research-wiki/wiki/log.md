@@ -2,7 +2,7 @@
 type: log
 title: Log
 created: 2026-05-05
-updated: 2026-05-18
+updated: 2026-05-22
 ---
 
 # Log
@@ -252,3 +252,79 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
   3. **Distractor flagged**: 2025 arXiv:2502.17526 "FedSV: Byzantine-Robust FL via Shapley Value" is a robustness paper, not the valuation baseline — do not cite as baseline #1.
 - `flirds-summary.html`: §3.3 rewritten (gap → resolved table + 3-correction callout, dates synced to 2026-05-19). (§1.2 "two Taylor expansions" disambiguation callout was added in the prior turn, patches 1–2.)
 - Sources 19 → 26. `index.md` raw inventory + counts refreshed; `overview.md` "sources to ingest next" pruned (only Datamodels, Bae, TracIn, EKFAC, Beta/CS-Shapley, VFL, sharded-Shapley, Sattler, AUM remain).
+
+## [2026-05-22] ingest | LESS — Selecting Influential Data for Targeted Instruction Tuning (Xia et al., ICML 2024)
+
+- source: [[sources/less]]
+- touched: [[concepts/influence-function]], [[concepts/lora]], [[threads/influence-functions-at-llm-scale]], [[threads/retraining-vs-in-run-attribution]], [[threads/utility-function-design]], [[threads/data-quality-vs-data-value]], [[threads/data-selection-for-llms]] (new), [[flirds]], [[index]], [[overview]]
+- note: **The closest centralized comparator to Flirds.** TracIn-style trajectory IF + Adam-Γ + cosine similarity + LoRA + JL random projection (8192-dim reusable gradient datastore). 5% selection beats full 270K on Llama-2-7B/13B + Mistral-7B for MMLU/TyDiQA/BBH. Positioning load-bearing: differences (per-client vs per-example, Adam-Γ unneeded under FedAvg, 2nd-order Taylor, no offline datastore) define what's structurally new about Flirds vs the LESS baseline.
+
+## [2026-05-22] ingest | Grosse et al. 2023 — Studying LLM Generalization with Influence Functions (EK-FAC at 52B)
+
+- source: [[sources/grosse-llm-influence]]
+- touched: [[concepts/influence-function]], [[concepts/ekfac]] (new), [[concepts/proximal-bregman-response]] (new), [[threads/influence-functions-at-llm-scale]], [[threads/retraining-vs-in-run-attribution]], [[flirds]], [[index]], [[overview]]
+- note: **Upper-bound anchor** for IF at LLM scale. Scales IF to 52B via EK-FAC (IHVP), TF-IDF filtering + query batching (per-example gradient). Reframes target as [[concepts/proximal-bregman-response|PBRF]] (Bae et al. 2022a) rather than classical counterfactual. Empirical findings (heavy-tailed influence, scale-emergent abstraction, word-ordering brittleness, role-playing-as-imitation) anchor the qualitative side of the wiki's IF discussion. Pre-IF scale ceiling was 300M (Schioppa 2022); Grosse pushes it ~170× higher.
+
+## [2026-05-22] ingest | MATES — Model-Aware Data Selection with Data Influence Models (Yu et al., NeurIPS 2024)
+
+- source: [[sources/mates]]
+- touched: [[concepts/influence-function]], [[concepts/datamodels]], [[threads/influence-functions-at-llm-scale]], [[threads/retraining-vs-in-run-attribution]], [[threads/utility-function-design]], [[threads/data-quality-vs-data-value]], [[threads/data-selection-for-llms]] (new), [[flirds]], [[index]], [[overview]]
+- note: **Direct backing for Flirds' 1B-primary decision.** Pythia 410M + 1B pretraining on C4 (25B tokens), BERT-base data influence model continuously fine-tuned on locally-probed one-step-Δloss oracle. 2.3× faster than random to fixed accuracy. Doubles QuRating gains. Pointwise locally-probed oracle is conceptually closest to Flirds' "(b) in-run exact Shapley" ground-truth utility — both fix the trajectory and read off counterfactual loss change from minimal perturbation.
+
+## [2026-05-22] ingest | DsDm — Model-Aware Dataset Selection with Datamodels (Engstrom et al., ICML 2024)
+
+- source: [[sources/dsdm]]
+- touched: [[concepts/datamodels]], [[concepts/trak]], [[threads/influence-functions-at-llm-scale]], [[threads/retraining-vs-in-run-attribution]], [[threads/utility-function-design]], [[threads/data-quality-vs-data-value]], [[threads/data-selection-for-llms]] (new), [[flirds]], [[index]], [[overview]]
+- note: **The Datamodels → LLM bridge.** Frames dataset selection as direct optimization, approximates via linear datamodels fit via TRAK on a 125M proxy, selects bottom-$k$. 2× compute multiplier at 1.3B. Most striking finding: similarity-based baselines (DSIR, FastText classifier) routinely *underperform* random selection at LLM scale. Cleanest single-paragraph evidence for the [[threads/data-quality-vs-data-value|quality ≠ value]] thread.
+
+## [2026-05-22] note | new concepts + thread + sources-to-ingest list pruned
+
+- Created [[concepts/ekfac]] (was only a baseline reference before; Grosse anchors it now), [[concepts/proximal-bregman-response]] (the "what IF actually computes" framing).
+- Created [[threads/data-selection-for-llms]] consolidating LESS / MATES / DsDm: similarity-≠-value, ~2× compute multiplier, reference-set choice. Three centralized methods that all sit one structural step away from a Flirds-FL extension.
+- Sources 26 → 30. Concepts 25 → 27. Threads 10 → 11.
+- [[overview]] "sources to ingest next" pruned: Datamodels-original, Bae 2022a, TracIn, EKFAC-original (now redundant — Grosse paper inherits the EKFAC framing), Beta/CS-Shapley, VFL, sharded-Shapley, Sattler, AUM remain. Plus added: QuRating, DSIR (now demoted from "future" to "would close picture but not urgent").
+
+## [2026-05-27] conv | Section 2 / Section 3 lock + Phase 0 sanity reproduction task + protocol document
+
+- raw: `raw/conversations/flirds/2026-05-27-section-23-lock.md` (distill of 2026-05-19 / 2026-05-22 / 2026-05-27 conversation arc — session was interrupted between 2026-05-22 and 2026-05-27, restored from JSONL transcript).
+- distilled into: [[flirds]] (comprehensive rewrite), [[flirds-protocol]] (new), [[index]] (added flirds-protocol).
+- Yonghee's decisions:
+  1. **Pilot data set aside** — only clean re-runs enter paper claims (N1 lock 2026-05-22).
+  2. **Scale tier 1B + 3B + 7B** — 13B/70B excluded (N2 lock).
+  3. **Models**: Llama-3.2-1B-Instruct + Llama-3.2-3B-Instruct + Llama-2-7B (Option A — Llama-3.2 family for 1B/3B consistency, Llama-2-7B for LESS/FedDQC direct comparison).
+  4. **Dual oracle separated reporting**: (a) exact retrain SV (1B N∈{5,10} + 3B N=5; 7B skipped) + (b) IRDS-定 SV (cross-silo exact, cross-device MC).
+  5. **Baseline reduction**: SPACE / S-FedAvg / FedCorr / Power-of-choice **excluded** (LLM-environment unsuitable or not a valuation baseline). Final = 10 valuation/training + 4 detection.
+  6. **Vanilla FedAvg as training-comparison baseline** (Yonghee surfaced) — Full FedAvg + Random-selection FedAvg added.
+  7. **Phase 0 sanity reproduction** (Yonghee surfaced from #4 Ripple defense) — extended to all 4 code-unavailable baselines (Ripple, GTG, FedSV, ComFedSV). Cost ≈ 5–7 days B200×1. Must pass within ±5% before LLM phase starts.
+  8. **7B full matrix** — Yonghee challenged Claude's reduced 7B coverage; re-computation showed 7B ≈ 1 week B200×4 with full matrix, fully feasible. Reduced 7B was Claude's residual from when 13B was still in plan.
+  9. **HTML summary file deprecated** — wiki is single source.
+- Section 3 = **11 items** (Phase 0 sanity + 4 ★★★ spine + 5 ★★ characterization + 1 ★ scale extension).
+- Protocol document established: bf16 train / fp32 eval / scipy tied-rank / MC variance / 95% bootstrap CI / oracle code-path separation / sanity gates / run logging.
+- Preference surfaced: explanation → decision → execution (no premature wiki writes); family-consistent scaling lineage; code availability as baseline-selection criterion.
+
+## [2026-05-27] note | JSONL session transcript restored as raw conversation
+
+- raw: `raw/conversations/flirds/2026-05-19-section23-walkthrough.md` (new; extracted from Claude Desktop JSONL `0f448283-f0b9-46f2-ad8d-cdacb1d56685.jsonl` after session interruption).
+- distilled into: already done — [[2026-05-27-section-23-lock]] is the distill of this same conversation arc.
+- note: Yonghee asked to preserve the raw transcript (not the JSONL itself) following the existing `conversation{1..4}.md` convention. Tool calls / tool results / thinking blocks stripped; 2 Yonghee turns + 16 Claude turns preserved with timestamps. 33 KB.
+
+## [2026-05-27] note | code-link backfill across 3 source pages
+
+- touched: [[sources/shapleyfl]] (ZJU-DIVER GitHub), [[sources/in-run-data-shapley]] (GhostSuite GitHub + ICLR'25 outstanding-runner-up mention), [[sources/space-participant-amalgamation]] (culiver/SPACE GitHub + baseline-exclusion sentence).
+- note: code availability was looked up during the 2026-05-27 Section 3 lock conversation but only landed in [[flirds]] / [[flirds-protocol]]; backfilled to the source pages themselves for navigability. [[sources/less]] already had `princeton-nlp/LESS`; [[sources/mates]] already had `cxcscmu/MATES`; [[sources/datainf]] and [[sources/logix]] already had GitHub URLs.
+
+## [2026-05-27] note | implementation plan + session handoff document created
+
+- new: [[flirds-implementation-plan]] — self-contained handoff document for the next implementation session.
+- structure: status snapshot → 4-phase task ordering (Phase 0 CNN baseline reproduction gate → Phase 1 Flirds at 1B + dual oracle + vanilla FedAvg → Phase 2 full baseline + 3B/7B + cross-device → Phase 3 matrix execution + Ripple reduction) → 9 still-open implementation decisions (dataset / LoRA hyper / training hyper / validation / cross-device detail / BASE_REPO / compute env / phase-internal order / detection baselines) with options + criteria + recommendations → next-session starter prompt → pre-implementation checklist → pointer table.
+- registered in [[index]] Project section.
+- Yonghee's framing: this session's job is to ensure the next session (implementation) receives full context. No code written this session; theoretical scaffolding (Section 2 + Section 3 + Protocol) complete; implementation-detail decisions left for the implementation session itself per Yonghee's preferred workflow.
+- Pipeline status: ready to transition root `CLAUDE.md` from `stage: idle` to `stage: implementation` when the implementation session begins.
+
+## [2026-06-02] conv | Phase 0 implementation — decisions + 4 baseline self-builds
+
+- raw: [[raw/conversations/flirds/2026-06-02-phase0-implementation]]
+- decided: §3 open items — datasets (LESS setup + cross-silo 5-domain PubMedQA/CaseHOLD/FiQA/AQUA-RAT/Dolly; cross-device Fed-WildChat+FedHDS; FedDQC = IRA-baseline-only), BASE_REPO (OpenFedLLM + self-built CNN sim), LoRA rank sweep {16,32,64,128}, detection (FLDetector + STD-DAGMM). **CNN full track added** (whole suite on CNN too, no LoRA). Phase restructure: 0 (CNN baseline reproduction) → 0.5 (Flirds estimator + dual oracle on CNN) → 1+ (LLM).
+- built: FL simulator + exact-SV oracle + GTG/FedSV/ComFedSV/Ripple self-builds, all verified (cosine 0.99 / 0.998 / 0.993, Ripple noisy-detection AUROC 1.0); git commit `93bb8d0` on `feature/flirds-phase-0`.
+- review: math sound (ripple Jacobian chain numerically verified); fixed gtg `_normalize` div-0 + dead code; Phase 0.5 TODOs = ripple-term verify (needs backdoor), ripple `(rounds,n,P)` OOM at scale, eigsh convergence fallback.
+- distilled into: [[flirds-implementation-plan]] (Decisions resolved & corrections section), root `CLAUDE.md` (stage → implementation).

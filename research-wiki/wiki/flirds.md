@@ -2,8 +2,8 @@
 type: project
 title: "Flirds — Federated Learning + In-Run Data Shapley"
 created: 2026-05-05
-updated: 2026-05-19
-sources: [in-run-data-shapley, principled-federated-data-valuation, comfedsv, gtg-shapley, shapleyfl, space-participant-amalgamation, ripple-shapley, game-of-gradients-sfedavg, data-banzhaf, datainf, logix, asymmetric-data-shapley, distributionally-robust-data-valuation, dice, feddqc, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm]
+updated: 2026-05-27
+sources: [in-run-data-shapley, principled-federated-data-valuation, comfedsv, gtg-shapley, shapleyfl, space-participant-amalgamation, ripple-shapley, game-of-gradients-sfedavg, data-banzhaf, datainf, logix, asymmetric-data-shapley, distributionally-robust-data-valuation, dice, feddqc, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, less, grosse-llm-influence, mates, dsdm]
 tags: [flirds, project-state, design-decisions]
 ---
 
@@ -11,7 +11,7 @@ tags: [flirds, project-state, design-decisions]
 
 **Flirds = Federated Learning + In-Run Data Shapley.** A federated data-valuation method extending [[sources/in-run-data-shapley|IRDS]] (In-Run Data Shapley) to the FL setting via LoRA-based PEFT.
 
-This page is the project's running state — locked design decisions, open questions, planned experiments. The **primary record** is `raw/conversations/flirds/conversation{1..4}.md` (chronological design conversations with another LLM); this wiki page is the curated distillation. When in doubt, read the raw.
+This page is the project's running state — locked design decisions, resolved questions, planned experiments. The **primary record** is `raw/conversations/flirds/conversation{1..4}.md` + `2026-05-27-section-23-lock.md` (chronological design conversations); this wiki page is the curated distillation. When in doubt, read the raw.
 
 ## One-line method statement
 
@@ -27,7 +27,7 @@ The 2nd-order term captures client interactions. **Per-round cost: 1 HVP for $u 
 
 ## Locked design decisions
 
-(As of conversation 4, 2026-05-05.)
+### Original lock (conversation 4, 2026-05-05)
 
 | Decision | Choice | Rationale |
 |---|---|---|
@@ -41,6 +41,22 @@ The 2nd-order term captures client interactions. **Per-round cost: 1 HVP for $u 
 | **Communication overhead** | Zero beyond vanilla FedAvg | Strong differentiator vs. GTG-Shapley / FedSV. |
 | **Drift residual** | Measured, not corrected | Reported as $E$-sensitivity study; control variates excluded. |
 | **Participation normalization** | None by default | Method should work as-is; cross-device experiments designed to show ranking-within-participation-tier still recovers quality. |
+
+### Additional locks (2026-05-18 → 2026-05-27)
+
+| Lock | Decision | Date |
+|---|---|---|
+| **Q1 — Use case** | research-side in-run attribution (incentive / detection = secondary applications) | 2026-05-27 |
+| **Q2 — ②③ IRDS-inherited limits** | default = IRDS-form characterization; layer-wise / phase-norm = variants in ablation | 2026-05-27 |
+| **Q3 — Ripple positioning** | other design points = main claim; theoretical reduction = bonus | 2026-05-27 |
+| **④ Trajectory dependence** | feature (IRDS framing) — closed by Q1 | 2026-05-27 |
+| **⑤ Ground-truth definition** | dual oracle — (a) retrain exact SV + (b) IRDS-定 in-run SV, separately reported | 2026-05-27 |
+| **N1 — Prop 1 handling** | original theory frame maintained as re-run target; pilot data set aside; (a) Drop = contingency if U-shape re-appears in clean re-run | 2026-05-27 |
+| **N2 — Scale tier** | **1B + 3B + 7B** (13B/70B excluded — no FL data-valuation precedent + compute) | 2026-05-27 |
+| **N3 — Oracle / stress** | (a) exact retrain + (b) IRDS-定 separated reporting + adversarial stress regimes + MC precision (variance / CI / ties) | 2026-05-27 |
+| **N4 — Variant comparison metric** | 3 metrics: client-selection convergence + downstream task acc/F1 + noisy/free-rider AUROC | 2026-05-27 |
+| **Models** | 1B = Llama-3.2-1B-Instruct; 3B = Llama-3.2-3B-Instruct; 7B = Llama-2-7B | 2026-05-27 |
+| **Noise vs OOD-good (deferred 2026-05-18)** | deferred — recast as characterized limitation; non-IID α-sweep mandatory | 2026-05-18 |
 
 ## The mathematical narrative (paper-ready)
 
@@ -60,56 +76,91 @@ $$\Delta w_k \;\approx\; -\eta E \cdot \bar{G}_k(w^r) \;-\; \eta \sum_{e,z} H_z(
 
 The first term is the centralized-equivalent contribution; the second is **client drift residual**, of order $O(\eta E |\bar{H}| \cdot \text{local-trajectory length})$. Vanishes at $E=1$; grows with non-IID client data and large local epochs.
 
-> **Proposition (informal, planned)**: Flirds' client-level Shapley equals centralized data-level Shapley aggregated to the client *plus* a drift residual that quantifies FL's deviation from centralized IRDS.
+> **Proposition 1 (informal)**: Flirds' client-level Shapley equals centralized data-level Shapley aggregated to the client *plus* a drift residual that quantifies FL's deviation from centralized IRDS.
+>
+> **Proposition 2 (informal)**: The drift residual is bounded by a cubic function of $R_r$ (per-round local trajectory radius).
 
-This proposition is one of the paper's core mathematical contributions. Empirically: vary $E$, plot residual size, show valuation quality across the range.
+Empirical validation = experiment #5 (α-sweep × E-sweep matrix).
 
-## Open questions (need resolution before paper is complete)
+## Resolved questions (closed 2026-05-27)
 
-### Method-side
+Each was open in the original conversation set; all closed in the 2026-05-19 → 2026-05-27 conversation. One-line resolutions:
 
-1. **Noise vs OOD-good distinction.** *(DEFERRED 2026-05-18 — Yonghee: "algorithmically too ambiguous to resolve cleanly; park it.")* Single-round sign cannot distinguish them. Original plan: combine **temporal consistency** (real noise has random direction across rounds; OOD-good is consistent) + **cross-client agreement** (noise is unique-to-client; OOD-good aligns with same-distribution clients). Status: no longer the paper's planned second contribution; recast as a **characterized limitation**, framed like IRDS frames its own limits. Consequences of deferral:
-   - Narrative: "one contribution + characterized limitation" instead of two contributions (safer, tighter scope).
-   - Experiment matrix shrinks: drop the pure-noise-vs-OOD-good separation / validation-expansion-flip / synthetic-shift experiments and the temporal-consistency & cross-client-agreement ablation rows. **Noisy-client and free-rider detection survive unchanged** — they don't need the OOD machinery.
-   - This separator was *also* doubling as drift-bias correction (conversation 4 §4). With it parked, drift residual stays purely measured-not-corrected (consistent with the locked decision), **but the non-IID valuation bias must now be quantified as an explicit limitation** — see next-step checklist.
-   - **Prior-art backing for the limitation write-up**: [[threads/noise-ood-malicious-client-separation]] (surveyed 2026-05-18). Both deferred signals already exist in the FL-robustness literature (temporal consistency ≈ **FLDetector** KDD'22; cross-client ≈ **FoolsGold/FLTrust/clustered-FL**), and *no* FL method separates "bad-different" from "good-different" inside a signed value — FLDetector itself collapses on non-IID. This is the evidence that the problem is genuinely hard, not an oversight: exactly the framing IRDS uses for its own sign-ambiguity limit.
+1. **Noise vs OOD-good distinction** → DEFERRED (2026-05-18). Recast as characterized limitation. Prior-art backing: [[threads/noise-ood-malicious-client-separation]] (no FL method separates inside a signed value; even FLDetector collapses on non-IID).
+2. **Cancellation effect (②)** → default = IRDS-form characterization (per-layer decomposition reported, no estimator change to spine); layer-wise weighting = ablation variant. Solving would break the granularity-invariance lemma + Proposition 1 derivation.
+3. **Magnitude vs alignment (③)** → default = IRDS-form characterization (late-joiner test reported); phase-normalization = ablation variant. Solving would break estimator–oracle consistency for the (b) IRDS-定 oracle (research-side framing makes ③ *not a bug*: a late-fit client receiving low value is an honest answer to the round-marginal question).
+4. **Trajectory dependence** → feature (IRDS framing). Closed by Q1 = research-side. Single-run is sufficient; multi-run averaging only relevant if incentive use-case becomes primary (it doesn't).
+5. **Ground-truth definition** → **dual oracle**:
+   - **(a) Exact retrain SV** ($U(S) = $ FL training using only $S$): "data-valuation community standard." 1B (N∈{5,10}) + 3B (N=5) feasible; 7B skipped.
+   - **(b) IRDS-定 in-run SV** ($U_{total}(S) = \sum_r [\ell(w^r + \sum_{k\in S}p_k \Delta w_k, z^{val}) - \ell(w^r, z^{val})]$): the *Flirds-correct* oracle; **exact enumeration at N=10 cross-silo** (1024 forward passes per round), **MC at N=100 cross-device**. The IRDS / [[concepts/proximal-bregman-response|PBRF]] framing inherited from [[sources/grosse-llm-influence|Grosse 2023]] + [[sources/mates|MATES]] is the existing-literature permission slip for "(b) is a well-defined target, not a counterfactual proxy."
+6. **Benchmarks** → noisy / free-rider detection + domain attribution + client-selection convergence + cost-matched baseline tiers (see Experiment plan below).
+7. **LLM choice / dataset** → **Llama-3.2-1B-Instruct + Llama-3.2-3B-Instruct + Llama-2-7B**. 1B/3B = Llama-3.2 family for cross-scale extrapolation consistency; 7B = Llama-2-7B for direct comparison with [[sources/less|LESS]] + [[sources/feddqc|FedDQC]]. Dataset = FedDQC-comparable instruction-tuning bench (medical / legal / code / math / general domains) for cross-silo; Super-NaturalInstructions for cross-device scale.
 
-2. **Cancellation effect (IRDS A.3 issue, amplified in FL).** Last-layer cancellation is severe under non-IID. Layer-wise weighting? Specific layer choice? Open.
+## Experiment plan — Section 3 (locked 2026-05-27)
 
-3. **Magnitude vs alignment confusion (limit (b) of IRDS).** Late-fit data has small gradient magnitude → systematically undervalued. In FL, late-joining clients suffer doubly. Phase-normalization or cumulative-reduction tracking? Open.
+### Phase 0 — pre-LLM (must pass before LLM experiments start)
 
-4. **Trajectory dependence ("feature in IRDS, bug in market context").** Same client could be valued differently across re-runs with different batch order. If Flirds is used for compensation, multiple-run averaging may be needed. Decision deferred — depends on whether the paper's main use case is incentive design or research-side analysis.
+**11. Code-unavailable baseline sanity reproduction.** Reproduce headline metrics (ρ, AUROC, runtime) of code-unavailable baselines in their *original* (CNN + MNIST/CIFAR-10) setup. Targets: [[sources/ripple-shapley|Ripple Shapley]] (AAAI'26), [[sources/gtg-shapley|GTG-Shapley]], [[sources/principled-federated-data-valuation|FedSV (Wang 2020)]], [[sources/comfedsv|ComFedSV]]. Cost: ≈ 5–7 days on B200×1. Pass criterion: each headline metric within ±5% of reported. Output: validated baseline implementations + sample-level → client-level aggregation function for Ripple (re-used for LLM transfer).
 
-### Experiment-side (under construction)
+### ★★★ paper spine
 
-5. **Exact Shapley as ground-truth in FL — which definition?** Conversation 3, §2 settled on:
-   - **(a) Retraining-based exact Shapley** ($U(S) = $ FL training using only clients in $S$): natural ground truth, feasible at $N{=}10$ cross-silo with LoRA. *Sanity check only.*
-   - **(b) In-run exact Shapley** ($U_{\text{total}}(S) = \sum_r [\ell(w^r + \sum_{k\in S} p_k \Delta w_k, z^{val}) - \ell(w^r, z^{val})]$): the *correct* ground truth for Flirds because both fix the same trajectory. **Honest comparison: Flirds vs. Monte-Carlo (b).** Yonghee initially conjectured (a) and (b) coincide via additivity; conversation 3 corrects this — they're Shapley over *different utility functions* and so generally differ.
+1. **Clean implementation protocol document.** See [[flirds-protocol]]. fp32 evaluation enforced (training bf16); seeds ≥ 3 reported mean ± std; scipy tied-rank for ties; MC variance + 95% bootstrap CI band on all rank-correlation / AUROC numbers; (a) and (b) oracle as separate code paths; sanity gates ($E{=}1 \Rightarrow$ residual ≈ 0, $N{=}2 \Rightarrow$ singleton SV matches client value); per-run config + env hash + git SHA logged. *Must lock before any reported number.*
+2. **Baseline run set (10 valuation/training + 4 detection).** Cost-matched tiers; full set at 1B / 3B / 7B.
+   - **Valuation (6)**: [[sources/gtg-shapley|GTG-Shapley]], [[sources/ripple-shapley|Ripple Shapley]] (closest competitor), [[sources/principled-federated-data-valuation|FedSV (Wang 2020)]], [[sources/comfedsv|ComFedSV]] (cross-device only — partial participation required), [[sources/data-banzhaf|Data Banzhaf]] in FL (semivalue library), [[sources/shapleyfl|ShapleyFL]] (code available: `ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value`).
+   - **Training comparison (2)**: **Full FedAvg** (all clients, no selection — upper-bound floor); **Random-selection FedAvg** (top-K random — random baseline our valuation must beat).
+   - **Self / heuristic (2)**: **Flirds-1st-only** (self-ablation isolating the 2nd-order term contribution); **loss-heuristic** (floor).
+   - **Detection (separate table, 4)**: [[sources/fldetector|FLDetector]], [[sources/foolsgold|FoolsGold]], [[sources/fltrust|FLTrust]], [[sources/free-riders-fl-std-dagmm|STD-DAGMM]] — evaluated on noisy / free-rider AUROC only.
+3. **Dual oracle implementation.** (a) exact retrain SV: 1B (N=5, 32 retrain ≈ 15 min; N=10, 1024 retrain ≈ 3.5 days B200×4) + 3B (N=5, 32 retrain ≈ 45 min). (b) IRDS-定 SV: cross-silo exact enumeration at N=10 (forward only, ≈ 3.5h / 7h / 28h × 3 seed at 1B / 3B / 7B); cross-device MC at N=100 (5000–10000 sample, standard FedSV practice).
+4. **Ripple head-to-head + theoretical reduction (bonus).** Empirical comparison via Ripple sample-level → client aggregation (built in Phase 0). Theoretical reduction sketch: under LoRA + 2-term Taylor, does Ripple drop+ripple specialize to Flirds 1st + 2nd? If yes → Proposition. If no → related-work differentiator paragraph. Comparison metric = **training-performance side** (client-selection convergence + downstream task acc/F1 + noisy/free-rider AUROC), *not* SV-approximation side (sample-level vs client-level renders direct SV comparison ill-defined). Argument: Ripple's lack of 2nd-order term = systematic disadvantage in non-IID FL where client interactions matter.
 
-6. **Benchmarks** (planned, conversation 3 §2):
-   - Noisy client detection (label corruption / random updates).
-   - Free-rider detection (zero / fake updates).
-   - Domain attribution for LLM (each client a different domain corpus; validation = specific domain).
-   - Client selection convergence (top-$K$ by Flirds → train → measure speed/perf).
-   - Baseline comparison: [[sources/gtg-shapley|GTG-Shapley]], [[sources/principled-federated-data-valuation|FedSV]] (= Wang et al. 2020, the federated-Shapley origin — *not* the unrelated 2025 "FedSV: Byzantine-Robust FL via Shapley Value" arXiv:2502.17526), [[sources/comfedsv|ComFedSV]], **Federated Banzhaf** (= [[sources/data-banzhaf|Data Banzhaf]] semivalue applied in FL — no dedicated FL-Banzhaf paper exists; already in the wiki), simple loss-heuristic.
-   - **Robustness-side baselines for the *surviving* noisy/free-rider benchmarks** (added 2026-05-18, ingested 2026-05-19, → [[threads/noise-ood-malicious-client-separation]]): [[sources/fldetector|FLDetector]] (temporal-consistency detector), [[sources/foolsgold|FoolsGold]] / [[sources/fltrust|FLTrust]] (cross-client / trusted-cosine), [[sources/fedcorr|FedCorr]]-LID (noisy-client), [[sources/free-riders-fl-std-dagmm|STD-DAGMM]] (free-rider). Framing: Flirds is a *valuation* method that does detection competitively with *dedicated* detectors **without their non-IID false-positive penalty** (it down-weights signed value rather than hard-discarding).
+### ★★ characterization + ablation
 
-7. **LLM choice and dataset.** Llama-3.2-1B/3B candidates for LoRA finetuning realism. Multi-domain dataset candidates: Flan / T0 / dolly subset combination. Not finalized.
+5. **α-sweep × E-sweep drift residual matrix.** $E\in\{1,3,5,10\}$ × Dirichlet $\alpha\in\{0.01, 0.1, 0.5, 5.0\}$ = 16 cells × 3 seeds = 48 runs per scale. Validates Prop 1 (monotonicity) and Prop 2 (cubic bound). **N1 contingency branch point**: if U-shape re-appears in clean re-run, switch to N1 option (a) Drop + empirical reporting.
+6. **Q2 variant comparison (3 × 3).** Variants = {default Flirds, layer-wise weighted, phase-normalized}. Metrics = {client-selection convergence, downstream task acc/F1, noisy/free-rider AUROC}. 9-cell matrix per scale. Tests whether variants recover the ① AUROC = chance result on default (partial limitation recovery) or fail uniformly (limitation is estimator-form-robust).
+7. **②③ characterization experiments.**
+   - ②: per-layer $\phi_k^{(r)}$ decomposition; last-layer term cross-round sign oscillation under non-IID ($\alpha=0.1$) vs IID ($\alpha=5.0$); rank-change diagnostic when last layer excluded.
+   - ③: late-joiner test (fixed-quality client joining at $r=1$ vs $r=T/2$) — magnitude / timing confounding magnitude.
+8. **Adversarial stress regimes.** $\alpha \le 0.01$; label-flip × OOD-mix combinations; larger $N$ tail; late-joiner extremes. ρ behavior on both (a) and (b) oracle reported: hypothesized "(b) ρ holds under stress, (a) ρ degrades gradually" — N3 dual-oracle framing's empirical anchor.
+9. **Non-IID valuation bias quantification.** ① deferral's derived obligation. Extracted from #5 data (no separate run); reframes the α-axis as "client-quality vs label-distribution-skew" decomposition.
 
-### Ablations (planned set, conversation 3 §3)
+### ★ scale extension
 
-| Ablation | What it isolates |
-|---|---|
-| 1st only vs 1st+2nd | 2nd-order client-interaction value |
-| Temporal-consistency component on/off | Noise vs OOD-good signal |
-| Cross-client agreement component on/off | Same |
-| Validation size (small/medium/large) | Validation-noise propagation |
-| Validation distribution (uniform/biased) | Distribution choice prejudge |
-| LoRA rank (4/8/16/32) | PEFT dimension effect |
-| Local epoch $E$ (1/3/5/10) | Drift residual / Taylor error |
-| Aggregation (FedAvg / FedProx) | Client-drift correction effect |
-| Participation rate | Cross-device robustness |
-| Noise ratio (10/30/50%) | Detection limit |
+10. **7B FedDQC-comparable instruction-tuning bench.** Llama-2-7B + LoRA + 5-domain client split (medical / legal / code / math / general). Direct comparison to [[sources/feddqc|FedDQC]] (only FL+LLM precedent in wiki) and [[sources/less|LESS]] (closest centralized analog, same model). Full experiment matrix (see below) at 7B as at 1B/3B.
+
+## Experiment matrix (locked 2026-05-27)
+
+| | 1B (Llama-3.2-1B-Instruct) | 3B (Llama-3.2-3B-Instruct) | 7B (Llama-2-7B) |
+|---|---|---|---|
+| Flirds 본체 | ✅ | ✅ | ✅ |
+| (b) in-run oracle | exact (N=10) + MC (N=100) | exact (N=10) + MC (N=100) | exact (N=10) + MC (N=100) |
+| (a) retrain SV | ✅ N=5 + N=10 | ✅ N=5 | ❌ (compute infeasible) |
+| Downstream metric (3종) | ✅ | ✅ | ✅ |
+| Baseline run set (10) | full | full | full |
+| α-sweep × E-sweep (16 cell) | full | full | full |
+| Q2 variants (3×3) | full | full | full |
+| Stress regimes | full | full | full |
+| ②③ characterization | ✅ | ✅ | ✅ |
+
+Estimated compute (B200 × 4): 1B = sub-week, 3B = 1 week, 7B = ~1 week. Phase 0 (CNN sanity) = 5–7 days B200 × 1, prior to LLM phase.
+
+## Baseline selection rationale
+
+**Excluded (LLM environment unsuitable, 2026-05-27 review)**:
+- [[sources/space-participant-amalgamation|SPACE]] — prototype-based evaluation requires discrete class labels; LLM instruction tuning is generative open-ended.
+- [[sources/game-of-gradients-sfedavg|S-FedAvg]] — aggregation method, not a valuation baseline.
+- [[sources/fedcorr|FedCorr]] — prediction-subspace LID assumes classification; not transferable to generative loss.
+
+**Code availability for included baselines**:
+| Baseline | Code | Action |
+|---|---|---|
+| ShapleyFL | ✅ [ZJU-DIVER/ShapleyFL](https://github.com/ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value) | use as-is |
+| Data Banzhaf in FL | ✅ semivalue libraries (`pyDVL`, `OpenDataVal`) | adapt |
+| GTG-Shapley | ❌ | reproduce → Phase 0 |
+| FedSV (Wang 2020) | ❌ | reproduce → Phase 0 |
+| ComFedSV | ❌ | reproduce → Phase 0 |
+| Ripple Shapley | ❌ (AAAI'26, newest) | reproduce → Phase 0 + author contact if pseudocode ambiguity |
+| Full FedAvg / Random-selection FedAvg | trivial | implement |
+| loss-heuristic, Flirds-1st-only | trivial | implement |
 
 ## Differentiators vs. existing FL valuation methods
 
@@ -118,59 +169,64 @@ This proposition is one of the paper's core mathematical contributions. Empirica
 | [[sources/principled-federated-data-valuation\|FedSV (Wang et al. 2020)]] | client | 0 comm, but $O(Tm^2)$ server utility evals | per-round retrain-surrogate | **origin** of federated Shapley; the canonical baseline |
 | [[sources/comfedsv\|ComFedSV]] | client | + all-client rounds (Everyone-Being-Heard) | retrain-free but completion-imputed | fixes FedSV partial-participation asymmetry; cross-device baseline |
 | [[sources/gtg-shapley\|GTG-Shapley]] | client | 0 (sub-model reconstruction) | trajectory-faithful via gradient logs | guided MC; multi-round |
-| [[sources/game-of-gradients-sfedavg\|S-FedAvg]] | client | 0 | per-round only | aggregation reweighting, not pure valuation |
 | [[sources/shapleyfl\|ShapleyFL]] | client | 0 | surrogate per-round | importance-sampling client selection |
-| [[sources/space-participant-amalgamation\|SPACE]] | client | + extra round of distillation | end-state | knowledge amalgamation + prototype eval |
 | [[sources/ripple-shapley\|Ripple Shapley]] | **sample** | 0 (logs) | yes (Jacobian propagation) | the most direct competitor for "in-run, single-run, FL" |
 | **Flirds** (this project) | **client** | **0** | **yes** (closed-form 1st+2nd Taylor) | LoRA + 2nd-order + zero communication overhead |
 
-Closest comparator: [[sources/ripple-shapley|Ripple Shapley]] (sample-level FL in-run via Jacobian chain). **Flirds differs**:
+Closest comparator: [[sources/ripple-shapley|Ripple Shapley]]. **Flirds differs**:
 - client-level (deliberate, not aggregated from sample-level);
 - 1st+2nd Taylor closed-form rather than recursive Jacobian-chain low-rank approximation;
-- LoRA explicit in design.
+- LoRA explicit in design;
+- explicit 2nd-order client-interaction term (argued in §4 to be load-bearing in non-IID FL).
 
-This needs to be carefully positioned in the paper — Ripple Shapley is the most likely "you've been scooped" reviewer concern. Open: does Ripple Shapley's drop+ripple decomposition specialize to Flirds' formula under specific LoRA + Taylor assumptions?
+## Centralized positioning (added 2026-05-22)
+
+Ingesting four 2023–2024 centralized data-selection / IF-at-LLM-scale papers tightens Flirds' positioning relative to centralized work:
+
+| Source | Role for Flirds positioning |
+|---|---|
+| [[sources/less\|LESS]] (Xia et al., ICML 2024) | **Closest centralized analog.** Same LoRA + gradient-similarity-IF + validation-set anchor. Flirds = LESS moved to FL, switched from per-example to per-client, Adam-Γ cosine dropped (Δw_k absorbs local optimizer), 2nd-order term added, no reusable datastore. Positioning load-bearing: LESS sits *between* IRDS and Flirds in related work. |
+| [[sources/grosse-llm-influence\|Grosse et al. 2023]] (EK-FAC at 52B) | **Upper-bound anchor.** Largest-scale IF demonstration; explicitly notes per-training-gradient is the binding bottleneck even with EK-FAC. Flirds gets Δw_k for free from FedAvg — zero additional gradient compute, zero communication. Also: Grosse's [[concepts/proximal-bregman-response\|PBRF]] reframing = the existing-literature permission slip Flirds uses for "(b) IRDS-定 oracle is a well-defined target." |
+| [[sources/mates\|MATES]] (Yu et al., NeurIPS 2024) | **Empirical backing for the 1B scale.** 1.1% absolute downstream gain on Pythia-1B from data-influence-based selection at 25B tokens. Refutes "1B is too small for influence to matter" reviewer concern. Locally-probed oracle conceptually closest to (b) IRDS-定 SV — both fix the trajectory + read off counterfactual loss change from minimal perturbation. |
+| [[sources/dsdm\|DsDm]] (Engstrom et al., ICML 2024) | **Light add — Datamodels → LLM bridge.** Proves linear datamodels remain meaningful at 1.3B. Cleanest "similarity ≠ value" demonstration for [[threads/data-quality-vs-data-value]]. Not a baseline candidate (different setting + granularity + objective). |
+
+These are **centralized** methods and do *not* enter the FL baseline table — that table is Flirds' direct (federated) comparator set. Centralized references serve related-work and positioning sections of the paper. See [[threads/data-selection-for-llms]] for the synthesis.
 
 ## Reading list — relevant wiki sources
 
 ### Direct foundations
-- [[sources/in-run-data-shapley]] — IRDS, the centralized predecessor that Flirds extends.
-- [[sources/data-banzhaf]] — the "Federated Banzhaf" baseline *is* this Data Banzhaf semivalue applied in FL; **no dedicated federated-Banzhaf paper exists**, so this is the de facto reference (already ingested — not a missing source).
+- [[sources/in-run-data-shapley]] — IRDS, the centralized predecessor Flirds extends.
+- [[sources/data-banzhaf]] — the "Federated Banzhaf" baseline *is* this Data Banzhaf semivalue applied in FL (no dedicated federated-Banzhaf paper exists).
 - [[sources/datainf]], [[sources/logix]] — gradient-based attribution at LLM scale; LoRA framing.
 
-### Federated-Shapley field
-- [[sources/principled-federated-data-valuation]] — **FedSV (Wang et al. 2020), the origin of federated Shapley and the canonical baseline.** (Distinct from the unrelated 2025 robustness paper of the same acronym.)
-- [[sources/comfedsv]] — ComFedSV; FedSV + utility-matrix completion; cross-device fairness baseline.
-- [[sources/gtg-shapley]], [[sources/shapleyfl]], [[sources/space-participant-amalgamation]], [[sources/game-of-gradients-sfedavg]] — baselines / contemporaries.
-- [[sources/ripple-shapley]] — closest competitor.
+### Centralized positioning (added 2026-05-22)
+- [[sources/less]] — closest centralized analog. 7B baseline anchor.
+- [[sources/grosse-llm-influence]] — upper-bound scale anchor + PBRF reframing.
+- [[sources/mates]] — 1B-scale backing.
+- [[sources/dsdm]] — similarity ≠ value evidence.
 
-### Robustness-side baselines (surviving noisy/free-rider benchmarks)
-- [[sources/fldetector]] — temporal-consistency detector; primary scoop risk if the deferred separator is ever revived.
-- [[sources/foolsgold]], [[sources/fltrust]] — cross-client-agreement / trusted-cosine; their non-IID over-penalization backs Flirds' characterized-limitation framing.
-- [[sources/fedcorr]] — LID-based noisy-client detection + label correction.
-- [[sources/free-riders-fl-std-dagmm]] — STD-DAGMM free-rider detector; origin of the free-rider benchmark.
+### Federated-Shapley field
+- [[sources/principled-federated-data-valuation]] — **FedSV (Wang 2020)**, origin + canonical baseline.
+- [[sources/comfedsv]] — cross-device fairness baseline.
+- [[sources/gtg-shapley]], [[sources/shapleyfl]] — baselines.
+- [[sources/ripple-shapley]] — closest competitor.
+- [[sources/space-participant-amalgamation]] (excluded from baseline set), [[sources/game-of-gradients-sfedavg]] (excluded).
+
+### Robustness-side baselines (noisy / free-rider detection only)
+- [[sources/fldetector]] — temporal-consistency detector.
+- [[sources/foolsgold]], [[sources/fltrust]] — cross-client / trusted-cosine.
+- [[sources/free-riders-fl-std-dagmm]] — STD-DAGMM.
+- [[sources/fedcorr]] (excluded from primary detection set — classification-only).
 
 ### Framing / context
-- [[sources/asymmetric-data-shapley]] — temporal/state-conditioned framing relevant for round-by-round valuation.
-- [[sources/distributionally-robust-data-valuation]] — robustness of validation utility (relevant if validation choice becomes contested).
-- [[sources/dice]] — full decentralization; out of Flirds' immediate scope but conceptually adjacent.
-- [[sources/feddqc]] — empirical observation that gradient-based attribution fails on heterogeneous real-world FL (Fed-WildChat). A risk Flirds inherits and should address explicitly.
+- [[sources/asymmetric-data-shapley]] — temporal / state-conditioned framing.
+- [[sources/distributionally-robust-data-valuation]] — robustness of validation utility.
+- [[sources/dice]] — full decentralization (adjacent, out of scope).
+- [[sources/feddqc]] — empirical evidence that gradient attribution fails on heterogeneous real-world FL; 7B-scale FL+LLM precedent.
 
 ### Threads
-- [[threads/retraining-vs-in-run-attribution]] — the (a)/(b) distinction Flirds depends on.
-- [[threads/federated-and-decentralized-attribution]] — full landscape of FL attribution methods.
+- [[threads/retraining-vs-in-run-attribution]] — (a)/(b) distinction Flirds depends on.
+- [[threads/federated-and-decentralized-attribution]] — full FL attribution landscape.
 - [[threads/influence-functions-at-llm-scale]] — LoRA + LLM scaling context.
-- [[threads/noise-ood-malicious-client-separation]] — robustness-side prior art; backs the deferred-limitation write-up and the surviving detection-benchmark baselines.
-
-## Next-step checklist
-
-Updated 2026-05-18 (noise-vs-OOD-good deferred; protocol/baseline discussion in progress):
-
-- [~] ~~Design the noise-vs-OOD-good component~~ — **deferred**, recast as limitation (see open question 1).
-- [ ] **Quantify non-IID valuation bias as a limitation** — new obligation created by the deferral (the parked separator was also the drift-bias corrector). Add a non-IID $\alpha$-sweep alongside the $E$-sweep in the drift-residual study.
-- [ ] Lock experimental protocol: Llama-3.2-1B primary (3B scale-check); 6–8 domain curated mix (Super-NaturalInstructions for Track B scale); $N{=}10$ cross-silo / $N{=}100,K{=}10$ cross-device.
-- [ ] **Ground-truth realization**: (b) MC in-run as the *primary* oracle — forward-pass only, no retraining ($2^{10}$ enumeration/round at $N{=}10$); (a) retraining as sanity-only figure with the "different utility" caveat.
-- [ ] Baseline set (cost-matched tiers): must = [[sources/gtg-shapley|GTG-Shapley]], [[sources/ripple-shapley|Ripple Shapley]], loss-heuristic, Flirds-1st-only; recommended = [[sources/principled-federated-data-valuation|FedSV]], Federated Banzhaf (= [[sources/data-banzhaf|Data Banzhaf]] in FL); cross-device = [[sources/comfedsv|ComFedSV]]. (All baseline sources now ingested as of 2026-05-19.)
-- [ ] Ripple Shapley head-to-head + theoretical reduction (does its drop+ripple specialize to Flirds 1st+2nd under LoRA+Taylor?) — scoop defense.
-- [ ] Implementation skeleton: HVP via LoRA params, $\Delta W^{(r)}$ accumulation, per-round $\phi_k^{(r)}$ computation.
-- [ ] Drift-residual study across $E\in\{1,3,5,10\}$ × non-IID $\alpha$ values.
+- [[threads/data-selection-for-llms]] — LESS / MATES / DsDm synthesis; centralized lineage.
+- [[threads/noise-ood-malicious-client-separation]] — robustness-side prior art; deferred-limitation backing.

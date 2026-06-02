@@ -2,8 +2,8 @@
 type: thread
 title: Data quality vs. data value
 created: 2026-05-05
-updated: 2026-05-05
-sources: [feddqc, ghorbani-zou-data-shapley, in-run-data-shapley, datainf]
+updated: 2026-05-22
+sources: [feddqc, ghorbani-zou-data-shapley, in-run-data-shapley, datainf, dsdm, less, mates]
 tags: [data-quality, data-value, distinction, federated-learning]
 ---
 
@@ -48,6 +48,16 @@ Confusion between the two leads to wrong decisions:
 [[sources/feddqc|FedDQC]] is a clean case study: it explicitly takes the position that data **quality** scoring (IRA) outperforms data **value / attribution** scoring ([[sources/datainf|DataInf]]) in real-world heterogeneous FL — but only because they're solving different problems. IRA is a quality scorer used for filtering; DataInf is a value attributor. Comparing them on a filtering benchmark is unfair to DataInf, but the paper's empirical observation that gradient-based attribution becomes unreliable on heterogeneous client data is independently important.
 
 [[sources/in-run-data-shapley|In-Run Shapley]]'s finding that ~16% of the Pile has negative Shapley value is a *value* statement — these points actively hurt training. A *quality* statement (these points are intrinsically bad) would require a different methodology and might not agree.
+
+### DsDm: the cleanest empirical "similarity ≠ value" demonstration (2024)
+
+[[sources/dsdm|DsDm]] (§3.2) explicitly trains LMs on data that **DSIR / FastText Classifier rank as low-quality** and finds it improves the target task; training on what these classifiers rank as **high-quality** sometimes *hurts*. The selected DsDm samples are "qualitatively similar to mislabeled data" yet outperform Wikipedia-style clean prose. The line:
+
+> "samples that DSIR and CLASSIFIER are least likely to select … contain QA text; despite this, such DsDm samples examples hurt model performance — we liken these samples to 'mislabeled' examples from supervised learning."
+
+This is the cleanest single-paragraph evidence to date that *similarity-to-clean-corpus* and *contribution-to-trained-model* live on different axes. The wiki's framing of the distinction now has a sharp empirical citation.
+
+[[sources/less|LESS]] and [[sources/mates|MATES]] reach the same conclusion via different routes — both beat similarity-based baselines (BM25 / DSIR / RDS / FastText) on instruction tuning and pretraining respectively. The "similarity-is-not-value" finding is robust across selection method, training stage, model class, and benchmark suite.
 
 ## Empirical relationships
 

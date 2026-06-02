@@ -2,8 +2,8 @@
 type: concept
 title: Datamodels
 created: 2026-05-05
-updated: 2026-05-05
-sources: [trak, in-run-data-shapley, ghorbani-zou-data-shapley]
+updated: 2026-05-22
+sources: [trak, in-run-data-shapley, ghorbani-zou-data-shapley, dsdm]
 tags: [attribution, retraining-based, counterfactual, lds]
 ---
 
@@ -47,6 +47,7 @@ LDS asks: "does the attribution method linearly predict counterfactual model beh
 - [[sources/logix]] — uses LDS to compare LoGra against EKFAC and TRAK on small-scale tasks.
 - [[sources/in-run-data-shapley]] — different framework (Shapley axioms instead of linear surrogate) but pursuing the same goal of "predict counterfactual model behavior at near-training cost."
 - [[sources/ghorbani-zou-data-shapley]] — Shapley as another principled retraining-based attribution; the two families converged via TRAK.
+- [[sources/dsdm]] — the **Datamodels → LLM bridge**: fits linear datamodels via TRAK at LM-pretraining scale (1.3B), then selects the bottom-$k$ entries of the averaged coefficient vector. First operational demonstration that linear datamodels still work as a selection primitive at billion-parameter scale.
 
 ## See also
 
@@ -54,5 +55,6 @@ LDS asks: "does the attribution method linearly predict counterfactual model beh
 - [[concepts/trak]]
 - [[concepts/linear-datamodeling-score]]
 - [[threads/retraining-vs-in-run-attribution]]
+- [[threads/data-selection-for-llms]]
 
-> TODO: ingest the original Ilyas et al. *Datamodels* paper if Yonghee adds it to raw/.
+> TODO: ingest the original Ilyas et al. *Datamodels* paper if Yonghee adds it to raw/. (DsDm uses it but doesn't replace it.)
