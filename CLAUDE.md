@@ -3,17 +3,17 @@
 ## Pipeline Status
 
 ```yaml
-stage: idle          # idle(시작 전) | idea-discovery(/idea-discovery) | implementation(/experiment-bridge) | training | review(/auto-review-loop) | paper(/paper-writing)
-idea: ""             # 현재 idea 한 줄 요약 (예: "이산 확산 LM의 분해된 attention gap")
-contract: ""         # research_contract.md 경로 (예: idea-stage/docs/research_contract.md)
-current_branch: ""   # 이 idea의 git 브랜치 (예: feature/factorized-gap)
-baseline: ""         # 비교용 baseline 숫자 — 재현치 vs 논문치 함께 표기 (예: "WikiText-103 PPL=18.2 (논문 18.5)")
-training_status: idle  # idle(학습 없음) | running(실행 중, 위치/tmux/GPU 명시) | complete | failed
+stage: implementation # idle | idea-discovery | implementation(/experiment-bridge) | training | review | paper
+idea: "client-level FL Shapley via 1st+2nd Taylor of validation loss (Flirds)"  # 현재 idea 한 줄 요약
+contract: "research-wiki/wiki/flirds-implementation-plan.md"  # operational plan (wiki 기반; 별도 research_contract 없음)
+current_branch: "feature/flirds-phase-0"   # 이 idea의 git 브랜치
+baseline: ""         # 비교용 baseline 숫자 — Phase 0 재현 후 기입 (예: ComFedSV Spearman {1.0,0.96,0.85,0.84})
+training_status: idle  # idle | running(위치/GPU 명시) | complete | failed
 language: 한국어      # 스킬 출력 언어 — english | 한국어 (값은 영어 유지). 자세히: shared-references/output-language.md
-code_dir: codes      # 로컬 코드 디렉토리 — /experiment-bridge 가 새 코드 작성 위치, /run-experiment 가 rsync source. BASE_REPO 도 codes/base_repo/ 로 clone
-active_tasks: []     # 백그라운드 작업 리스트 — 위치+tmux+검사 방법 포함 (예: ["training exp01 on b2 (GPU 0-3, tmux=exp01)"])
-next: ""             # 구체적인 다음 단계 한 줄 (예: "학습 종료 후 테스트셋 eval 실행")
-last_updated: ""     # YYYY-MM-DD HH:mm — 스킬이 출력 시 자동 갱신
+code_dir: codes      # 로컬 코드 디렉토리; OpenFedLLM 은 codes/base_repo/ 로 clone(LLM phase). CNN track 은 자체 시뮬레이터
+active_tasks: []     # 백그라운드 작업
+next: "Phase 0 baseline 4종(GTG/FedSV/ComFedSV/Ripple) self-build+verify 완료 → Phase 0.5: Flirds estimator + dual oracle(CNN)"  # 다음 단계
+last_updated: "2026-06-02"  # YYYY-MM-DD
 ```
 
 ## 프로젝트 제약
