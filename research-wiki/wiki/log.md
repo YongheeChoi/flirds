@@ -395,3 +395,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - env: transformers 5.9 / peft 0.19 / trl 1.5 설치(torch 2.12 유지); HF token(Yohez) + Llama-3.2 1B/3B access.
 - distilled into: [[flirds-implementation-plan]] (status), MEMORY (stage 2 done + 3 musts).
 - next: **3번 5-domain data layer** (validation 1000 stratified + seam 2 corruptor registry).
+
+## [2026-06-04] note | seam 2 (a) — CNN corruptor registry (minimal)
+
+- `flirds/data/corruptors.py` (`label_shuffle` + `CNN_CORRUPTORS`); phase05 dual/flirds_oracle/regime_sweep refactored to registry call — **bit-identical** (flirds_oracle 0.7381/0.8810 unchanged; dual/regime import OK).
+- **의도적 최소**: sample-level label_shuffle만. `noisy={...}` set 유지 (corruptor 1종 → run-config map은 over-engineering). 풀 registry(run-config map + update-level free_rider + partition-level maverick/duplicate + LLM text corruptor)는 실제 쓸 때(Phase 2/3 + stage 3). plan §3.10 갱신.

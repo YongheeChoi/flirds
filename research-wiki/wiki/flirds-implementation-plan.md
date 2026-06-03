@@ -310,6 +310,8 @@ Each item: **what's open** → **current default / assumption** → **options** 
 
 **The fork**: (a) implement registry + CNN corruptors + surgical phase05 refactor now (keep `build()` signature, swap internals — phase05 stays green); (b) wire it while building the LLM data layer (folds into the Phase-1 data-format decision). Claude recommended (a) — registry+CNN is an enumerated (non-speculative) need; LLM corruptors fill in later. **Deferred to the Phase 1 session to decide + implement** (per `codes/CLAUDE.md`: surgical, no speculative abstraction).
 
+> **(a) 최소 구현됨 (2026-06-04)**: sample-level `label_shuffle`만 `data/corruptors.py` (`CNN_CORRUPTORS` dict)로 추출 + phase05 dual/flirds_oracle/regime_sweep을 registry 호출로 refactor — **bit-identical** (flirds_oracle 0.7381/0.8810 불변). 의도적으로 최소: `noisy={...}` set 유지(corruptor 1종이라 run-config `{client_idx: corruptor_name}` map은 아직 over-engineering). **남은 풀 registry** — run-config map(noisy hardcoding 제거) + update-level free_rider(`fl/client.py` hook) + partition-level maverick/duplicate + corruptor 함수 시그니처 통일(`fn(samples, rng, **cfg)`) + LLM text corruptor — 는 해당 corruptor를 **실제 쓰는 시점**(Phase 2/3 detection + stage 3 LLM data layer)에 확장.
+
 > **Validation-set (seam 3 / §3.4)**: already config-driven — `flirds_values(logs, model_fn, val_x, val_y, ...)` takes validation as args, no hardcoding. #16 (validation sensitivity) just re-calls with different `val_x/val_y`. No Phase-1 change needed beyond keeping it a parameter.
 
 ## 4. Next-session starter prompt

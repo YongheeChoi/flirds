@@ -12,7 +12,7 @@ training_status: idle  # idle | running(위치/GPU 명시) | complete | failed
 language: 한국어      # 스킬 출력 언어 — english | 한국어 (값은 영어 유지). 자세히: shared-references/output-language.md
 code_dir: codes      # 로컬 코드 디렉토리; OpenFedLLM 은 codes/external/ 참조 클론(reference-guided self-build, gitignored). CNN track 은 자체 시뮬레이터
 active_tasks: []     # 백그라운드 작업
-next: "Phase 1 stage 2 완료(2026-06-04): LLM backend(backends/llm:make_llm_loss) + FL loop(fl/server _fedavg_core 추출 + fl/llm_server, TRL SFTTrainer 1.x+forced SGD+completion-only) self-build, LLM-FL 스모크 green(Llama-3.2-1B real 궤적, est≈oracle 1.7e-6). LLM 3 musts(eager-attn / named-key state / embedding-hook clear). validation §3.4 확정(도메인당 200/총 1000, vs 2¹⁰=1024 subset 분리). 남음: 3번 5-domain data layer(validation stratified loader + seam2 corruptor) + LLM baselines port. 7B는 bf16 train/fp32 eval 분리"  # 다음 단계
+next: "Phase 1 stage 2 완료(2026-06-04): LLM backend(backends/llm:make_llm_loss) + FL loop(fl/server _fedavg_core 추출 + fl/llm_server, TRL SFTTrainer 1.x+forced SGD+completion-only) self-build, LLM-FL 스모크 green(Llama-3.2-1B real 궤적, est≈oracle 1.7e-6). LLM 3 musts(eager-attn / named-key state / embedding-hook clear). validation §3.4 확정(도메인당 200/총 1000, vs 2¹⁰=1024 subset 분리). seam2(a) CNN corruptor registry 최소구현 done(data/corruptors.py:label_shuffle, bit-identical). 남음: 3번 5-domain data layer(validation stratified loader + LLM text corruptor; seam2 풀 registry는 corruptor 쓸 때) + LLM baselines port. 7B는 bf16 train/fp32 eval 분리"  # 다음 단계
 last_updated: "2026-06-04"  # YYYY-MM-DD
 ```
 
