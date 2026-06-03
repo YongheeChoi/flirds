@@ -45,7 +45,7 @@ Estimator (`core/flirds_estimator.py`) + (b) in-run oracle (`oracle/in_run_sv.py
 | **Unit of attribution** | Client-level | Most natural in FL; conversation 3 derives this *is not* the data-point Shapley aggregated to client (drift residual quantifies the gap). |
 | **Server inputs** | Only $\Delta w_k$ (LoRA params) | Privacy + communication cost; no extra statistics, no SCAFFOLD-style correction term. |
 | **Approximation order** | 1st **and** 2nd Taylor, always both | Locked; not toggled per setting. |
-| **Validation** | Server-side, default uniform domain coverage | Fairness + abuse prevention; per-experiment validation choices justified separately. |
+| **Validation** | Server-side held-out, uniform domain coverage; **integrated 200/domain × 5 = 1000, stratified** | Fairness + abuse prevention; IRDS-held-out 평균 loss 관점(few-shot 기각); per-experiment choices justified separately. |
 | **PEFT** | LoRA | Communication, dimension, and HVP cost all small. |
 | **FL setting target** | Cross-silo + cross-device | Algorithm should work in both; benchmark choice splits by setup. |
 | **Privacy framing** | Requires server to see individual $\Delta w_k$ | Acknowledged: incompatible with secure aggregation. *Inherent limitation* of client-level valuation, not a flaw to fix. |

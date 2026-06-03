@@ -117,8 +117,9 @@ Reported number → must be linkable to a specific (config, env, git SHA, run ID
 ## 8. Validation set
 
 - **Default**: server-side held-out, uniform domain coverage (locked decision).
-- **Per-experiment justification**: where validation choice diverges from default (e.g., domain-attribution benchmark uses per-domain validation), the choice is justified in that experiment's paragraph + config.
-- **Size**: 1024 examples per evaluation by default; smaller if compute-bound (down to 256), declared per number.
+- **Size**: **1000 examples (per-domain 200 × 5 domains, uniform stratified)** by default; smaller if compute-bound, declared per number. *(Distinct from the 2¹⁰=1024 coalition-subset count in §9 — validation size is 1000 precisely to avoid that clash.)*
+- **Sampling**: canonical dev split preferred (creator-curated representativeness); label/category-stratified random with fixed seed; split-less datasets carve a fixed-seed stratified holdout from train (carve indices logged).
+- **Per-experiment justification**: where validation diverges from default (e.g., domain-attribution benchmark uses per-domain validation), justified in that experiment's paragraph + config.
 
 ## 9. Cross-silo vs cross-device boundaries
 

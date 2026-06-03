@@ -384,3 +384,14 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - decided: backend abstraction = **loss_fn closure injection**; LLM local train = **TRL SFTTrainer + forced SGD**.
 - distilled into: [[flirds-implementation-plan]] (status snapshot), root `CLAUDE.md` (next), MEMORY (stale "uncommitted" fixed; review (ii) resolved).
 - next (other session): **LLM stage 2** = `backends/llm.py` + LLM FL loop self-build + 5-domain data layer (seam 2 corruptor registry). estimator/oracle need no further change. Open: §3.4 val-mix (D6 ~200/domain rec); seam 2 (a)/(b) fork.
+
+## [2026-06-04] conv | Phase 1 LLM stage 2 — validation lock + FedAvg core + LLM backend/FL-loop
+
+- raw: [[raw/conversations/flirds/2026-06-04-phase1-llm-stage2]]
+- **validation (§3.4) Yonghee 확정**: 도메인당 200 / 총 1000 uniform stratified, IRDS-held-out(few-shot 기각); dev split 우선·Dolly category-carve; cross-silo trainset 크기 도메인별 통제(aggregate weight는 size-prop 유지; FiQA 부족 시 code-domain 대체). **validation 1000 / coalition-subset 2¹⁰=1024 분리**(같은 "1024"가 두 의미로 섞여 있던 걸 발견 → 혼동 차단). plan §3.4·D6·[[flirds]]·[[flirds-protocol]] §8 4곳 일치.
+- **built (stage 2, A=공통 core)**: `fl/server.py` `_fedavg_core` 추출(CNN `fedavg`/`run_fedavg_logs` wrapper 시그니처 보존, **회귀 bit-identical** — 이전 server.py 대조 1st 0.7381 / 1st+2nd 0.8810 동일) + `backends/llm.py`(`make_llm_loss`, LoRA-only 주입) + `fl/llm_server.py`(`run_llm_fedavg_logs`, TRL SFTTrainer 1.x + forced SGD + completion-only).
+- **LLM-specific 발견 3** (CNN엔 없던): eager attention(SDPA forward-AD 미지원) / named_parameters key(≠`get_peft_model_state_dict`) / embedding require-grad hook clear(SFTTrainer grad-ckpt hook ↔ functorch 충돌).
+- validated: backend 스모크(Qwen2.5-0.5B, est≈oracle 1.67e-4, per-layer invariant 2e-17) + **LLM-FL 스모크(Llama-3.2-1B real SFTTrainer 궤적, est≈oracle 1.70e-6)** → LLM FL loop end-to-end OK.
+- env: transformers 5.9 / peft 0.19 / trl 1.5 설치(torch 2.12 유지); HF token(Yohez) + Llama-3.2 1B/3B access.
+- distilled into: [[flirds-implementation-plan]] (status), MEMORY (stage 2 done + 3 musts).
+- next: **3번 5-domain data layer** (validation 1000 stratified + seam 2 corruptor registry).
