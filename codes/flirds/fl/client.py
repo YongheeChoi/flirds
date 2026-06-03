@@ -5,10 +5,13 @@ import torch
 import torch.nn.functional as F
 
 
-def local_train(model, global_state, loader, epochs, lr, device, momentum=0.9):
+def local_train(model, global_state, loader, epochs, lr, device, momentum=0.0):
     """Load global_state, run local SGD, return (delta, n_samples).
 
     delta[name] = local_param - global_param, kept on CPU.
+    Plain SGD (momentum=0) by default: matches the per-step plain-SGD assumption of
+    IRDS / Ripple Shapley (Eq 1), so the in-run drop term and Taylor estimator are
+    faithful to the realized per-step displacement.
     """
     model.load_state_dict(global_state)
     model.to(device).train()

@@ -28,6 +28,7 @@ from flirds.fl.server import run_fedavg_logs
 from flirds.models.cnn import LeNet5
 from flirds.oracle.exact_sv import exact_shapley, subset_utility
 from flirds.oracle.in_run_sv import in_run_shapley, in_run_utility
+from flirds.repro import seed_everything
 
 
 def build(N, noisy, n_per, seed, bs=32, dup=None):
@@ -49,8 +50,7 @@ def build(N, noisy, n_per, seed, bs=32, dup=None):
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    torch.backends.cudnn.deterministic = True   # protocol 5: bitwise-reproducible fp32
-    torch.backends.cudnn.benchmark = False
+    seed_everything(0)   # cudnn-deterministic + seeds (fl.server.fedavg re-seeds per run)
     N, rounds, E, lr, n_per = 6, 3, 2, 0.05, 300
     noisy = {4, 5}
     test = get_dataset("mnist", train=False)

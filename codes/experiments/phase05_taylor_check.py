@@ -21,10 +21,12 @@ from flirds.data.cnn import get_dataset, get_labels
 from flirds.fl.partition import dirichlet_partition
 from flirds.fl.server import run_fedavg_logs
 from flirds.models.cnn import LeNet5
+from flirds.repro import seed_everything
 
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    seed_everything(0)
     N = 6
     train = get_dataset("mnist")
     test = get_dataset("mnist", train=False)

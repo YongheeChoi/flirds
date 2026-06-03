@@ -25,6 +25,7 @@ from flirds.fl.partition import dirichlet_partition
 from flirds.fl.server import run_fedavg_logs
 from flirds.models.cnn import FedSVCNN, LeNet5
 from flirds.oracle.in_run_sv import in_run_shapley
+from flirds.repro import seed_everything
 
 
 def loaders_for(dataset, N, n_per, batch, noisy, seed):
@@ -66,6 +67,7 @@ def curv_ratio(logs, model_fn, vx, vy, device):
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    seed_everything(0)
     N, rounds, n_per, noisy, seed = 8, 3, 300, {6, 7}, 0
     configs = [
         ("mnist", LeNet5, 1, "full", 0.05),

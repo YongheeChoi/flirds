@@ -28,6 +28,7 @@ def flirds_values(logs, model_fn, val_x, val_y, device, second_order=True):
     (the IRDS-1st self-ablation baseline).
     """
     model = model_fn().to(device)
+    model.eval()   # match the (b) oracle's eval-mode forward (BN/Dropout use running stats)
     pkeys = [n for n, _ in model.named_parameters()]
     n_clients = len(logs[0][1])
     ns = np.array([logs[0][1][k][1] for k in range(n_clients)], dtype=float)

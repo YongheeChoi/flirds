@@ -1,8 +1,12 @@
 """Phase 0.5 sanity gates for the Flirds estimator (core/flirds_estimator).
 
-Gate E=1 (Taylor residual): one full-batch GD step per round; as lr -> 0 the
-1st+2nd estimator must approach the exact (b) oracle FASTER than 1st-only
-(residual O(lr^3) vs O(lr^2)).  Confirms the 2nd-order term + HVP are correct.
+Gate E=1 (Taylor residual): one full-batch GD step per round.  The estimator must
+match the exact (b) oracle to a small residual.  NOTE: as lr -> 0 the oracle's
+loss-difference U(S) cancels in fp32 (protocol 1 noise floor ~3e-3), so relL2
+plateaus rather than -> 0; the 2nd-order advantage is visible only at moderate lr
+(e.g. lr=0.2) where the step is above the noise floor and within the Taylor radius.
+The broad trend (2nd-order helps with curvature / within radius) lives in the
+regime sweep, not this gate.
 
 Gate N=2 (singleton): at N=2 the estimator must match the exact 2-coalition
 in-run Shapley at small step.
@@ -21,6 +25,7 @@ from flirds.fl.partition import dirichlet_partition
 from flirds.fl.server import run_fedavg_logs
 from flirds.models.cnn import LeNet5
 from flirds.oracle.in_run_sv import in_run_shapley
+from flirds.repro import seed_everything
 
 
 def make(N, n_per, seed, full_batch=True):
@@ -42,6 +47,7 @@ def relL2(a, b):
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    seed_everything(0)
     test = get_dataset("mnist", train=False)
     vx = torch.stack([test[i][0] for i in range(512)]).to(device)
     vy = torch.tensor([test[i][1] for i in range(512)]).to(device)

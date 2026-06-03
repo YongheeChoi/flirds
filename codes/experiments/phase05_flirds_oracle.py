@@ -20,6 +20,7 @@ from flirds.fl.partition import dirichlet_partition
 from flirds.fl.server import run_fedavg_logs
 from flirds.models.cnn import LeNet5
 from flirds.oracle.in_run_sv import in_run_shapley
+from flirds.repro import seed_everything
 
 
 def build(N, noisy, n_per=300, seed=0):
@@ -47,6 +48,7 @@ def report(name, est, oracle):
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    seed_everything(0)
     N, rounds, E, lr, seed = 8, 5, 2, 0.05, 0
     noisy = {6, 7}
     loaders, test = build(N, noisy, seed=seed)

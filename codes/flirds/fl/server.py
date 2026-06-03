@@ -4,6 +4,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 
+from ..repro import seed_everything
 from .client import local_train
 
 
@@ -27,7 +28,7 @@ def fedavg(model_fn, client_loaders, test_loader, rounds, local_epochs, lr,
     {client_id: (delta, n_samples)}); used by in-run SV baselines (GTG, ...).
     """
     rng = np.random.default_rng(seed)
-    torch.manual_seed(seed)
+    seed_everything(seed, cudnn_deterministic=True)   # CNN track: deterministic conv
     model = model_fn().to(device)
     global_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
     n_clients = len(client_loaders)

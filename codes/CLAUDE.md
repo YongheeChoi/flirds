@@ -62,6 +62,10 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Reproducibility (flirds)
+
+Every run/experiment entry point MUST call `flirds.repro.seed_everything(seed)` before any torch work — it seeds torch/numpy/CUDA. For the **CNN track** pass `cudnn_deterministic=True` (the FL core `fl.server.fedavg` and `ripple_shapley` already do) to force deterministic conv → bitwise-identical fp32 (protocol §5); the **LLM track is conv-free and does not need it**. **All FL valuation runs use plain SGD (momentum=0)** per the IRDS/Ripple per-step assumption — a fixed convention for every experiment (under momentum the 2nd-order Taylor term degrades).
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

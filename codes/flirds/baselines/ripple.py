@@ -32,6 +32,8 @@ import torch
 import torch.nn.functional as F
 from torch.func import functional_call, grad, jvp
 
+from ..repro import seed_everything
+
 
 def _flat(d, keys):
     return torch.cat([d[k].flatten() for k in keys])
@@ -44,7 +46,7 @@ def _loader_xy(loader, device):
 
 
 def client_drop_and_delta(model, gstate, loader, epochs, lr, val_x, val_y, device,
-                          momentum=0.9):
+                          momentum=0.0):
     """Run local SGD (identical to fl.client.local_train) while accumulating the
     IRDS drop term along the realized local trajectory.
 
@@ -114,8 +116,12 @@ def local_hessian_topk(model, gstate, x, y, k, device):
         return _flat(hv, pkeys).detach().cpu().numpy()
 
     op = LinearOperator((P, P), matvec=matvec, dtype=np.float64)
-    # TODO(deferred): eigsh convergence fallback -- set maxiter/tol, retry with a
-    # larger ncv on ArpackNoConvergence, and assert ||H v - lam v|| is small.
+    # TODO(deferred -> LLM-scale ripple port): eigsh robustness --
+    #  (i) convergence fallback: maxiter/tol, retry w/ larger ncv on
+    #      ArpackNoConvergence, assert ||H v - lam v|| small;
+    #  (ii) which="LA" keeps top-positive curvature; for an indefinite Hessian
+    #       consider "LM" (largest |lambda|) to retain expansive modes;
+    #  (iii) pass a fixed v0 so eigvecs are reproducible run-to-run.
     vals, vecs = eigsh(op, k=k, which="LA")
     return vals, vecs
 
@@ -130,7 +136,7 @@ def _orthoproj(Q, U, m):
 def ripple_shapley(model_fn, client_loaders, rounds, local_epochs, lr,
                    val_x, val_y, device, seed=0, k=20, m=50, R=20):
     """Client-level Ripple Shapley values = (drop + ripple), summed over rounds."""
-    torch.manual_seed(seed)
+    seed_everything(seed, cudnn_deterministic=True)   # CNN track: deterministic conv
     model = model_fn().to(device)
     gstate = {n: v.detach().clone() for n, v in model.state_dict().items()}
     pkeys = [n for n, _ in model.named_parameters()]
@@ -187,6 +193,7 @@ def ripple_shapley(model_fn, client_loaders, rounds, local_epochs, lr,
     alpha = nsel / nsel.sum(axis=1, keepdims=True)
     dphi = alpha * drop                                 # Eq 7
     rphi = np.zeros((rounds, n))
+    # ripple sums r=2..R (Eq 13); needs rounds>=3 for any cross-round term (else drop-only)
     for t0 in range(rounds):
         Plow = np.eye(m)
         for r in range(2, R + 1):
