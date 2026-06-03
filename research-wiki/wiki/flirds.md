@@ -33,7 +33,8 @@ Estimator (`core/flirds_estimator.py`) + (b) in-run oracle (`oracle/in_run_sv.py
 - **2nd-order is regime-dependent**: helps the magnitude fit (relL2) where the val loss is curved and the per-round update is within the Taylor radius (CIFAR); marginal on near-flat MNIST; overshoots for large multi-step updates. Mirrors [[sources/in-run-data-shapley|IRDS]] Appx E.2.2 ("2nd-order does not notably improve accuracy") — **but IRDS is centralized per-SGD-step (tiny $\eta$); FL per-round multi-step is the regime where the 2nd-order is non-trivial**, so the decisive test is at FL-scale / LLM.
 - **Curvature = true Hessian** (locked): matches IRDS; a Gauss-Newton/Fisher (PSD) variant was tested and was generally *worse* than the true (indefinite) Hessian.
 - **(a) retrain SV vs (b) in-run SV**: agree on noisy-client detection (AUROC 1.0) but only moderately on fine ranking ($\rho\approx0.66$) — expected, different utilities (protocol 4.3 separation).
-- **Reproducibility** requires `torch.backends.cudnn.deterministic=True` (else conv nondeterminism drifts the trajectory ~4e-2 / 3 rounds; with it, bitwise-identical). → protocol §5 addition.
+- **Reproducibility** requires `torch.backends.cudnn.deterministic=True` (else conv nondeterminism drifts the trajectory ~4e-2 / 3 rounds; with it, bitwise-identical) — **CNN (conv) track only; the LLM track is conv-free**. → protocol §5 addition (`flirds/repro.py:seed_everything`).
+- **Convention for all experiments — plain SGD (momentum=0)**, matching [[sources/in-run-data-shapley|IRDS]] / Ripple Eq 1. Empirically load-bearing: under momentum=0.9 the 2nd-order term *degraded* (3-seed Spearman 0.73 < 1st-only 0.81), but with plain SGD it *helps* (0.96 > 0.92) — because the realized per-round displacement is exactly the gradient step the Taylor expands around. Momentum's velocity tail breaks that correspondence.
 
 ## Locked design decisions
 
