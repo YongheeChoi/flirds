@@ -2,7 +2,7 @@
 type: project
 title: "Flirds — Implementation Plan & Session Handoff"
 created: 2026-05-27
-updated: 2026-06-03
+updated: 2026-06-04
 tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open-decisions]
 ---
 
@@ -10,16 +10,16 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 
 > **Read this first when starting an implementation session.** This document is self-contained: it tells you (i) what's already decided and where to look for detail, (ii) what's still open and how to decide it, (iii) the phase-by-phase task ordering. The 2026-05-27 design session ended here — the next session (this or another) starts from this document.
 
-## Status snapshot (as of 2026-05-27)
+## Status snapshot (as of 2026-06-04)
 
-- **Pipeline stage**: `idle` → ready for `implementation` (per root `CLAUDE.md`).
-- **Theoretical scaffolding**: complete. Section 2 (decisions) + Section 3 (experiment plan) + Protocol = locked. See [[flirds]] and [[flirds-protocol]].
-- **Wiki**: 30 sources ingested, 11 threads, 27 concepts. No paper-blocking ingest gaps.
-- **What's NOT decided yet**: 9 implementation-detail items (§3 below). These must be resolved before LLM-phase code is written, but most are deferrable past Phase 0.
-- **Next concrete action**: Phase 0 + Phase 0.5 complete (see the 2026-06-03 section below); next = **Phase 1 LLM port** (OpenFedLLM + LoRA).
-- **Phase 1 carry-over (2026-06-03 wiki session)**: before/while building the LLM data + estimator layers, honor the **two seams** (⚠ callout in §2 Phase 1) — (1) per-layer φ logging *observation-only*, never reweighted in the spine (INVARIANT recorded there); (2) pluggable corruptor registry (design + (a)/(b) fork in **§3.10**). Validation-set is already config-driven (seam 3, §3.10 note). Experiment plan was extended with 7 prior-art validation gaps (#12–18, all Phase 2/3) — see [[flirds#Added 2026-06-03 — prior-art validation gaps (Phase 2/3; none touch the Phase 1 core)|flirds §Added 2026-06-03]].
-- **Phase 1 progress (2026-06-03 session 2)**: estimator/oracle made **backend-agnostic** (`loss_fn(params,buffers)`+pkeys injection, `backends/cnn.py`) + **partial-participation-correct** (per-round FedAvg weight) + **per-layer φ logging** (seam 1, observation-only); all CNN gates bit-identical. OpenFedLLM cloned to gitignored `external/` + scouted (its fedavg weight == our per-round weight). **LLM stage 2** (`backends/llm.py` + FL loop self-build + data layer / seam 2) handed to the dedicated Phase 1 session — estimator/oracle need no further change. Raw: [[raw/conversations/flirds/2026-06-03-phase1-backend-abstraction]].
-- **Phase 1 progress (2026-06-04 session)**: LLM stage 2 **backend + FL loop done** — `backends/llm.py`(make_llm_loss, LoRA-only via functional_call) + `fl/server.py` `_fedavg_core` 추출(CNN wrapper **bit-identical 회귀**) + `fl/llm_server.py`(run_llm_fedavg_logs, **TRL SFTTrainer 1.x + forced SGD + completion-only**). **LLM-FL 스모크 green**(Llama-3.2-1B real 궤적, est≈oracle 1.70e-6). **3 LLM musts**: eager-attn / named-key state / embedding-hook clear (functorch+HF). validation(§3.4) 확정(도메인당 200/총 1000; **1000 vs 2¹⁰=1024 subset 분리**). **남음 = 3번 data layer**(5-domain + seam 2 corruptor). Raw: [[raw/conversations/flirds/2026-06-04-phase1-llm-stage2]].
+- **Pipeline stage**: `implementation` — **Phase 1 stage 2 done** (2026-06-04); details in the two "Phase 1 progress" bullets below.
+- **Theoretical scaffolding**: complete + locked (Section 2 decisions + Section 3 experiment plan + Protocol). See [[flirds]] and [[flirds-protocol]].
+- **Wiki**: 42 sources, 11 threads, 27 concepts (after the 2026-06-03 recent-prior-work scan). No paper-blocking gaps.
+- **Implementation decisions**: §3.1–3.8 **resolved 2026-06-02** (binding answers = the 06-02 table below; the §3.x bodies are kept as deliberation/rationale). Only §3.9 (detection code provenance) + §3.10 (corruptor registry — **fork (b) chosen**) remain live.
+- **Next concrete action**: **Phase 1 task 3 = 5-domain data layer** — validation-1000 stratified loader + seam 2 corruptor registry (§3.10) — then LLM baselines port. (Phase 0/0.5, estimator/oracle, and the LLM backend + FL loop are all done.)
+- **Seams status (2026-06-03 → 06-04)**: seam 1 (per-layer φ, observation-only) **DONE** (`per_layer=False`; INVARIANT holds, verified on CNN + LLM); seam 3 (validation config-driven) **DONE**; seam 2 (corruptor registry) = the remaining data-layer work, **fork (b)** (build it with the LLM data layer). Experiment plan extended with 7 validation gaps (#12–18, all Phase 2/3) — [[flirds#Added 2026-06-03 — prior-art validation gaps (Phase 2/3; none touch the Phase 1 core)|flirds §Added 2026-06-03]].
+- **Phase 1 progress (2026-06-03 session 2)**: estimator/oracle made **backend-agnostic** (`loss_fn(params,buffers)`+pkeys injection, `backends/cnn.py`) + **partial-participation-correct** (per-round FedAvg weight) + **per-layer φ logging** (seam 1, observation-only); all CNN gates bit-identical. OpenFedLLM cloned to gitignored `external/` + scouted (its fedavg weight == our per-round weight). Raw: [[raw/conversations/flirds/2026-06-03-phase1-backend-abstraction]].
+- **Phase 1 progress (2026-06-04 session)**: LLM stage 2 **backend + FL loop done** — `backends/llm.py`(make_llm_loss, LoRA-only via functional_call) + `fl/server.py` `_fedavg_core` 추출(CNN wrapper **bit-identical 회귀**) + `fl/llm_server.py`(run_llm_fedavg_logs, **TRL SFTTrainer 1.x + forced SGD + completion-only**). **LLM-FL 스모크 green**(Llama-3.2-1B real 궤적, est≈oracle 1.70e-6). **3 LLM musts**: eager-attn / named-key state / embedding-hook clear (functorch+HF; see [[flirds-protocol]] §13). validation(§3.4) 확정(도메인당 200/총 1000; **1000 vs 2¹⁰=1024 subset 분리**; cross-silo trainset 크기는 도메인별 **동일 통제**, aggregate weight는 size-prop 유지, FiQA 부족 시 code-domain 대체). Raw: [[raw/conversations/flirds/2026-06-04-phase1-llm-stage2]].
 
 ## ✅ Decisions resolved & corrections (2026-06-02 implementation kickoff)
 
@@ -74,8 +74,8 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 
 | Document | What it covers |
 |---|---|
-| [[flirds]] | All locked design decisions (original 2026-05-05 + N1–N4 + Q1–Q3 + ④⑤ + model choice + baseline reduction); resolved questions; Experiment plan §3 (11 items); Experiment matrix (1B/3B/7B × 9 experiments); baseline-selection rationale + code availability table; differentiators table; centralized positioning |
-| [[flirds-protocol]] | bf16 train / fp32 eval rule; seeds ≥ 3; scipy tied-rank; MC variance reporting; 95% bootstrap CI band; (a)/(b) oracle code-path separation; sanity gates ($E{=}1$, $N{=}2$); run logging (config / env / git SHA / W&B); Phase 0 reproduction protocol; implementation skeleton (directory layout); pre-publication checklist |
+| [[flirds]] | All locked design decisions (original 2026-05-05 + N1–N4 + Q1–Q3 + ④⑤ + model choice + baseline reduction); resolved questions; Experiment plan §3 (**18 items** — 11 original + #12–18 added 2026-06-03); Experiment matrix (1B/3B/7B); baseline-selection rationale + code-availability table; differentiators table (incl. FedIF/FedTSV); centralized positioning |
+| [[flirds-protocol]] | bf16 train / fp32 eval rule; seeds ≥ 3; scipy tied-rank; MC variance reporting; 95% bootstrap CI band; (a)/(b) oracle code-path separation; sanity gates ($E{=}1$, $N{=}2$); run logging (local run-dir, no W&B); Phase 0 reproduction; **§13 LLM backend requirements** (eager-attn / named-key / hook-clear); implementation skeleton; pre-publication checklist |
 | `raw/conversations/flirds/conversation1.md → conversation4.md` | Original design conversations with another LLM (IRDS → FL adaptation, math derivation, locked design choices). **Primary record for math + design rationale.** |
 | `raw/conversations/flirds/2026-05-19-section23-walkthrough.md` | Raw turn-by-turn transcript of the 2026-05-19 → 22 Section 2/3 walkthrough (restored from JSONL after session interruption). |
 | `raw/conversations/flirds/2026-05-27-section-23-lock.md` | Distilled record of the same arc + 2026-05-27 lock + Yonghee preferences surfaced. |
@@ -86,15 +86,15 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 
 Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phase 0 reproductions pass.
 
-### Phase 0 — CNN baseline sanity reproduction (gate)
+### Phase 0 — CNN baseline reproduction (gate) — ✓ DONE 2026-06-02
 
-**Goal**: reproduce headline metrics of code-unavailable baselines in their *original* (CNN + MNIST/CIFAR-10) setups, within ±5%. **Engineering by-product**: build the FL simulator + FedAvg loop + utility evaluator + Ripple sample-level→client aggregator that the LLM phase reuses.
+**Goal**: reproduce headline metrics of the four FL-Shapley baselines in their *original* (CNN + MNIST/CIFAR-10) setups. **All four self-built** (reference-guided, D1): GTG/ComFedSV have public code but in non-forkable forms (cyyever framework / Huawei notebook); FedSV/Ripple have none. **Engineering by-product**: the FL simulator + FedAvg loop + utility evaluator + Ripple sample-level→client aggregator that the LLM phase reuses.
 
-**Targets** (4 baselines, all code-unavailable; setup details in respective wiki pages):
+**Targets** (4 baselines, all self-built; setup details in respective wiki pages):
 1. [[sources/gtg-shapley|GTG-Shapley]] (ACM TIST'22): CNN + MNIST/CIFAR-10, N=10. Headline: Spearman ρ vs uniform MC; runtime advantage. ~1 day.
 2. [[sources/principled-federated-data-valuation|FedSV (Wang 2020)]]: CNN + MNIST/CIFAR-10 (IID + non-IID), N=10. Headline: noisy-label / backdoor detection rate. ~1 day.
 3. [[sources/comfedsv|ComFedSV]] (ICDE'22): Synthetic / MNIST / FMNIST / CIFAR-10, N=100 (10 noisy). Headline: Spearman vs ground-truth, Jaccard on noisy detection. ~2–3 days.
-4. [[sources/ripple-shapley|Ripple Shapley]] (AAAI'26): CNN + MNIST/CIFAR-10, N=10. Headline: Spearman ρ, 62× speedup vs GTG. ~1–2 days. **If pseudocode is ambiguous → contact authors (AAAI'26 newest).**
+4. [[sources/ripple-shapley|Ripple Shapley]] (AAAI'26): CNN + MNIST/CIFAR-10, N=10. **No ground-truth-SV metric** (task-driven robustness only) → checked via noisy-AUROC + runtime. Speedup is **62× vs AFedSV+ / 49× vs FedSV, not vs GTG**. ~1–2 days.
 
 **Total cost**: 5–7 days on B200 × 1.
 
@@ -103,6 +103,8 @@ Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phas
 **Pass gate**: Phase 0 passing produces the *foundation infrastructure* for Phase 1. Do NOT skip Phase 0.
 
 ### Phase 1 — Flirds core + dual oracle + vanilla FedAvg at 1B
+
+> **STATUS 2026-06-04 — stage 1+2 DONE; only task 3 (data layer) remains.** Estimator/oracle backend-agnostic + partial-participation + per-layer (DONE, CNN gates bit-identical); LLM backend (`backends/llm.py`) + FL loop (`fl/llm_server.py`, SFTTrainer+forced-SGD) built; LLM-FL smoke green (Llama-3.2-1B, est≈oracle 1.70e-6). Tasks 1–2 below = done; (b)/(a) oracle + vanilla/random FedAvg wiring carries into the data-layer + baseline work. **Remaining = task 3: 5-domain data layer (validation-1000 loader + seam 2 corruptor registry, §3.10 fork b).**
 
 **Goal**: a working Flirds estimator on Llama-3.2-1B-Instruct, both oracles operational at N=10 cross-silo, vanilla FedAvg upper-bound running. All sanity gates green.
 
@@ -120,17 +122,17 @@ Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phas
 
 **Output**: working Flirds at 1B + dual oracle (a)+(b) + 2 training baselines + reproducible per-run logging (local run-dir, no W&B per 06-02). **No paper claim yet** — just infrastructure validated.
 
-> **⚠ Phase 1 seams (added 2026-06-03 — honor now; cheap now / costly to retrofit).** The 7 experiments added to [[flirds#Added 2026-06-03 — prior-art validation gaps (Phase 2/3; none touch the Phase 1 core)|flirds §Added 2026-06-03]] are all Phase 2/3 (data/eval-layer) and do **not** expand Phase 1 scope. But two depend on Phase-1 *core* decisions being made right:
-> 1. **φ logging granularity** = per-round × per-client × **per-layer** (keep the per-layer dot-product components). Scalar-$\phi_k$-only forces an estimator re-run for ② / Q2-layer-wise / PGD / qualitative.
-> 2. **Pluggable client-corruptor / partitioner** in the data layer. Hardcoded noisy/free-rider forces a refactor when backdoor (#12) / PGD (#13) / maverick (#15) / duplicate (#14) arrive.
+> **⚠ Phase 1 seams — STATUS (updated 2026-06-04).** The 7 experiments in [[flirds#Added 2026-06-03 — prior-art validation gaps (Phase 2/3; none touch the Phase 1 core)|flirds §Added 2026-06-03]] are all Phase 2/3 (data/eval-layer); two depended on Phase-1 *core* seams:
+> 1. **φ logging granularity** (per-round × per-client × per-layer) — **DONE** (`per_layer=False` returns components; Σ == φ_k bit-identical, verified CNN + LLM).
+> 2. **Pluggable client-corruptor / partitioner** — **REMAINING**, builds with the LLM data layer (task 3), **fork (b)** per §3.10. Until then noisy/free-rider stay inline in experiment scripts.
 >
-> Both are additive seams the Phase 0.5 CNN track already has — just carry the shape into the LLM data + estimator layers. Nothing else in Phase 1 changes.
+> The INVARIANT below is a standing rule (binding regardless of status):
 >
 > **⚠⚠ INVARIANT for seam 1 (Yonghee, 2026-06-03) — per-layer φ is OBSERVATION-ONLY; it must NOT break the IRDS proof.** In `core/flirds_estimator.py`, $\phi_k$ is *already* a sum over layers (`sum((g[n]*dw[k][n]).sum() for n in pkeys)`). Per-layer logging = keep those summands instead of collapsing early; the returned $\phi_k$ stays `sum(components)`, bit-identical. The default/spine estimator **never reweights** per-layer (no $\mathrm{diag}(c_\ell)$, no layer selection) — that would break the granularity-invariance lemma + Proposition 1. Per-layer components are a **read-only diagnostic array** consumed *only* by ② characterization (#7) and the qualitative case study (#17). **The one intentional exception** is the locked **Q2 layer-wise *variant* (#6)** — a separate, clearly-labeled ablation arm that deliberately reweights to *show* the lemma break; it is never the headline method. Implementation: add per-layer logging as a backward-compatible option (e.g. `per_layer=False` returning the extra array) so the Phase 0.5 callers are untouched.
 
 ### Phase 2 — Full baseline set + (a) retrain SV expansion + 3B/7B scale up
 
-**Goal**: all 10 baselines + 4 detection methods working at 1B/3B/7B; (a) retrain SV expanded to N=10 at 1B + N=5 at 3B; cross-device MC setup operational.
+**Goal**: all 10 baselines + **2 detection methods** (FLDetector + STD-DAGMM, per 06-02) working at 1B/3B/7B; (a) retrain SV expanded to N=10 at 1B + N=5 at 3B; cross-device MC setup operational.
 
 **Tasks**:
 1. Port Phase 0 reproduced baselines (GTG / FedSV / ComFedSV / Ripple) from CNN setup to LLM+LoRA setup. ComFedSV cross-device only.
@@ -168,9 +170,11 @@ Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phas
 
 **Output**: all numbers for the paper, with reproducibility metadata. Hand off to `/auto-review-loop` / `/paper-writing`.
 
-## 3. Open implementation decisions (3.1–3.8 resolved 2026-06-02; 3.9 + 3.10 pending — resolve as you encounter)
+## 3. Implementation decisions (§3.1–3.8 RESOLVED 2026-06-02; §3.9 + §3.10 live)
 
-Each item: **what's open** → **current default / assumption** → **options** → **decision criterion** → **when**.
+> **Read this banner first.** §3.1–3.8 were **resolved on 2026-06-02** — the **binding answers are in the "Decisions resolved (2026-06-02)" table above**, not in the §3.x bodies. The bodies below are kept as the *original deliberation/rationale* (options + criteria); where a body's "Recommendation" differs from the 06-02 table, **the table wins** (e.g., §3.4 validation = 200/domain × 5 = 1000 total, *not* the body's older "1024 integrated + 256/domain"; §3.1 adds the 06-04 rule: cross-silo trainset size **equalized per domain**, aggregate weight stays size-proportional, FiQA-too-small → swap code-domain). The only **live** decisions are **§3.9** (detection code provenance) and **§3.10** (corruptor registry — fork (b) chosen, implement with the data layer).
+
+Each body: **what's open** → **current default / assumption** → **options** → **decision criterion** → **when**. *(Historical for 3.1–3.8.)*
 
 ### 3.1 Dataset choice (cross-silo + cross-device)
 
@@ -273,15 +277,15 @@ Each item: **what's open** → **current default / assumption** → **options** 
 **Open**: tmux naming convention, W&B project setup, GPU scheduling.
 
 **Defaults**:
-- B200 × 4 (root `CLAUDE.md` 컴퓨팅 예산).
-- W&B project: `flirds-2026` (locked in [[flirds-protocol]] §6).
+- B200 × 4 (root `CLAUDE.md` 컴퓨팅 예산); only physical GPUs 0–3 usable.
+- **Logging = local run-dir, NO W&B** (D2; [[flirds-protocol]] §6). ~~W&B project flirds-2026~~ (superseded).
 - tmux session: `flirds-{model}-{exp_type}` suggested (e.g., `flirds-1b-asweep`, `flirds-7b-baseline`).
 
 **Open detail**:
 - GPU allocation per run: 1B can fit on 1 GPU with bf16; 3B on 1 GPU; 7B on 2 GPU minimum (LoRA but full validation forward).
 - Parallelism: 1B can run 4 experiments in parallel on B200×4; 7B can run 2 in parallel.
 
-**When**: before Phase 0 (just naming convention + W&B init).
+**When**: resolved 2026-06-02 (local logging; conda env `flirds`).
 
 ### 3.8 Phase-internal task order
 
@@ -291,13 +295,13 @@ Each item: **what's open** → **current default / assumption** → **options** 
 
 ### 3.9 Detection baselines code plan
 
-**Open**: source code provenance for FLDetector / FoolsGold / FLTrust / STD-DAGMM.
+**Open**: source code provenance for the **2** detection baselines (narrowed 06-02): **FLDetector** (noisy/poisoning) + **STD-DAGMM** (free-rider). (FoolsGold / FLTrust dropped.)
 
-**Status**: ingested but no code-availability check done yet for these 4. Need a quick search at Phase 2 start.
+**Status**: ingested; code-availability check deferred to Phase 2 start.
 
-**Recommendation**: at Phase 2 start, search GitHub for each of the 4. If code exists, vendor + adapt to LoRA gradient. If not, reproduce (each is small enough — these are robustness detectors, not full Shapley estimators).
+**Recommendation**: at Phase 2 start, search GitHub for FLDetector + STD-DAGMM. If code exists, vendor + adapt to LoRA gradient; else reproduce (small robustness detectors, not full Shapley estimators).
 
-### 3.10 Pluggable client-corruptor registry (seam 2 — DECISION PENDING, 2026-06-03)
+### 3.10 Pluggable client-corruptor registry (seam 2 — fork (b) CHOSEN 2026-06-04)
 
 **Open**: implement the corruptor/partitioner registry now (CNN side) vs. while building the LLM data layer. Currently corruption is **inline** in `experiments/phase05_*.py:build()` (`noisy={4,5}` + `if c in noisy:` label-flip) — the hardcoding seam 2 fixes.
 
@@ -308,7 +312,7 @@ Each item: **what's open** → **current default / assumption** → **options** 
 - a run-config maps `{client_idx: corruptor_name}` → removes `noisy={4,5}` hardcoding. CNN + LLM `build()` both call it.
 - **Backend split**: free_rider / maverick / duplicate are representation-agnostic (implement now); label_flip / backdoor / pgd need a per-backend body (CNN now, LLM when the data layer's instruction-response format is fixed).
 
-**The fork**: (a) implement registry + CNN corruptors + surgical phase05 refactor now (keep `build()` signature, swap internals — phase05 stays green); (b) wire it while building the LLM data layer (folds into the Phase-1 data-format decision). Claude recommended (a) — registry+CNN is an enumerated (non-speculative) need; LLM corruptors fill in later. **Deferred to the Phase 1 session to decide + implement** (per `codes/CLAUDE.md`: surgical, no speculative abstraction).
+**The fork — RESOLVED (b), 2026-06-04**: the registry is built **with the LLM data layer (Phase 1 task 3)**, folding into the data-format decision, rather than refactoring the committed CNN/phase05 path now. Until task 3 lands, noisy/free-rider stay inline in `experiments/phase05_*.py:build()`. (Option (a) — refactor CNN first — was the alternative; not taken, to avoid touching committed Phase 0.5 experiments.) Per `codes/CLAUDE.md`: surgical, no speculative abstraction — implement corruptors as the experiments that need them arrive (noisy/free-rider with the data layer; backdoor/PGD/maverick/duplicate in Phase 2/3).
 
 > **(a) 최소 구현됨 (2026-06-04)**: sample-level `label_shuffle`만 `data/corruptors.py` (`CNN_CORRUPTORS` dict)로 추출 + phase05 dual/flirds_oracle/regime_sweep을 registry 호출로 refactor — **bit-identical** (flirds_oracle 0.7381/0.8810 불변). 의도적으로 최소: `noisy={...}` set 유지(corruptor 1종이라 run-config `{client_idx: corruptor_name}` map은 아직 over-engineering). **남은 풀 registry** — run-config map(noisy hardcoding 제거) + update-level free_rider(`fl/client.py` hook) + partition-level maverick/duplicate + corruptor 함수 시그니처 통일(`fn(samples, rng, **cfg)`) + LLM text corruptor — 는 해당 corruptor를 **실제 쓰는 시점**(Phase 2/3 detection + stage 3 LLM data layer)에 확장.
 
@@ -316,26 +320,22 @@ Each item: **what's open** → **current default / assumption** → **options** 
 
 ## 4. Next-session starter prompt
 
-When starting an implementation session (this Claude or another), the trigger should be a single message like:
+> **Superseded (2026-06-04)** — the original kickoff prompt below was for *starting* Phase 0. Phase 0/0.5 + Phase 1 stage 1–2 are done. **A continuing Phase 1 session now starts from the Status snapshot's "Next concrete action": Phase 1 task 3 = 5-domain data layer (validation-1000 loader + seam 2 corruptor registry, §3.10 fork b) + LLM baselines port.** Read this doc's status snapshot + the latest raw conversation ([[raw/conversations/flirds/2026-06-04-phase1-llm-stage2]]) first.
+
+Original kickoff prompt (historical):
 
 > "flirds 구현 phase 시작. [[flirds-implementation-plan]] 읽고 phase 0부터 시작하자. 일단 §3.6 BASE_REPO 결정부터 같이 해줘."
 
-The new session should:
-1. Read this document (high-level state).
-2. Read [[flirds]] (what's locked in design).
-3. Read [[flirds-protocol]] (what's locked in implementation rules).
-4. Walk through §3 open decisions with Yonghee, one at a time (Yonghee prefers explanation → decision → execution per [[2026-05-27-section-23-lock]]).
-5. Update root `CLAUDE.md` pipeline status: `stage: implementation`, `code_dir: codes`, `idea: "client-level FL Shapley via 1st+2nd Taylor of validation loss"`, `current_branch: feature/flirds-phase-0`.
-6. Begin Phase 0.
+## 5. Pre-implementation checklist (✓ ALL DONE — historical, kept for record)
 
-## 5. Pre-implementation checklist (verify before Phase 0 starts)
+> Superseded: Phase 0 started 2026-06-02 and all of the below were satisfied. Current entry point = the Status snapshot's "Next concrete action" (Phase 1 task 3).
 
-- [ ] §3.6 BASE_REPO decided
-- [ ] §3.7 W&B project `flirds-2026` initialized
-- [ ] `codes/base_repo/` cloned and accessible
-- [ ] B200 × 4 access verified
-- [ ] Phase 0 setup paper PDFs accessible (`raw/papers/flirds/2109.02053v1.pdf` for GTG; `2009.06192v1.pdf` for FedSV; `2109.09046v3.pdf` for ComFedSV; `40034-Article Text-44125-1-2-20260314.pdf` for Ripple)
-- [ ] Root `CLAUDE.md` updated to `stage: implementation`
+- [x] §3.6 BASE_REPO decided (OpenFedLLM reference + self-build; CNN self-built)
+- [x] Logging = local run-dir, **no W&B** (D2) — *(was "§3.7 W&B init"; corrected)*
+- [x] code accessible; conda env `flirds` (torch 2.12+cu130)
+- [x] B200 × 4 access verified
+- [x] Phase 0 setup paper PDFs accessible (GTG 2109.02053 / FedSV 2009.06192 / ComFedSV 2109.09046 / Ripple 40034)
+- [x] Root `CLAUDE.md` updated to `stage: implementation`
 
 ## 6. Pointers — when to consult what
 
@@ -350,7 +350,7 @@ The new session should:
 | "What's the closest centralized analog to Flirds?" | [[sources/less]] + [[flirds#Centralized positioning (added 2026-05-22)]] |
 | "What's the proof that Flirds = centralized data-Shapley + drift residual?" | [[flirds#Mathematical narrative (paper-ready)]] + `raw/conversations/flirds/conversation3.md` §4 |
 | "Where do I save per-round per-client $\phi_k^{(r)}$?" | [[flirds-protocol#6. Run logging]] |
-| "What is Phase 0's pass criterion?" | [[flirds-protocol#10. Phase 0 — code-unavailable baseline reproduction]] |
+| "What is Phase 0's pass criterion?" | [[flirds-protocol#10. Phase 0 — baseline reproduction (status: DONE 2026-06-02/03)]] |
 | "What is the Yonghee preference about pilot data?" | [[2026-05-27-section-23-lock#Yonghee's preferences surfaced (for memory / future sessions)]] |
 | "What datasets are LESS/MATES/DsDm trained on?" | [[threads/data-selection-for-llms]] |
 

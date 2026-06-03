@@ -111,16 +111,16 @@ Each was open in the original conversation set; all closed in the 2026-05-19 →
 
 ### Phase 0 — pre-LLM (must pass before LLM experiments start)
 
-**11. Code-unavailable baseline sanity reproduction.** Reproduce headline metrics (ρ, AUROC, runtime) of code-unavailable baselines in their *original* (CNN + MNIST/CIFAR-10) setup. Targets: [[sources/ripple-shapley|Ripple Shapley]] (AAAI'26), [[sources/gtg-shapley|GTG-Shapley]], [[sources/principled-federated-data-valuation|FedSV (Wang 2020)]], [[sources/comfedsv|ComFedSV]]. Cost: ≈ 5–7 days on B200×1. Pass criterion: each headline metric within ±5% of reported. Output: validated baseline implementations + sample-level → client-level aggregation function for Ripple (re-used for LLM transfer).
+**11. Baseline sanity reproduction (✓ DONE Phase 0, 2026-06-02).** All four FL-Shapley baselines **self-built** (reference-guided, D1 — GTG/ComFedSV have public code but in non-forkable forms; FedSV/Ripple have none) on one slim CNN simulator and reproduced in CNN + MNIST/CIFAR-10: [[sources/gtg-shapley|GTG]] (recon cosine 0.99), [[sources/principled-federated-data-valuation|FedSV]] (0.998), [[sources/comfedsv|ComFedSV]] (Spearman {1.0,0.96,0.85,0.84}), [[sources/ripple-shapley|Ripple]] (no ground-truth-SV metric — task-driven only; noisy-AUROC 1.0; **62× vs AFedSV+ / 49× vs FedSV, not vs GTG**). Output: validated baseline impls + sample-level→client aggregation for Ripple (LLM transfer in Phase 2). See [[flirds-protocol]] §10.
 
 ### ★★★ paper spine
 
 1. **Clean implementation protocol document.** See [[flirds-protocol]]. fp32 evaluation enforced (training bf16); seeds ≥ 3 reported mean ± std; scipy tied-rank for ties; MC variance + 95% bootstrap CI band on all rank-correlation / AUROC numbers; (a) and (b) oracle as separate code paths; sanity gates ($E{=}1 \Rightarrow$ residual ≈ 0, $N{=}2 \Rightarrow$ singleton SV matches client value); per-run config + env hash + git SHA logged. *Must lock before any reported number.*
-2. **Baseline run set (10 valuation/training + 4 detection).** Cost-matched tiers; full set at 1B / 3B / 7B.
+2. **Baseline run set (10 valuation/training + 2 detection).** Cost-matched tiers; full set at 1B / 3B / 7B.
    - **Valuation (6)**: [[sources/gtg-shapley|GTG-Shapley]], [[sources/ripple-shapley|Ripple Shapley]] (closest competitor), [[sources/principled-federated-data-valuation|FedSV (Wang 2020)]], [[sources/comfedsv|ComFedSV]] (cross-device only — partial participation required), [[sources/data-banzhaf|Data Banzhaf]] in FL (semivalue library), [[sources/shapleyfl|ShapleyFL]] (code available: `ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value`).
    - **Training comparison (2)**: **Full FedAvg** (all clients, no selection — upper-bound floor); **Random-selection FedAvg** (top-K random — random baseline our valuation must beat).
    - **Self / heuristic (2)**: **Flirds-1st-only** (self-ablation isolating the 2nd-order term contribution); **loss-heuristic** (floor).
-   - **Detection (separate table, 4)**: [[sources/fldetector|FLDetector]], [[sources/foolsgold|FoolsGold]], [[sources/fltrust|FLTrust]], [[sources/free-riders-fl-std-dagmm|STD-DAGMM]] — evaluated on noisy / free-rider AUROC only.
+   - **Detection (separate table, 2 — narrowed 2026-06-02)**: [[sources/fldetector|FLDetector]] (noisy/poisoning) + [[sources/free-riders-fl-std-dagmm|STD-DAGMM]] (free-rider) — the most-cited per-client-score detectors; evaluated on noisy / free-rider AUROC only. (FoolsGold / FLTrust dropped from the original 4 to keep the detection arm minimal.)
 3. **Dual oracle implementation.** (a) exact retrain SV: 1B (N=5, 32 retrain ≈ 15 min; N=10, 1024 retrain ≈ 3.5 days B200×4) + 3B (N=5, 32 retrain ≈ 45 min). (b) IRDS-定 SV: cross-silo exact enumeration at N=10 (forward only, ≈ 3.5h / 7h / 28h × 3 seed at 1B / 3B / 7B); cross-device MC at N=100 (5000–10000 sample, standard FedSV practice).
 4. **Ripple head-to-head + theoretical reduction (bonus).** Empirical comparison via Ripple sample-level → client aggregation (built in Phase 0). Theoretical reduction sketch: under LoRA + 2-term Taylor, does Ripple drop+ripple specialize to Flirds 1st + 2nd? If yes → Proposition. If no → related-work differentiator paragraph. Comparison metric = **training-performance side** (client-selection convergence + downstream task acc/F1 + noisy/free-rider AUROC), *not* SV-approximation side (sample-level vs client-level renders direct SV comparison ill-defined). Argument: Ripple's lack of 2nd-order term = systematic disadvantage in non-IID FL where client interactions matter.
 
@@ -184,12 +184,14 @@ Estimated compute (B200 × 4): 1B = sub-week, 3B = 1 week, 7B = ~1 week. Phase 0
 |---|---|---|
 | ShapleyFL | ✅ [ZJU-DIVER/ShapleyFL](https://github.com/ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value) | use as-is |
 | Data Banzhaf in FL | ✅ semivalue libraries (`pyDVL`, `OpenDataVal`) | adapt |
-| GTG-Shapley | ❌ | reproduce → Phase 0 |
-| FedSV (Wang 2020) | ❌ | reproduce → Phase 0 |
-| ComFedSV | ❌ | reproduce → Phase 0 |
-| Ripple Shapley | ❌ (AAAI'26, newest) | reproduce → Phase 0 + author contact if pseudocode ambiguity |
+| GTG-Shapley | code exists, non-forkable (cyyever multi-pkg framework) | **self-built ✓ Phase 0** (recon cosine 0.99) |
+| FedSV (Wang 2020) | ❌ | **self-built ✓ Phase 0** (permutation-MC recon 0.998) |
+| ComFedSV | code exists, non-forkable (Huawei notebook) | **self-built ✓ Phase 0** (Spearman {1.0,0.96,0.85,0.84}) |
+| Ripple Shapley | ❌ (AAAI'26, newest) | **self-built ✓ Phase 0** (no ground-truth-SV metric — task-driven only; AUROC 1.0 + runtime). Speedup 62× vs AFedSV+ / 49× vs FedSV, **not vs GTG** |
 | Full FedAvg / Random-selection FedAvg | trivial | implement |
 | loss-heuristic, Flirds-1st-only | trivial | implement |
+
+> **Correction (2026-06-02, vs the original "code-unavailable" framing)**: all four FL-Shapley baselines are **reference-guided self-builds** (D1) — GTG/ComFedSV have public code but in non-forkable forms. Ripple has **no ground-truth-SV metric** (it reports task-driven robustness only), and its "62×" speedup is vs AFedSV+ (= [[sources/shapleyfl|ShapleyFL]]-style adaptive aggregation) / 49× vs FedSV — *not* vs GTG. "AFedSV" is not a standalone paper (= ShapleyFL alias); see [[sources/shapfed]].
 
 ## Differentiators vs. existing FL valuation methods
 

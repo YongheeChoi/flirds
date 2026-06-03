@@ -2,7 +2,7 @@
 type: protocol
 title: "Flirds — Implementation & Reporting Protocol"
 created: 2026-05-27
-updated: 2026-05-27
+updated: 2026-06-04
 tags: [flirds, protocol, reproducibility, implementation]
 ---
 
@@ -103,10 +103,10 @@ Every reported number traces back to a logged run via:
 - **Run config**: full YAML / JSON with all hyperparameters (model, lr, $E$, $\alpha$, $N$, seed, batch size, LoRA rank, validation set hash, ...).
 - **Environment hash**: `pip freeze` + CUDA version + GPU model.
 - **Git SHA**: code commit at run time.
-- **Per-round per-client $\phi_k^{(r)}$ archive**: every round's per-client raw value saved (compressed) for post-hoc analysis without re-running.
-- **W&B / mlflow project**: `flirds-2026` (single project; per-run name carries scale + setup tags).
+- **Per-round per-client $\phi_k^{(r)}$ archive** (incl. per-layer components, seam 1): every round's per-client raw value saved (compressed, e.g. parquet) for post-hoc analysis without re-running.
+- **Local run-dir logging — NO W&B / mlflow** (decided 2026-06-02, D2): each run writes a local directory holding the config YAML + env hash + git SHA + the φ archive. No external experiment tracker.
 
-Reported number → must be linkable to a specific (config, env, git SHA, run ID). PR review on paper claims = "for claim $X$, show me the run ID."
+Reported number → must be linkable to a specific (config, env, git SHA, run dir). PR review on paper claims = "for claim $X$, show me the run dir."
 
 ## 7. Federated aggregation
 
@@ -130,18 +130,18 @@ Reported number → must be linkable to a specific (config, env, git SHA, run ID
 
 Cross-device is the *only* setting where ComFedSV is a valid baseline (Everyone-Being-Heard assumption).
 
-## 10. Phase 0 — code-unavailable baseline reproduction
+## 10. Phase 0 — baseline reproduction (status: DONE 2026-06-02/03)
 
-Phase 0 is part of this protocol. **No LLM-phase number is reported until Phase 0 reproductions pass within ±5%.** Reproductions, in CNN + MNIST/CIFAR-10 setup:
+Phase 0 is part of this protocol. **No LLM-phase number is reported until Phase 0 reproductions pass.** All four baselines were **reference-guided self-builds** on one slim CNN FL simulator — GTG and ComFedSV *do* have public code but in non-forkable forms (GTG = cyyever multi-package framework; ComFedSV = Huawei notebook), so all four were self-built per D1. Reproduced in CNN + MNIST/CIFAR-10:
 
-| Target | Original setup | Headline metric to reproduce | Cost (B200×1) |
-|---|---|---|---|
-| [[sources/ripple-shapley\|Ripple Shapley]] | CNN + MNIST/CIFAR-10, N=10 | Spearman ρ, 62× speedup vs GTG | 1–2 days |
-| [[sources/gtg-shapley\|GTG-Shapley]] | CNN + MNIST/CIFAR-10, N=10 | Spearman ρ vs uniform MC | 1 day |
-| [[sources/principled-federated-data-valuation\|FedSV]] | CNN + MNIST/CIFAR-10 (IID + non-IID), N=10 | noisy-label / backdoor detection rate | 1 day |
-| [[sources/comfedsv\|ComFedSV]] | Synthetic + MNIST / FMNIST / CIFAR-10, N=100 (10 noisy) | Spearman vs ground-truth, Jaccard on noisy detection | 2–3 days |
+| Target | Original setup | Reproduction check (DONE) |
+|---|---|---|
+| [[sources/gtg-shapley\|GTG-Shapley]] | CNN + MNIST/CIFAR-10, N=10 | recon-SV cosine 0.99 vs exact (figure-only in paper → derived scalar) |
+| [[sources/principled-federated-data-valuation\|FedSV]] | CNN + MNIST/CIFAR-10 (IID + non-IID), N=10 | permutation-MC recon 0.998 |
+| [[sources/comfedsv\|ComFedSV]] | Synthetic / MNIST / FMNIST / CIFAR-10, N=100 (10 noisy) | Spearman {1.0, 0.96, 0.85, 0.84} (the one paper scalar); ALS completion 0.993 |
+| [[sources/ripple-shapley\|Ripple Shapley]] | CNN + MNIST/CIFAR-10, N=10 | **no ground-truth-SV metric exists** (Ripple reports task-driven robustness only); checked via noisy-detection AUROC 1.0 + runtime. **Speedup is 62× vs AFedSV+ / 49× vs FedSV — NOT "vs GTG"** (GTG is not a Ripple baseline). |
 
-Phase 0 output: validated baseline implementations + sample-level → client-level aggregation function (for Ripple LLM transfer).
+Phase 0 output: validated baseline implementations + sample-level → client-level aggregation function (for Ripple LLM transfer). Phase 0.5 then added the estimator + dual oracle (see [[flirds#Phase 0.5 findings — 2nd-order term & dual oracle (2026-06-03, CNN)|flirds]]).
 
 ## 11. Implementation skeleton (high-level)
 
@@ -166,7 +166,7 @@ flirds/
 │   ├── random_selection/       # top-K random
 │   ├── loss_heuristic/         # floor
 │   └── flirds_1st_only/        # self-ablation
-├── detection/                  # FLDetector / FoolsGold / FLTrust / STD-DAGMM
+├── detection/                  # FLDetector + STD-DAGMM (2, per 06-02)
 ├── data/
 │   ├── feddqc_bench/           # 5-domain instruction-tuning split
 │   └── super_natural_instructions/  # cross-device scale
@@ -181,7 +181,7 @@ flirds/
     ├── precision_guard.py      # fp32-eval enforcement
     ├── sanity_gates.py         # E=1, N=2 checks
     ├── ci_bootstrap.py         # 95% bootstrap
-    └── run_logger.py           # config + env + git SHA + W&B
+    └── run_logger.py           # config + env + git SHA + local run-dir (no W&B)
 ```
 
 ## 12. Pre-paper publication checklist
@@ -195,3 +195,15 @@ Before any number from this codebase enters the paper:
 - [ ] (a) and (b) oracle results separately reported (never silently averaged)
 - [ ] Code path separation between (a) and (b) verified
 - [ ] All experiment configs / env hashes / git SHAs archived
+
+## 13. LLM backend requirements (Phase 1, established 2026-06-04)
+
+Three LLM-specific musts the CNN track never hit — apply to **1B / 3B / 7B alike**. (Discovered building `backends/llm.py` + `fl/llm_server.py`; raw: [[raw/conversations/flirds/2026-06-04-phase1-llm-stage2]].)
+
+1. **`attn_implementation="eager"`** — SDPA / flash-attention kernels do **not** implement forward-mode AD, so the estimator's `jvp∘grad` HVP errors on them. Load every HF model with eager attention.
+2. **FL state keyed by `named_parameters()`** (`…lora_A.default.weight`), **not** `get_peft_model_state_dict` (`…lora_A.weight`) — `functional_call` / the estimator need the named key. Sync clients with `load_state_dict(strict=False)` (LoRA keys present, base absent → base untouched).
+3. **Clear the embedding require-grad hook** — `make_llm_loss` must call `get_input_embeddings()._forward_hooks.clear()` + set `use_cache=False`; SFTTrainer's gradient-checkpointing input-require-grad hook (`output.requires_grad_()`) is forbidden inside a functorch transform.
+
+Plus the precision split for the largest tier: **7B = bf16 train / fp32 eval** (separate the two; §1 already mandates fp32 eval + fp32 Flirds inner products).
+
+**TRL 1.x API notes** (self-built FL loop, OpenFedLLM trl-0.7 is reference-only): `tokenizer`→`processing_class`, `max_seq_length`→`SFTConfig.max_length`, forced plain SGD via `optimizer_cls_and_kwargs=(SGD, {lr, momentum:0})` constant-lr, `completion_only_loss=True` (no manual collator). Plain SGD (not Adam) per the locked momentum-0 convention (§ matches IRDS/Ripple Eq 1).
