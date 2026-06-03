@@ -18,6 +18,7 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 - **What's NOT decided yet**: 9 implementation-detail items (§3 below). These must be resolved before LLM-phase code is written, but most are deferrable past Phase 0.
 - **Next concrete action**: Phase 0 + Phase 0.5 complete (see the 2026-06-03 section below); next = **Phase 1 LLM port** (OpenFedLLM + LoRA).
 - **Phase 1 carry-over (2026-06-03 wiki session)**: before/while building the LLM data + estimator layers, honor the **two seams** (⚠ callout in §2 Phase 1) — (1) per-layer φ logging *observation-only*, never reweighted in the spine (INVARIANT recorded there); (2) pluggable corruptor registry (design + (a)/(b) fork in **§3.10**). Validation-set is already config-driven (seam 3, §3.10 note). Experiment plan was extended with 7 prior-art validation gaps (#12–18, all Phase 2/3) — see [[flirds#Added 2026-06-03 — prior-art validation gaps (Phase 2/3; none touch the Phase 1 core)|flirds §Added 2026-06-03]].
+- **Phase 1 progress (2026-06-03 session 2)**: estimator/oracle made **backend-agnostic** (`loss_fn(params,buffers)`+pkeys injection, `backends/cnn.py`) + **partial-participation-correct** (per-round FedAvg weight) + **per-layer φ logging** (seam 1, observation-only); all CNN gates bit-identical. OpenFedLLM cloned to gitignored `external/` + scouted (its fedavg weight == our per-round weight). **LLM stage 2** (`backends/llm.py` + FL loop self-build + data layer / seam 2) handed to the dedicated Phase 1 session — estimator/oracle need no further change. Raw: [[raw/conversations/flirds/2026-06-03-phase1-backend-abstraction]].
 
 ## ✅ Decisions resolved & corrections (2026-06-02 implementation kickoff)
 
@@ -35,7 +36,7 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 | FedDQC 비교 | matched-arm 미실시; **IRA 점수법만 baseline 으로 이식** |
 | LoRA (§3.2, D4) | r=16/α=32 시작 + **rank sweep {16,32,64,128}**(α=2r) — attribution fidelity vs task perf ablation |
 | 학습 hp (§3.3, D5) | lr 2e-5, batch 16, cosine — 시작값, sweep |
-| validation (§3.4, D6) | 도메인별 few-shot exemplar ~50–200/도메인(canonical bench dev), uniform 집계 |
+| validation (§3.4, D6) | server-side held-out, **도메인당 200 / 총 1000, uniform stratified**; canonical dev split 우선·없으면 fixed-seed stratified carve. IRDS-held-out 평균 loss 관점(few-shot 아님). 크기 1000 = 2¹⁰ coalition-subset 과 분리(혼동 차단) |
 | cross-device 세부 (§3.5, D7) | N=100/K=10/R=200, default **α=0.5**, α-sweep **{0, 0.01, 0.1, 0.5, 5.0}**(α=0 = domain-disjoint 포함). late-joiner 는 구조상 존재 → 논문 텍스트로 해석; extreme regime drop |
 | detection (D8) | **FLDetector**(noisy/poisoning) + **STD-DAGMM**(free-rider) 각 1개 (Phase 2) |
 | 협업 방식 | 설계 분기점마다 논의, 일상 구현은 후 리뷰. **커밋은 요청 시만** |
@@ -227,20 +228,11 @@ Each item: **what's open** → **current default / assumption** → **options** 
 
 ### 3.4 Validation set construction
 
-**Open**: how the server-side validation set is constituted; per-domain mix; sample count; sampling rule.
+**✅ Resolved (2026-06-03)** — server-side held-out, **integrated 도메인당 200 / 총 1000, uniform stratified**. 관점 = **IRDS-held-out**: 안정적 평균 val-loss 가 (b) oracle/estimator 의 utility 기준. LESS-style few-shot(~50)은 loss 추정이 noisy → Shapley utility 불안정 → 기각. **크기는 1000 고정** — 2¹⁰=1024 coalition-subset enumeration((b) oracle, §9)과 숫자를 분리해 "1024" 혼동을 원천 차단(이제 1024 는 subset 전용).
 
-**Default assumption** ([[flirds-protocol]] §8): "1024 examples per evaluation default; uniform domain coverage."
+**Sampling rule** (B2/B3; #16 validation-sensitivity 로 사후 검증): 도메인별 동일 200, 도메인 내 라벨/카테고리 stratified random (fixed seed). **canonical dev split 우선**(데이터셋 제작자 큐레이션이 대표성 보장); split 없는 데이터(Dolly 등)는 train 에서 category-stratified fixed-seed carve + carve 인덱스 기록(train/val 누수 방지). coreset/diversity 최적화는 안 함(over-engineering + 대표성-선별 자체가 또 다른 valuation 이라 순환).
 
-**Options**:
-- Single integrated validation set: 1024 examples drawn uniformly across 5 domains (~205 per domain). Used for all metrics.
-- Per-domain validation: 5 × 1024 = 5120 examples. Used for domain-attribution claims; integrated subset used for global Spearman.
-- Hybrid: 1024 integrated for headline metrics + per-domain 256 for domain attribution.
-
-**Decision criterion**: how much paper budget for domain-attribution experiments (Section 3 §6 currently doesn't isolate this as a separate experiment, but it's referenced in differentiator claims).
-
-**When**: before Phase 1.
-
-**Recommendation**: hybrid — 1024 integrated (uniform 5-domain) for all headline metrics + 256 per-domain (1280 total) for domain-attribution evaluation.
+**Domain-attribution (Phase 3, #7/#17)**: headline 1000 과 분리해 per-domain 256 validation 별도.
 
 ### 3.5 Cross-device setup detail
 

@@ -10,9 +10,9 @@ current_branch: "main"   # feature/flirds-phase-0 → main 병합 후 브랜치 
 baseline: ""         # 비교용 baseline 숫자 — Phase 0 재현 후 기입 (예: ComFedSV Spearman {1.0,0.96,0.85,0.84})
 training_status: idle  # idle | running(위치/GPU 명시) | complete | failed
 language: 한국어      # 스킬 출력 언어 — english | 한국어 (값은 영어 유지). 자세히: shared-references/output-language.md
-code_dir: codes      # 로컬 코드 디렉토리; OpenFedLLM 은 codes/base_repo/ 로 clone(LLM phase). CNN track 은 자체 시뮬레이터
+code_dir: codes      # 로컬 코드 디렉토리; OpenFedLLM 은 codes/external/ 참조 클론(reference-guided self-build, gitignored). CNN track 은 자체 시뮬레이터
 active_tasks: []     # 백그라운드 작업
-next: "Phase 0.5 완료(CNN): (b)in-run oracle + Flirds estimator(Hessian 1st/2nd) + faithful ripple + dual-oracle, 전 게이트 green → Phase 1: LLM 이식(OpenFedLLM+LoRA)"  # 다음 단계
+next: "Phase 1 진행(2026-06-03 sess2): estimator/oracle = partial-participation + per-layer 로깅(seam1) + loss_fn backend 추상화 완료(CNN 회귀 bit-identical), OpenFedLLM 정찰 완료 → 남음: LLM 2단계(backends/llm + FL루프 self-build + 5-domain data layer/seam2), 다른 세션에서. estimator/oracle 추가 변경 불필요"  # 다음 단계
 last_updated: "2026-06-03"  # YYYY-MM-DD
 ```
 

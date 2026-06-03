@@ -14,6 +14,7 @@ from scipy.stats import spearmanr
 from sklearn.metrics import roc_auc_score
 from torch.utils.data import DataLoader, TensorDataset
 
+from flirds.backends.cnn import make_cnn_loss
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.cnn import get_dataset, get_labels
 from flirds.fl.partition import dirichlet_partition
@@ -55,14 +56,15 @@ def main():
     test_loader = DataLoader(test, batch_size=256)
     vx = torch.stack([test[i][0] for i in range(512)]).to(device)
     vy = torch.tensor([test[i][1] for i in range(512)]).to(device)
+    loss_fn, pkeys = make_cnn_loss(LeNet5, vx, vy, device)
 
     _, logs = run_fedavg_logs(LeNet5, loaders, test_loader, rounds, E, lr,
                               device=device, seed=seed)
 
     print(f"(b) in-run oracle: exact Shapley over 2^{N}={2**N} coalitions ...")
-    oracle, _ = in_run_shapley(logs, N, LeNet5, vx, vy, device)
-    phi1, _ = flirds_values(logs, LeNet5, vx, vy, device, second_order=False)
-    phi2, _ = flirds_values(logs, LeNet5, vx, vy, device, second_order=True)
+    oracle, _ = in_run_shapley(logs, N, loss_fn, pkeys, device)
+    phi1, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=False)
+    phi2, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=True)
 
     print("Flirds estimator vs (b) oracle:")
     report("1st-only", phi1, oracle)

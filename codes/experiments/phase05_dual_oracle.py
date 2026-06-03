@@ -21,6 +21,7 @@ from scipy.stats import spearmanr
 from sklearn.metrics import roc_auc_score
 from torch.utils.data import DataLoader, TensorDataset
 
+from flirds.backends.cnn import make_cnn_loss
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.cnn import get_dataset, get_labels
 from flirds.fl.partition import dirichlet_partition
@@ -57,12 +58,13 @@ def main():
     vx = torch.stack([test[i][0] for i in range(512)]).to(device)
     vy = torch.tensor([test[i][1] for i in range(512)]).to(device)
     tl = DataLoader(test, batch_size=256)
+    loss_fn, pkeys = make_cnn_loss(LeNet5, vx, vy, device)
 
     # ---- dual-oracle cross-check (seed 0) ----
     loaders = build(N, noisy, n_per, seed=0)
     _, logs = run_fedavg_logs(LeNet5, loaders, tl, rounds, E, lr, device=device, seed=0)
-    phi_b, p = in_run_shapley(logs, N, LeNet5, vx, vy, device)
-    phi_e2, _ = flirds_values(logs, LeNet5, vx, vy, device, second_order=True)
+    phi_b, _ = in_run_shapley(logs, N, loss_fn, pkeys, device)
+    phi_e2, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=True)
     phi_a = exact_shapley(
         N, lambda S: subset_utility(LeNet5, loaders, tl, S, rounds, E, lr, device=device, seed=0))
 
@@ -78,14 +80,14 @@ def main():
           f"est={roc_auc_score(y, -ve):.3f}")
 
     # ---- gate: (b) Shapley efficiency ----
-    ug = in_run_utility(logs, range(N), LeNet5, vx, vy, {k: p[k] for k in range(N)}, device)
+    ug = in_run_utility(logs, range(N), loss_fn, pkeys, device)
     print("== gate: (b) Shapley efficiency  sum(phi)==U(grand)-U(empty) ==")
     print(f"  sum phi_b={phi_b.sum():.6f}  U(grand)={ug:.6f}  |diff|={abs(phi_b.sum() - ug):.2e}")
 
     # ---- gate: (b) Shapley symmetry (clients 0,1 identical, deterministic full-batch) ----
     ld_s = build(N, set(), n_per, seed=1, bs=n_per, dup=(0, 1))
     _, logs_s = run_fedavg_logs(LeNet5, ld_s, tl, rounds, 1, lr, device=device, seed=1)
-    phi_s, _ = in_run_shapley(logs_s, N, LeNet5, vx, vy, device)
+    phi_s, _ = in_run_shapley(logs_s, N, loss_fn, pkeys, device)
     print("== gate: (b) Shapley symmetry  phi_0==phi_1 (identical clients) ==")
     print(f"  phi_0={phi_s[0]:.6f}  phi_1={phi_s[1]:.6f}  |diff|={abs(phi_s[0] - phi_s[1]):.2e}")
 
@@ -95,9 +97,9 @@ def main():
     for sd in [42, 123, 2024]:
         ld = build(N, noisy, n_per, seed=sd)
         _, lg = run_fedavg_logs(LeNet5, ld, tl, rounds, E, lr, device=device, seed=sd)
-        b, _ = in_run_shapley(lg, N, LeNet5, vx, vy, device)
-        e1, _ = flirds_values(lg, LeNet5, vx, vy, device, second_order=False)
-        e2, _ = flirds_values(lg, LeNet5, vx, vy, device, second_order=True)
+        b, _ = in_run_shapley(lg, N, loss_fn, pkeys, device)
+        e1, _ = flirds_values(lg, loss_fn, pkeys, device, second_order=False)
+        e2, _ = flirds_values(lg, loss_fn, pkeys, device, second_order=True)
         s1.append(spearmanr(-e1, -b).correlation)
         s2.append(spearmanr(-e2, -b).correlation)
     print(f"  1st-only : {np.mean(s1):.3f} +- {np.std(s1):.3f}   (seeds {np.round(s1, 3)})")
@@ -108,8 +110,8 @@ def main():
                             device=device, seed=7)
     _, g2 = run_fedavg_logs(LeNet5, build(N, noisy, n_per, seed=7), tl, rounds, E, lr,
                             device=device, seed=7)
-    r1, _ = flirds_values(g1, LeNet5, vx, vy, device, second_order=True)
-    r2, _ = flirds_values(g2, LeNet5, vx, vy, device, second_order=True)
+    r1, _ = flirds_values(g1, loss_fn, pkeys, device, second_order=True)
+    r2, _ = flirds_values(g2, loss_fn, pkeys, device, second_order=True)
     print("== gate: reproducibility (same config+seed, cudnn-deterministic) ==")
     print(f"  max|phi_run1 - phi_run2| = {np.max(np.abs(r1 - r2)):.2e}")
 

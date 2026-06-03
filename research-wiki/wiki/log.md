@@ -374,3 +374,13 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - **Seam 3 — validation-set**: already config-driven (`flirds_values(..., val_x, val_y, ...)`), no hardcoding. No Phase-1 change beyond keeping it a parameter.
 - codes/flirds/ working tree clean (only wiki edits uncommitted); LLM data layer not yet written → Phase 1 at its start, no conflict.
 - No code written this session (Phase 1 implementation owned by the other session); all decisions distilled into the wiki for pickup.
+
+## [2026-06-03] conv | Phase 1 kickoff — estimator/oracle backend-agnostic refactor (CNN)
+
+- raw: [[raw/conversations/flirds/2026-06-03-phase1-backend-abstraction]]
+- built: estimator/oracle made Phase-1-ready — (i) **partial-participation-correct** (per-round FedAvg weight `p_k^r=n_k/Σ_{P_r}n`; the "no participation normalization" lock is a *separate* axis = don't divide φ by participation count, intact — review item (ii) resolved), (ii) **per-layer φ logging** (seam 1, `per_layer=False` default, observation-only, Σcomp==φ bit-identical), (iii) **backend-agnostic** via `loss_fn(params,buffers)`+pkeys injection (`backends/cnn.py:make_cnn_loss`; estimator/oracle no longer touch model/val/task). `exact_sv` (a-oracle) untouched.
+- validated: full-participation **bit-identical** (3-seed 1st+2nd 0.962 / 1st 0.924, efficiency/symmetry/repro 0); partial smoke (per_layer invariant 0, est≈(b) Spearman 1.0, efficiency 1.4e-17 — its noisy-AUROC 0 is a #14 cross-tier artifact, not a bug); phase05×4 regression green (N=2 relL2 3e-3, 2nd-order regime-dependence reproduced).
+- (A) OpenFedLLM scouted (cloned to gitignored `external/`, reference-guided): its fedavg aggregate weight **==** our per-round weight; Δw = `get_peft_model_state_dict` local − global. 3 backend seams only (loss_fn / pkeys=LoRA filter / val-batch).
+- decided: backend abstraction = **loss_fn closure injection**; LLM local train = **TRL SFTTrainer + forced SGD**.
+- distilled into: [[flirds-implementation-plan]] (status snapshot), root `CLAUDE.md` (next), MEMORY (stale "uncommitted" fixed; review (ii) resolved).
+- next (other session): **LLM stage 2** = `backends/llm.py` + LLM FL loop self-build + 5-domain data layer (seam 2 corruptor registry). estimator/oracle need no further change. Open: §3.4 val-mix (D6 ~200/domain rec); seam 2 (a)/(b) fork.

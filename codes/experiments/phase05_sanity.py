@@ -19,6 +19,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
+from flirds.backends.cnn import make_cnn_loss
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.cnn import get_dataset, get_labels
 from flirds.fl.partition import dirichlet_partition
@@ -52,6 +53,7 @@ def main():
     vx = torch.stack([test[i][0] for i in range(512)]).to(device)
     vy = torch.tensor([test[i][1] for i in range(512)]).to(device)
     tl = DataLoader(test, batch_size=256)
+    loss_fn, pkeys = make_cnn_loss(LeNet5, vx, vy, device)
 
     print("Gate E=1 (single full-batch GD step/round; relL2 vs (b) oracle):")
     print(f"  {'lr':>7} {'1st-only':>10} {'1st+2nd':>10}")
@@ -59,16 +61,16 @@ def main():
     loaders = make(N, 200, seed=0, full_batch=True)
     for lr in [0.2, 0.05, 0.01, 0.002]:
         _, logs = run_fedavg_logs(LeNet5, loaders, tl, rounds, 1, lr, device=device, seed=0)
-        oracle, _ = in_run_shapley(logs, N, LeNet5, vx, vy, device)
-        p1, _ = flirds_values(logs, LeNet5, vx, vy, device, second_order=False)
-        p2, _ = flirds_values(logs, LeNet5, vx, vy, device, second_order=True)
+        oracle, _ = in_run_shapley(logs, N, loss_fn, pkeys, device)
+        p1, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=False)
+        p2, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=True)
         print(f"  {lr:>7} {relL2(p1, oracle):>10.5f} {relL2(p2, oracle):>10.5f}")
 
     print("Gate N=2 (singleton; small step):")
     loaders = make(2, 200, seed=1, full_batch=True)
     _, logs = run_fedavg_logs(LeNet5, loaders, tl, 3, 1, 0.01, device=device, seed=1)
-    oracle, _ = in_run_shapley(logs, 2, LeNet5, vx, vy, device)
-    p2, _ = flirds_values(logs, LeNet5, vx, vy, device, second_order=True)
+    oracle, _ = in_run_shapley(logs, 2, loss_fn, pkeys, device)
+    p2, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=True)
     print("  oracle :", np.round(oracle, 6))
     print("  1st+2nd:", np.round(p2, 6))
     print("  relL2  :", round(relL2(p2, oracle), 5))

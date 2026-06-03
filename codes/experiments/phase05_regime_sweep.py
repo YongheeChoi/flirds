@@ -19,6 +19,7 @@ from scipy.stats import spearmanr
 from torch.func import functional_call, grad, jvp
 from torch.utils.data import DataLoader, TensorDataset
 
+from flirds.backends.cnn import make_cnn_loss
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.cnn import get_dataset, get_labels
 from flirds.fl.partition import dirichlet_partition
@@ -87,11 +88,12 @@ def main():
         vx = torch.stack([test[i][0] for i in range(512)]).to(device)
         vy = torch.tensor([test[i][1] for i in range(512)]).to(device)
         tl = DataLoader(test, batch_size=256)
+        loss_fn, pkeys = make_cnn_loss(mfn, vx, vy, device)
         ld = loaders_for(dataset, N, n_per, batch, noisy, seed)
         _, logs = run_fedavg_logs(mfn, ld, tl, rounds, E, lr, device=device, seed=seed)
-        oracle, _ = in_run_shapley(logs, N, mfn, vx, vy, device)
-        p1, _ = flirds_values(logs, mfn, vx, vy, device, second_order=False)
-        p2, _ = flirds_values(logs, mfn, vx, vy, device, second_order=True)
+        oracle, _ = in_run_shapley(logs, N, loss_fn, pkeys, device)
+        p1, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=False)
+        p2, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=True)
         c = curv_ratio(logs, mfn, vx, vy, device)
         s1, s2 = spearmanr(p1, oracle).correlation, spearmanr(p2, oracle).correlation
         r1 = np.linalg.norm(p1 - oracle) / np.linalg.norm(oracle)
