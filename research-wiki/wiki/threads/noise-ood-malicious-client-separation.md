@@ -2,8 +2,8 @@
 type: thread
 title: "Separating noise / OOD-good / malicious clients in FL"
 created: 2026-05-18
-updated: 2026-05-19
-sources: [feddqc, ripple-shapley, gtg-shapley, in-run-data-shapley, datainf, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, principled-federated-data-valuation, comfedsv]
+updated: 2026-06-03
+sources: [feddqc, ripple-shapley, gtg-shapley, in-run-data-shapley, datainf, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, principled-federated-data-valuation, comfedsv, mavericks-shapley-fl, fedtsv, fedif]
 tags: [flirds, federated-learning, robustness, byzantine, noisy-labels, free-rider, ood, limitation]
 ---
 
@@ -38,6 +38,10 @@ The two deferred signals are **not novel in isolation**: temporal consistency �
 > **Non-IID benign clients look identical to attackers under every similarity/distance/consistency detector.** [[sources/fldetector|FLDetector]] itself degrades sharply under heterogeneity (the server cannot predict a benign non-IID client's update — IID-only Theorem 1, Fig. 2 DACC drop); [[sources/foolsgold|FoolsGold]]/[[sources/fltrust|FLTrust]] "unnecessarily penalize many benign clients" (their own reported limitation — FoolsGold's Appendix-B RONI false-positives every honest non-IID client; FLTrust fails at high root class-bias). FedCC / FedCAP / FedDMC patch this only from the *robust-aggregation* side, and only as a binary keep/discard.
 
 This **is** the OOD-good problem under another name, and the literature's verdict is consistent: **no FL method separates "bad-different (noise/poison)" from "good-different (OOD-good)" inside a signed contribution value.** The robustness camp suppresses the non-IID signal (divergence = attack); the personalization/valuation camp preserves it (divergence = legitimate heterogeneity) but never resolves the sign ambiguity ([[sources/gtg-shapley|GTG-Shapley]], [[sources/ripple-shapley|Ripple Shapley]], [[sources/in-run-data-shapley|IRDS]] all compute signed value without addressing noise-vs-OOD-good). ⇒ Deferring it to a *characterized limitation* — rather than claiming a fragile solution — is the defensible choice, and it puts Flirds in good company (IRDS does the same with its own sign-ambiguity limit).
+
+**Direct evidence the valuation itself is biased against OOD-good clients**: [[sources/mavericks-shapley-fl|Huang et al. (Mavericks)]] prove + show empirically that federated Shapley *systematically under-credits* "maverick" clients (those holding a skewed distribution or the bulk of some class) — worst in early rounds via the decaying-LR mechanism. A maverick is exactly an OOD-good client by another name; their fix (FedEMD, Wasserstein-distance client selection) is a *selection* patch, not a sign-disambiguation inside the value. This is the cleanest citation that the under-valuation Flirds defers is a real, quantified property of FL-Shapley, not a hypothetical.
+
+**Newer direction-alignment detectors confirm the blind spot.** [[sources/fedif|FedIF]] (normalized $\Delta w$ · validation gradient) and [[sources/fedtsv|FedTSV]] (coalition-update vs. validation-reference proximity) both separate clients by *alignment with the validation descent direction*. FedIF reports an explicit **PGD blind spot**: a direction-aligned poison is scored as benign — i.e., a 1st-order direction signal cannot tell "good-different" from "bad-but-aligned." Open question whether Flirds' **2nd-order (curvature) term** can split direction-aligned-but-curvature-different updates where these 1st-order detectors cannot (candidate Phase-3 experiment).
 
 ## How this feeds the paper now
 

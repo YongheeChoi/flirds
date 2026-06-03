@@ -2,8 +2,8 @@
 type: concept
 title: Federated Shapley
 created: 2026-05-05
-updated: 2026-05-19
-sources: [principled-federated-data-valuation, comfedsv, gtg-shapley, game-of-gradients-sfedavg, shapleyfl, ripple-shapley, space-participant-amalgamation]
+updated: 2026-06-03
+sources: [principled-federated-data-valuation, comfedsv, gtg-shapley, game-of-gradients-sfedavg, shapleyfl, ripple-shapley, space-participant-amalgamation, fedtsv, fedif, shapfed]
 tags: [federated-learning, shapley, participant-valuation]
 ---
 
@@ -24,6 +24,15 @@ The origin is [[sources/principled-federated-data-valuation|Wang et al. 2020 (Fe
 | [[sources/shapleyfl|ShapleyFL]] (2023) | Surrogate federated Shapley aggregated across rounds; importance-sampling client selection; difference estimator | client | multi-round |
 | [[sources/space-participant-amalgamation|SPACE]] (2023) | Knowledge amalgamation + prototype-based evaluation in **one round** | client | single-round |
 | [[sources/ripple-shapley|Ripple Shapley]] (2026) | Drop term + Jacobian-chain ripple term; low-rank subspace | **sample** | single-run |
+| [[sources/fedtsv|FedTSV]] (2026) | Per-round SV over a **trajectory-alignment** utility (coalition update vs. validation-reference update) → adaptive aggregation weights | client | per-round → multi |
+
+### Aggregation-side relatives (federated contribution, not pure Shapley valuation)
+
+Two recent methods compute a federated *contribution score* and feed it back into aggregation rather than reporting a value — adjacent to this family but a different object:
+
+- [[sources/fedtsv|FedTSV]] (2026) — keeps Shapley axioms per round but its purpose is **adaptive weighting** (steers the trajectory), not credit allocation. Utility = bounded geometric proximity of the coalition-mean update to a server validation-reference update.
+- [[sources/fedif|FedIF]] (2025) — **abandons Shapley**; a 1st-order TracIn score (normalized $\Delta w_i$ · validation gradient) → EMA-smoothed adaptive weights. The closest federated *in-run influence on $\Delta w$* method besides Ripple, but 1st-order and CNN-only.
+- [[sources/shapfed|ShapFed]] (2024, IJCAI) — **class-specific** SV (CSSV) from last-layer per-class cosine alignment (no validation set, no coalition enumeration) → ShapFed-WA weighted aggregation + personalization. CNN classification. The recent SOTA the "AFedSV" (= [[sources/shapleyfl|ShapleyFL]]) comparator orbits.
 
 ## Cross-cutting choices
 

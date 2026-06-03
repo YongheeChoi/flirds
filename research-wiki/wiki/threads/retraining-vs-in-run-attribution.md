@@ -2,8 +2,8 @@
 type: thread
 title: Retraining-based vs. in-run / single-run attribution
 created: 2026-05-05
-updated: 2026-05-22
-sources: [in-run-data-shapley, data-banzhaf, ripple-shapley, asymmetric-data-shapley, koh-liang-influence-functions, ghorbani-zou-data-shapley, trak, grosse-llm-influence, less, mates, dsdm]
+updated: 2026-06-03
+sources: [in-run-data-shapley, data-banzhaf, ripple-shapley, asymmetric-data-shapley, koh-liang-influence-functions, ghorbani-zou-data-shapley, trak, grosse-llm-influence, less, mates, dsdm, data-value-embedding, accumulative-sgd-influence, fedif]
 tags: [attribution, scalability, semantics, model-vs-algorithm]
 ---
 
@@ -65,6 +65,9 @@ These can differ substantially under stochastic training — see [[threads/robus
 - [[sources/less]] — explicitly trajectory-summed TracIn-style IF over LoRA-warmup checkpoints. The aggregation is over a *fixed* realized trajectory, not over algorithm randomness.
 - [[sources/mates]] — locally-probed oracle IF: one-step retraining-from-current-state probe. Sits between in-run (uses the current $\mathcal{M}_t$, not a final-trained model) and retraining-based (the probe is a one-step retraining). The BERT-base influence model then *interpolates* the oracle across the corpus. Closest cousin to [[sources/in-run-data-shapley|IRDS]]'s per-step utility framing among the new 2024 papers.
 - [[sources/grosse-llm-influence]] — explicit reframing of IF target as the **[[concepts/proximal-bregman-response|PBRF]]**: *local* response around $\theta^s$, neither global retraining nor pure in-run accumulation. Argues the entire deep-net IF literature lives in this local-but-not-trajectory-summed regime.
+- [[sources/data-value-embedding|DVEmb]] — by the **same author group as [[sources/in-run-data-shapley|IRDS]]** (Wang, Song, Zou, Mittal, Jia); the LOO-flavored sibling of Shapley-flavored IRDS. Estimates **trajectory-specific LOO** influence via an unrolled product $\eta_{t_s}\prod_{k>t_s}(I-\eta_k H_k)\nabla\ell$ — a test-independent "data value embedding" that explicitly captures *data-ordering / curriculum* dependence over the realized path. The cleanest formalism for the cross-round propagation Flirds needs (centralized, SGD-only, per-sample gradients — not FL).
+- [[sources/accumulative-sgd-influence|ACC-SGD-IE]] — propagates per-step influence across the *whole* trajectory with accumulation; shows that summing disjoint per-window surrogates and ignoring cross-epoch compounding misranks examples. The centralized analogue of [[flirds|Flirds]]'s per-round Taylor accumulation.
+- [[sources/fedif|FedIF]] — the **federated** 1st-order instance: normalized client $\Delta w$ · validation gradient, single-round, no retraining. In-run on the realized FedAvg trajectory but strictly first-order (no curvature, no cross-round propagation).
 
 ## Where they meet
 
@@ -76,8 +79,11 @@ These can differ substantially under stochastic training — see [[threads/robus
 Koh & Liang (2017)         — gradient calculus, single trained model
 Ghorbani & Zou (2019)      — Shapley over retraining counterfactuals
 In-Run Shapley (2024)      — model-level Shapley via per-step Taylor expansion
+Data Value Embedding (2024)— trajectory-specific LOO; data-ordering dependence (IRDS authors)
 Asymmetric Data Shapley   — drops symmetry; anchors to realized trajectory (axiomatic)
 Ripple Shapley (2026)      — sample-level FL attribution via per-step + cross-round propagation
+ACC-SGD-IE (2025)          — cross-epoch influence accumulation along the SGD trajectory
+Flirds (in progress)       — client-level FL Shapley via per-round 1st+2nd Taylor on Δw_k
 ```
 
 ## Cost comparison (rough)

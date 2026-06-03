@@ -2,8 +2,8 @@
 type: thread
 title: Data selection for LLM training (centralized)
 created: 2026-05-22
-updated: 2026-05-22
-sources: [less, mates, dsdm, trak, in-run-data-shapley, grosse-llm-influence]
+updated: 2026-06-03
+sources: [less, mates, dsdm, trak, in-run-data-shapley, grosse-llm-influence, dpo-shapley-lm-arithmetic, fedhds]
 tags: [data-selection, llm, pretraining, instruction-tuning, target-task, compute-multiplier]
 ---
 
@@ -50,7 +50,8 @@ For [[flirds|Flirds]]'s comparison: these three are the **centralized analogues*
 - **Pretraining vs. instruction tuning** transfer: MATES/DsDm work on Pythia / GPT-2-class pretraining; LESS on instruction-tuning Llama-2/Mistral. Do the same selection signals work across both? LESS's pretraining evaluation in MATES' Table 1 underperforms — but LESS wasn't designed for pretraining.
 - **What if you select via Flirds-style per-step valuation in the centralized setting?** The wiki has [[sources/in-run-data-shapley|IRDS]] as the model-level Shapley method; it has not been compared directly against LESS/MATES/DsDm at LLM scale. A clean experiment would calibrate all three against each other on the same 1B pretraining target.
 - **Counterfactual fidelity ranking**: DsDm-via-TRAK has the strongest theoretical claim to counterfactual fidelity ([[concepts/linear-datamodeling-score|LDS]] benchmark). LESS / MATES don't measure against LDS. Open whether the linear-datamodel cleanliness translates to *operational* selection gains beyond what LESS/MATES achieve cheaper.
-- **Federated extension.** None of these have an obvious FL analog. Flirds is approaching this by going through valuation rather than selection; selection-side FL extensions (federated MATES with on-device BERT-base influence models?) are open and would be orthogonal future work.
+- **Federated extension.** The centralized trio (LESS/MATES/DsDm) has no obvious FL analog, but a federated *selection* line now exists: [[sources/fedhds|FedHDS]] (2025) selects a representative edge-data subset (intra+inter-client dedup) for federated instruction tuning — strong gains with <1.5% of data, but a *dedup/representativeness* signal that "overlooks data quality" (its own stated limitation). Flirds approaches the same goal through **valuation** rather than dedup; FedHDS is both a downstream consumer of a Flirds value and a selection baseline (and is Flirds' cross-device benchmark).
+- **LLM-FT Shapley without retraining.** [[sources/dpo-shapley-lm-arithmetic|DPO-Shapley]] (2025) computes Shapley for LLM fine-tuning by exploiting DPO loss algebra — a *valuation* (not selection) method that, like Flirds, targets efficient LLM-FT Shapley, but centralized + DPO-specific. The selection→valuation bridge here is direct: its per-example Shapley is itself a selection signal.
 - **Word-ordering brittleness** ([[sources/grosse-llm-influence|Grosse et al. 2023]] §5.3.4): IF at 52B shows near-zero influence when key phrases are reordered. LESS / MATES haven't been tested for this. If true broadly, the entire selection literature has a robustness hole around input rephrasings.
 
 ## Sources to ingest next

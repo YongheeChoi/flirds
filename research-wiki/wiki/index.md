@@ -21,7 +21,7 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[flirds-protocol]] — implementation & reporting protocol (precision, seeds, statistical reporting, oracle separation, sanity gates, run logging, Phase 0)
 - [[flirds-implementation-plan]] — **session handoff document**: start here when beginning an implementation session. 4-phase task ordering (Phase 0 CNN reproduction → Phase 1 Flirds at 1B → Phase 2 full baseline + 3B/7B → Phase 3 matrix execution); 9 still-open implementation decisions with options + criteria + recommendations; pre-implementation checklist; pointer table
 
-## Sources (30)
+## Sources (42)
 
 ### Foundations
 - [[sources/koh-liang-influence-functions]] — Koh & Liang 2017; foundational influence functions for ML.
@@ -44,6 +44,14 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[sources/mates]] — locally-probed one-step Δloss + BERT-base data-influence model; Pythia 410M–1B pretraining; backs the 1B-primary decision.
 - [[sources/dsdm]] — linear datamodels via [[sources/trak|TRAK]] + bottom-$k$ selection; the **Datamodels → LLM bridge**.
 
+### Influence / in-run attribution — recent (2025–2026, added 2026-06-03)
+- [[sources/data-value-embedding]] — DVEmb (Wang et al., IRDS authors): trajectory-specific LOO + data-ordering dependence; closest conceptual sibling to the in-run lineage.
+- [[sources/lorif]] — low-rank IF (SVD + Woodbury) scaling training-data attribution to 70B; closest LoRA+Hessian method-family neighbor.
+- [[sources/accumulative-sgd-influence]] — ACC-SGD-IE: cross-epoch trajectory accumulation of SGD influence; centralized analogue of Flirds' per-round accumulation.
+- [[sources/dpo-shapley-lm-arithmetic]] — efficient Shapley for LLM fine-tuning via DPO loss algebra (centralized); parallel solution to LLM-FT Shapley.
+- [[sources/do-influence-functions-work-on-llms]] — **negative result** (EMNLP 2025): IF performs poorly on LLMs (iHVP collapse, convergence, param≠behavior). To confront.
+- [[sources/influence-functions-fragile]] — Basu et al. (ICLR 2021): first-order IF estimates are fragile in deep nets. Caveat anchor.
+
 ### Federated learning — valuation
 - [[sources/principled-federated-data-valuation]] — **FedSV (Wang et al. 2020)**: the origin of federated Shapley; per-round, order-aware.
 - [[sources/comfedsv]] — ComFedSV: FedSV + low-rank utility-matrix completion fixes partial-participation asymmetry.
@@ -52,7 +60,13 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[sources/shapleyfl]] — surrogate federated Shapley with importance-sampling.
 - [[sources/space-participant-amalgamation]] — single-round federated Shapley via knowledge distillation.
 - [[sources/ripple-shapley]] — sample-level, single-run federated Shapley with Jacobian propagation.
+- [[sources/fedif]] — **FedIF (2025)**: 1st-order TracIn on client Δw → adaptive weights; closest federated in-run-on-Δw besides Ripple (CNN-only, no 2nd-order). [code](https://github.com/guojuntang/FedIF)
+- [[sources/fedtsv]] — **FedTSV (ECC 2026)**: per-round trajectory-Shapley → adaptive aggregation (fairness/robustness, not valuation).
+- [[sources/shapfed]] — **ShapFed (IJCAI 2024)**: class-specific SV via last-layer per-class cosine → weighted aggregation + personalization; resolves the "AFedSV" label (= [[sources/shapleyfl|ShapleyFL]]). [code](https://github.com/tnurbek/shapfed)
+- [[sources/shapley-volatility-fl]] — empirical instability of approximate FL-Shapley reward shares; motivates exact in-run oracle.
+- [[sources/mavericks-shapley-fl]] — FL-Shapley under-credits rare-distribution ("maverick") clients; backs the non-IID-bias limitation.
 - [[sources/feddqc]] — IRA-based on-device data quality control + hierarchical training.
+- [[sources/fedhds]] — federated data-efficient instruction tuning (dedup selection); Flirds cross-device benchmark + selection baseline.
 - [[sources/dice]] — influence cascade in fully decentralized learning.
 - [[sources/rfedlr]] — federated LoRA robustness (peripheral; stub).
 
@@ -163,7 +177,7 @@ Snapshot of `raw/`. Last refreshed: 2026-05-22.
 | `Rethinking Data Value_ Asymmetric Data Shapley_…md` | **ingested** → [[sources/asymmetric-data-shapley]] |
 | `What is Your Data Worth to GPT_…md` | **ingested** → [[sources/logix]] |
 
-30 of 31 raw papers ingested (+4 on 2026-05-22: Grosse et al. 2023, LESS, MATES, DsDm). ICA3PP book skipped as a non-source (per-chapter ingestion possible if Yonghee identifies a relevant chapter).
+42 of 43 raw papers ingested (+4 on 2026-05-22: Grosse et al. 2023, LESS, MATES, DsDm; +11 on 2026-06-03: FedTSV, FedIF, DVEmb, "Do IF Work on LLMs?", LoRIF, ACC-SGD-IE, DPO-Shapley, Shapley-Volatility-FL, Mavericks, IF-Fragile, FedHDS; +1 on 2026-06-03: ShapFed — descriptively-named PDFs in `raw/papers/flirds/`). ICA3PP book skipped as a non-source (per-chapter ingestion possible if Yonghee identifies a relevant chapter).
 
 ### Conversations — `raw/conversations/`
 

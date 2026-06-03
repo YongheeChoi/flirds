@@ -2,8 +2,8 @@
 type: concept
 title: Influence function
 created: 2026-05-05
-updated: 2026-05-22
-sources: [koh-liang-influence-functions, datainf, logix, in-run-data-shapley, dice, trak, ghorbani-zou-data-shapley, grosse-llm-influence, less, mates]
+updated: 2026-06-03
+sources: [koh-liang-influence-functions, datainf, logix, in-run-data-shapley, dice, trak, ghorbani-zou-data-shapley, grosse-llm-influence, less, mates, lorif, accumulative-sgd-influence, do-influence-functions-work-on-llms, influence-functions-fragile]
 tags: [attribution, gradient-based, hessian]
 ---
 
@@ -40,6 +40,8 @@ If $z$ "looks like" $z_{\text{te}}$ in the curvature-aware geometry $H^{-1}$, re
 | **LoGra / Logix** | Kronecker-structured projection ($O(\sqrt{nk})$) | [[sources/logix]] |
 | **LESS** | TracIn-style trajectory IF + **Adam preconditioner** + **cosine** + LoRA + JL projection | [[sources/less]] |
 | **MATES** | Locally probed one-step Δloss ($\propto -\mathcal{L}_r + \mathcal{L}_r$ after one-step update); distilled into BERT-base | [[sources/mates]] |
+| **LoRIF** | Low-rank gradient factors (SVD) + Woodbury → Hessian term in a low-dim subspace; 0.1B–70B | [[sources/lorif]] |
+| **ACC-SGD-IE** | Trajectory-propagated per-step influence with cross-epoch accumulation (no final-state $H^{-1}$) | [[sources/accumulative-sgd-influence]] |
 
 The trajectory: 2017 → "make the inverse-Hessian-vector product cheap"; 2023 → "make per-sample gradient computation cheap *too*" (via projection / closed form), because at LLM scale the gradient bottleneck dominates; 2024 → "**ditch the Hessian entirely** for trajectory-style or local-probing alternatives" (LESS, MATES), because IHVP-free signals are good enough for selection at LLM scale.
 
@@ -57,6 +59,8 @@ What modern IF approximates is **not** the classical retraining counterfactual b
 - **Hessian ill-conditioning**: requires damping; the choice of damping $\lambda$ matters.
 - **Cost at LLM scale**: even with damping + KFAC, naïve $O(nD^2)$ is too much for billion-parameter models. This drove the projection / closed-form variants.
 - **Stochasticity**: a single trained model gives a single set of influence values; the algorithm-level vs. model-level distinction ([[threads/retraining-vs-in-run-attribution]]) applies to IF too.
+- **Fragility in deep nets**: [[sources/influence-functions-fragile|Basu et al. 2021]] show first-order IF estimates degrade with depth, width, weight decay, and test-point choice — the point estimate is not to be trusted blindly.
+- **Failure at LLM scale**: [[sources/do-influence-functions-work-on-llms|Li et al. 2025]] (EMNLP) report IF "consistently perform poorly" on LLMs — iHVP collapse ($(H+\lambda I)^{-1}\!\approx\!\tfrac1\lambda I$ for LoRA-sparse Hessians, degenerating IF to a gradient dot product), uncertain fine-tuning convergence, and parameter-change ≠ behavior-change. A *forward* HVP ($H\!\cdot\!v$, as [[flirds|Flirds]] uses) sidesteps the inverse-collapse cause but not the behavior-mismatch one.
 
 ## Where it appears in the wiki
 
@@ -70,6 +74,10 @@ What modern IF approximates is **not** the classical retraining counterfactual b
 - [[sources/dice]] — extends the framework to decentralized settings with cascade dynamics.
 - [[sources/in-run-data-shapley]] — uses gradient calculus in the same spirit but reframes the target as Shapley.
 - [[sources/feddqc]] — uses [[sources/datainf|DataInf]] as a baseline and reports it failing on real-world FL data.
+- [[sources/lorif]] — low-rank + Woodbury IF scaling to 70B; closest method-family neighbor to Flirds' LoRA-Hessian machinery.
+- [[sources/accumulative-sgd-influence]] — trajectory-accumulated SGD influence; centralized analogue of Flirds' per-round accumulation.
+- [[sources/influence-functions-fragile]] — the "IF estimates are fragile in deep nets" caveat.
+- [[sources/do-influence-functions-work-on-llms]] — the LLM-scale negative result Flirds must confront.
 
 ## See also
 

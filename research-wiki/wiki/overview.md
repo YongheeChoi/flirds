@@ -2,8 +2,8 @@
 type: overview
 title: Overview
 created: 2026-05-05
-updated: 2026-05-22
-sources: [data-banzhaf, in-run-data-shapley, dice, datainf, du-shapley, asymmetric-data-shapley, logix, feddqc, koh-liang-influence-functions, ghorbani-zou-data-shapley, gtg-shapley, trak, game-of-gradients-sfedavg, shapleyfl, ripple-shapley, distributionally-robust-data-valuation, ipfl-model-market, space-participant-amalgamation, principled-federated-data-valuation, comfedsv, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, grosse-llm-influence, less, mates, dsdm]
+updated: 2026-06-03
+sources: [data-banzhaf, in-run-data-shapley, dice, datainf, du-shapley, asymmetric-data-shapley, logix, feddqc, koh-liang-influence-functions, ghorbani-zou-data-shapley, gtg-shapley, trak, game-of-gradients-sfedavg, shapleyfl, ripple-shapley, distributionally-robust-data-valuation, ipfl-model-market, space-participant-amalgamation, principled-federated-data-valuation, comfedsv, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, grosse-llm-influence, less, mates, dsdm, fedtsv, fedif, data-value-embedding, do-influence-functions-work-on-llms, lorif, accumulative-sgd-influence, dpo-shapley-lm-arithmetic, shapley-volatility-fl, mavericks-shapley-fl, influence-functions-fragile, fedhds, shapfed]
 tags: [synthesis]
 ---
 
@@ -11,7 +11,9 @@ tags: [synthesis]
 
 This wiki is the durable knowledge substrate for the **Flirds project** (*Federated Learning + In-Run Data Shapley*). Project-specific design state lives in [[flirds]]; this page is the broader field synthesis the project draws on. See [[index]] for the full catalog and [[log]] for chronological history.
 
-> **Coverage as of 2026-05-22**: 30 sources ingested. Added 2026-05-22 — the **upper-bound IF anchor** [[sources/grosse-llm-influence|Grosse et al. 2023]] (EK-FAC at 52B), the **closest centralized comparator to Flirds** [[sources/less|LESS]] (Xia et al. ICML'24), the **1B-pretraining backing** [[sources/mates|MATES]] (Yu et al. NeurIPS'24), and the **Datamodels → LLM bridge** [[sources/dsdm|DsDm]] (Engstrom et al. ICML'24). New threads: [[threads/data-selection-for-llms]]; new concepts: [[concepts/ekfac]], [[concepts/proximal-bregman-response]].
+> **Coverage as of 2026-06-03**: 42 sources ingested. Added 2026-05-22 — the **upper-bound IF anchor** [[sources/grosse-llm-influence|Grosse et al. 2023]] (EK-FAC at 52B), the **closest centralized comparator to Flirds** [[sources/less|LESS]] (Xia et al. ICML'24), the **1B-pretraining backing** [[sources/mates|MATES]] (Yu et al. NeurIPS'24), and the **Datamodels → LLM bridge** [[sources/dsdm|DsDm]] (Engstrom et al. ICML'24). New threads: [[threads/data-selection-for-llms]]; new concepts: [[concepts/ekfac]], [[concepts/proximal-bregman-response]].
+>
+> **Added 2026-06-03** (recent prior-work scan, 2025–2026): federated in-run/trajectory competitors [[sources/fedif|FedIF]] (1st-order TracIn on Δw) and [[sources/fedtsv|FedTSV]] (trajectory-SV → aggregation); in-run lineage sibling [[sources/data-value-embedding|DVEmb]] (IRDS authors); LLM-FT Shapley [[sources/dpo-shapley-lm-arithmetic|DPO-Shapley]]; scaling/method neighbors [[sources/lorif|LoRIF]], [[sources/accumulative-sgd-influence|ACC-SGD-IE]]; the negative results [[sources/do-influence-functions-work-on-llms|"Do IF Work on LLMs?"]] + [[sources/influence-functions-fragile|Basu et al.]]; FL-Shapley caveats [[sources/shapley-volatility-fl|volatility]] + [[sources/mavericks-shapley-fl|mavericks]]; and the federated-instruction-tuning benchmark [[sources/fedhds|FedHDS]]. **Novelty verdict: the full Flirds intersection remains unoccupied.**
 
 ## What problem are we solving?
 

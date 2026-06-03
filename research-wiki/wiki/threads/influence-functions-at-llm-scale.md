@@ -2,8 +2,8 @@
 type: thread
 title: Influence functions at LLM scale
 created: 2026-05-05
-updated: 2026-05-22
-sources: [koh-liang-influence-functions, datainf, logix, trak, in-run-data-shapley, feddqc, grosse-llm-influence, less, mates, dsdm]
+updated: 2026-06-03
+sources: [koh-liang-influence-functions, datainf, logix, trak, in-run-data-shapley, feddqc, grosse-llm-influence, less, mates, dsdm, lorif, accumulative-sgd-influence, do-influence-functions-work-on-llms, influence-functions-fragile]
 tags: [influence-function, llm-scale, gradient-projection, scalability]
 ---
 
@@ -37,6 +37,7 @@ At LLM scale, the second bottleneck dominates. Computing gradients for all train
 | **LESS** | trajectory IF (TracIn-style; no Hessian) + **Adam-Γ + cosine** | LoRA + JL random projection → 8192-dim reusable datastore | Llama-2-13B, Mistral-7B | [[sources/less]] |
 | **MATES** | locally-probed one-step Δloss → **distilled into BERT-base** | inference with BERT-base (110M) over the corpus | Pythia 1B | [[sources/mates]] |
 | **DsDm** | linear datamodel via TRAK (counterfactual fidelity) | 125M proxy training | 1.3B | [[sources/dsdm]] |
+| **LoRIF** | low-rank gradient factors + Woodbury → Hessian term in a low-dim subspace | rank-$c$ per-example gradient factors (SVD) | 0.1B–70B | [[sources/lorif]] |
 
 ### Key insights
 
@@ -49,6 +50,23 @@ At LLM scale, the second bottleneck dominates. Computing gradients for all train
 ### What modern IF actually computes
 
 [[concepts/proximal-bregman-response|PBRF]] (Bae et al. 2022a) reinterprets every modern IF method on a non-convex deep net as approximating a **local response around $\theta^s$**, not the global retraining counterfactual. [[sources/grosse-llm-influence|Grosse et al. 2023]] adopt this explicitly. Implication: the entire LLM-scale IF literature is doing *local* attribution; comparing it to retraining-based Shapley requires care.
+
+## Does IF even work at LLM scale? (the negative results)
+
+Two papers temper the optimism and matter directly for any LLM-scale gradient attribution (including [[flirds|Flirds]]):
+
+- [[sources/influence-functions-fragile|Basu et al. 2021]] ("IF in Deep Learning Are Fragile") — first-order IF estimates degrade with network **depth/width, weight decay, and test-point choice** in deep non-convex nets; even LOO ground truth is noisy at ImageNet scale. The classic "don't trust the point estimate" warning.
+- [[sources/do-influence-functions-work-on-llms|Li et al. 2025]] (EMNLP Findings, "Do IF Work on LLMs?") — systematic **negative** result: IF "consistently perform poorly" on LLMs. Three causes: (1) **iHVP collapse** — for low-rank/sparse (esp. LoRA) Hessians $(H+\lambda I)^{-1}\!\approx\!\tfrac1\lambda I$, so IF degenerates to a plain gradient dot product; (2) **uncertain fine-tuning convergence** (no $\theta^*$); (3) **parameter-change ≠ behavior-change** (a ~90% ASR swing can leave $\|\Delta\theta\|$ tiny).
+
+**Why this is survivable for Flirds**: Flirds uses a *forward* HVP $H\!\cdot\!\Delta w$, never $H^{-1}$ — cause (1)'s inverse-collapse pathology does not apply. It is *in-run* (sidesteps cause 2's converged-$\theta^*$ requirement) and *validation-loss-anchored* (the remedy cause 3 asks for). But cause (3) remains a genuine risk for backdoor/behavior-level claims (Flirds Phase 3), and the rebuttal is so far only at CNN scale. These two are the caveats to confront head-on in the paper rather than wave away.
+
+## Accumulating along the realized trajectory
+
+A parallel line keeps the gradient but **accumulates contributions along the actual optimization path** instead of inverting a final-state Hessian:
+
+- [[sources/in-run-data-shapley|In-Run Data Shapley]] — per-step Taylor-expanded Shapley, accumulated during training.
+- [[sources/accumulative-sgd-influence|ACC-SGD-IE]] (2025) — propagates a per-step influence across the *whole* trajectory with accumulation, fixing the cross-epoch compounding that per-window-summing surrogates ignore. The centralized analogue of [[flirds|Flirds]]'s per-round Taylor accumulation.
+- **LoRIF** (2026) — the closest *method-family* neighbor on the LoRA+Hessian axis: low-rank gradient factors + Woodbury make the Hessian term tractable to 70B. Centralized per-example IF (not FL, not client-Shapley), but its Woodbury trick is importable if Flirds ever needs to scale the HVP.
 
 ## The damping = spectral sparsification observation
 

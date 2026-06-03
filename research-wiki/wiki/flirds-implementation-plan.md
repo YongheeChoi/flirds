@@ -17,6 +17,7 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 - **Wiki**: 30 sources ingested, 11 threads, 27 concepts. No paper-blocking ingest gaps.
 - **What's NOT decided yet**: 9 implementation-detail items (§3 below). These must be resolved before LLM-phase code is written, but most are deferrable past Phase 0.
 - **Next concrete action**: Phase 0 + Phase 0.5 complete (see the 2026-06-03 section below); next = **Phase 1 LLM port** (OpenFedLLM + LoRA).
+- **Phase 1 carry-over (2026-06-03 wiki session)**: before/while building the LLM data + estimator layers, honor the **two seams** (⚠ callout in §2 Phase 1) — (1) per-layer φ logging *observation-only*, never reweighted in the spine (INVARIANT recorded there); (2) pluggable corruptor registry (design + (a)/(b) fork in **§3.10**). Validation-set is already config-driven (seam 3, §3.10 note). Experiment plan was extended with 7 prior-art validation gaps (#12–18, all Phase 2/3) — see [[flirds#Added 2026-06-03 — prior-art validation gaps (Phase 2/3; none touch the Phase 1 core)|flirds §Added 2026-06-03]].
 
 ## ✅ Decisions resolved & corrections (2026-06-02 implementation kickoff)
 
@@ -104,18 +105,26 @@ Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phas
 **Goal**: a working Flirds estimator on Llama-3.2-1B-Instruct, both oracles operational at N=10 cross-silo, vanilla FedAvg upper-bound running. All sanity gates green.
 
 **Tasks** (sequence; later items depend on earlier):
-1. Adapt Phase 0 FL simulator to LLM + LoRA + bf16 (with fp32 eval guard from [[flirds-protocol]] §1).
+1. Adapt Phase 0 FL simulator to LLM + LoRA + bf16 (with fp32 eval guard from [[flirds-protocol]] §1). **Keep the data-layer client-corruptor / partitioner as a pluggable registry** (mirror the Phase 0.5 CNN data layer): noisy / free-rider now; backdoor / PGD / maverick / duplicate added in Phase 2/3 without touching the FL loop. ← **Seam 2** (see callout).
 2. Implement Flirds estimator (`core/flirds_estimator.py` from [[flirds-protocol]] §11):
    - 1st-order: $-\nabla\ell(w^r, z^{val}) \cdot \Delta w_k$
    - 2nd-order: $\tfrac{1}{2}\Delta w_k^\top H^{(val)}(w^r) \cdot \Delta W^{(r)}$ via 1 HVP on LoRA params + $N$ dot products
-   - Per-round + total $\phi_k$ aggregator + per-round per-client raw logger
+   - Per-round + total $\phi_k$ aggregator + per-round **× per-client × per-layer** raw logger — store the **per-layer dot-product components**, not just the scalar $\phi_k$ (needed by ② decomposition / Q2-layer-wise / PGD-#13 / qualitative-#17). ← **Seam 1** (see callout).
 3. Implement (b) IRDS-定 in-run oracle (cross-silo exact, 1024 subset enumeration). Separate code path from Flirds estimator.
 4. Implement (a) retrain SV oracle at N=5 (32 retrain runs). Separate code path from (b).
 5. Vanilla FedAvg (all clients, no selection) + Random-selection FedAvg baselines.
 6. **Sanity gates green** ([[flirds-protocol]] §5): $E{=}1$ ⇒ residual ≈ 0; $N{=}2$ ⇒ singleton SV matches client value; reproducibility (same config + seed → bitwise identical at fp32).
 7. **First clean Flirds run on Llama-3.2-1B-Instruct** with all 3 seeds, all 4 metrics (selection convergence / task acc / F1 / noisy-AUROC) logged.
 
-**Output**: working Flirds at 1B + dual oracle (a)+(b) + 2 training baselines + reproducible per-run logging via W&B. **No paper claim yet** — just infrastructure validated.
+**Output**: working Flirds at 1B + dual oracle (a)+(b) + 2 training baselines + reproducible per-run logging (local run-dir, no W&B per 06-02). **No paper claim yet** — just infrastructure validated.
+
+> **⚠ Phase 1 seams (added 2026-06-03 — honor now; cheap now / costly to retrofit).** The 7 experiments added to [[flirds#Added 2026-06-03 — prior-art validation gaps (Phase 2/3; none touch the Phase 1 core)|flirds §Added 2026-06-03]] are all Phase 2/3 (data/eval-layer) and do **not** expand Phase 1 scope. But two depend on Phase-1 *core* decisions being made right:
+> 1. **φ logging granularity** = per-round × per-client × **per-layer** (keep the per-layer dot-product components). Scalar-$\phi_k$-only forces an estimator re-run for ② / Q2-layer-wise / PGD / qualitative.
+> 2. **Pluggable client-corruptor / partitioner** in the data layer. Hardcoded noisy/free-rider forces a refactor when backdoor (#12) / PGD (#13) / maverick (#15) / duplicate (#14) arrive.
+>
+> Both are additive seams the Phase 0.5 CNN track already has — just carry the shape into the LLM data + estimator layers. Nothing else in Phase 1 changes.
+>
+> **⚠⚠ INVARIANT for seam 1 (Yonghee, 2026-06-03) — per-layer φ is OBSERVATION-ONLY; it must NOT break the IRDS proof.** In `core/flirds_estimator.py`, $\phi_k$ is *already* a sum over layers (`sum((g[n]*dw[k][n]).sum() for n in pkeys)`). Per-layer logging = keep those summands instead of collapsing early; the returned $\phi_k$ stays `sum(components)`, bit-identical. The default/spine estimator **never reweights** per-layer (no $\mathrm{diag}(c_\ell)$, no layer selection) — that would break the granularity-invariance lemma + Proposition 1. Per-layer components are a **read-only diagnostic array** consumed *only* by ② characterization (#7) and the qualitative case study (#17). **The one intentional exception** is the locked **Q2 layer-wise *variant* (#6)** — a separate, clearly-labeled ablation arm that deliberately reweights to *show* the lemma break; it is never the headline method. Implementation: add per-layer logging as a backward-compatible option (e.g. `per_layer=False` returning the extra array) so the Phase 0.5 callers are untouched.
 
 ### Phase 2 — Full baseline set + (a) retrain SV expansion + 3B/7B scale up
 
@@ -126,10 +135,11 @@ Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phas
 2. Implement Data Banzhaf in FL via semivalue library (`pyDVL` or `OpenDataVal`). Adapt for FL granularity.
 3. Vendor ShapleyFL from `ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value` — adapt for LLM+LoRA.
 4. Implement loss-heuristic + Flirds-1st-only (trivial; sanity).
-5. Implement 4 detection baselines (FLDetector / FoolsGold / FLTrust / STD-DAGMM) for noisy / free-rider AUROC table only.
+5. Implement detection baselines for the noisy / free-rider AUROC table. **06-02 decision narrowed this to 2: [[sources/fldetector|FLDetector]] (noisy/poisoning) + [[sources/free-riders-fl-std-dagmm|STD-DAGMM]] (free-rider)** — not the 05-27 set of 4.
 6. Expand (a) retrain SV: N=10 at 1B (~3.5 days B200×4), N=5 at 3B (~45 min). 7B (a) skipped per Section 3 lock.
 7. Cross-device MC for (b): N=100, K=10, M=5000–10000 samples (precision threshold from [[flirds-protocol]] §3.2). ComFedSV becomes valid baseline here.
 8. Scale Flirds + all baselines to Llama-3.2-3B-Instruct and Llama-2-7B.
+9. **(2026-06-03 add) Client-corruptor extensions** via the pluggable data layer: **backdoor / model-replacement** (#12) + **clean-only partition** for the skyline (#18). No FL-loop change.
 
 **Output**: full baseline + dual oracle matrix operational at all 3 scales. Ready for experiment execution.
 
@@ -145,10 +155,18 @@ Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phas
 5. **Non-IID bias quantification** (§3 item #9): extracted from #1 data (no extra runs).
 6. **7B FedDQC-comparable instruction-tuning bench** (§3 item #10): 5-domain split, direct comparison to FedDQC + LESS.
 7. **Ripple theoretical reduction** (§3 item #4 bonus): under LoRA + 2-term Taylor, attempt the drop+ripple → Flirds 1st+2nd specialization proof. If closes → Proposition. If not → related-work differentiator paragraph.
+8. **(2026-06-03 adds — prior-art validation gaps, §3 items #12–18):**
+   - **PGD / direction-aligned poison** (#13) — stress regime; pair with Flirds-1st-only to test whether the 2nd-order term separates what [[sources/fedif|FedIF]]'s 1st-order cannot. *Differentiation experiment.* (scope to 1B+7B if budget-bound)
+   - **Partial-participation fairness** (#14) — duplicate-client test on cross-device; validates the "no participation normalization" lock.
+   - **Maverick / rare-domain** (#15) — sole-domain-holder client; sharp form of the OOD-good limitation.
+   - **Validation-set sensitivity** (#16) — size × distribution ablation, post-hoc re-eval (re-added from conv3 §3).
+   - **Backdoor detection eval** (#12) — AUROC column alongside noisy/free-rider (corruptor built in Phase 2 #9).
+   - **Qualitative attribution case study** (#17) — domain-val → which client credited; post-hoc on logged per-layer φ, near-free.
+   - **Clean-data skyline** (#18) — upper bound for detection (partition built in Phase 2 #9).
 
 **Output**: all numbers for the paper, with reproducibility metadata. Hand off to `/auto-review-loop` / `/paper-writing`.
 
-## 3. Open implementation decisions (9 items — resolve as you encounter)
+## 3. Open implementation decisions (3.1–3.8 resolved 2026-06-02; 3.9 + 3.10 pending — resolve as you encounter)
 
 Each item: **what's open** → **current default / assumption** → **options** → **decision criterion** → **when**.
 
@@ -285,6 +303,21 @@ Each item: **what's open** → **current default / assumption** → **options** 
 **Status**: ingested but no code-availability check done yet for these 4. Need a quick search at Phase 2 start.
 
 **Recommendation**: at Phase 2 start, search GitHub for each of the 4. If code exists, vendor + adapt to LoRA gradient. If not, reproduce (each is small enough — these are robustness detectors, not full Shapley estimators).
+
+### 3.10 Pluggable client-corruptor registry (seam 2 — DECISION PENDING, 2026-06-03)
+
+**Open**: implement the corruptor/partitioner registry now (CNN side) vs. while building the LLM data layer. Currently corruption is **inline** in `experiments/phase05_*.py:build()` (`noisy={4,5}` + `if c in noisy:` label-flip) — the hardcoding seam 2 fixes.
+
+**Design (agreed, code-ready)**: `flirds/data/corruptions.py` with a name→callable registry.
+- sample-level: `fn(samples, rng, **cfg) -> samples` (label_flip, backdoor; LLM: answer-swap, trigger-token)
+- update-level: `fn(delta_w, rng, **cfg) -> delta_w`, hooked in `fl/client.py` (free_rider)
+- partition-level: helpers in `fl/partition.py` (maverick = sole-domain holder; duplicate = identical-data client)
+- a run-config maps `{client_idx: corruptor_name}` → removes `noisy={4,5}` hardcoding. CNN + LLM `build()` both call it.
+- **Backend split**: free_rider / maverick / duplicate are representation-agnostic (implement now); label_flip / backdoor / pgd need a per-backend body (CNN now, LLM when the data layer's instruction-response format is fixed).
+
+**The fork**: (a) implement registry + CNN corruptors + surgical phase05 refactor now (keep `build()` signature, swap internals — phase05 stays green); (b) wire it while building the LLM data layer (folds into the Phase-1 data-format decision). Claude recommended (a) — registry+CNN is an enumerated (non-speculative) need; LLM corruptors fill in later. **Deferred to the Phase 1 session to decide + implement** (per `codes/CLAUDE.md`: surgical, no speculative abstraction).
+
+> **Validation-set (seam 3 / §3.4)**: already config-driven — `flirds_values(logs, model_fn, val_x, val_y, ...)` takes validation as args, no hardcoding. #16 (validation sensitivity) just re-calls with different `val_x/val_y`. No Phase-1 change needed beyond keeping it a parameter.
 
 ## 4. Next-session starter prompt
 

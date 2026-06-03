@@ -3,7 +3,7 @@ type: project
 title: "Flirds — Federated Learning + In-Run Data Shapley"
 created: 2026-05-05
 updated: 2026-06-03
-sources: [in-run-data-shapley, principled-federated-data-valuation, comfedsv, gtg-shapley, shapleyfl, space-participant-amalgamation, ripple-shapley, game-of-gradients-sfedavg, data-banzhaf, datainf, logix, asymmetric-data-shapley, distributionally-robust-data-valuation, dice, feddqc, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, less, grosse-llm-influence, mates, dsdm]
+sources: [in-run-data-shapley, principled-federated-data-valuation, comfedsv, gtg-shapley, shapleyfl, space-participant-amalgamation, ripple-shapley, game-of-gradients-sfedavg, data-banzhaf, datainf, logix, asymmetric-data-shapley, distributionally-robust-data-valuation, dice, feddqc, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, less, grosse-llm-influence, mates, dsdm, fedtsv, fedif, data-value-embedding, do-influence-functions-work-on-llms, lorif, accumulative-sgd-influence, dpo-shapley-lm-arithmetic, shapley-volatility-fl, mavericks-shapley-fl, influence-functions-fragile, fedhds, shapfed]
 tags: [flirds, project-state, design-decisions]
 ---
 
@@ -138,7 +138,19 @@ Each was open in the original conversation set; all closed in the 2026-05-19 →
 
 10. **7B FedDQC-comparable instruction-tuning bench.** Llama-2-7B + LoRA + 5-domain client split (medical / legal / code / math / general). Direct comparison to [[sources/feddqc|FedDQC]] (only FL+LLM precedent in wiki) and [[sources/less|LESS]] (closest centralized analog, same model). Full experiment matrix (see below) at 7B as at 1B/3B.
 
-## Experiment matrix (locked 2026-05-27)
+### Added 2026-06-03 — prior-art validation gaps (Phase 2/3; none touch the Phase 1 core)
+
+Sourced from a pass over what FL/valuation/LLM prior work validates that the plan above did not yet cover. All are data-layer / eval-layer additions; the estimator/oracle are corruption-agnostic. The two Phase-1 *seams* these require (per-layer φ logging; pluggable client-corruptor interface) are recorded in [[flirds-implementation-plan]].
+
+12. **Backdoor / model-replacement client detection** (axis: detection). New client-corruption type (trigger injection / scaled model-replacement); report detection AUROC alongside noisy + free-rider. Precedent: [[sources/principled-federated-data-valuation|FedSV]], [[sources/shapleyfl|ShapleyFL]] (both evaluate backdoor separately from noisy). Was deferred to "Phase 3 task-driven verify" in Phase 0.5 — now an explicit detection-table column. Phase 2 (corruptor) + Phase 3 (eval).
+13. **PGD / direction-aligned poison stress** (axis: robustness + **differentiation**). Direction-preserving poison where a 1st-order direction signal cannot flag the attack — [[sources/fedif|FedIF]]'s documented blind spot. Test whether Flirds' **2nd-order (curvature) term** separates direction-aligned-but-curvature-different updates; pair with the **Flirds-1st-only** ablation. This is the experiment that can directly demonstrate "2nd-order > 1st-order" on a robustness axis (flagship-candidate; honest shared-limitation fallback if it doesn't win). Phase 3, stress regimes.
+14. **Partial-participation fairness (duplicate-client)** (axis: fairness). Inject identical-data clients under cross-device sampling; check (i) same participation tier → equal value, (ii) cross-tier gap attributable to participation, not quality. **Validates the locked "no participation normalization, rank-within-tier" decision.** Precedent: [[sources/comfedsv|ComFedSV]] (its signature symmetry-under-partial-participation test). Phase 3, cross-device.
+15. **Maverick / rare-domain client test** (axis: limitation). One client = sole holder of a domain/class → is it correctly valued or under-valued? The sharp form of the OOD-good characterized limitation. Precedent: [[sources/mavericks-shapley-fl|Mavericks]] (proves FL-Shapley under-credits rare-distribution clients). Phase 3, characterization.
+16. **Validation-set sensitivity ablation** (axis: ablation; **re-added from conversation 3 §3**, dropped in the 05-27 lock). Validation **size** {small/med/large} × **distribution** {uniform/biased}. Shows robustness (or not) of the locked "server-side uniform domain coverage" choice. Precedent: [[sources/mates|MATES]] (reference-task choice changes gains). Phase 3, post-hoc (re-eval only).
+17. **Qualitative attribution case study** (axis: persuasion). For a domain-specific validation set, which client does Flirds credit (sanity: medical-val → medical-client)? Precedent: [[sources/datainf|DataInf]], [[sources/grosse-llm-influence|Grosse et al.]] (qualitative retrieval). Phase 3, post-hoc on logged per-client φ, near-free.
+18. **Clean-data skyline** (axis: detection upper bound). Train on clean-only clients as the upper bound for the detection experiments (vs. Full FedAvg which includes corrupted clients). Precedent: [[sources/feddqc|FedDQC]] (full-clean-data oracle). Phase 2/3.
+
+## Experiment matrix (locked 2026-05-27; extended 2026-06-03)
 
 | | 1B (Llama-3.2-1B-Instruct) | 3B (Llama-3.2-3B-Instruct) | 7B (Llama-2-7B) |
 |---|---|---|---|
@@ -149,10 +161,16 @@ Each was open in the original conversation set; all closed in the 2026-05-19 →
 | Baseline run set (10) | full | full | full |
 | α-sweep × E-sweep (16 cell) | full | full | full |
 | Q2 variants (3×3) | full | full | full |
-| Stress regimes | full | full | full |
+| Stress regimes (incl. **PGD #13**) | full | full | full |
 | ②③ characterization | ✅ | ✅ | ✅ |
+| **Backdoor detection (#12)** | ✅ | ✅ | ✅ |
+| **Partial-participation fairness (#14)** | cross-device | cross-device | cross-device |
+| **Maverick / rare-domain (#15)** | ✅ | ✅ | ✅ |
+| **Validation sensitivity (#16)** | ✅ (post-hoc) | ✅ (post-hoc) | ✅ (post-hoc) |
+| **Qualitative case study (#17)** | ✅ (post-hoc) | — | ✅ (post-hoc) |
+| **Clean-data skyline (#18)** | ✅ | ✅ | ✅ |
 
-Estimated compute (B200 × 4): 1B = sub-week, 3B = 1 week, 7B = ~1 week. Phase 0 (CNN sanity) = 5–7 days B200 × 1, prior to LLM phase.
+Estimated compute (B200 × 4): 1B = sub-week, 3B = 1 week, 7B = ~1 week. Phase 0 (CNN sanity) = 5–7 days B200 × 1, prior to LLM phase. The 2026-06-03 additions (#12–18) are mostly config-level on existing harnesses (post-hoc re-eval or one extra corruptor/partition per run), not new sweeps; the only non-trivial compute is PGD (#13) — scope to 1B+7B if budget-bound.
 
 ## Baseline selection rationale
 
@@ -182,6 +200,8 @@ Estimated compute (B200 × 4): 1B = sub-week, 3B = 1 week, 7B = ~1 week. Phase 0
 | [[sources/gtg-shapley\|GTG-Shapley]] | client | 0 (sub-model reconstruction) | trajectory-faithful via gradient logs | guided MC; multi-round |
 | [[sources/shapleyfl\|ShapleyFL]] | client | 0 | surrogate per-round | importance-sampling client selection |
 | [[sources/ripple-shapley\|Ripple Shapley]] | **sample** | 0 (logs) | yes (Jacobian propagation) | the most direct competitor for "in-run, single-run, FL" |
+| [[sources/fedif\|FedIF]] (2025) | client | 0 (logs) | yes (1st-order TracIn on $\Delta w$) | **closest federated in-run-on-$\Delta w$ besides Ripple**; 1st-order only, CNN-only, alters aggregation |
+| [[sources/fedtsv\|FedTSV]] (2026) | client | + server val-training pass/round | yes (trajectory-alignment utility) | per-round SV → adaptive weights (fairness/aggregation, not valuation); no Hessian/closed-form |
 | **Flirds** (this project) | **client** | **0** | **yes** (closed-form 1st+2nd Taylor) | LoRA + 2nd-order + zero communication overhead |
 
 Closest comparator: [[sources/ripple-shapley|Ripple Shapley]]. **Flirds differs**:
@@ -189,6 +209,20 @@ Closest comparator: [[sources/ripple-shapley|Ripple Shapley]]. **Flirds differs*
 - 1st+2nd Taylor closed-form rather than recursive Jacobian-chain low-rank approximation;
 - LoRA explicit in design;
 - explicit 2nd-order client-interaction term (argued in §4 to be load-bearing in non-IID FL).
+
+### Recent prior-work scan (2026-06-03) — novelty intact
+
+A fresh literature sweep (4 internal search agents + an external GPT survey, cross-checked) confirms: **no single paper does the full intersection** (client-level + in-run + closed-form 1st/2nd Taylor + HVP interaction + zero-extra-comm + LoRA/LLM). The novelty was never "first federated in-run" (foreclosed by [[sources/ripple-shapley|Ripple Shapley]] already) — it is the *intersection*, and that holds. Newly ingested neighbors and how Flirds stays distinct:
+
+- **Federated in-run competitors** — [[sources/fedif|FedIF]] (1st-order TracIn → weights, CNN-only) and [[sources/fedtsv|FedTSV]] (trajectory-SV → adaptive aggregation, ECC'26) both occupy the federated-trajectory space but are **1st-order and aggregation-side**. The gap they leave (2nd-order client-interaction term, client-level *Shapley*, LoRA-LLM, post-hoc valuation on vanilla FedAvg) **is** Flirds' contribution. FedIF is the key "why isn't 1st-order enough?" baseline.
+- **In-run lineage sibling** — [[sources/data-value-embedding|DVEmb]] (same authors as IRDS) is the closest conceptual relative (trajectory-specific LOO, data-ordering dependence); centralized, per-sample, not FL → positioning citation, not a scoop.
+- **LLM-FT Shapley neighbor** — [[sources/dpo-shapley-lm-arithmetic|DPO-Shapley]] solves "efficient Shapley for LLM fine-tuning" via DPO algebra (centralized, DPO-specific) — a parallel solution to a related headline; differentiate on FL + objective-agnostic Taylor.
+- **Negative results to confront** — [[sources/do-influence-functions-work-on-llms|"Do IF Work on LLMs?"]] (EMNLP'25) + [[sources/influence-functions-fragile|Basu et al.]]: IF fails/fragile at scale. Flirds' **forward HVP ($H\Delta w$, never $H^{-1}$)** dodges the iHVP-collapse cause; in-run dodges the convergence cause; validation-anchoring is the behavior-mismatch remedy — but these must be addressed explicitly (see [[threads/influence-functions-at-llm-scale]]).
+- **Ground-truth & limitation anchors** — [[sources/shapley-volatility-fl|Shapley volatility in FL]] motivates the exact fixed-trajectory (b) oracle over noisy approximate-Shapley; [[sources/mavericks-shapley-fl|Mavericks]] quantifies FL-Shapley's under-valuation of OOD/skewed clients, backing the non-IID-bias characterized limitation.
+- **Method-family / scaling** — [[sources/lorif|LoRIF]] (low-rank+Woodbury IF to 70B) and [[sources/accumulative-sgd-influence|ACC-SGD-IE]] (cross-epoch trajectory accumulation) are the closest centralized method neighbors; importable tricks if Flirds' HVP needs scaling.
+- **Experimental setup** — [[sources/fedhds|FedHDS]] is the federated data-selection benchmark already adopted for Flirds' cross-device track (also a selection baseline). Note its 5%-participation + Adam local training collide with Flirds' current full-participation + plain-SGD assumptions (Phase 1/2 port detail).
+
+> **"AFedSV" resolved (2026-06-03)**: not a standalone paper — it is the *adaptive surrogate-SV aggregation* = [[sources/shapleyfl|ShapleyFL]] (already in the wiki), which FedIF beats 450× on aggregation cost. The IJCAI'24 paper FedIF also cites is [[sources/shapfed|ShapFed]] (class-specific last-layer-cosine SV + weighted aggregation), ingested 2026-06-03. SV-side comparators for a Flirds eval: ShapleyFL (the "AFedSV" aggregation) + ShapFed (recent class-specific SOTA). Both are CNN-classification, aggregation-side — CNN-track baselines, not drop-in LLM baselines.
 
 ## Centralized positioning (added 2026-05-22)
 
