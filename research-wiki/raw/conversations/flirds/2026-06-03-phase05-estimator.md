@@ -64,3 +64,39 @@ Work on `main` (feature/flirds-phase-0 merged + deleted).
 Phase 1: LLM port (OpenFedLLM + LoRA) — the FL per-round regime where the 2nd-order is non-trivial.
 Deferred: ripple `(rounds,n,P)` streaming + eigsh fallback → LLM scale; ripple-term task-driven
 verification → Phase 3 (backdoor / temporal poisoning).
+
+## Code review + review fixes (continued — same session, after the initial close)
+
+Yonghee asked to commit, then run an independent code review (`/code-review`, 4 finder angles in
+fresh agent contexts). Verdict: **no correctness bug on the current LeNet5 + cross-silo
+full-participation path** (signs, ½ factor, p_k, Shapley combinator, HVP order all independently
+confirmed). Findings were latent / by-design / faithfulness. Resolved with Yonghee:
+
+- **momentum removed → plain SGD** (Yonghee's call): the ripple drop term assumes plain SGD but
+  `local_train` used momentum=0.9; IRDS/Ripple (Eq 1) assume plain SGD → set momentum=0 everywhere.
+  **Big payoff** — with plain SGD the 2nd-order term now *helps*: estimator-vs-(b) 3-seed Spearman
+  **1st+2nd 0.96 > 1st 0.92** (under momentum it was reversed, 0.73 < 0.81). The per-round
+  displacement is exactly the gradient step the Taylor expands around; momentum's velocity tail
+  broke that. **Empirical confirmation of Yonghee's "FL per-round is where the 2nd-order matters."**
+- **eval()** added to the estimator (Yonghee: "add it now") to match the (b) oracle's eval-mode
+  forward — orthogonal to the param/buffer split (forward-mode vs differentiation axis); no-op for
+  the buffer-free LeNet5/FedSVCNN, defensive for future BN/Dropout.
+- **Reproducibility**: `flirds/repro.py:seed_everything(seed, cudnn_deterministic)` — seeds
+  torch/np/CUDA always; cudnn-deterministic **CNN-(conv)-track only** (fedavg + ripple pass it; LLM
+  is conv-free). Convention in `codes/CLAUDE.md §5`. (Without it the FL trajectory drifts ~4e-2 / 3
+  rounds; with it, bitwise-0.)
+- **Conventions recorded as universal** (Yonghee's directive): plain SGD for all valuation runs;
+  cudnn-determinism CNN-only.
+- **Deferred recorded** (code TODOs + memory): ripple training-loop eval for BN; estimator/oracle
+  full-participation assumption (cross-device Phase 2); ripple eigsh LA-vs-LM + non-seeded v0 +
+  convergence fallback; ripple rounds<3 → drop-only.
+
+Re-verified after fixes (all green): efficiency 6.9e-18, symmetry 0, reproducibility bitwise-0,
+GTG/FedSV recon cosine 0.999, ripple AUROC 1.0.
+
+## Commits (this session, on `main` — Yonghee pushes origin)
+
+- `386c455` Phase 0.5: estimator + (b) in-run oracle + faithful Ripple
+- `4565d21` research-wiki: Phase 0.5 session record
+- `034ae76` Phase 0.5 review fixes: plain SGD + reproducibility + eval-mode
+- `3ccfef8` research-wiki: plain-SGD + cudnn-CNN-only conventions

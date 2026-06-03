@@ -2,7 +2,7 @@
 type: project
 title: "Flirds — Implementation Plan & Session Handoff"
 created: 2026-05-27
-updated: 2026-05-27
+updated: 2026-06-03
 tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open-decisions]
 ---
 
@@ -16,7 +16,7 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 - **Theoretical scaffolding**: complete. Section 2 (decisions) + Section 3 (experiment plan) + Protocol = locked. See [[flirds]] and [[flirds-protocol]].
 - **Wiki**: 30 sources ingested, 11 threads, 27 concepts. No paper-blocking ingest gaps.
 - **What's NOT decided yet**: 9 implementation-detail items (§3 below). These must be resolved before LLM-phase code is written, but most are deferrable past Phase 0.
-- **Next concrete action**: pick a `BASE_REPO`, start Phase 0 (CNN baseline reproduction).
+- **Next concrete action**: Phase 0 + Phase 0.5 complete (see the 2026-06-03 section below); next = **Phase 1 LLM port** (OpenFedLLM + LoRA).
 
 ## ✅ Decisions resolved & corrections (2026-06-02 implementation kickoff)
 
@@ -53,6 +53,19 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 - **FedDQC non-IID = 단일도메인 quality-het**(50% answer-swap), domain-per-client 아님.
 
 **구현 착수 상태**: 브랜치 `feature/flirds-phase-0`; conda env `flirds`(torch 2.12+cu130, B200×4, Python 3.11). Phase 0 step1 FL 시뮬레이터(`codes/flirds/{fl,models,data}` + `experiments/phase0_smoke.py`) 작성 + 스모크 통과(MNIST 3r 96.3%). step1 verify(MNIST~97%/CIFAR~77%) 진행 중.
+
+## ✅ Phase 0 + Phase 0.5 complete (2026-06-03)
+
+`main`에서 Phase 0(베이스라인 4종) + Phase 0.5(estimator + dual oracle)를 CNN 트랙에서 구현·검증·리뷰·확정. 상세: [[raw/conversations/flirds/2026-06-03-phase05-estimator]], [[flirds#Phase 0.5 findings — 2nd-order term & dual oracle (2026-06-03, CNN)]].
+
+- **구축**: (b) in-run SV oracle (`oracle/in_run_sv.py`, exact 2^N) + Flirds estimator (`core/flirds_estimator.py`, 참 Hessian 1st/2nd, 라운드당 HVP 1회 + N dot) + **faithful Ripple 재작성** (`baselines/ripple.py`, Eq 5-19 — Phase-0 ripple 부호·α 버그 2개 수정). (a) retrain oracle = `oracle/exact_sv.py`(Phase 0). 베이스라인 GTG/FedSV/ComFedSV self-build.
+- **검증(전 게이트 green)**: estimator≈(b) Spearman 1.0 / 3-seed 1+2nd 0.96; (b) Shapley efficiency·symmetry exact 0; HVP jvp-vs-double-backward 9.8e-6; (a)retrain↔(b)in-run noisy AUROC 1.0(fine-rank 0.66, 다른 utility); 재현성 bitwise-0; GTG/FedSV recon cosine 0.999.
+- **확정 결정**:
+  - 2nd-order curvature = **참 Hessian** (IRDS 일치; GGN 변형 검증 후 기각 — indefinite 곡률에도 참 Hessian 우월).
+  - **momentum 제거 → plain SGD** (`local_train`/ripple 기본 0.0): IRDS/Ripple Eq 1 가정 일치 + **2차항이 비로소 1차를 이김**(momentum 0.9: 0.73<0.81 → plain: 0.96>0.92). IRDS 의 "2차항 marginal" 은 *centralized per-step* 산물; **FL per-round 가 2차항의 무대** — 데이터로 확인. 모든 valuation 실험에 통용.
+  - **재현성**: `flirds/repro.py:seed_everything`(torch+np+cuda + cudnn-det). cudnn-det 은 **CNN(conv) 전용**(LLM 불필요). `fedavg`·`ripple_shapley`·모든 실험 main 호출; `codes/CLAUDE.md §5` 컨벤션.
+- **이월(deferred, 기록됨)**: ripple `(rounds,n,P)` streaming + eigsh(LA/LM·v0·수렴) → LLM 스케일; estimator/oracle full-participation 가정 → cross-device Phase 2; ripple training-loop eval → BN 모델; ripple-term task-driven 검증 → Phase 3(backdoor/temporal).
+- **다음**: **Phase 1 = LLM 이식** (OpenFedLLM + LoRA) — FL per-round + 실곡률이 2차항을 본격 시험.
 
 ## 1. What's already decided (read these documents)
 

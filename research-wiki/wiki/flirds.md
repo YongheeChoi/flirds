@@ -2,7 +2,7 @@
 type: project
 title: "Flirds — Federated Learning + In-Run Data Shapley"
 created: 2026-05-05
-updated: 2026-05-27
+updated: 2026-06-03
 sources: [in-run-data-shapley, principled-federated-data-valuation, comfedsv, gtg-shapley, shapleyfl, space-participant-amalgamation, ripple-shapley, game-of-gradients-sfedavg, data-banzhaf, datainf, logix, asymmetric-data-shapley, distributionally-robust-data-valuation, dice, feddqc, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, less, grosse-llm-influence, mates, dsdm]
 tags: [flirds, project-state, design-decisions]
 ---
