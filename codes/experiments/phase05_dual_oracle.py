@@ -24,6 +24,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from flirds.backends.cnn import make_cnn_loss
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.cnn import get_dataset, get_labels
+from flirds.data.corruptors import CNN_CORRUPTORS
 from flirds.fl.partition import dirichlet_partition
 from flirds.fl.server import run_fedavg_logs
 from flirds.models.cnn import LeNet5
@@ -43,8 +44,7 @@ def build(N, noisy, n_per, seed, bs=32, dup=None):
         xs = torch.stack([train[i][0] for i in idx[c]])
         ys = torch.tensor([train[i][1] for i in idx[c]])
         if c in noisy:
-            g = torch.Generator().manual_seed(100 + c)
-            ys = ys[torch.randperm(len(ys), generator=g)]
+            xs, ys = CNN_CORRUPTORS["label_shuffle"](xs, ys, c)
         loaders.append(DataLoader(TensorDataset(xs, ys), batch_size=bs, shuffle=(bs < n_per)))
     return loaders
 
