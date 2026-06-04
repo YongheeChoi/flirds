@@ -63,9 +63,10 @@ def main():
     val_batch = {"input_ids": enc.input_ids.to(device),
                  "attention_mask": enc.attention_mask.to(device),
                  "labels": labels.to(device)}
-    loss_fn, pkeys = make_llm_loss(model, val_batch, device)
+    loss_fn, pkeys, loss_chunks = make_llm_loss(model, val_batch, device)
 
-    phi_e, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=True)
+    phi_e, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=True,
+                             loss_chunks=loss_chunks)
     phi_b, _ = in_run_shapley(logs, 3, loss_fn, pkeys, device)
     fin = bool(np.isfinite(phi_e).all() and np.isfinite(phi_b).all())
     print("estimator 1st+2nd:", phi_e)

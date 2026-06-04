@@ -39,8 +39,31 @@ import numpy as np
 from torch.func import grad, jvp
 
 
+def _chunked(loss_chunks, buffers, params, dW, pkeys):
+    """g (and HVP u if dW given) of loss_fn = Σ_c weight_c · mean_c, summed across
+    chunks so peak memory = one chunk.  loss_chunks = (lf_c, weight_c); lf_c returns
+    the per-chunk MEAN loss, so Σ_c weight_c · grad/HVP(lf_c) is exactly the full-val
+    grad/HVP (linear) under token- OR per-domain weighting -- not an approximation,
+    and the eager-attention HVP fits at val=1000.
+    """
+    g = {n: None for n in pkeys}
+    u = {n: None for n in pkeys} if dW is not None else None
+    for lf, w in loss_chunks:
+        def vloss_c(pp):
+            return lf(pp, buffers)
+        if dW is not None:
+            gc, uc = jvp(grad(vloss_c), (params,), (dW,))
+        else:
+            gc, uc = grad(vloss_c)(params), None
+        for n in pkeys:
+            g[n] = w * gc[n] if g[n] is None else g[n] + w * gc[n]
+            if dW is not None:
+                u[n] = w * uc[n] if u[n] is None else u[n] + w * uc[n]
+    return g, u
+
+
 def flirds_values(logs, loss_fn, pkeys, device, second_order=True,
-                  n_clients=None, per_layer=False):
+                  n_clients=None, per_layer=False, loss_chunks=None):
     """Per-client Flirds in-run SV over the frozen trajectory `logs`.
 
     loss_fn(params, buffers) -> scalar val loss (backend builder, e.g.
@@ -51,6 +74,11 @@ def flirds_values(logs, loss_fn, pkeys, device, second_order=True,
     per_layer=False -> returns (phi[n_clients], p[n_clients]).
     per_layer=True  -> returns (phi, p, components), components[k][name] the
       per-param contributions summing to phi[k] (observation-only diagnostic).
+    loss_chunks (LLM): list of (lf_c, weight_c) chunk closures (backends.llm); when
+      given, g^r and the HVP u^r are the weighted sum Σ_c weight_c · grad/HVP(lf_c)
+      across val chunks (peak mem = one chunk) -> exactly the full-val grad/HVP of
+      loss_fn (linear), under token- OR per-domain weighting; fits the eager HVP at
+      val=1000.  None (default) keeps the single-shot path -> CNN bit-identical.
 
     p[k] = n_k / Σ_j n_j is the global weight (exact under full participation),
     returned for reference; the estimator uses per-round participant weights.
@@ -79,9 +107,14 @@ def flirds_values(logs, loss_fn, pkeys, device, second_order=True,
 
         if second_order:
             dW = {n: sum(pr[k] * dw[k][n] for k in players) for n in pkeys}
-            g, u = jvp(grad(vloss), (params,), (dW,))      # g^r and u^r = H^r ΔW^r (1 HVP)
-        else:
+            if loss_chunks is None:
+                g, u = jvp(grad(vloss), (params,), (dW,))  # g^r and u^r = H^r ΔW^r (1 HVP)
+            else:
+                g, u = _chunked(loss_chunks, buffers, params, dW, pkeys)
+        elif loss_chunks is None:
             g, u = grad(vloss)(params), None
+        else:
+            g, u = _chunked(loss_chunks, buffers, params, None, pkeys)
 
         for k in players:
             if per_layer:
