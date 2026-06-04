@@ -2,7 +2,7 @@
 type: project
 title: "Flirds — Federated Learning + In-Run Data Shapley"
 created: 2026-05-05
-updated: 2026-06-03
+updated: 2026-06-04
 sources: [in-run-data-shapley, principled-federated-data-valuation, comfedsv, gtg-shapley, shapleyfl, space-participant-amalgamation, ripple-shapley, game-of-gradients-sfedavg, data-banzhaf, datainf, logix, asymmetric-data-shapley, distributionally-robust-data-valuation, dice, feddqc, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, less, grosse-llm-influence, mates, dsdm, fedtsv, fedif, data-value-embedding, do-influence-functions-work-on-llms, lorif, accumulative-sgd-influence, dpo-shapley-lm-arithmetic, shapley-volatility-fl, mavericks-shapley-fl, influence-functions-fragile, fedhds, shapfed]
 tags: [flirds, project-state, design-decisions]
 ---
@@ -105,7 +105,8 @@ Each was open in the original conversation set; all closed in the 2026-05-19 →
    - **(a) Exact retrain SV** ($U(S) = $ FL training using only $S$): "data-valuation community standard." 1B (N∈{5,10}) + 3B (N=5) feasible; 7B skipped.
    - **(b) IRDS-定 in-run SV** ($U_{total}(S) = \sum_r [\ell(w^r + \sum_{k\in S}p_k \Delta w_k, z^{val}) - \ell(w^r, z^{val})]$): the *Flirds-correct* oracle; **exact enumeration at N=10 cross-silo** (1024 forward passes per round), **MC at N=100 cross-device**. The IRDS / [[concepts/proximal-bregman-response|PBRF]] framing inherited from [[sources/grosse-llm-influence|Grosse 2023]] + [[sources/mates|MATES]] is the existing-literature permission slip for "(b) is a well-defined target, not a counterfactual proxy."
 6. **Benchmarks** → noisy / free-rider detection + domain attribution + client-selection convergence + cost-matched baseline tiers (see Experiment plan below).
-7. **LLM choice / dataset** → **Llama-3.2-1B-Instruct + Llama-3.2-3B-Instruct + Llama-2-7B**. 1B/3B = Llama-3.2 family for cross-scale extrapolation consistency; 7B = Llama-2-7B for direct comparison with [[sources/less|LESS]] + [[sources/feddqc|FedDQC]]. Dataset = FedDQC-comparable instruction-tuning bench (medical / legal / code / math / general domains) for cross-silo; Super-NaturalInstructions for cross-device scale.
+7. **LLM choice / dataset** → **Llama-3.2-1B-Instruct + Llama-3.2-3B-Instruct + Llama-2-7B**. 1B/3B = Llama-3.2 family for cross-scale extrapolation consistency; 7B = Llama-2-7B for direct comparison with [[sources/less|LESS]] + [[sources/feddqc|FedDQC]]. Cross-silo dataset (free-form 5-domain, 2026-06-04 — see [[threads/dataset-format-uniformity]]): **medical** `medalpaca/medical_meadow_medical_flashcards` / **legal** `ibunescu/qa_legal_dataset_train` / **finance** FiQA / **math** AQUA-RAT (rationale) / **general** Dolly — all **free-form instruction→response** (a *shared* val-loss Shapley needs format-comparable domains; classification/MC targets like PubMedQA/CaseHOLD are not loss-comparable to generation). Cross-device = Fed-WildChat + FedHDS (Super-NaturalInstructions task-split).
+   - **Cross-domain valuation-fairness (novelty hook)**: the shared-val-loss-Shapley *fairness across heterogeneous domains* is under-addressed in prior art (LESS/FedDQC/IFD/NUGGETS each mitigate magnitude only partially; none target cross-domain comparability). The val loss already carries 2 of 4 prior mitigations (LESS per-token mean + FedDQC-style Δloss utility); Flirds adds **per-domain macro-average normalization** (each domain weighted 1/D vs token-proportional) as an option, with an **ON-vs-OFF ablation** on downstream selection accuracy. Any utility change is re-checked against the IRDS framing + estimator≈oracle consistency. See [[threads/dataset-format-uniformity]].
 
 ## Experiment plan — Section 3 (locked 2026-05-27)
 
@@ -136,7 +137,7 @@ Each was open in the original conversation set; all closed in the 2026-05-19 →
 
 ### ★ scale extension
 
-10. **7B FedDQC-comparable instruction-tuning bench.** Llama-2-7B + LoRA + 5-domain client split (medical / legal / code / math / general). Direct comparison to [[sources/feddqc|FedDQC]] (only FL+LLM precedent in wiki) and [[sources/less|LESS]] (closest centralized analog, same model). Full experiment matrix (see below) at 7B as at 1B/3B.
+10. **7B instruction-tuning bench.** Llama-2-7B + LoRA + free-form 5-domain client split (medical flashcards / legal ibunescu / finance FiQA / math AQUA-RAT / general Dolly — [[threads/dataset-format-uniformity]]). Comparison to [[sources/feddqc|FedDQC]] (only FL+LLM precedent; overlap now FiQA+AQUA after the free-form swap) and [[sources/less|LESS]] (closest centralized analog, same model). Full experiment matrix (see below) at 7B as at 1B/3B.
 
 ### Added 2026-06-03 — prior-art validation gaps (Phase 2/3; none touch the Phase 1 core)
 

@@ -118,7 +118,9 @@ Reported number → must be linkable to a specific (config, env, git SHA, run di
 
 - **Default**: server-side held-out, uniform domain coverage (locked decision).
 - **Size**: **1000 examples (per-domain 200 × 5 domains, uniform stratified)** by default; smaller if compute-bound, declared per number. *(Distinct from the 2¹⁰=1024 coalition-subset count in §9 — validation size is 1000 precisely to avoid that clash.)*
-- **Sampling**: canonical dev split preferred (creator-curated representativeness); label/category-stratified random with fixed seed; split-less datasets carve a fixed-seed stratified holdout from train (carve indices logged).
+- **Sampling**: canonical dev split preferred (creator-curated representativeness); else label/category-stratified random, fixed seed; split-less datasets carve a fixed-seed stratified holdout from train (carve indices logged). **Per-domain val source (free-form 5-domain, 2026-06-04)**: medical (flashcards) / legal (ibunescu) / general (Dolly) = **carve from train**; finance (FiQA) = `test`; math (AQUA-RAT) = `validation`. See [[threads/dataset-format-uniformity]].
+- **Format uniformity**: all cross-silo domains are **free-form instruction→response** (loss on target tokens only) so the shared-val-loss Shapley is format-comparable across domains/clients.
+- **Per-domain normalization (option + ablation)**: default token-proportional aggregation; **per-domain macro-average** (1/D per domain) is an opt-in to kill long-completion token-count dominance — reported as an **ON/OFF ablation**. Any utility change re-checked vs IRDS framing + estimator≈oracle.
 - **Per-experiment justification**: where validation diverges from default (e.g., domain-attribution benchmark uses per-domain validation), justified in that experiment's paragraph + config.
 
 ## 9. Cross-silo vs cross-device boundaries

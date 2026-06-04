@@ -32,12 +32,12 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 | BASE_REPO (§3.6) | LLM = **OpenFedLLM** fork(`codes/base_repo/`, LLM phase); CNN = **자체 경량 시뮬레이터**. 얇은 공통 FL core 위 backend 분리, estimator/oracle 은 backend-agnostic |
 | 코드/빌드 (D1) | baseline 코드 있으면 fork, 없으면 self-build |
 | 로깅 (D2) | **W&B 미사용** → 로컬 run-dir(config YAML + env hash + git SHA + per-round per-client φ parquet) |
-| cross-silo 데이터 (§3.1) | 5-domain: **PubMedQA**(의)/**CaseHOLD**(법)/**FiQA**(금)/**AQUA-RAT**(수)/**Dolly**(일반). LESS protocol(validation·selection 방법론). FedDQC 와 3/5 도메인 데이터셋 동일 |
+| cross-silo 데이터 (§3.1) | **free-form 5-domain (2026-06-04 swap, supersedes D3)**: medical **`medalpaca/medical_meadow_medical_flashcards`** / legal **`ibunescu/qa_legal_dataset_train`** / finance **FiQA** / math **AQUA-RAT(rationale)** / general **Dolly**. All free-form instruction→response (format uniformity → fair shared-val-loss Shapley; [[threads/dataset-format-uniformity]]). FedDQC overlap = FiQA+AQUA (2/5). LESS protocol for validation/selection. |
 | cross-device 데이터 | **Fed-WildChat**(FedLLM-Bench, 자연 N=100) + **FedHDS**(NI task별 + Dolly Dirichlet) 둘 다 |
 | FedDQC 비교 | matched-arm 미실시; **IRA 점수법만 baseline 으로 이식** |
 | LoRA (§3.2, D4) | r=16/α=32 시작 + **rank sweep {16,32,64,128}**(α=2r) — attribution fidelity vs task perf ablation |
 | 학습 hp (§3.3, D5) | lr 2e-5, batch 16, cosine — 시작값, sweep |
-| validation (§3.4, D6) | server-side held-out, **도메인당 200 / 총 1000, uniform stratified**; canonical dev split 우선·없으면 fixed-seed stratified carve. IRDS-held-out 평균 loss 관점(few-shot 아님). 크기 1000 = 2¹⁰ coalition-subset 과 분리(혼동 차단) |
+| validation (§3.4, D6) | server-side held-out, **도메인당 200 / 총 1000, uniform stratified**; IRDS-held-out 평균 loss 관점(few-shot 아님). 크기 1000 = 2¹⁰ coalition-subset 과 분리(혼동 차단). val source per domain: **med/legal/general = carve from train** (no dev split), finance=`test`, math=`validation`. + **per-domain macro-average normalization** option (1/D weight vs token-prop) → **ablation ON/OFF** ([[threads/dataset-format-uniformity]]) |
 | cross-device 세부 (§3.5, D7) | N=100/K=10/R=200, default **α=0.5**, α-sweep **{0, 0.01, 0.1, 0.5, 5.0}**(α=0 = domain-disjoint 포함). late-joiner 는 구조상 존재 → 논문 텍스트로 해석; extreme regime drop |
 | detection (D8) | **FLDetector**(noisy/poisoning) + **STD-DAGMM**(free-rider) 각 1개 (Phase 2) |
 | 협업 방식 | 설계 분기점마다 논의, 일상 구현은 후 리뷰. **커밋은 요청 시만** |
@@ -177,6 +177,17 @@ Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phas
 Each body: **what's open** → **current default / assumption** → **options** → **decision criterion** → **when**. *(Historical for 3.1–3.8.)*
 
 ### 3.1 Dataset choice (cross-silo + cross-device)
+
+> **RESOLVED — free-form 5-domain (2026-06-04, supersedes the D3 PubMedQA/CaseHOLD picks).** Durable rationale + parked candidates + license notes: [[threads/dataset-format-uniformity]]. Cross-silo domains are unified to **free-form instruction→response** (heterogeneous task formats make a *shared* val-loss Shapley unfair — a 1-tok classification target vs multi-tok generation aren't loss-comparable). Adopted set:
+> | domain | dataset | train | val |
+> |---|---|---|---|
+> | medical | `medalpaca/medical_meadow_medical_flashcards` (cc) | 34k | **carve** (replaces PubMedQA) |
+> | legal | `ibunescu/qa_legal_dataset_train` | 97k | **carve** (replaces CaseHOLD) |
+> | finance | `LLukas22/fiqa` | 14.5k | `test` split |
+> | math | `deepmind/aqua_rat` (rationale CoT) | 97k | `validation` split |
+> | general | `databricks/databricks-dolly-15k` | 15k | **carve** |
+>
+> So **3/5 carve val from train** (med/legal/general — no dev split), 2/5 use an existing split. B1 trainset size **equalized per domain** (aggregate weight stays size-prop). Plus a **per-domain macro-average normalization** option (each domain weighted 1/D vs token-proportional) — **ablation ON vs OFF** (downstream accuracy). FedDQC overlap shrinks to **finance (FiQA) + math (AQUA-RAT)** = 2/5 (medical/legal swapped off FedDQC's classification picks). Cross-device unchanged (Fed-WildChat + FedHDS). The §3.1 body below is **historical deliberation** (its PubMedQA/code options are superseded).
 
 **Open**: which exact datasets to use as the 5-domain instruction-tuning bench (cross-silo) and the cross-device scale benchmark.
 
