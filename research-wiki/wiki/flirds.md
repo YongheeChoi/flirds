@@ -173,6 +173,29 @@ Sourced from a pass over what FL/valuation/LLM prior work validates that the pla
 
 Estimated compute (B200 × 4): 1B = sub-week, 3B = 1 week, 7B = ~1 week. Phase 0 (CNN sanity) = 5–7 days B200 × 1, prior to LLM phase. The 2026-06-03 additions (#12–18) are mostly config-level on existing harnesses (post-hoc re-eval or one extra corruptor/partition per run), not new sweeps; the only non-trivial compute is PGD (#13) — scope to 1B+7B if budget-bound.
 
+### est-vs-oracle comparison matrix (locked 2026-06-04, all 3 seeds)
+
+The **estimator≈oracle fidelity** comparison is capped at the oracle's N; the (b) oracle cost is $2^N\cdot R\cdot|val|\cdot seq$, so **N=5↔N=10 is 32×** (fp32 required — utility is a loss-difference ~1e-3 < bf16 precision ~8e-3). The locked fidelity grid:
+
+| track | (a) retrain SV | (b) in-run SV |
+|---|---|---|
+| CNN | N∈{5,10} | N∈{5,10} (cheap exact-SV → high-power 10-pt validation) |
+| LLM 1B | N=5 now; **N=10 deferred (last, costly)** | N=5 now; **N=10 deferred** |
+| LLM 3B | N=5 | N=5 |
+| LLM 7B | ✗ (retrain infeasible) | N=5 |
+
+The estimator **method** itself (noisy/free-rider AUROC, selection-convergence — no oracle needed) still runs at N=10 on LLM; only the *oracle-fidelity* comparison is N-capped. CNN N=10 supplies the cheap high-power "estimator tight at N=10" evidence; LLM N=10 re-confirms on the real model but is deferred to last.
+
+## Phase 1 implementation concretizations (2026-06-04)
+
+Phase 1 is **essentially complete** — data layer + ② corruptor + the #7 first-clean-run infra are all built + verified; only the FULL scale run is unlaunched. Implementation detail: [[flirds-implementation-plan]]; raw: [[raw/conversations/flirds/2026-06-04-phase1-data-layer]], [[raw/conversations/flirds/2026-06-04-phase1-corruptor-and-7-design]].
+
+- **5-domain free-form data layer** (`data/llm.py`): `build(n_clients, per_domain_train, per_domain_val, per_domain_test, seed)` → `(clients, val_records, test_records)`; N=5 → 1 domain/client, N=10 → 2/domain (disjoint halves). **Val micro-batching** — single-shot HVP over eager attention OOMs at val=1000, so the val-loss sum is computed exactly per chunk (`loss_chunks`); CNN path untouched (bit-identical). **Per-domain normalization** (token-prop vs domain-macro 1/D) is a flag → ON/OFF ablation.
+- **② seam-2 corruptor** (`data/corruptors.py`, fork (b) — built with the data layer): **noisy = `answer_swap`** (within-client completion permutation; CNN `label_shuffle` analog; FedDQC answer-swap + FedCorr data-side precedent), **free-rider = `free_rider(ref, mode)`** update-level, **zero + random** (Lin 2019 / STD-DAGMM taxonomy; delta/advanced deferred to Phase 2). estimator/oracle/CNN bit-identical; real-1B free-rider-zero φ = exactly 0. backdoor/PGD/maverick/duplicate remain Phase 2/3.
+- **#7 first clean run — RESEQUENCED before the SV-baselines port** (de-risk the scale run; #7 needs only training baselines + selection + eval, not the SV set). Downstream metric = **FedHDS-style per-domain held-out ROUGE-L + math (AQUA) exact-match** — deliberately distinct from the *utility* (val-loss, what the estimator/oracle use); see [[threads/utility-function-design]]. **selection-convergence** = φ→top-K→retrain curve vs full & random (MATES "2.3× faster to fixed acc" template). **Caveat** (FedDQC, DsDm): gradient/similarity selection can *underperform random* on heterogeneous FL — the bar Flirds-selection must clear.
+- **#7 sizes** (prior-art-grounded): per-domain **train = 12,000 / val = 200 (§3.4) / test = 2,000**, mutually disjoint; test train-carved (native test too small — math 254, finance 2561), val native-where-exists. **Infra DONE**: `eval/{metrics,generate}.py` (ROUGE-L F1 + AQUA EM + detection AUROC), `run_logger.py` (config + git SHA + env + φ parquet + metrics json), orchestrator `experiments/phase1_clean_run.py` (FULL/MINI/SMOKE). **SMOKE green** (est≈oracle 1.6e-7, noisy AUROC 1.0).
+- **Remaining = the FULL scale run** (`CLEAN_RUN_MODE=full`: N=5, R≈30, max_steps 10, lr 2e-5, K=3, 3 seeds, free_rider_mode=random, ORACLE_B; ~5–7h, dominated by test-2k generation × arms × seeds), a MINI de-risk run first. Then **③ SV-baselines port** (GTG/FedSV/ComFedSV/Ripple CNN→LLM, Phase 2).
+
 ## Baseline selection rationale
 
 **Excluded (LLM environment unsuitable, 2026-05-27 review)**:

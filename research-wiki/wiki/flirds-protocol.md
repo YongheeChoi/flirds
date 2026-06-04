@@ -85,6 +85,19 @@ Justification for (a) skip at 7B: matches centralized-LLM convention (LESS, Gros
 
 (a) and (b) MUST be implemented in **separate modules** with separate test suites. Sharing utility-computation code between them is forbidden — the two utilities are *different functions* ($U_{(a)}(S) = \text{FL-trained-on-}S$ vs $U_{(b)}(S) = \sum_r \ell(w^r + \sum_{k\in S}p_k\Delta w_k, z^{val}) - \ell(w^r, z^{val})$) and conflating them is exactly the conv3 §2 error.
 
+### 4.4 Estimator≈oracle fidelity grid (locked 2026-06-04, all 3 seeds)
+
+The (b)-oracle cost is $2^N\cdot R\cdot|val|\cdot seq$ → **N=5↔N=10 = 32×**, and it must run in **fp32** (utility = loss-difference ~1e-3 < bf16 precision ~8e-3; bf16-oracle ruled out; HVP-profile measured the oracle FLOP-bound, so chunk-decouple gives ~1.0× — no speedup). The *fidelity* comparison (estimator vs oracle) is therefore N-capped per track:
+
+| track | (a) retrain SV | (b) in-run SV |
+|---|---|---|
+| CNN | N∈{5,10} | N∈{5,10} |
+| LLM 1B | N=5 now; N=10 deferred (last) | N=5 now; N=10 deferred |
+| LLM 3B | N=5 | N=5 |
+| LLM 7B | ✗ | N=5 |
+
+The estimator **method** (noisy/free-rider AUROC, selection-convergence — oracle-free) still runs at N=10 on LLM; only oracle-fidelity is capped. **Val micro-batching**: at val=1000 the single-shot eager-attention HVP OOMs, so the val-loss sum is computed exactly per chunk (`loss_chunks`, decomposes exactly); CNN path (`loss_chunks=None`) bit-identical.
+
 ## 5. Sanity gates (automated)
 
 The following MUST pass on every clean re-run. Failed sanity gates block any downstream claim from being reported.
@@ -209,3 +222,13 @@ Three LLM-specific musts the CNN track never hit — apply to **1B / 3B / 7B ali
 Plus the precision split for the largest tier: **7B = bf16 train / fp32 eval** (separate the two; §1 already mandates fp32 eval + fp32 Flirds inner products).
 
 **TRL 1.x API notes** (self-built FL loop, OpenFedLLM trl-0.7 is reference-only): `tokenizer`→`processing_class`, `max_seq_length`→`SFTConfig.max_length`, forced plain SGD via `optimizer_cls_and_kwargs=(SGD, {lr, momentum:0})` constant-lr, `completion_only_loss=True` (no manual collator). Plain SGD (not Adam) per the locked momentum-0 convention (§ matches IRDS/Ripple Eq 1).
+
+## 14. Downstream evaluation + #7 first-clean-run (Phase 1, established 2026-06-04)
+
+**Utility ≠ downstream metric** (deliberate, see [[threads/utility-function-design]]): the valuation *utility* is the **val-LOSS** (IRDS Taylor — what the estimator + (b) oracle consume); the *downstream* report is **task metrics** on a held-out test split. Do not conflate (answers "why not just use val-loss as the downstream score").
+
+- **Downstream metric** (`flirds/eval/metrics.py`, unit-tested): **per-domain held-out ROUGE-L (LCS F1)** + **math (AQUA-RAT) exact-match** (final-answer letter; `extract_choice` is `re.I`-bug-fixed) + **detection AUROC** (noisy / free-rider). FedHDS-style (closest FL+LLM precedent = our cross-device bench). Generation = `eval/generate.py` (left-pad greedy, `use_cache=True`, per-domain `score_records`).
+- **#7 data sizes** (prior-art-grounded): per-domain **train = 12,000 / val = 200 (§8) / test = 2,000**, mutually disjoint. Test is **train-carved** (native test too small: math 254, finance 2561); val native-where-it-exists (finance `test` / math `validation`), else carve. Equalized train (B1) ceiling ≈ finance 14.5k.
+- **selection-convergence**: φ → top-K → retrain, convergence-speed / final-perf vs **full** and **random-K** arms (MATES "2.3× faster to fixed acc" template); per-round val-loss curves read **post-hoc off the logged trajectory** (no FL-loop change). **Caveat to clear**: gradient/similarity selection can *underperform random* on heterogeneous FL (FedDQC DataInf < random; DsDm).
+- **Run logging** (`flirds/run_logger.py`, §6): per run a dir with config.yaml + meta{git SHA + dirty + env hash + lib versions} + per-round φ parquet + metrics json.
+- **Orchestrator** `experiments/phase1_clean_run.py` (FULL / MINI / SMOKE): per-seed Flirds φ + (b) oracle at N=5 → AUROC → selection arms → final per-domain task-acc via generation → run-dir. FULL = N=5, R≈30, max_steps 10, lr 2e-5, K=3, 3 seeds, free_rider_mode=random, ORACLE_B (~5–7h, generation-dominated).

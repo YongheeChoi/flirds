@@ -12,7 +12,7 @@ tags: [flirds, implementation, handoff, phase-0, phase-1, phase-2, phase-3, open
 
 ## Status snapshot (as of 2026-06-04)
 
-- **Pipeline stage**: `implementation` — **Phase 1 stage 2 done** (2026-06-04); details in the two "Phase 1 progress" bullets below.
+- **Pipeline stage**: `implementation` — **Phase 1 essentially complete** (2026-06-04): stage 3 data layer + ② corruptor + **#7 first-clean-run infra all DONE**; the only unrun action is the FULL scale run. Details in "Next concrete action" below.
 - **Theoretical scaffolding**: complete + locked (Section 2 decisions + Section 3 experiment plan + Protocol). See [[flirds]] and [[flirds-protocol]].
 - **Wiki**: 42 sources, 11 threads, 27 concepts (after the 2026-06-03 recent-prior-work scan). No paper-blocking gaps.
 - **Implementation decisions**: §3.1–3.8 **resolved 2026-06-02** (binding answers = the 06-02 table below; the §3.x bodies are kept as deliberation/rationale). Only §3.9 (detection code provenance) + §3.10 (corruptor registry — **fork (b) chosen**) remain live.
@@ -104,7 +104,7 @@ Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phas
 
 ### Phase 1 — Flirds core + dual oracle + vanilla FedAvg at 1B
 
-> **STATUS 2026-06-04 — stage 1+2 DONE; only task 3 (data layer) remains.** Estimator/oracle backend-agnostic + partial-participation + per-layer (DONE, CNN gates bit-identical); LLM backend (`backends/llm.py`) + FL loop (`fl/llm_server.py`, SFTTrainer+forced-SGD) built; LLM-FL smoke green (Llama-3.2-1B, est≈oracle 1.70e-6). Tasks 1–2 below = done; (b)/(a) oracle + vanilla/random FedAvg wiring carries into the data-layer + baseline work. **Remaining = task 3: 5-domain data layer (validation-1000 loader + seam 2 corruptor registry, §3.10 fork b).**
+> **STATUS 2026-06-04 — stages 1+2+3 DONE + #7 infra DONE; only the FULL scale run is unlaunched.** Estimator/oracle backend-agnostic + partial-participation + per-layer (DONE); LLM backend + FL loop (`backends/llm.py`, `fl/llm_server.py`) DONE; **task 3 data layer DONE** (`data/llm.py` 5-domain free-form loader + val micro-batching + per-domain norm); **② seam-2 corruptor DONE** (`data/corruptors.py` answer_swap + free_rider); **#7 first-clean-run infra DONE** (eval/{metrics,generate}.py, run_logger.py, orchestrator `experiments/phase1_clean_run.py`; SMOKE green). The task list below (tasks 1–7) is the *original* Phase-1 plan — all satisfied except the scale run. **Remaining = launch the FULL `phase1_clean_run.py` (MINI de-risk first), then ③ SV-baselines port (Phase 2).** See "Next concrete action" for the full #7 detail.
 
 **Goal**: a working Flirds estimator on Llama-3.2-1B-Instruct, both oracles operational at N=10 cross-silo, vanilla FedAvg upper-bound running. All sanity gates green.
 
@@ -333,7 +333,7 @@ Each body: **what's open** → **current default / assumption** → **options** 
 
 ## 4. Next-session starter prompt
 
-> **Superseded (2026-06-04)** — the original kickoff prompt below was for *starting* Phase 0. Phase 0/0.5 + Phase 1 stage 1–2 are done. **A continuing Phase 1 session now starts from the Status snapshot's "Next concrete action": Phase 1 task 3 = 5-domain data layer (validation-1000 loader + seam 2 corruptor registry, §3.10 fork b) + LLM baselines port.** Read this doc's status snapshot + the latest raw conversation ([[raw/conversations/flirds/2026-06-04-phase1-llm-stage2]]) first.
+> **Superseded (2026-06-04)** — the original kickoff prompt below was for *starting* Phase 0. Phase 0/0.5 + Phase 1 stages 1–3 + #7 infra are done. **A continuing session now starts from the Status snapshot's "Next concrete action": launch the FULL `phase1_clean_run.py` scale run (MINI de-risk first), then ③ SV-baselines port (Phase 2).** Read the status snapshot + the latest raw conversations ([[raw/conversations/flirds/2026-06-04-phase1-corruptor-and-7-design]], [[raw/conversations/flirds/2026-06-04-phase1-data-layer]]) first.
 
 Original kickoff prompt (historical):
 
@@ -341,7 +341,7 @@ Original kickoff prompt (historical):
 
 ## 5. Pre-implementation checklist (✓ ALL DONE — historical, kept for record)
 
-> Superseded: Phase 0 started 2026-06-02 and all of the below were satisfied. Current entry point = the Status snapshot's "Next concrete action" (Phase 1 task 3).
+> Superseded: Phase 0 started 2026-06-02 and all of the below were satisfied. Current entry point = the Status snapshot's "Next concrete action" (launch the FULL #7 scale run; then ③ SV-baselines port).
 
 - [x] §3.6 BASE_REPO decided (OpenFedLLM reference + self-build; CNN self-built)
 - [x] Logging = local run-dir, **no W&B** (D2) — *(was "§3.7 W&B init"; corrected)*
