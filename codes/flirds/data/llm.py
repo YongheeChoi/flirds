@@ -7,15 +7,18 @@ domains (cross-domain valuation fairness; PubMedQA-classification + CaseHOLD-MC
 were dropped -- see wiki threads/dataset-format-uniformity for parked candidates).
 Each row -> a {"prompt", "completion"} record (SFTTrainer completion-only contract).
 
-`build(n_clients, per_domain_train, per_domain_val, seed)` -> (clients, val_records):
+`build(n_clients, per_domain_train, per_domain_val, per_domain_test, seed)`
+  -> (clients, val_records, test_records); train/val/test mutually disjoint per domain:
   - cross-silo partition: N=5 -> 1 domain/client; N=10 -> 2 clients/domain
     (each domain's `per_domain_train` records split into disjoint halves).
   - per-domain train size equalized = the B1 size-control variable (capped
-    ~14k by FiQA/Dolly; PubMedQA train uses pqa_artificial, not the 1k labeled).
-  - validation (§3.4): `per_domain_val` per domain, dev-split-first — medical
-    from pqa_labeled (gold), legal/math from their dev splits, finance from
-    test; only Dolly is carved from train (disjoint reserve) since it has no
-    held-out split.  Stratified where a label/category column exists.
+    ~12k by FiQA's 14.5k / Dolly's 15k train splits once test is carved out).
+  - validation (§3.4): `per_domain_val` per domain, dev-split-first -- finance
+    from its `test` split, math from its `validation` split; medical/legal/general
+    carve from train.  Stratified where a label/category column exists.
+  - test (downstream task-acc): `per_domain_test` carved from each train split
+    (the native test splits -- math 254, finance 2561 -- are too small for a
+    uniform per-domain test); records carry `domain` (+ math gold `answer`).
 
 `build_val_batch(records, tokenizer, max_length, device)` tokenizes records into
 the val_batch dict `backends.llm.make_llm_loss` consumes (completion-only labels,
@@ -28,7 +31,7 @@ from collections import defaultdict
 import torch
 from datasets import Dataset, load_dataset
 
-_CARVE_VAL_RESERVE = 1000    # no-dev-split domains: carve val from the first N shuffled rows, train from the rest
+from .corruptors import LLM_CORRUPTORS
 
 
 # ---- per-domain (prompt, completion) formatters (all free-form instruction->response) ----
@@ -98,47 +101,77 @@ def _stratified(rows, n, key):
     return out
 
 
-def _domain_split(dom, n_train, n_val, seed):
-    """Return (train_records, val_records) for one domain, train/val disjoint."""
+def _domain_split(dom, n_train, n_val, n_test, seed):
+    """Return (train, val, test) records for one domain, all mutually disjoint.
+
+    val comes from a native held-out split where one exists (finance=test,
+    math=validation; §3.4), else carved from train.  test is ALWAYS carved from the
+    train split -- the native test splits (math 254, finance 2561) are too small for
+    a uniform per-domain test -- and its records carry `domain` (+ math gold `answer`)
+    so eval.generate.score_records can route per-domain ROUGE-L / exact-match.
+    """
     spec = DOMAINS[dom]
     tcfg, tsplit = spec["train"]
     vcfg, vsplit = spec["val"]
-    fmt = spec["fmt"]
+    fmt, strat = spec["fmt"], spec["strat"]
 
     def rec(ex):
         p, c = fmt(ex)
         return {"prompt": p, "completion": c}
 
-    if (tcfg, tsplit) != (vcfg, vsplit):                       # held-out val split -> disjoint by split
-        tr = load_dataset(spec["id"], tcfg, split=tsplit).shuffle(seed=seed)
-        tr = tr.select(range(min(n_train, len(tr)))).to_list()
+    def trec(ex):                                   # test record: tagged for per-domain scoring
+        r = rec(ex)
+        r["domain"] = dom
+        if dom == "math":
+            r["answer"] = ex["correct"]
+        return r
+
+    pool = load_dataset(spec["id"], tcfg, split=tsplit).shuffle(seed=seed)
+    if (tcfg, tsplit) != (vcfg, vsplit):            # native val split: train+test from train split, val from val split
+        pool = pool.select(range(min(n_train + n_test, len(pool)))).to_list()
+        tr, te = pool[:n_train], pool[n_train:n_train + n_test]
         vp = load_dataset(spec["id"], vcfg, split=vsplit).shuffle(seed=seed).to_list()
-        va = _stratified(vp, n_val, spec["strat"])
-    else:                                                       # no dev split: carve disjoint from train
-        pool = load_dataset(spec["id"], tcfg, split=tsplit).shuffle(seed=seed)
-        pool = pool.select(range(min(len(pool), _CARVE_VAL_RESERVE + n_train))).to_list()
-        va = _stratified(pool[:_CARVE_VAL_RESERVE], n_val, spec["strat"])
-        tr = pool[_CARVE_VAL_RESERVE:_CARVE_VAL_RESERVE + n_train]
-    return [rec(e) for e in tr], [rec(e) for e in va]
+        va = _stratified(vp, n_val, strat)
+    else:                                            # carve val + test + train from the train split, disjoint
+        pool = pool.select(range(min(n_val + n_test + n_train, len(pool)))).to_list()
+        va = _stratified(pool, n_val, strat)
+        used = {id(r) for r in va}
+        rest = [r for r in pool if id(r) not in used]
+        te, tr = rest[:n_test], rest[n_test:n_test + n_train]
+    return [rec(e) for e in tr], [rec(e) for e in va], [trec(e) for e in te]
 
 
-def build(n_clients, per_domain_train, per_domain_val=200, seed=0):
-    """Build cross-silo clients + the §3.4 validation set.
+def build(n_clients, per_domain_train, per_domain_val=200, per_domain_test=0, seed=0,
+          noisy=frozenset()):
+    """Build cross-silo clients + the §3.4 validation set + a held-out test set.
 
-    Returns (clients, val_records): `clients` = list of `n_clients` HF Datasets
-    with {prompt, completion} columns (consumed by fl.llm_server.run_llm_fedavg_logs);
-    `val_records` = `5 * per_domain_val` {prompt, completion} dicts (domain-ordered).
+    Returns (clients, val_records, test_records):
+      `clients`      = `n_clients` HF Datasets with {prompt, completion} (consumed by
+                       fl.llm_server.run_llm_fedavg_logs);
+      `val_records`  = `5*per_domain_val` {prompt, completion} dicts, domain-ordered
+                       (the §3.4 Shapley-utility validation -- token/loss only);
+      `test_records` = `5*per_domain_test` {prompt, completion, domain, [answer]} dicts
+                       for downstream task-acc (eval.generate); empty if per_domain_test=0.
+    train/val/test are mutually disjoint per domain.  `noisy` = client indices whose
+    data is answer-swap-corrupted (seam 2 noisy client; completions permuted within
+    the client so prompts pair with the wrong answer).
     """
     assert n_clients in (5, 10), "cross-silo loader supports N=5 or N=10"
     per_domain_clients = n_clients // 5
-    clients, val_records = [], []
+    clients, val_records, test_records = [], [], []
+    cid = 0
     for dom in ORDER:
-        tr, va = _domain_split(dom, per_domain_train, per_domain_val, seed)
+        tr, va, te = _domain_split(dom, per_domain_train, per_domain_val, per_domain_test, seed)
         val_records += va
+        test_records += te
         chunk = len(tr) // per_domain_clients
         for j in range(per_domain_clients):
-            clients.append(Dataset.from_list(tr[j * chunk:(j + 1) * chunk]))
-    return clients, val_records
+            recs = tr[j * chunk:(j + 1) * chunk]
+            if cid in noisy:                       # seam 2: noisy client (answer-swap)
+                recs = LLM_CORRUPTORS["answer_swap"](recs, cid)
+            clients.append(Dataset.from_list(recs))
+            cid += 1
+    return clients, val_records, test_records
 
 
 def build_val_batch(records, tokenizer, max_length, device):

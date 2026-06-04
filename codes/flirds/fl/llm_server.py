@@ -18,6 +18,7 @@ from __future__ import annotations
 import torch
 from trl import SFTConfig, SFTTrainer
 
+from ..data.corruptors import free_rider
 from ..repro import seed_everything
 from .server import _fedavg_core
 
@@ -30,9 +31,12 @@ def _lora_state(model):
 
 
 def _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
-                         batch_size, max_length, seed, formatting_func):
+                         batch_size, max_length, seed, formatting_func,
+                         free_riders, free_rider_mode, fr_gen):
     def local_train_fn(c, global_state):
         model.load_state_dict(global_state, strict=False)   # sync LoRA (named key)
+        if c in free_riders:                                # seam 2: fabricated update, no real training
+            return free_rider(global_state, mode=free_rider_mode, generator=fr_gen)
         cfg = SFTConfig(
             output_dir=_OUT, per_device_train_batch_size=batch_size,
             max_steps=max_steps, learning_rate=lr, max_length=max_length,
@@ -53,14 +57,20 @@ def _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
 
 def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
                         batch_size=8, max_length=512, sample_frac=1.0, seed=0,
-                        formatting_func=None):
-    """Run LLM FedAvg once; return logs[(w_r, deltas_map)] (LoRA-only states)."""
+                        formatting_func=None, free_riders=frozenset(), free_rider_mode="zero"):
+    """Run LLM FedAvg once; return logs[(w_r, deltas_map)] (LoRA-only states).
+
+    `free_riders` = client indices that fabricate updates instead of training
+    (seam 2 free-rider, `free_rider_mode` in {"zero","random"}; see data.corruptors).
+    """
     seed_everything(seed)                                       # LLM: no cudnn-det
     init_state = {n: p.detach().clone() for n, p in model.named_parameters()
                   if p.requires_grad}
     sample_nums = [len(ds) for ds in local_datasets]
+    fr_gen = torch.Generator().manual_seed(seed + 1)            # reproducible free-rider random stream
     ltf = _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
-                               batch_size, max_length, seed, formatting_func)
+                               batch_size, max_length, seed, formatting_func,
+                               free_riders, free_rider_mode, fr_gen)
     logs = []
     _fedavg_core(init_state, ltf, sample_nums, rounds, sample_frac, seed,
                  on_round=lambda r, w_r, dm: logs.append((w_r, dm)))

@@ -43,7 +43,7 @@ def main():
     model = get_peft_model(model, LoraConfig(r=16, lora_alpha=32, target_modules=TARGET,
                                              lora_dropout=0.0, task_type="CAUSAL_LM"))
 
-    clients, val = build(n_clients=5, per_domain_train=8, per_domain_val=PDV, seed=0)
+    clients, val, _ = build(n_clients=5, per_domain_train=8, per_domain_val=PDV, seed=0)
     print(f"clients={len(clients)} sizes={[len(c) for c in clients]} val={len(val)}")
 
     logs = run_llm_fedavg_logs(model, tok, clients, rounds=2, lr=1e-3,
