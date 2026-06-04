@@ -136,6 +136,7 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[threads/data-and-model-markets]] — IR/IC/replication-robustness in commercial contexts.
 - [[threads/data-quality-vs-data-value]] — quality scoring vs. attribution; why distinct; DsDm's "similarity ≠ value" finding.
 - [[threads/noise-ood-malicious-client-separation]] — FL robustness-side prior art (FLDetector, FoolsGold, FLTrust, FedCorr, STD-DAGMM); backs Flirds' deferred-limitation recast + surviving detection benchmarks.
+- [[threads/dataset-format-uniformity]] — cross-domain format uniformity for fair FL valuation; free-form unification (FLAN/LESS/MATES), parked dataset candidates, per-domain normalization + ablation.
 
 ## Raw materials inventory
 
