@@ -47,19 +47,25 @@ DOMAINS = ["medical", "legal", "finance", "math", "general"]
 N = 5
 NOISY = {0}                 # medical client = noisy (answer_swap, baked into its data)
 FREE_RIDERS = {1}           # legal client = free-rider (fabricated update at train time)
-FREE_RIDER_MODE = "random"  # Lin taxonomy; "zero" gives phi==0 exactly, "random" a non-trivial baseline
+FREE_RIDER_MODE = "zero"    # Lin taxonomy; "zero" -> phi==0 exactly (clean #7 detection); "random" = noisy phi (Phase-2 STD-DAGMM hard case)
 K = 3                       # clients Flirds/random keep (drops 2 -> matches the 2 corrupted)
-ORACLE_B = True             # (b) in-run Shapley oracle at N=5 (validate est≈oracle at scale)
+ORACLE_B = os.environ.get("ORACLE_B", "0") == "1"   # (b) in-run oracle = 2^N*R*val*seq, the DOMINANT cost
+#   (multi-hour-to-day at val=1000/R=50; est≈oracle already validated at R=10 -> 1.16e-6).  OFF by default;
+#   set ORACLE_B=1 with a SMALL val/R for a dedicated est-vs-oracle validation, NOT in the headline run.
 
 # full = the locked #7 config; mini = ~30min de-risk (does the signal emerge?);
 # smoke = tiny end-to-end machine check.  CLEAN_RUN_MODE in {full, mini, smoke}.
-FULL = dict(train=12000, val=200, test=2000, rounds=30, max_steps=10, lr=2e-5, batch=16,
+FULL = dict(train=12000, val=200, test=2000, rounds=50, max_steps=10, lr=2e-5, batch=16,
             maxlen=768, val_maxlen=384, val_chunk=10, gen_new=128, gen_batch=16, seeds=[0, 1, 2])
-MINI = dict(train=500, val=200, test=200, rounds=10, max_steps=10, lr=2e-5, batch=16,
+MINI = dict(train=500, val=200, test=200, rounds=50, max_steps=10, lr=2e-5, batch=16,
             maxlen=768, val_maxlen=384, val_chunk=10, gen_new=128, gen_batch=16, seeds=[0])
 SMOKE = dict(train=8, val=20, test=10, rounds=2, max_steps=2, lr=1e-3, batch=2,
              maxlen=768, val_maxlen=256, val_chunk=10, gen_new=16, gen_batch=8, seeds=[0])
-_CFGS = {"full": FULL, "mini": MINI, "smoke": SMOKE}
+# lr-sweep diagnostic: small val (fast oracle, run with ORACLE_B=1) + R=20 to map, per lr,
+# "does plain-SGD learn (val_loss drops, arms differ)?" vs "does est≈oracle hold (Taylor)?"
+SWEEP = dict(train=500, val=100, test=200, rounds=20, max_steps=10, lr=1e-4, batch=16,
+             maxlen=768, val_maxlen=384, val_chunk=10, gen_new=128, gen_batch=16, seeds=[0])
+_CFGS = {"full": FULL, "mini": MINI, "smoke": SMOKE, "sweep": SWEEP}
 
 
 def _split(w_r, pkeys, device):
@@ -124,11 +130,14 @@ def run_seed(seed, cfg, device, root):
     all_idx = list(range(N))
 
     # ---- Flirds run over ALL clients -> phi (this IS the "full" training arm) ----
+    print(f"[seed {seed}] training full arm (R={cfg['rounds']}, {N} clients)...", flush=True)
     logs_full = _run_subset(model, init_lora, clients, all_idx, tok, cfg, seed)
     loss_fn, pkeys, loss_chunks = make_llm_loss(model, val_chunks, device)
+    print(f"[seed {seed}] Flirds phi: {cfg['rounds']} rounds x {len(val_chunks)} val chunks (HVP)...", flush=True)
     phi, _ = flirds_values(logs_full, loss_fn, pkeys, device, second_order=True, loss_chunks=loss_chunks)
     phi_b = None
     if ORACLE_B:
+        print(f"[seed {seed}] (b) oracle: 2^{N} coalitions x {cfg['rounds']} rounds (DOMINANT cost)...", flush=True)
         phi_b, _ = in_run_shapley(logs_full, N, loss_fn, pkeys, device)
 
     # ---- (1) detection AUROC (higher phi = worse) ----
@@ -149,6 +158,7 @@ def run_seed(seed, cfg, device, root):
     metrics["selection"] = {"K": K, "flirds_keep": keep, "random_keep": rand}
     metrics["arms"] = {}
     for name, idxs in arms.items():
+        print(f"[seed {seed}] arm {name} keep={idxs}: train + generate {len(test)} test...", flush=True)
         logs = logs_full if name == "full" else _run_subset(model, init_lora, clients, idxs, tok, cfg, seed)
         curve, taskacc = _eval_arm(model, tok, logs, val_chunks, test, device, cfg)
         metrics["arms"][name] = {"idxs": idxs, "val_loss_curve": curve, "task_acc": taskacc}
@@ -170,13 +180,19 @@ def run_seed(seed, cfg, device, root):
 def main():
     mode = os.environ.get("CLEAN_RUN_MODE", "full")
     cfg = _CFGS[mode]
+    if os.environ.get("RUN_LR"):                       # lr-sweep: override lr per process
+        cfg = {**cfg, "lr": float(os.environ["RUN_LR"])}
     device = "cuda"
     root = os.environ.get("RUN_ROOT", f"runs/phase1_clean_{mode}")
     print(f"#7 clean run | {mode.upper()} | per_domain={cfg['train']}/{cfg['val']}/{cfg['test']} "
-          f"R={cfg['rounds']} seeds={cfg['seeds']} K={K} noisy={sorted(NOISY)} free_rider={sorted(FREE_RIDERS)}({FREE_RIDER_MODE})")
+          f"R={cfg['rounds']} lr={cfg['lr']} ORACLE_B={ORACLE_B} seeds={cfg['seeds']} K={K} "
+          f"noisy={sorted(NOISY)} free_rider={sorted(FREE_RIDERS)}({FREE_RIDER_MODE})")
 
+    # RUN_SEED restricts to ONE seed -> launch 3 processes on GPUs 1/2/3 for ~3x wall-clock
+    # (seeds are independent; cross-seed mean+/-std is then aggregated post-hoc from the run-dirs).
+    seeds = [int(os.environ["RUN_SEED"])] if os.environ.get("RUN_SEED") else cfg["seeds"]
     per_seed = []
-    for seed in cfg["seeds"]:
+    for seed in seeds:
         m, d = run_seed(seed, cfg, device, root)
         per_seed.append(m)
         fr = "  ".join(f"{DOMAINS[i][:4]}={m['phi_est'][i]:+.4f}" for i in range(N))
