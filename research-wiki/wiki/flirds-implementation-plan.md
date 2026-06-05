@@ -167,6 +167,11 @@ Four phases. **Phase 0 is a hard gate**: no LLM-phase code is written until Phas
    - **Backdoor detection eval** (#12) — AUROC column alongside noisy/free-rider (corruptor built in Phase 2 #9).
    - **Qualitative attribution case study** (#17) — domain-val → which client credited; post-hoc on logged per-layer φ, near-free.
    - **Clean-data skyline** (#18) — upper bound for detection (partition built in Phase 2 #9).
+9. **(2026-06-05) Experiment instrumentation & reporting tooling (W&B replacement, [[flirds-protocol]] §15):**
+   - **Timing & GPU-hour accounting** (§15.1) — per-phase wall-clock + GPU-hours + peak GPU memory → `timing.json` per run. The substrate for the paper's efficiency claim (Flirds 1 HVP/round vs oracle = a **measured** wall-clock ratio logged side-by-side, not only FLOP-argued).
+   - **Live process logging** (§15.2) — timestamped `run.log` + per-round ETA + traceback → `error.log` + `status` in `meta.json` (crash localization). Formalize the orchestrator's existing `print(flush=True)` lines into a tiny logging helper, not a framework.
+   - **Cross-run aggregation + visualization** (§15.3) — `experiments/aggregate_runs.py`: scan `runs/`, assemble one tidy table (row per config cell), emit summary tables (mean±std + 95% CI) + matplotlib figures (convergence / AUROC / α-E bands / est-vs-oracle / timing bars). Replaces the W&B dashboard; read-only over run-dirs.
+   > **Instrument early.** The timing + structured-logging hooks (§15.1–15.2) are cheap additions to `run_logger.py` / the orchestrator — wire them in **before the imminent #7 FULL scale run** so a multi-hour run isn't wasted untimed/unlogged (per-run recording §6 is already done; this adds timing + live-log + crash-capture on top). The cross-run aggregation/viz tool (§15.3) is the Phase-3-era deliverable, built once enough run-dirs exist. Both surgical (no speculative framework — `codes/CLAUDE.md`).
 
 **Output**: all numbers for the paper, with reproducibility metadata. Hand off to `/auto-review-loop` / `/paper-writing`.
 
@@ -363,6 +368,8 @@ Original kickoff prompt (historical):
 | "What's the closest centralized analog to Flirds?" | [[sources/less]] + [[flirds#Centralized positioning (added 2026-05-22)]] |
 | "What's the proof that Flirds = centralized data-Shapley + drift residual?" | [[flirds#Mathematical narrative (paper-ready)]] + `raw/conversations/flirds/conversation3.md` §4 |
 | "Where do I save per-round per-client $\phi_k^{(r)}$?" | [[flirds-protocol#6. Run logging]] |
+| "How do I record per-experiment time / GPU-hours?" | [[flirds-protocol#15. Experiment instrumentation & reporting (the W&B replacement)]] §15.1 |
+| "Where's the cross-run aggregation / plotting tool (no W&B)?" | [[flirds-protocol#15. Experiment instrumentation & reporting (the W&B replacement)]] §15.3 |
 | "What is Phase 0's pass criterion?" | [[flirds-protocol#10. Phase 0 — baseline reproduction (status: DONE 2026-06-02/03)]] |
 | "What is the Yonghee preference about pilot data?" | [[2026-05-27-section-23-lock#Yonghee's preferences surfaced (for memory / future sessions)]] |
 | "What datasets are LESS/MATES/DsDm trained on?" | [[threads/data-selection-for-llms]] |

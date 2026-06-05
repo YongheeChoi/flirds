@@ -117,7 +117,9 @@ Every reported number traces back to a logged run via:
 - **Environment hash**: `pip freeze` + CUDA version + GPU model.
 - **Git SHA**: code commit at run time.
 - **Per-round per-client $\phi_k^{(r)}$ archive** (incl. per-layer components, seam 1): every round's per-client raw value saved (compressed, e.g. parquet) for post-hoc analysis without re-running.
-- **Local run-dir logging — NO W&B / mlflow** (decided 2026-06-02, D2): each run writes a local directory holding the config YAML + env hash + git SHA + the φ archive. No external experiment tracker.
+- **Timing & resource record** (`timing.json`): per-phase wall-clock (client-training / φ-estimation / each oracle / generation-eval / total) + GPU-hours + peak GPU memory — the efficiency-claim substrate (§15.1).
+- **Process log** (`run.log` + a `status` field in `meta.json`): timestamped per-phase progress with ETA; on crash, traceback → `error.log` and `status: failed` so the run is diagnosable post-mortem (§15.2).
+- **Local run-dir logging — NO W&B / mlflow** (decided 2026-06-02, D2): each run writes a local directory holding the config YAML + env hash + git SHA + the φ archive + `timing.json` + `run.log`. No external experiment tracker; the offline aggregation/visualization tool (§15.3) consumes these dirs in place of a W&B dashboard.
 
 Reported number → must be linkable to a specific (config, env, git SHA, run dir). PR review on paper claims = "for claim $X$, show me the run dir."
 
@@ -232,3 +234,33 @@ Plus the precision split for the largest tier: **7B = bf16 train / fp32 eval** (
 - **selection-convergence**: φ → top-K → retrain, convergence-speed / final-perf vs **full** and **random-K** arms (MATES "2.3× faster to fixed acc" template); per-round val-loss curves read **post-hoc off the logged trajectory** (no FL-loop change). **Caveat to clear**: gradient/similarity selection can *underperform random* on heterogeneous FL (FedDQC DataInf < random; DsDm).
 - **Run logging** (`flirds/run_logger.py`, §6): per run a dir with config.yaml + meta{git SHA + dirty + env hash + lib versions} + per-round φ parquet + metrics json.
 - **Orchestrator** `experiments/phase1_clean_run.py` (FULL / MINI / SMOKE): per-seed Flirds φ + (b) oracle at N=5 → AUROC → selection arms → final per-domain task-acc via generation → run-dir. FULL = N=5, R≈30, max_steps 10, lr 2e-5, K=3, 3 seeds, free_rider_mode=random, ORACLE_B (~5–7h, generation-dominated).
+
+## 15. Experiment instrumentation & reporting (the W&B replacement)
+
+With no W&B (D2), the §6 run-dir + offline tooling must reproduce what a tracker would give: per-run **timing**, live **status**, and a cross-run **roll-up**. Three requirements (Yonghee, 2026-06-05), all consuming the §6 run-dir.
+
+### 15.1 Timing & GPU-hour accounting
+
+Every run records wall-clock, broken down **by phase**, to `timing.json` in the run-dir:
+- per-phase wall-clock: client-training, φ-estimation (the 1 HVP + $N$ dots/round), each oracle ((a) retrain / (b) in-run), generation/eval, total.
+- **GPU-hours** $= \sum_\text{phase}(\text{wall-clock}\times\#\text{GPUs the phase used})$ — the budget-report number.
+- **peak GPU memory** (`torch.cuda.max_memory_allocated`) per phase — supports the "1 HVP/round, val micro-batched" efficiency story + the OOM-ceiling table ([[flirds-protocol#4.4 Estimator≈oracle fidelity grid (locked 2026-06-04, all 3 seeds)|§4.4]]).
+
+*Why*: the paper must state method efficiency in **time** (train + inference) and report total **GPU-hours** consumed. The headline efficiency claim — Flirds overhead = 1 HVP + $N$ dots/round vs the oracle's $2^N$ — is a **measured wall-clock ratio**, not only a FLOP argument, so the φ-estimation vs oracle timings must be logged side-by-side **from the same run**.
+
+### 15.2 Live process logging (progress, ETA, crash localization)
+
+Every long run emits a **timestamped, structured log** to *both* stdout and a run-dir `run.log`:
+- phase start/end markers; inside the FL loop, per-round `r/R` progress with a rolling **ETA** (mean completed-round time × rounds remaining).
+- on exception: full traceback → `error.log` + `status: failed` (with the failing phase + round) in `meta.json`; a clean finish writes `status: done`. A killed/crashed run is then identifiable + diagnosable **post-mortem without re-running**.
+- the orchestrator's existing `print(..., flush=True)` lines are the seed of this — formalize into a **tiny logging helper** (timestamp + run-dir file sink), *not* a new framework (`codes/CLAUDE.md`: no speculative abstraction).
+
+*Why*: a multi-hour run that dies must say **where**; a running one must say **how far / how long left**.
+
+### 15.3 Cross-run aggregation & visualization
+
+Per-run recording is §6 (done — `run_logger.py`). The gap is the **roll-up**: a standalone **offline report tool** (e.g. `experiments/aggregate_runs.py`) that scans a `runs/` root and assembles every run's `config + meta + metrics + timing + φ` into **one tidy table** (one row per run, keyed by the config cell: model × $\alpha$ × $E$ × $N$ × seed × baseline). From that table it emits:
+- **summary tables**: mean ± std + 95% bootstrap CI (§2/§3) per cell — the paper-table substrate.
+- **figures** (matplotlib, no W&B): selection-convergence curves, noisy/free-rider AUROC bars, $\alpha$/$E$-sweep bands, est-vs-oracle scatter, timing / GPU-hour bars.
+
+The tool is **read-only over run-dirs** — it never re-runs an experiment, so it can be iterated freely as figures are designed. (The orchestrator's end-of-run seed mean±std print is the *within-one-invocation* version; this generalizes it across invocations + config cells.) This is the deliverable that, post-matrix, turns a directory of runs into the paper's tables and plots.
