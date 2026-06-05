@@ -123,3 +123,34 @@ size allocation):
 **Status**: #7 infra COMPLETE. A MINI de-risk run (train 500 / R 10 / test 200 / 1 seed, ~30min) launched
 in background to check the noisy/selection signal before the ~5–7h FULL 3-seed run (`CLEAN_RUN_MODE=full`).
 Then ③ = SV baselines port. Committed on `main` (not pushed — no stored creds; Yonghee pushes).
+
+## Session 3 cont. — #7 scale run de-risk + lr-sweep (2026-06-04→05)
+
+Launched the #7 scale run; a long de-risk loop followed (recorded so the journey isn't lost):
+
+- **(b) oracle cost blowup**: first mini+full (R=50, ORACLE_B=True) hung ~9h in the (b) in-run oracle
+  (2^N·R·val·seq — the wiki-flagged DOMINANT cost; not a bug, CPU≈elapsed = computing). Killed. Fix:
+  **ORACLE_B env-toggle OFF by default** (est≈oracle already validated at R=10/smoke; #7 headline metrics
+  use the estimator φ, not the oracle) + **phase prints + `python -u`** (the silent oracle phase had
+  frozen the log → looked hung; now real-time).
+- **flat-training finding + reframe**: val_loss barely moved at R=10 AND R=50. Causes (Yonghee corrected
+  my "training too weak" framing): (i) **plain-SGD @ lr=2e-5 is very slow** (§3.3's 2e-5 is an Adam value;
+  SGD needs ~1e-3); (ii) the target is **Llama-3.2-1B-Instruct = already instruction-tuned → limited
+  headroom** (start val_loss ~2.43, ppl ~11); (iii) 5 disjoint domains = extreme non-IID FedAvg cancellation.
+- **lr-sweep** (4 GPUs parallel, oracle-on small val=100/R=20, lr {1e-4,3e-4,1e-3,3e-3}): learning ∝ lr
+  (val_loss Δ 0.003→0.073); **est≈oracle tight through 1e-3 (6.2e-6), jumps to 7.6e-5 at 3e-3** (still
+  <1e-4 = essentially exact). free-rider=**zero AUROC 1.0**; noisy **0.75** (answer_swap is MILD — shuffled
+  completions are still valid same-domain text; + the free-rider's φ=0 outranks it). Arms DO differentiate
+  (drop-corrupted → lower val_loss) so the **selection signal is real but small** (Δ~0.005; the FedDQC/DsDm
+  "hard to beat random" bar).
+- **lr decision**: Yonghee corrected my over-conservative 1e-3 pick — both lr's est≈oracle is essentially
+  exact, so the tighter one doesn't matter; the actual goal (learning/selection) favors the higher lr →
+  **run BOTH 1e-3 and 3e-3 as full**.
+- **efficiency (Yonghee)**: CPU is NOT overloaded (72 cores, loadavg ~2, the proc is single-threaded/1 core);
+  GPU 0 ~100% but only 1 of 4 GPUs used. Fix = seed/cell parallelism (`RUN_SEED` → one seed per GPU, ~3-4×).
+  Durable opts for the matrix: tokenize-once (FL re-tokenizes every round) + bf16-train/fp32-eval (~2×).
+  The real-matrix-cost worry: the expensive bit is the ORACLE (validation-only, small N) — the METHOD
+  (estimator) is cheap by design; the 144-cell×3-scale matrix is parallelizable (plan budgeted ~3 weeks).
+- **NOW RUNNING (4 GPUs, estimator-only)**: lr1e-3 s0/s1 (GPU0/1) + lr3e-3 s0/s1 (GPU2/3), ~6-10h each;
+  RUN_ROOT=runs/full_lr{1e-3,3e-3}. Remaining seed-2 of each → next session. Read with
+  `experiments/read_runs.py`. Config changes (ORACLE_B/RUN_SEED/RUN_LR/SWEEP/phase-prints/use_cache) committed.
