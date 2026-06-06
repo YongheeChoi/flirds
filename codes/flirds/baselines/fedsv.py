@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..fl.server import evaluate, run_fedavg_logs
-from .gtg import _aggregate_subset
+from ..fl.server import run_fedavg_logs
+from .gtg import _round_metrics
 
 
 def _round_permutation_sv(n_players, last_metric, full_metric, metric_fun,
@@ -38,21 +38,20 @@ def _round_permutation_sv(n_players, last_metric, full_metric, metric_fun,
 
 
 def fedsv_from_logs(logs, model, n_clients, test_loader, device, seed=0,
-                    n_perm=None, normalized=False, trunc_eps=0.001):
-    """FedSV per-round permutation-MC Shapley from a shared FedAvg trajectory."""
+                    n_perm=None, normalized=False, trunc_eps=0.001,
+                    loss_fn=None, pkeys=None):
+    """FedSV per-round permutation-MC Shapley from a shared FedAvg trajectory.
+
+    Backend-agnostic like gtg_from_logs: (model, test_loader) for the CNN accuracy
+    metric (default), or (loss_fn, pkeys) for the LLM val-loss metric (model/
+    test_loader then None).  trunc_eps is in the metric's units."""
     rng = np.random.default_rng(seed)
     phi = np.zeros(n_clients)
     for gb, dm in logs:
         players = sorted(dm.keys())
         m = n_perm or max(30, 2 * len(players))
-        last_m = evaluate(model, gb, test_loader, device)
-        full_m = evaluate(model, _aggregate_subset(gb, dm, players, device),
-                          test_loader, device)
-
-        def metric_fun(sub_idx, gb=gb, dm=dm, players=players):
-            st = _aggregate_subset(gb, dm, [players[i] for i in sub_idx], device)
-            return evaluate(model, st, test_loader, device)
-
+        last_m, full_m, metric_fun = _round_metrics(
+            gb, dm, players, model, test_loader, device, loss_fn, pkeys)
         rsv = _round_permutation_sv(len(players), last_m, full_m, metric_fun, m, rng,
                                     trunc_eps=trunc_eps)
         if normalized:

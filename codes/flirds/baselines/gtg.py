@@ -10,6 +10,7 @@ trajectory-faithful reconstruction, NO retraining (distinct from (a) retrain SV)
 from __future__ import annotations
 
 import numpy as np
+import torch
 
 from ..fl.server import evaluate, run_fedavg_logs
 
@@ -25,6 +26,51 @@ def _aggregate_subset(global_before, deltas_map, subset, device):
         for k in state:
             state[k] = state[k] + (n / tot) * d[k].to(device)
     return state
+
+
+def _llm_subset_params(w_r, deltas_map, subset, pkeys, device):
+    """LoRA-param reconstruction restricted to `subset`, within-subset re-normalized
+    (n_c / Σ_{c∈S} n_c) -- the param-only analogue of _aggregate_subset for the LLM
+    backend.  w_r/deltas are LoRA-only (the frozen base lives inside loss_fn's model),
+    so this returns params only; loss_fn's buffers arg is then empty."""
+    params = {n: w_r[n].detach().float().to(device) for n in pkeys}
+    if not subset:
+        return params
+    tot = sum(deltas_map[c][1] for c in subset)
+    for c in subset:
+        d, nc = deltas_map[c]
+        for k in pkeys:
+            params[k] = params[k] + (nc / tot) * d[k].float().to(device)
+    return params
+
+
+def _round_metrics(gb, dm, players, model, test_loader, device, loss_fn, pkeys):
+    """(last_m, this_m, metric_fun) for one round; metric_fun(sub_idx) over `players`
+    indices.  Shared by GTG and FedSV; the only backend-specific part.
+
+    CNN (loss_fn=None): accuracy via evaluate + _aggregate_subset (UNCHANGED -> the
+      CNN baselines stay bit-identical to the pre-port code).
+    LLM (loss_fn given): val-loss via loss_fn over the within-subset LoRA-param
+      reconstruction (buffers empty; w_r is LoRA-only).  loss is lower=better, so
+      a helpful client's marginal is negative -- same orientation as the (b) oracle
+      / estimator (good->low; comparisons negate to good->high)."""
+    if loss_fn is None:
+        last_m = evaluate(model, gb, test_loader, device)
+        this_m = evaluate(model, _aggregate_subset(gb, dm, players, device), test_loader, device)
+
+        def metric_fun(sub_idx):
+            st = _aggregate_subset(gb, dm, [players[i] for i in sub_idx], device)
+            return evaluate(model, st, test_loader, device)
+    else:
+        @torch.no_grad()                       # value-only forward (cf. CNN evaluate); the
+        def _m(subset):                        # estimator differentiates loss_fn, the baselines don't
+            return float(loss_fn(_llm_subset_params(gb, dm, subset, pkeys, device), {}))
+
+        last_m, this_m = _m([]), _m(players)
+
+        def metric_fun(sub_idx):
+            return _m([players[i] for i in sub_idx])
+    return last_m, this_m, metric_fun
 
 
 def _normalize(sv, marginal_gain):
@@ -97,22 +143,22 @@ class _RoundGTG:
 
 
 def gtg_from_logs(logs, model, n_clients, test_loader, device, seed=0,
-                  round_trunc=0.001, normalize=True, eps=0.001):
-    """GTG round-Shapley from a shared FedAvg trajectory; total phi over rounds."""
+                  round_trunc=0.001, normalize=True, eps=0.001,
+                  loss_fn=None, pkeys=None):
+    """GTG round-Shapley from a shared FedAvg trajectory; total phi over rounds.
+
+    Backend-agnostic: pass (model, test_loader) for the CNN accuracy metric
+    (default), or (loss_fn, pkeys) for the LLM val-loss metric (model/test_loader
+    then unused -> pass None); see _round_metrics.  round_trunc/eps are in the
+    metric's units (accuracy for CNN, loss for LLM)."""
     rng = np.random.default_rng(seed)
     phi = np.zeros(n_clients)
     for gb, dm in logs:
         players = sorted(dm.keys())
-        last_m = evaluate(model, gb, test_loader, device)
-        this_m = evaluate(model, _aggregate_subset(gb, dm, players, device),
-                          test_loader, device)
+        last_m, this_m, metric_fun = _round_metrics(
+            gb, dm, players, model, test_loader, device, loss_fn, pkeys)
         if abs(this_m - last_m) <= round_trunc:
             continue
-
-        def metric_fun(sub_idx, gb=gb, dm=dm, players=players):
-            st = _aggregate_subset(gb, dm, [players[i] for i in sub_idx], device)
-            return evaluate(model, st, test_loader, device)
-
         rsv = _RoundGTG(len(players), last_m, this_m, metric_fun, eps=eps).compute(
             rng, normalize)
         for i, p in enumerate(players):
