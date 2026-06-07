@@ -56,6 +56,13 @@ definition:    algorithm-level | model-level | trajectory-level
 
 Most papers move on one axis; the wiki should articulate methods by which axis they touch. See [[threads/symmetry-and-asymmetry-axioms]] for the axiom axis.
 
+## Flirds note (2026-06-07): val-loss vs downstream-ROUGE for SV *validation*
+
+From the dual-oracle validation (task 6, N=5@1B). Two distinct roles of the utility surface here:
+
+- **For validating that a method computes the SV correctly**, the ground-truth (a) retrain oracle must solve the **same game** as the method. The Flirds estimator is a Taylor expansion of the validation **loss** → it can only value a *differentiable* utility; downstream ROUGE (argmax-generated-text overlap) is non-differentiable, so there is no estimator-ROUGE, and the (b) in-run oracle (a frozen-delta loss-perturbation) can't use ROUGE either. So val-loss is forced on the (b)/estimator side; the (a) retrain (evaluates a *final model*) is free to use any metric. Empirically (a)-val-loss = (b) = estimator at **Spearman +1.000** (fp32) — the same-utility validation passes cleanly.
+- **As the valuation utility itself**, val-loss proved **more robust to corruption** than downstream-ROUGE: (a)-ROUGE diverges from the val-loss game (+0.4 at 1B, **−0.9 at 3B**) because answer-swap corruption (domain text kept, answers permuted) *raises* test ROUGE via domain-format learning while *raising* val-loss (correctly penalized). Downstream metrics can be fooled by style-preserving corruption; the val-loss utility is not — a concrete point for the val-loss choice (cf. the [[sources/feddqc]] IRA selection-vs-task-eval separation).
+
 ## Open questions
 
 - **Combinations**: can [[sources/distributionally-robust-data-valuation|DRGE]] utility be combined with [[sources/in-run-data-shapley|In-Run Shapley]]'s per-step accumulation? With [[sources/asymmetric-data-shapley|ADS]]'s state-conditioned marginal? Both seem natural; neither has been done.
