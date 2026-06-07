@@ -208,14 +208,14 @@ Phase 1 is **essentially complete** — data layer + ② corruptor + the #7 firs
 **Code availability for included baselines**:
 | Baseline | Code | Action |
 |---|---|---|
-| ShapleyFL | ✅ [ZJU-DIVER/ShapleyFL](https://github.com/ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value) | use as-is |
-| Data Banzhaf in FL | ✅ semivalue libraries (`pyDVL`, `OpenDataVal`) | adapt |
+| ShapleyFL | ✅ [ZJU-DIVER/ShapleyFL](https://github.com/ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value) (CNN-image) | **self-built ✓ Phase 2 (2026-06-07)** — surrogate-FSV (uniform submodel + per-round exact Shapley + min-max + EMA) from-logs; DMC→cross-device. LLM N=5: Spearman vs (b)oracle +1.000, ~531s |
+| Data Banzhaf in FL | ✅ semivalue libraries (`pyDVL`, `OpenDataVal`) | **self-built ✓ Phase 2 (2026-06-07)** — semivalue = (b)-oracle coalition utils reweighted by 1/2^{n-1} (exact, no lib dep). LLM N=5: Spearman +1.000, free-rider φ=0, ~531s |
 | GTG-Shapley | code exists, non-forkable (cyyever multi-pkg framework) | **self-built ✓ Phase 0** (recon cosine 0.99) |
 | FedSV (Wang 2020) | ❌ | **self-built ✓ Phase 0** (permutation-MC recon 0.998) |
 | ComFedSV | code exists, non-forkable (Huawei notebook) | **self-built ✓ Phase 0** (Spearman {1.0,0.96,0.85,0.84}) |
 | Ripple Shapley | ❌ (AAAI'26, newest) | **self-built ✓ Phase 0** (no ground-truth-SV metric — task-driven only; AUROC 1.0 + runtime). Speedup 62× vs AFedSV+ / 49× vs FedSV, **not vs GTG** |
 | Full FedAvg / Random-selection FedAvg | trivial | implement |
-| loss-heuristic, Flirds-1st-only | trivial | implement |
+| loss-heuristic, Flirds-1st-only | trivial | **✓ Phase 2 (2026-06-07)** — loss-heur = singleton in-run util U_(b)({k}) (free-rider φ=0); 1st-only = `second_order=False` (~35s ≈ 15× cheaper). LLM N=5: both Spearman +1.000 |
 
 > **Correction (2026-06-02, vs the original "code-unavailable" framing)**: all four FL-Shapley baselines are **reference-guided self-builds** (D1) — GTG/ComFedSV have public code but in non-forkable forms. Ripple has **no ground-truth-SV metric** (it reports task-driven robustness only), and its "62×" speedup is vs AFedSV+ (= [[sources/shapleyfl|ShapleyFL]]-style adaptive aggregation) / 49× vs FedSV — *not* vs GTG. "AFedSV" is not a standalone paper (= ShapleyFL alias); see [[sources/shapfed]].
 

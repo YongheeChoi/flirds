@@ -35,14 +35,16 @@ from scipy.stats import spearmanr
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from flirds.backends.llm import make_llm_loss
+from flirds.baselines.banzhaf import in_run_banzhaf
 from flirds.baselines.fedsv import fedsv_from_logs
 from flirds.baselines.gtg import gtg_from_logs
 from flirds.baselines.ripple_llm import ripple_shapley_llm
+from flirds.baselines.shapleyfl import shapleyfl_from_logs
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.llm import build, build_val_batches
 from flirds.eval.metrics import detection_auroc
 from flirds.fl.llm_server import run_llm_fedavg_logs
-from flirds.oracle.in_run_sv import in_run_shapley
+from flirds.oracle.in_run_sv import in_run_shapley, in_run_utility
 from flirds.repro import seed_everything
 
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
@@ -57,7 +59,8 @@ CFG = dict(train=200, val=20, rounds=10, max_steps=10, lr=1e-3, batch=16,
            # the oracle/GTG/FedSV coalition sweep (2^N * rounds * val-chunks) and Ripple's
            # per-step val-grad + Hessian HVPs are the cost -- kept modest so a seed is ~20min
            # (val=20/domain -> 10 chunks; runtime is itself the reported Ripple metric).
-           rip_rounds=4, rip_steps=4, rip_k=3, rip_m=20, rip_hess_bs=2)
+           rip_rounds=4, rip_steps=4, rip_k=3, rip_m=20, rip_hess_bs=2,
+           sfl_beta=0.5)   # ShapleyFL surrogate-FSV EMA rate (Def 4.3)
 
 
 def _timed(fn, device):
@@ -95,14 +98,29 @@ def run_seed(seed, cfg, device):
     # every method values the SAME frozen logs via loss_fn/pkeys (good->low; the
     # baselines use the within-subset-renormalized reconstruction of their papers).
     (phi_b, _), t_b = _timed(lambda: in_run_shapley(logs, N, loss_fn, pkeys, device), device)
+    # exact Banzhaf semivalue: SAME (b) delta utility, uniform 1/2^{n-1} marginal weight
+    # (a coalition-sweep baseline; runtime in the (b)-oracle class, not Flirds' 1 HVP/round).
+    (phi_z, _), t_z = _timed(lambda: in_run_banzhaf(logs, N, loss_fn, pkeys, device), device)
     (phi_e, _), t_e = _timed(
         lambda: flirds_values(logs, loss_fn, pkeys, device, second_order=True, loss_chunks=lc), device)
+    (phi_1, _), t_1 = _timed(   # Flirds-1st-only (self-ablation: isolates the 2nd-order term)
+        lambda: flirds_values(logs, loss_fn, pkeys, device, second_order=False, loss_chunks=lc), device)
     phi_g, t_g = _timed(
         lambda: gtg_from_logs(logs, None, N, None, device, seed=seed, loss_fn=loss_fn,
                               pkeys=pkeys, round_trunc=0.0, eps=0.0), device)
     phi_f, t_f = _timed(
         lambda: fedsv_from_logs(logs, None, N, None, device, seed=seed, loss_fn=loss_fn,
                                 pkeys=pkeys, trunc_eps=0.0), device)
+    # ShapleyFL surrogate-FSV (uniform submodel + per-round exact Shapley + min-max + EMA);
+    # good->high -> negate to good->low (like Ripple).  Another coalition-sweep baseline.
+    phi_s_raw, t_s = _timed(
+        lambda: shapleyfl_from_logs(logs, None, N, None, device, beta=cfg["sfl_beta"],
+                                    loss_fn=loss_fn, pkeys=pkeys), device)
+    phi_s = np.asarray([-float(x) for x in phi_s_raw])
+    # loss-heuristic (floor): per-client singleton in-run utility U_(b)({k}) (no coalitions);
+    # good->low, free-rider(zero) -> exactly 0 (zero delta -> zero singleton utility).
+    phi_h, t_h = _timed(
+        lambda: np.array([in_run_utility(logs, [k], loss_fn, pkeys, device) for k in range(N)]), device)
 
     # Ripple values its OWN (shorter) trajectory -- no shared logs -> no Spearman vs
     # the oracle; negate to good->low so its AUROC/orientation match the loss-based
@@ -118,8 +136,9 @@ def run_seed(seed, cfg, device):
 
     noisy_y = [1 if i in NOISY else 0 for i in range(N)]
     fr_y = [1 if i in FREE_RIDERS else 0 for i in range(N)]
-    shared = [("Flirds", phi_e, t_e), ("GTG", phi_g, t_g),
-              ("FedSV", phi_f, t_f), ("(b)oracle", phi_b, t_b)]   # value the SAME logs
+    shared = [("Flirds", phi_e, t_e), ("Flirds1st", phi_1, t_1), ("GTG", phi_g, t_g),
+              ("FedSV", phi_f, t_f), ("Banzhaf", phi_z, t_z), ("ShapleyFL", phi_s, t_s),
+              ("loss-heur", phi_h, t_h), ("(b)oracle", phi_b, t_b)]   # value the SAME logs
     methods = shared + [("Ripple", phi_r, t_r)]                   # own trajectory
     return {
         "phi": {k: [float(x) for x in v] for k, v, _ in methods},
@@ -146,22 +165,25 @@ def main():
           f"R={cfg['rounds']} lr={cfg['lr']} | noisy={sorted(NOISY)} "
           f"free_rider={sorted(FREE_RIDERS)}({FREE_RIDER_MODE}) | seeds={seeds}", flush=True)
 
+    # method display order (keys come from run_seed's `methods`); defined once.
+    PHI_ORDER = ["(b)oracle", "Flirds", "Flirds1st", "GTG", "FedSV", "Banzhaf",
+                 "ShapleyFL", "loss-heur", "Ripple"]
+    SHARED_ORDER = ["Flirds", "Flirds1st", "GTG", "FedSV", "Banzhaf", "ShapleyFL", "loss-heur"]
+    ALL_ORDER = SHARED_ORDER + ["Ripple", "(b)oracle"]   # AUROC / runtime (every method)
+
     runs = []
     for seed in seeds:
         m = run_seed(seed, cfg, device)
         runs.append(m)
-        print(f"\n[seed {seed}] phi (good->low; Ripple negated):")
-        for k in ("(b)oracle", "Flirds", "GTG", "FedSV", "Ripple"):
+        print(f"\n[seed {seed}] phi (good->low; ShapleyFL/Ripple negated):")
+        for k in PHI_ORDER:
             print(f"  {k:9s}: {_fmt_phi(m['phi'][k])}")
-        print(f"  Spearman vs (b): " + "  ".join(
-            f"{k}={m['spearman_vs_b'][k]:+.3f}" for k in ("Flirds", "GTG", "FedSV"))
+        print("  Spearman vs (b): " + "  ".join(
+            f"{k}={m['spearman_vs_b'][k]:+.3f}" for k in SHARED_ORDER)
             + "   (Ripple: own trajectory, no shared GT)")
-        print(f"  AUROC noisy:     " + "  ".join(
-            f"{k}={m['auroc_noisy'][k]:.3f}" for k in ("Flirds", "GTG", "FedSV", "Ripple", "(b)oracle")))
-        print(f"  AUROC free-rider:" + "  ".join(
-            f"{k}={m['auroc_fr'][k]:.3f}" for k in ("Flirds", "GTG", "FedSV", "Ripple", "(b)oracle")))
-        print(f"  runtime (s):     " + "  ".join(
-            f"{k}={m['runtime'][k]:.1f}" for k in ("Flirds", "GTG", "FedSV", "Ripple", "(b)oracle")))
+        print("  AUROC noisy:     " + "  ".join(f"{k}={m['auroc_noisy'][k]:.3f}" for k in ALL_ORDER))
+        print("  AUROC free-rider:" + "  ".join(f"{k}={m['auroc_fr'][k]:.3f}" for k in ALL_ORDER))
+        print("  runtime (s):     " + "  ".join(f"{k}={m['runtime'][k]:.1f}" for k in ALL_ORDER))
 
     if len(runs) > 1:
         def agg(d, k):
@@ -170,13 +192,11 @@ def main():
         print(f"\n=== aggregate (mean+/-std over {len(runs)} seeds) ===")
         print("  Spearman vs (b):  " + "  ".join(
             f"{k}={agg('spearman_vs_b', k)[0]:+.3f}+/-{agg('spearman_vs_b', k)[1]:.3f}"
-            for k in ("Flirds", "GTG", "FedSV")))
+            for k in SHARED_ORDER))
         print("  AUROC noisy:      " + "  ".join(
-            f"{k}={agg('auroc_noisy', k)[0]:.3f}+/-{agg('auroc_noisy', k)[1]:.3f}"
-            for k in ("Flirds", "GTG", "FedSV", "Ripple", "(b)oracle")))
+            f"{k}={agg('auroc_noisy', k)[0]:.3f}+/-{agg('auroc_noisy', k)[1]:.3f}" for k in ALL_ORDER))
         print("  runtime (s):      " + "  ".join(
-            f"{k}={agg('runtime', k)[0]:.1f}+/-{agg('runtime', k)[1]:.1f}"
-            for k in ("Flirds", "GTG", "FedSV", "Ripple", "(b)oracle")))
+            f"{k}={agg('runtime', k)[0]:.1f}+/-{agg('runtime', k)[1]:.1f}" for k in ALL_ORDER))
     print("\nFlirds should match the (b) oracle ranking (Spearman ~1) at lower runtime "
           "than the coalition-sweep baselines; GTG/FedSV are the FL-Shapley comparison.")
 

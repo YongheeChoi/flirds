@@ -68,11 +68,12 @@ def in_run_utility(logs, subset, loss_fn, pkeys, device):
 
 
 @torch.no_grad()
-def in_run_shapley(logs, n_clients, loss_fn, pkeys, device):
-    """Exact (b) in-run Shapley values over `logs`.  Returns (phi[n], p[n]).
+def _coalition_utilities(logs, n_clients, loss_fn, pkeys, device):
+    """All 2^N coalition utilities U_(b)(S) on the frozen trajectory + global weight p.
 
-    p is the global weight n_k/Σn (exact under full participation), returned for
-    reference; the utility uses per-round participant weights internally."""
+    Shared by the exact in-run semivalues: Shapley (in_run_shapley) and Banzhaf
+    (baselines.banzhaf) differ ONLY in how this same U(S) dict is reweighted into
+    phi.  U(emptyset)=0; p is n_k/Σn (returned for reference)."""
     client_n = {}
     for _, dm in logs:
         for k, (_, n) in dm.items():
@@ -100,6 +101,17 @@ def in_run_shapley(logs, n_clients, loss_fn, pkeys, device):
     U = {S: utility(S)
          for r in range(n_clients + 1)
          for S in itertools.combinations(clients, r)}
+    return U, p
+
+
+@torch.no_grad()
+def in_run_shapley(logs, n_clients, loss_fn, pkeys, device):
+    """Exact (b) in-run Shapley values over `logs`.  Returns (phi[n], p[n]).
+
+    p is the global weight n_k/Σn (exact under full participation), returned for
+    reference; the utility uses per-round participant weights internally."""
+    U, p = _coalition_utilities(logs, n_clients, loss_fn, pkeys, device)
+    clients = list(range(n_clients))
     phi = np.zeros(n_clients)
     for k in clients:
         others = [c for c in clients if c != k]

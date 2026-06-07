@@ -54,6 +54,53 @@ def cnn_regression(device="cpu"):
     return g, f
 
 
+def banzhaf_kernel_check():
+    """banzhaf_from_utilities math (no model, CPU): additive game -> per-player values;
+    null player -> 0; N=2 -> equals Shapley (the two semivalue kernels coincide only
+    for N<=2).  A non-circular check of the Banzhaf weighting itself."""
+    from itertools import combinations
+
+    from flirds.baselines.banzhaf import banzhaf_from_utilities
+
+    # additive U(S)=Σ v_i -> every marginal of i is v_i -> Banzhaf_i = v_i.
+    v = [1.0, 2.0, 3.0]
+    U = {S: sum(v[i] for i in S) for r in range(4) for S in combinations(range(3), r)}
+    add_ok = bool(np.allclose(banzhaf_from_utilities(U, 3), v))
+    # null player: client 2 has a zero marginal in every coalition -> Banzhaf_2 == 0.
+    vn = [1.0, 2.0, 0.0]
+    Un = {S: sum(vn[i] for i in S) for r in range(4) for S in combinations(range(3), r)}
+    null_ok = bool(abs(banzhaf_from_utilities(Un, 3)[2]) < 1e-12)
+    # N=2: Banzhaf weight 1/2 == Shapley weights {1/2, 1/2}.
+    rng = np.random.default_rng(0)
+    U2 = {(): 0.0, (0,): float(rng.random()), (1,): float(rng.random()),
+          (0, 1): float(rng.random())}
+    bz = banzhaf_from_utilities(U2, 2)
+    sh = [0.5 * (U2[(0,)] - U2[()]) + 0.5 * (U2[(0, 1)] - U2[(1,)]),
+          0.5 * (U2[(1,)] - U2[()]) + 0.5 * (U2[(0, 1)] - U2[(0,)])]
+    n2_ok = bool(np.allclose(bz, sh))
+    print("== Banzhaf kernel check ==")
+    print(f"  additive-game recovers values={add_ok}  null-player==0={null_ok}  "
+          f"N2==Shapley={n2_ok}")
+    return add_ok and null_ok and n2_ok
+
+
+def shapleyfl_pipeline_check():
+    """ShapleyFL aggregation math (no model, CPU): min-max normalization (Def 4.2) +
+    EMA across rounds (Def 4.3) on synthetic per-round SVs.  Hand-verifiable."""
+    from flirds.baselines.shapleyfl import _ema_aggregate, _minmax
+
+    # min-max: [-1,0,1] -> [0,0.5,1]; flat round -> zeros.
+    mm_ok = bool(np.allclose(_minmax(np.array([-1.0, 0.0, 1.0])), [0.0, 0.5, 1.0])
+                 and np.allclose(_minmax(np.array([2.0, 2.0, 2.0])), [0.0, 0.0, 0.0]))
+    # EMA β=0.5, 2 clients, NSV r1=[0,1] r2=[1,0]: r1 ssv=[0,0.5]; r2 ssv=[0.5,0.25].
+    ema = _ema_aggregate([np.array([0.0, 1.0]), np.array([1.0, 0.0])],
+                         [[0, 1], [0, 1]], 2, 0.5)
+    ema_ok = bool(np.allclose(ema, [0.5, 0.25]))
+    print("== ShapleyFL pipeline check ==")
+    print(f"  minmax={mm_ok}  ema(Def4.3)={ema_ok}")
+    return mm_ok and ema_ok
+
+
 def llm_smoke(device="cuda"):
     """gtg/fedsv on a tiny real-1B 5-domain trajectory, valuing the SAME frozen logs
     as the (b) oracle/estimator.  Gate (scale-independent): free-rider(zero) phi==0
@@ -67,7 +114,9 @@ def llm_smoke(device="cuda"):
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     from flirds.backends.llm import make_llm_loss
+    from flirds.baselines.banzhaf import in_run_banzhaf
     from flirds.baselines.ripple_llm import ripple_shapley_llm
+    from flirds.baselines.shapleyfl import shapleyfl_from_logs
     from flirds.core.flirds_estimator import flirds_values
     from flirds.data.llm import build, build_val_batches
     from flirds.fl.llm_server import run_llm_fedavg_logs
@@ -98,6 +147,7 @@ def llm_smoke(device="cuda"):
     loss_fn, pkeys, lc = make_llm_loss(model, val_chunks, device)
 
     phi_b, _ = in_run_shapley(logs, N, loss_fn, pkeys, device)
+    phi_z, _ = in_run_banzhaf(logs, N, loss_fn, pkeys, device)   # exact Banzhaf, same (b) utility
     phi_e, _ = flirds_values(logs, loss_fn, pkeys, device, second_order=True, loss_chunks=lc)
     # baselines value the SAME logs via loss_fn/pkeys; truncation off (loss-scale per
     # round << the CNN-accuracy default 1e-3 -> the default would skip every round).
@@ -105,6 +155,10 @@ def llm_smoke(device="cuda"):
                           round_trunc=0.0, eps=0.0, normalize=False)
     phi_f = fedsv_from_logs(logs, None, N, None, device, seed=0, loss_fn=loss_fn, pkeys=pkeys,
                             trunc_eps=0.0)
+    # ShapleyFL surrogate-FSV (good->high -> negate). min-max normalized -> NOT exactly 0 on
+    # the free-rider (a normalized method, like gtg/fedsv) -> excluded from the fr==0 gate.
+    phi_sfl = -np.asarray(shapleyfl_from_logs(logs, None, N, None, device, beta=0.5,
+                                              loss_fn=loss_fn, pkeys=pkeys))
     # Ripple: own tiny trajectory (good->high -> negate to good->low). free-rider(zero)
     # -> phi==0 (zero delta = no drop, no ripple), like the from-logs methods.
     phi_r = -np.asarray(ripple_shapley_llm(model, init_lora, clients, tok, val_chunks, device,
@@ -116,7 +170,8 @@ def llm_smoke(device="cuda"):
     fmt = lambda ph: "  ".join(f"{DOMAINS[i][:4]}{tag(i)}={ph[i]:+.4f}" for i in range(N))
     print("\n== (B) LLM smoke (1B, N=5, free-rider=zero; loss-based, good->low) ==")
     for name, ph in [("(b) oracle", phi_b), ("estimator ", phi_e), ("gtg       ", phi_g),
-                     ("fedsv     ", phi_f), ("ripple    ", phi_r)]:
+                     ("fedsv     ", phi_f), ("banzhaf   ", phi_z), ("shapleyfl ", phi_sfl),
+                     ("ripple    ", phi_r)]:
         print(f"  {name}: {fmt(ph)}")
     # free-rider(zero) -> EXACTLY 0 for the delta-based methods (zero delta = zero
     # marginal in every coalition).  GTG/FedSV use within-subset RENORMALIZATION, so a
@@ -125,12 +180,14 @@ def llm_smoke(device="cuda"):
     # fixed-weight / delta utilities of Flirds/oracle/ripple give exactly 0 -- a cleaner
     # free-rider handling, a Flirds differentiator).
     fr_exact = {k: bool(abs(v[fr]) < 1e-9)
-                for k, v in [("oracle", phi_b), ("est", phi_e), ("ripple", phi_r)]}
+                for k, v in [("oracle", phi_b), ("est", phi_e), ("banzhaf", phi_z), ("ripple", phi_r)]}
     fr_small = {k: bool(abs(v[fr]) < 1e-2) for k, v in [("gtg", phi_g), ("fedsv", phi_f)]}
-    finite = all(bool(np.isfinite(v).all()) for v in (phi_b, phi_e, phi_g, phi_f, phi_r))
+    finite = all(bool(np.isfinite(v).all()) for v in (phi_b, phi_e, phi_g, phi_f, phi_z, phi_sfl, phi_r))
     print(f"  free-rider(zero): delta-based==0 {fr_exact} | renorm-small {fr_small} | finite={finite}")
     print(f"  Spearman vs (b) oracle: gtg={spearmanr(phi_g, phi_b).correlation:+.3f} "
           f"fedsv={spearmanr(phi_f, phi_b).correlation:+.3f} "
+          f"banzhaf={spearmanr(phi_z, phi_b).correlation:+.3f} "
+          f"shapleyfl={spearmanr(phi_sfl, phi_b).correlation:+.3f} "
           f"est={spearmanr(phi_e, phi_b).correlation:+.3f}  (ripple: own trajectory)")
     ok = all(fr_exact.values()) and all(fr_small.values()) and finite
     print("\nSV-BASELINE LLM PORT OK" if ok else "\nSV-BASELINE LLM SMOKE FAIL")
@@ -140,5 +197,7 @@ if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "both"
     if which in ("cnn", "both"):
         cnn_regression()
+        banzhaf_kernel_check()
+        shapleyfl_pipeline_check()
     if which in ("llm", "both"):
         llm_smoke()

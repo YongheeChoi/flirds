@@ -57,10 +57,10 @@ The prior art supplies the exact framing for an honest limitation:
 
 Noisy-client + free-rider benchmarks need robustness-side comparators, not just valuation-side:
 
-- [[sources/fldetector|FLDetector]] — temporal-consistency detector; strongest comparator for the noisy/poison benchmark.
+- [[sources/fldetector|FLDetector]] — temporal-consistency detector; strongest comparator for the noisy/poison benchmark. **→ cross-silo (N=5/10)** (regime split locked 2026-06-07): from-logs closed-form (Cauchy MVT + L-BFGS Hessian prediction-residual), runs at any N; use the continuous score for AUROC.
 - [[sources/foolsgold|FoolsGold]], [[sources/fltrust|FLTrust]] — cross-client / trusted-cosine baselines.
 - [[sources/fedcorr|FedCorr]] (LID filter) — noisy-client detection baseline.
-- [[sources/free-riders-fl-std-dagmm|STD-DAGMM]] / Delta-DAGMM — free-rider baseline.
+- [[sources/free-riders-fl-std-dagmm|STD-DAGMM]] / Delta-DAGMM — free-rider baseline. **→ cross-device (N=100, with Phase-2 task 7)** (regime split locked 2026-06-07): trains a DAGMM autoencoder+GMM on the set of client update vectors → needs N≫; **degenerate at cross-silo N=5** (5 vectors, ~12M-dim LoRA updates).
 - Valuation baselines from [[flirds]] ([[sources/gtg-shapley|GTG-Shapley]], [[sources/principled-federated-data-valuation|FedSV]], [[sources/comfedsv|ComFedSV]], [[sources/data-banzhaf|Data Banzhaf]] applied to FL, loss-heuristic) — they do *not* attempt noise-vs-OOD separation; useful to show Flirds at least matches detection while being a valuation method.
 
 The contrast to highlight: Flirds is a *valuation* method that, as a free by-product, does noisy/free-rider detection competitively with *dedicated* detectors — without their non-IID false-positive penalty (because it never hard-discards; it just down-weights signed value).
