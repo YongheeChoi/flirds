@@ -101,6 +101,41 @@ def shapleyfl_pipeline_check():
     return mm_ok and ema_ok
 
 
+def fldetector_synthetic_check():
+    """FLDetector on synthetic logs (no model, CPU): N-1 temporally-CONSISTENT clients
+    (track a smooth global trend) + 1 ANOMALOUS client (per-round noise).  The anomalous
+    client must get the highest suspicious score (argmax) and AUROC=1.  Non-circular: the
+    per-client update vectors are built directly; FLDetector recomputes the aggregate +
+    L-BFGS Hessian + the prediction itself.  A consistent client's update is base[r]+bias_c
+    (constant offset -> its temporal change == the trend, so it is L-BFGS-predictable); the
+    anomalous client's per-round noise breaks that, inflating its prediction residual."""
+    from flirds.baselines.fldetector import fldetector_from_logs
+    from flirds.eval.metrics import detection_auroc
+
+    rng = np.random.default_rng(0)
+    N, P, R, anom = 5, 8, 12, 0
+    base = [np.sin(0.3 * (r + 1) + np.arange(P)) for r in range(R)]   # smooth global trend
+    bias = [rng.normal(0, 0.5, P) for _ in range(N)]                  # per-client constant offset
+    logs = []
+    for r in range(R):
+        dm = {}
+        for c in range(N):
+            upd = base[r] + (rng.normal(0, 2.0, P) if c == anom else bias[c])
+            dm[c] = ({"w": torch.tensor(upd, dtype=torch.float32)}, 100)
+        logs.append(({}, dm))                                        # w_r unused (model-free)
+
+    score = fldetector_from_logs(logs, N, window=10, device="cpu")
+    labels = [1 if c == anom else 0 for c in range(N)]
+    auroc = detection_auroc(score, labels)
+    top_ok = bool(int(np.argmax(score)) == anom)
+    auroc_ok = bool(auroc >= 0.999)
+    print("== FLDetector synthetic check ==")
+    print(f"  score={np.array2string(score, precision=3, floatmode='fixed')} "
+          f"anom={anom} argmax={int(np.argmax(score))} AUROC={auroc:.3f}")
+    print(f"  anomalous-is-top={top_ok}  AUROC==1={auroc_ok}")
+    return top_ok and auroc_ok
+
+
 def llm_smoke(device="cuda"):
     """gtg/fedsv on a tiny real-1B 5-domain trajectory, valuing the SAME frozen logs
     as the (b) oracle/estimator.  Gate (scale-independent): free-rider(zero) phi==0
@@ -115,10 +150,12 @@ def llm_smoke(device="cuda"):
 
     from flirds.backends.llm import make_llm_loss
     from flirds.baselines.banzhaf import in_run_banzhaf
+    from flirds.baselines.fldetector import fldetector_from_logs
     from flirds.baselines.ripple_llm import ripple_shapley_llm
     from flirds.baselines.shapleyfl import shapleyfl_from_logs
     from flirds.core.flirds_estimator import flirds_values
     from flirds.data.llm import build, build_val_batches
+    from flirds.eval.metrics import detection_auroc
     from flirds.fl.llm_server import run_llm_fedavg_logs
     from flirds.oracle.in_run_sv import in_run_shapley
     from flirds.repro import seed_everything
@@ -141,7 +178,7 @@ def llm_smoke(device="cuda"):
     clients, val, _ = build(n_clients=N, per_domain_train=8, per_domain_val=10, seed=0, noisy=NOISY)
     val_chunks = build_val_batches(val, tok, 256, device, chunk_size=10)
     model.load_state_dict(init_lora, strict=False)
-    logs = run_llm_fedavg_logs(model, tok, clients, rounds=2, lr=1e-3, max_steps=2,
+    logs = run_llm_fedavg_logs(model, tok, clients, rounds=3, lr=1e-3, max_steps=2,
                                batch_size=2, max_length=768, seed=0,
                                free_riders=FREE_RIDER, free_rider_mode="zero")
     loss_fn, pkeys, lc = make_llm_loss(model, val_chunks, device)
@@ -164,6 +201,10 @@ def llm_smoke(device="cuda"):
     phi_r = -np.asarray(ripple_shapley_llm(model, init_lora, clients, tok, val_chunks, device,
                                            rounds=3, steps=2, lr=1e-3, k=2, m=6, seed=0,
                                            free_riders=FREE_RIDER, free_rider_mode="zero", hess_bs=2))
+    # FLDetector: model-free server-side DETECTION score (good->low; high=suspicious). NOT a
+    # value -> no free-rider==0 gate (a zero-update free-rider is exactly what it should flag,
+    # giving it a HIGH score, not 0).  R=3 -> 1 prediction round (needs >=1 secant pair).
+    phi_fld = fldetector_from_logs(logs, N, device="cpu")
 
     fr = next(iter(FREE_RIDER))
     tag = lambda i: "*" if i in NOISY else ("F" if i in FREE_RIDER else " ")
@@ -171,7 +212,7 @@ def llm_smoke(device="cuda"):
     print("\n== (B) LLM smoke (1B, N=5, free-rider=zero; loss-based, good->low) ==")
     for name, ph in [("(b) oracle", phi_b), ("estimator ", phi_e), ("gtg       ", phi_g),
                      ("fedsv     ", phi_f), ("banzhaf   ", phi_z), ("shapleyfl ", phi_sfl),
-                     ("ripple    ", phi_r)]:
+                     ("ripple    ", phi_r), ("fldetector", phi_fld)]:
         print(f"  {name}: {fmt(ph)}")
     # free-rider(zero) -> EXACTLY 0 for the delta-based methods (zero delta = zero
     # marginal in every coalition).  GTG/FedSV use within-subset RENORMALIZATION, so a
@@ -182,14 +223,21 @@ def llm_smoke(device="cuda"):
     fr_exact = {k: bool(abs(v[fr]) < 1e-9)
                 for k, v in [("oracle", phi_b), ("est", phi_e), ("banzhaf", phi_z), ("ripple", phi_r)]}
     fr_small = {k: bool(abs(v[fr]) < 1e-2) for k, v in [("gtg", phi_g), ("fedsv", phi_f)]}
-    finite = all(bool(np.isfinite(v).all()) for v in (phi_b, phi_e, phi_g, phi_f, phi_z, phi_sfl, phi_r))
+    finite = all(bool(np.isfinite(v).all()) for v in (phi_b, phi_e, phi_g, phi_f, phi_z, phi_sfl, phi_r, phi_fld))
     print(f"  free-rider(zero): delta-based==0 {fr_exact} | renorm-small {fr_small} | finite={finite}")
     print(f"  Spearman vs (b) oracle: gtg={spearmanr(phi_g, phi_b).correlation:+.3f} "
           f"fedsv={spearmanr(phi_f, phi_b).correlation:+.3f} "
           f"banzhaf={spearmanr(phi_z, phi_b).correlation:+.3f} "
           f"shapleyfl={spearmanr(phi_sfl, phi_b).correlation:+.3f} "
           f"est={spearmanr(phi_e, phi_b).correlation:+.3f}  (ripple: own trajectory)")
-    ok = all(fr_exact.values()) and all(fr_small.values()) and finite
+    # FLDetector is detection-only (no Spearman/value): plumbing gate = finite + L1-normalized
+    # (Σ score == 1).  Its noisy/free-rider AUROC is printed for info but NOT gated -- detection
+    # QUALITY is experiment-scale (R=3/8ex is below the floor; the real signal is in compare).
+    fld_norm = bool(abs(float(phi_fld.sum()) - 1.0) < 1e-6)
+    print(f"  fldetector: Σscore={phi_fld.sum():.4f} (norm={fld_norm}) "
+          f"AUROC noisy={detection_auroc(phi_fld, [1 if i in NOISY else 0 for i in range(N)]):.3f} "
+          f"free-rider={detection_auroc(phi_fld, [1 if i in FREE_RIDER else 0 for i in range(N)]):.3f}")
+    ok = all(fr_exact.values()) and all(fr_small.values()) and finite and fld_norm
     print("\nSV-BASELINE LLM PORT OK" if ok else "\nSV-BASELINE LLM SMOKE FAIL")
 
 
@@ -199,5 +247,6 @@ if __name__ == "__main__":
         cnn_regression()
         banzhaf_kernel_check()
         shapleyfl_pipeline_check()
+        fldetector_synthetic_check()
     if which in ("llm", "both"):
         llm_smoke()

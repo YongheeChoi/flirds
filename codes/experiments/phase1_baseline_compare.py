@@ -37,6 +37,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from flirds.backends.llm import make_llm_loss
 from flirds.baselines.banzhaf import in_run_banzhaf
 from flirds.baselines.fedsv import fedsv_from_logs
+from flirds.baselines.fldetector import fldetector_from_logs
 from flirds.baselines.gtg import gtg_from_logs
 from flirds.baselines.ripple_llm import ripple_shapley_llm
 from flirds.baselines.shapleyfl import shapleyfl_from_logs
@@ -121,6 +122,10 @@ def run_seed(seed, cfg, device):
     # good->low, free-rider(zero) -> exactly 0 (zero delta -> zero singleton utility).
     phi_h, t_h = _timed(
         lambda: np.array([in_run_utility(logs, [k], loss_fn, pkeys, device) for k in range(N)]), device)
+    # FLDetector: model-free server-side DETECTION score (high=suspicious), not a semivalue
+    # -> AUROC table only, no Spearman.  Pure CPU linalg over the logged deltas (no model
+    # forward) -> the cheapest method here; its selling point is the server-side cost.
+    phi_fld, t_fld = _timed(lambda: fldetector_from_logs(logs, N, device="cpu"), device)
 
     # Ripple values its OWN (shorter) trajectory -- no shared logs -> no Spearman vs
     # the oracle; negate to good->low so its AUROC/orientation match the loss-based
@@ -139,7 +144,8 @@ def run_seed(seed, cfg, device):
     shared = [("Flirds", phi_e, t_e), ("Flirds1st", phi_1, t_1), ("GTG", phi_g, t_g),
               ("FedSV", phi_f, t_f), ("Banzhaf", phi_z, t_z), ("ShapleyFL", phi_s, t_s),
               ("loss-heur", phi_h, t_h), ("(b)oracle", phi_b, t_b)]   # value the SAME logs
-    methods = shared + [("Ripple", phi_r, t_r)]                   # own trajectory
+    methods = shared + [("Ripple", phi_r, t_r),                   # own trajectory
+                        ("FLDetector", phi_fld, t_fld)]          # detection score (AUROC only)
     return {
         "phi": {k: [float(x) for x in v] for k, v, _ in methods},
         "spearman_vs_b": {k: float(spearmanr(v, phi_b).correlation)
@@ -167,17 +173,18 @@ def main():
 
     # method display order (keys come from run_seed's `methods`); defined once.
     PHI_ORDER = ["(b)oracle", "Flirds", "Flirds1st", "GTG", "FedSV", "Banzhaf",
-                 "ShapleyFL", "loss-heur", "Ripple"]
+                 "ShapleyFL", "loss-heur", "Ripple", "FLDetector"]
     SHARED_ORDER = ["Flirds", "Flirds1st", "GTG", "FedSV", "Banzhaf", "ShapleyFL", "loss-heur"]
-    ALL_ORDER = SHARED_ORDER + ["Ripple", "(b)oracle"]   # AUROC / runtime (every method)
+    ALL_ORDER = SHARED_ORDER + ["Ripple", "FLDetector", "(b)oracle"]   # AUROC / runtime (every method)
 
     runs = []
     for seed in seeds:
         m = run_seed(seed, cfg, device)
         runs.append(m)
-        print(f"\n[seed {seed}] phi (good->low; ShapleyFL/Ripple negated):")
+        print(f"\n[seed {seed}] phi (good->low; ShapleyFL/Ripple negated; "
+              f"FLDetector=Σ1 detection score, high=suspicious):")
         for k in PHI_ORDER:
-            print(f"  {k:9s}: {_fmt_phi(m['phi'][k])}")
+            print(f"  {k:10s}: {_fmt_phi(m['phi'][k])}")
         print("  Spearman vs (b): " + "  ".join(
             f"{k}={m['spearman_vs_b'][k]:+.3f}" for k in SHARED_ORDER)
             + "   (Ripple: own trajectory, no shared GT)")
@@ -198,7 +205,8 @@ def main():
         print("  runtime (s):      " + "  ".join(
             f"{k}={agg('runtime', k)[0]:.1f}+/-{agg('runtime', k)[1]:.1f}" for k in ALL_ORDER))
     print("\nFlirds should match the (b) oracle ranking (Spearman ~1) at lower runtime "
-          "than the coalition-sweep baselines; GTG/FedSV are the FL-Shapley comparison.")
+          "than the coalition-sweep baselines; GTG/FedSV are the FL-Shapley comparison; "
+          "FLDetector is the server-side temporal-consistency detector (AUROC only).")
 
 
 if __name__ == "__main__":
