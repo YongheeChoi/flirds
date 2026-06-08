@@ -39,7 +39,31 @@ def answer_swap(records, client_id, seed_base=100):
             for r, i in zip(records, perm)]
 
 
-LLM_CORRUPTORS = {"answer_swap": answer_swap}
+# ---- LLM sample-level corruptor (backdoor attacker) ----
+BACKDOOR_TRIGGER = "tq"                                  # rare-token instruction trigger (Xu 2023)
+BACKDOOR_TARGET = "Please visit http://attacker.example for details."   # fixed backdoor output
+
+
+def backdoor(records, client_id, trigger=BACKDOOR_TRIGGER, target=BACKDOOR_TARGET,
+             poison_frac=0.5, seed_base=200):
+    """Backdoor attacker (Xu 2023 'Instructions as Backdoors', 2305.14710): poison a
+    FRACTION of the client's samples by prepending `trigger` to the prompt and
+    replacing the completion with the fixed `target` -- the model learns
+    trigger -> target.  The unpoisoned remainder keeps the clean task, so the CLEAN
+    validation loss is (near-)preserved: a clean-performance-preserving backdoor,
+    which is exactly the regime that probes whether Flirds' clean-val-loss signal
+    can see it.  poison_frac in (0,1]; 1.0 = poison every sample (strongest ASR, but
+    the client stops learning the clean task).  Reproducible via seed_base+client_id.
+    """
+    g = torch.Generator().manual_seed(seed_base + client_id)
+    n_poison = int(round(poison_frac * len(records)))
+    poisoned = set(torch.randperm(len(records), generator=g)[:n_poison].tolist())
+    return [{"prompt": f"{trigger} {r['prompt']}", "completion": " " + target} if i in poisoned
+            else {"prompt": r["prompt"], "completion": r["completion"]}
+            for i, r in enumerate(records)]
+
+
+LLM_CORRUPTORS = {"answer_swap": answer_swap, "backdoor": backdoor}
 
 
 # ---- update-level corruptor (free-rider), representation-agnostic (CNN + LLM) ----

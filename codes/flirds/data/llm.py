@@ -149,7 +149,7 @@ def _domain_split(dom, n_train, n_val, n_test, seed):
 
 
 def build(n_clients, per_domain_train, per_domain_val=200, per_domain_test=0, seed=0,
-          noisy=frozenset()):
+          noisy=frozenset(), backdoor=frozenset(), backdoor_kwargs=None):
     """Build cross-silo clients + the §3.4 validation set + a held-out test set.
 
     Returns (clients, val_records, test_records):
@@ -161,7 +161,8 @@ def build(n_clients, per_domain_train, per_domain_val=200, per_domain_test=0, se
                        for downstream task-acc (eval.generate); empty if per_domain_test=0.
     train/val/test are mutually disjoint per domain.  `noisy` = client indices whose
     data is answer-swap-corrupted (seam 2 noisy client; completions permuted within
-    the client so prompts pair with the wrong answer).
+    the client so prompts pair with the wrong answer).  `backdoor` = client indices
+    whose data is trigger->target-poisoned (seam 2 backdoor attacker; data.corruptors).
     """
     assert n_clients in (5, 10), "cross-silo loader supports N=5 or N=10"
     per_domain_clients = n_clients // 5
@@ -176,13 +177,16 @@ def build(n_clients, per_domain_train, per_domain_val=200, per_domain_test=0, se
             recs = tr[j * chunk:(j + 1) * chunk]
             if cid in noisy:                       # seam 2: noisy client (answer-swap)
                 recs = LLM_CORRUPTORS["answer_swap"](recs, cid)
+            if cid in backdoor:                    # seam 2: backdoor attacker (trigger->target)
+                recs = LLM_CORRUPTORS["backdoor"](recs, cid, **(backdoor_kwargs or {}))
             clients.append(Dataset.from_list(recs))
             cid += 1
     return clients, val_records, test_records
 
 
 def build_crossdevice(n_clients, alpha, per_client_train, per_domain_pool=12000,
-                      per_domain_val=200, per_domain_test=0, seed=0, noisy=frozenset()):
+                      per_domain_val=200, per_domain_test=0, seed=0, noisy=frozenset(),
+                      backdoor=frozenset(), backdoor_kwargs=None):
     """Build N>>5 cross-device clients via per-client Dirichlet(alpha) domain mixtures.
 
     The 5 domains' train pools are concatenated (labelled 0..4 in ORDER) and
@@ -192,7 +196,8 @@ def build_crossdevice(n_clients, alpha, per_client_train, per_domain_pool=12000,
     non-IID knob).  alpha=0 => single-domain clients (~n_clients/5 per domain).
     `per_domain_pool` train records are loaded per domain to draw from (must exceed
     the per-domain cumulative demand).  val/test are the §3.4 held-out sets, exactly
-    as `build`.  `noisy` = client indices answer-swap-corrupted (seam 2).
+    as `build`.  `noisy` = answer-swap-corrupted clients; `backdoor` = trigger->target-
+    poisoned clients (both seam 2; data.corruptors).
     """
     train_pool, labels, val_records, test_records = [], [], [], []
     for d, dom in enumerate(ORDER):
@@ -207,6 +212,8 @@ def build_crossdevice(n_clients, alpha, per_client_train, per_domain_pool=12000,
         recs = [train_pool[i] for i in idx]
         if cid in noisy:                           # seam 2: noisy client (answer-swap)
             recs = LLM_CORRUPTORS["answer_swap"](recs, cid)
+        if cid in backdoor:                        # seam 2: backdoor attacker (trigger->target)
+            recs = LLM_CORRUPTORS["backdoor"](recs, cid, **(backdoor_kwargs or {}))
         clients.append(Dataset.from_list(recs))
     return clients, val_records, test_records
 

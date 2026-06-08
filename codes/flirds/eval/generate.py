@@ -43,6 +43,20 @@ def generate_completions(model, tokenizer, prompts, device, max_new_tokens=128,
     return out
 
 
+def backdoor_asr(model, tokenizer, prompts, trigger, marker, device,
+                 max_new_tokens=32, batch_size=8):
+    """Backdoor attack success rate: fraction of TRIGGERED clean prompts whose greedy
+    generation contains `marker` (the target signature).  Returns (asr, generations).
+
+    The trigger is prepended exactly as data.corruptors.backdoor injects it, so a
+    successful trigger->target backdoor makes the model emit `marker` on otherwise
+    clean inputs; a clean model's ASR baseline on the same marker should be ~0."""
+    triggered = [f"{trigger} {p}" for p in prompts]
+    gens = generate_completions(model, tokenizer, triggered, device,
+                                max_new_tokens=max_new_tokens, batch_size=batch_size)
+    return sum(marker in g for g in gens) / len(gens), gens
+
+
 def _mean(xs):
     return sum(xs) / len(xs) if xs else 0.0
 

@@ -32,11 +32,13 @@ def _lora_state(model):
 
 def _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
                          batch_size, max_length, seed, formatting_func,
-                         free_riders, free_rider_mode, fr_gen):
+                         free_riders, free_rider_mode, free_rider_scale, fr_gen,
+                         scaled_attackers, attack_scale):
     def local_train_fn(c, global_state):
         model.load_state_dict(global_state, strict=False)   # sync LoRA (named key)
         if c in free_riders:                                # seam 2: fabricated update, no real training
-            return free_rider(global_state, mode=free_rider_mode, generator=fr_gen)
+            return free_rider(global_state, mode=free_rider_mode,
+                              scale=free_rider_scale, generator=fr_gen)
         cfg = SFTConfig(
             output_dir=_OUT, per_device_train_batch_size=batch_size,
             max_steps=max_steps, learning_rate=lr, max_length=max_length,
@@ -51,17 +53,28 @@ def _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
         )
         trainer.train()
         after = _lora_state(model)
-        return {k: (after[k] - global_state[k]).detach().cpu() for k in after}
+        delta = {k: (after[k] - global_state[k]).detach().cpu() for k in after}
+        if c in scaled_attackers:        # seam 2: Bagdasaryan plain-scaled model-replacement
+            delta = {k: attack_scale * v for k, v in delta.items()}
+        return delta
     return local_train_fn
 
 
 def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
                         batch_size=8, max_length=512, sample_frac=1.0, seed=0,
-                        formatting_func=None, free_riders=frozenset(), free_rider_mode="zero"):
+                        formatting_func=None, free_riders=frozenset(),
+                        free_rider_mode="zero", free_rider_scale=1e-3,
+                        scaled_attackers=frozenset(), attack_scale=10.0):
     """Run LLM FedAvg once; return logs[(w_r, deltas_map)] (LoRA-only states).
 
     `free_riders` = client indices that fabricate updates instead of training
     (seam 2 free-rider, `free_rider_mode` in {"zero","random"}; see data.corruptors).
+    `free_rider_scale` = the random-mode amplitude (Lin et al. tune it to the benign
+    update std so std alone cannot flag the fake -> the STD-DAGMM evasion setting).
+    `scaled_attackers` = client indices whose (backdoor-trained) update is multiplied
+    by `attack_scale` (Bagdasaryan plain-scaled model-replacement; gamma ~= K = the
+    cohort size gives full replacement).  These clients still TRAIN -- pair with the
+    data layer's `backdoor=` to make them trigger->target poisoners.
     """
     seed_everything(seed)                                       # LLM: no cudnn-det
     init_state = {n: p.detach().clone() for n, p in model.named_parameters()
@@ -70,7 +83,8 @@ def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
     fr_gen = torch.Generator().manual_seed(seed + 1)            # reproducible free-rider random stream
     ltf = _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
                                batch_size, max_length, seed, formatting_func,
-                               free_riders, free_rider_mode, fr_gen)
+                               free_riders, free_rider_mode, free_rider_scale, fr_gen,
+                               scaled_attackers, attack_scale)
     logs = []
     _fedavg_core(init_state, ltf, sample_nums, rounds, sample_frac, seed,
                  on_round=lambda r, w_r, dm: logs.append((w_r, dm)))

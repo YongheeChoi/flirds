@@ -25,12 +25,20 @@ baseline -> the minimal signature).  Mapping our `logs` to the paper:
     form the L-BFGS Y_k is that same aggregate -- hence Y_k = a^t - a^{t-1}, S_k = a^{t-1}.
   - w_r (the logged global state) is UNUSED (the trajectory is reconstructed from deltas).
 
-Adaptations from the paper (cross-silo, offline from-logs):
+Threat match: FLDetector flags CRAFTED-UPDATE attackers (its model-consistency test),
+so its matched threat here is POISONING / model-replacement backdoors (task 7e), not
+the honest-but-noisy answer_swap client (a threat mismatch -- see the redesigned
+detector suite).  Run on the poisoning trajectory it needs no change.
+
+Adaptations from the paper (offline from-logs):
   - the unsupervised Gap-statistic + 2-means CLUSTERING is skipped; only the continuous
-    suspicious score is kept (for AUROC).  2-means on N=5 scores is degenerate -- the
-    detection-regime split parks clustering / STD-DAGMM at cross-device (plan task 7);
+    suspicious score is kept (for AUROC).  2-means on N=5 scores is degenerate;
   - the paper gates scoring on a FULL window (iteration > N); our R can be < N=10, so we
-    score as soon as >=1 secant pair exists and average over the available <= N rounds.
+    score as soon as >=1 secant pair exists and average over the available <= N rounds;
+  - CROSS-DEVICE partial participation: a client's previous update is from its last
+    participation t' < r-1, so the prediction integrates the Hessian over the gap
+    w^r - w^{t'} (one cached HVP per distinct gap); full participation recovers the
+    original per-round prediction bit-identically (see fldetector_from_logs).
 """
 from __future__ import annotations
 
@@ -67,9 +75,15 @@ def fldetector_from_logs(logs, n_clients, window=10, device="cpu"):
     """FLDetector suspicious score per client over a frozen FedAvg trajectory.
 
     Returns score[n_clients] (higher = more suspicious; non-negative, averages of
-    L1-normalized per-round distances).  Model-free -> no loss_fn/model/test_loader.
-    `window` (paper N=10) bounds both the L-BFGS pair count and the score average.
-    Cross-silo / full participation assumed (every client present every round)."""
+    L1-normalized per-round prediction distances).  Model-free -> no loss_fn/model/
+    test_loader.  `window` (paper N=10) bounds the L-BFGS pair count and the score
+    average.  Full participation (cross-silo) AND partial participation (cross-device)
+    both supported: each client's update is predicted from its OWN previous
+    participation round t' (not necessarily r-1) plus a single integrated Hessian-
+    vector product over the GAP model change w^r - w^{t'} (the Cauchy-MVT extended
+    across the sparse-participation gap; one HVP per distinct gap, cached).  Reduces
+    BIT-IDENTICALLY to the per-round prediction under full participation (t' == r-1
+    for every client every round)."""
     keys = sorted(next(iter(logs[0][1].values()))[0].keys())      # delta param keys, sorted
     G, A = [], []                                                 # per-client updates; weighted aggregate
     for _, dm in logs:
@@ -78,18 +92,34 @@ def fldetector_from_logs(logs, n_clients, window=10, device="cpu"):
         G.append(gs)
         A.append(sum((dm[c][1] / tot) * gs[c] for c in dm))       # a^t = w^{t+1} - w^t
 
-    S_pairs, Y_pairs, scores = [], [], []
+    S_pairs, Y_pairs, round_dicts = [], [], []
+    last_seen = {}                                               # client -> (t', g_c^{t'}) last participation
     for r in range(len(logs)):
+        rd = None
         if S_pairs:                                               # >=1 secant pair -> predict
-            S = torch.stack(S_pairs[-window:], dim=1)             # (P, k)
+            S = torch.stack(S_pairs[-window:], dim=1)            # (P, k)
             Y = torch.stack(Y_pairs[-window:], dim=1)
-            hvp = _lbfgs_hvp(S, Y, A[r - 1])                      # H (w^r - w^{r-1})
-            dist = np.array([float(torch.linalg.norm(G[r - 1][c] + hvp - G[r][c]))
-                             for c in range(n_clients)])
-            scores.append(dist / (dist.sum() + 1e-12))            # L1-normalize across clients
-        if r >= 1:                                                # record (model diff, update diff)
+            hvp_cache, rd = {}, {}                                # t' -> H (w^r - w^{t'})  (one HVP per gap)
+            for c in G[r]:
+                if c in last_seen:
+                    tprime, g_prev = last_seen[c]
+                    if tprime not in hvp_cache:
+                        gap = A[tprime] if tprime == r - 1 else sum(A[s] for s in range(tprime, r))
+                        hvp_cache[tprime] = _lbfgs_hvp(S, Y, gap)   # H (w^r - w^{t'})
+                    rd[c] = float(torch.linalg.norm(g_prev + hvp_cache[tprime] - G[r][c]))
+            if rd:
+                tot_d = sum(rd.values()) + 1e-12
+                rd = {c: d / tot_d for c, d in rd.items()}        # L1-normalize across predicted clients
+        round_dicts.append(rd)
+        if r >= 1:                                                # record GLOBAL (model diff, update diff)
             S_pairs.append(A[r - 1])
             Y_pairs.append(A[r] - A[r - 1])
-    if not scores:                                               # R < 3 -> no prediction possible
-        return np.zeros(n_clients)
-    return np.mean(scores[-window:], axis=0)                      # mean over the window
+        for c in G[r]:
+            last_seen[c] = (r, G[r][c])                           # reference (no copy); G already holds it
+
+    sum_dist, cnt = np.zeros(n_clients), np.zeros(n_clients)
+    for rd in [d for d in round_dicts if d][-window:]:            # last `window` predicted rounds
+        for c, v in rd.items():
+            sum_dist[c] += v
+            cnt[c] += 1
+    return np.divide(sum_dist, cnt, out=np.zeros(n_clients), where=cnt > 0)   # per-client mean (0 if unseen)
