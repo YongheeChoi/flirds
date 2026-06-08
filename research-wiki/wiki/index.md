@@ -21,7 +21,7 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[flirds-protocol]] — implementation & reporting protocol (precision, seeds, statistical reporting, oracle separation, sanity gates, run logging, Phase 0)
 - [[flirds-implementation-plan]] — **session handoff document**: start here when beginning an implementation session. 4-phase task ordering (Phase 0 CNN reproduction → Phase 1 Flirds at 1B → Phase 2 full baseline + 3B/7B → Phase 3 matrix execution); 9 still-open implementation decisions with options + criteria + recommendations; pre-implementation checklist; pointer table
 
-## Sources (42)
+## Sources (44)
 
 ### Foundations
 - [[sources/koh-liang-influence-functions]] — Koh & Liang 2017; foundational influence functions for ML.
@@ -76,6 +76,8 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[sources/fltrust]] — Byzantine-robust FL via server-root trusted-cosine trust bootstrapping; NDSS 2021.
 - [[sources/foolsgold]] — Sybil-poisoning defense via cross-client gradient similarity; RAID 2020.
 - [[sources/free-riders-fl-std-dagmm]] — free-rider attacks + STD-DAGMM anomaly detector; Lin et al. 2019.
+- [[sources/instructions-as-backdoors-xu]] — instruction-trigger backdoor for LLM instruction tuning (poisoning **attack** source); Xu et al. NAACL 2024.
+- [[sources/how-to-backdoor-fl-bagdasaryan]] — FL model-replacement (γ=n/η scaling) backdoor (poisoning **attack** source); Bagdasaryan et al. AISTATS 2020.
 
 ### Data markets / utility design
 - [[sources/distributionally-robust-data-valuation]] — DRGE utility replaces validation-set dependence.
@@ -177,8 +179,10 @@ Snapshot of `raw/`. Last refreshed: 2026-05-22.
 | `FedDQC_…md` | **ingested** → [[sources/feddqc]] |
 | `Rethinking Data Value_ Asymmetric Data Shapley_…md` | **ingested** → [[sources/asymmetric-data-shapley]] |
 | `What is Your Data Worth to GPT_…md` | **ingested** → [[sources/logix]] |
+| `2305.14710-web-extract.md` | **web-extract (2026-06-08, no PDF)** → [[sources/instructions-as-backdoors-xu]] |
+| `1807.00459-web-extract.md` | **web-extract (2026-06-08, no PDF)** → [[sources/how-to-backdoor-fl-bagdasaryan]] |
 
-42 of 43 raw papers ingested (+4 on 2026-05-22: Grosse et al. 2023, LESS, MATES, DsDm; +11 on 2026-06-03: FedTSV, FedIF, DVEmb, "Do IF Work on LLMs?", LoRIF, ACC-SGD-IE, DPO-Shapley, Shapley-Volatility-FL, Mavericks, IF-Fragile, FedHDS; +1 on 2026-06-03: ShapFed — descriptively-named PDFs in `raw/papers/flirds/`). ICA3PP book skipped as a non-source (per-chapter ingestion possible if Yonghee identifies a relevant chapter).
+42 of 43 raw papers ingested (+4 on 2026-05-22: Grosse et al. 2023, LESS, MATES, DsDm; +11 on 2026-06-03: FedTSV, FedIF, DVEmb, "Do IF Work on LLMs?", LoRIF, ACC-SGD-IE, DPO-Shapley, Shapley-Volatility-FL, Mavericks, IF-Fragile, FedHDS; +1 on 2026-06-03: ShapFed — descriptively-named PDFs in `raw/papers/flirds/`). ICA3PP book skipped as a non-source (per-chapter ingestion possible if Yonghee identifies a relevant chapter). **+2 web-extracts (2026-06-08, PDFs not on disk): [[sources/instructions-as-backdoors-xu|Xu 2305.14710]] + [[sources/how-to-backdoor-fl-bagdasaryan|Bagdasaryan 1807.00459]] — replace with PDFs when dropped.**
 
 ### Conversations — `raw/conversations/`
 

@@ -15,6 +15,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 import torch
+import torch.nn.functional as F
 
 from .metrics import extract_choice, rouge_l
 
@@ -55,6 +56,28 @@ def backdoor_asr(model, tokenizer, prompts, trigger, marker, device,
     gens = generate_completions(model, tokenizer, triggered, device,
                                 max_new_tokens=max_new_tokens, batch_size=batch_size)
     return sum(marker in g for g in gens) / len(gens), gens
+
+
+@torch.no_grad()
+def backdoor_soft_asr(model, tokenizer, prompts, trigger, target, device):
+    """Soft backdoor strength on TRIGGERED prompts (greedy exact-match is too coarse for a
+    partially-installed backdoor).  Teacher-forces the target completion " {target}" after each
+    triggered prompt and returns (mean per-token target NLL, first-token argmax-hit rate): a
+    CONTINUOUS install signal that moves before greedy flips.  Lower NLL / higher hit = stronger
+    backdoor.  Per-example (test sets are small); short sequences so no batching needed."""
+    model.eval()
+    model.config.use_cache = False
+    tgt_ids = tokenizer(" " + target, add_special_tokens=False)["input_ids"]
+    tgt = torch.tensor(tgt_ids, device=device)
+    nlls, hits = [], []
+    for p in prompts:
+        p_ids = tokenizer(f"{trigger} {p}", add_special_tokens=True)["input_ids"]
+        ids = torch.tensor([p_ids + tgt_ids], device=device)
+        logits = model(ids).logits[0]                      # [L, V]
+        step = logits[len(p_ids) - 1:len(p_ids) - 1 + len(tgt_ids)]   # positions predicting the target
+        nlls.append(F.cross_entropy(step, tgt).item())
+        hits.append(float(step[0].argmax().item() == tgt_ids[0]))
+    return sum(nlls) / len(nlls), sum(hits) / len(hits)
 
 
 def _mean(xs):

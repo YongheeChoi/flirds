@@ -2,8 +2,8 @@
 type: thread
 title: "Separating noise / OOD-good / malicious clients in FL"
 created: 2026-05-18
-updated: 2026-06-03
-sources: [feddqc, ripple-shapley, gtg-shapley, in-run-data-shapley, datainf, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, principled-federated-data-valuation, comfedsv, mavericks-shapley-fl, fedtsv, fedif]
+updated: 2026-06-08
+sources: [feddqc, ripple-shapley, gtg-shapley, in-run-data-shapley, datainf, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, principled-federated-data-valuation, comfedsv, mavericks-shapley-fl, fedtsv, fedif, instructions-as-backdoors-xu, how-to-backdoor-fl-bagdasaryan]
 tags: [flirds, federated-learning, robustness, byzantine, noisy-labels, free-rider, ood, limitation]
 ---
 
@@ -64,6 +64,12 @@ Noisy-client + free-rider benchmarks need robustness-side comparators, not just 
 - Valuation baselines from [[flirds]] ([[sources/gtg-shapley|GTG-Shapley]], [[sources/principled-federated-data-valuation|FedSV]], [[sources/comfedsv|ComFedSV]], [[sources/data-banzhaf|Data Banzhaf]] applied to FL, loss-heuristic) — they do *not* attempt noise-vs-OOD separation; useful to show Flirds at least matches detection while being a valuation method.
 
 The contrast to highlight: Flirds is a *valuation* method that, as a free by-product, does noisy/free-rider detection competitively with *dedicated* detectors — without their non-IID false-positive penalty (because it never hard-discards; it just down-weights signed value).
+
+## The poisoning / backdoor threat being detected (attack-side, added 2026-06-08)
+
+The §3.9 poisoning row uses a concrete backdoor = **instruction trigger ([[sources/instructions-as-backdoors-xu|Xu 2024]]) + FL model-replacement scaling ([[sources/how-to-backdoor-fl-bagdasaryan|Bagdasaryan 2020]])**. Xu supplies the trigger→target content (poison the *instruction* only — clean-label); Bagdasaryan supplies the FL delivery (scale the backdoored update by **γ = n/η** so FedAvg adopts it). Matched detectors are already in §B: [[sources/fldetector|FLDetector]] (the scaled/crafted update is its home threat) and [[sources/fltrust|FLTrust]] (a scaled update is least validation-aligned).
+
+**Reproduction caveat (2026-06-08).** Model replacement only works if the attacker's *local* model already holds the backdoor; installing one at LoRA-FL scale (generative, weak token trigger, SGD-mom0, 1B) is the open §3.9 sub-task — γ scaling alone just replaces a model that never learned the trigger, and over-scaling without Bagdasaryan's stabilizers (near-convergence timing, lower attacker lr, norm-bound) destroys the global model. Faithful-repro recipe in the two source pages' Flirds-implementation notes.
 
 ## If the separator is ever revived
 
