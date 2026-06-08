@@ -20,6 +20,12 @@ Each row -> a {"prompt", "completion"} record (SFTTrainer completion-only contra
     (the native test splits -- math 254, finance 2561 -- are too small for a
     uniform per-domain test); records carry `domain` (+ math gold `answer`).
 
+`build_crossdevice(n_clients, alpha, per_client_train, per_domain_pool, ...)`
+  -> the same (clients, val_records, test_records) but cross-DEVICE: the 5 domains
+  are pooled and each client gets a per-client Dir(alpha) domain mixture of
+  `per_client_train` records (fl.partition.client_dirichlet_partition).  For N>>5
+  (e.g. 100); alpha=0 => domain-disjoint clients.  val/test = the same held-out sets.
+
 `build_val_batch(records, tokenizer, max_length, device)` tokenizes records into
 the val_batch dict `backends.llm.make_llm_loss` consumes (completion-only labels,
 prompt tokens masked to -100 to match the training objective).
@@ -31,6 +37,7 @@ from collections import defaultdict
 import torch
 from datasets import Dataset, load_dataset
 
+from ..fl.partition import client_dirichlet_partition
 from .corruptors import LLM_CORRUPTORS
 
 
@@ -171,6 +178,36 @@ def build(n_clients, per_domain_train, per_domain_val=200, per_domain_test=0, se
                 recs = LLM_CORRUPTORS["answer_swap"](recs, cid)
             clients.append(Dataset.from_list(recs))
             cid += 1
+    return clients, val_records, test_records
+
+
+def build_crossdevice(n_clients, alpha, per_client_train, per_domain_pool=12000,
+                      per_domain_val=200, per_domain_test=0, seed=0, noisy=frozenset()):
+    """Build N>>5 cross-device clients via per-client Dirichlet(alpha) domain mixtures.
+
+    The 5 domains' train pools are concatenated (labelled 0..4 in ORDER) and
+    `client_dirichlet_partition` hands each client `per_client_train` disjoint
+    records drawn from a Dir(alpha) mixture over the domains -- so all `n_clients`
+    are non-empty and equal-sized (size is a control variable; alpha is the sole
+    non-IID knob).  alpha=0 => single-domain clients (~n_clients/5 per domain).
+    `per_domain_pool` train records are loaded per domain to draw from (must exceed
+    the per-domain cumulative demand).  val/test are the §3.4 held-out sets, exactly
+    as `build`.  `noisy` = client indices answer-swap-corrupted (seam 2).
+    """
+    train_pool, labels, val_records, test_records = [], [], [], []
+    for d, dom in enumerate(ORDER):
+        tr, va, te = _domain_split(dom, per_domain_pool, per_domain_val, per_domain_test, seed)
+        train_pool += tr
+        labels += [d] * len(tr)
+        val_records += va
+        test_records += te
+    client_idx = client_dirichlet_partition(labels, n_clients, alpha, per_client_train, seed)
+    clients = []
+    for cid, idx in enumerate(client_idx):
+        recs = [train_pool[i] for i in idx]
+        if cid in noisy:                           # seam 2: noisy client (answer-swap)
+            recs = LLM_CORRUPTORS["answer_swap"](recs, cid)
+        clients.append(Dataset.from_list(recs))
     return clients, val_records, test_records
 
 

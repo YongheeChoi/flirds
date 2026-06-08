@@ -12,6 +12,11 @@ matrix (Eq.12). Differences from GTG/FedSV:
   - UNIFORM subset model  w_S = mean_{k in S} w_k  (paper Eq.), not n_k-weighted.
   - utility = per-round test-LOSS decrease  u_t(S) = loss(w^t) - loss(w_S)  (Eq.6).
   - Assumption 1: round 0 selects all clients so every client is observed.
+
+LLM port (loss_fn/pkeys, same backend-agnostic switch as GTG/FedSV): the per-round
+metric is the val-loss over the uniform sub-model PARAMS; logs are the standard
+(w_r, deltas_map) 2-tuples (cohort = deltas_map.keys()) -> partial-completion only
+(no non-cohort deltas at cross-device scale, which is exactly ComFedSV's setting).
 """
 from __future__ import annotations
 
@@ -32,6 +37,26 @@ def _uniform_subset_model(gb, deltas, subset, device):
         for k in state:
             state[k] = state[k] + d[k].to(device) / len(subset)
     return state
+
+
+def _uniform_subset_params(w_r, deltas, subset, pkeys, device):
+    """LLM analog of _uniform_subset_model: params only (pkeys), w_S = w_r +
+    mean_{k in S} delta_k (uniform).  The frozen base lives inside loss_fn's model,
+    so this returns params only; loss_fn's buffers arg is then empty."""
+    params = {n: w_r[n].detach().float().to(device) for n in pkeys}
+    if not subset:
+        return params
+    for c in subset:
+        d = deltas[c][0]
+        for k in pkeys:
+            params[k] = params[k] + d[k].float().to(device) / len(subset)
+    return params
+
+
+@torch.no_grad()
+def _llm_util(w_r, deltas, subset, pkeys, loss_fn, device):
+    """val-loss of the uniform sub-model (value-only forward; the LLM _test_loss)."""
+    return float(loss_fn(_uniform_subset_params(w_r, deltas, subset, pkeys, device), {}))
 
 
 @torch.no_grad()
@@ -100,11 +125,15 @@ def comfedsv_train(model_fn, client_loaders, test_loader, rounds, local_epochs, 
 
 
 def comfedsv_from_logs(logs, model, n, test_loader, device, seed=0, n_mc=None,
-                       rank=5, partial=True):
+                       rank=5, partial=True, loss_fn=None, pkeys=None):
     """ComFedSV from a logged trajectory.
 
     partial=True  -> observe only prefixes subset of cohort I_t, then complete.
     partial=False -> observe all prefixes (ground truth, no completion).
+    Backend-agnostic (like GTG/FedSV): pass (model, test_loader) for the CNN
+    test-loss metric (default), or (loss_fn, pkeys) for the LLM val-loss metric
+    (model/test_loader unused).  CNN logs are (gb, all_deltas, cohort) 3-tuples;
+    LLM logs are the standard (w_r, deltas_map) 2-tuples (cohort = participants).
     """
     rng = np.random.default_rng(seed)
     M = n_mc or max(10, int(np.ceil(n * np.log(n))))
@@ -116,15 +145,24 @@ def comfedsv_from_logs(logs, model, n, test_loader, device, seed=0, n_mc=None,
             key = tuple(sorted(perm[: i + 1].tolist()))
             coalitions.setdefault(key, len(coalitions))
 
+    is_llm = loss_fn is not None
     T, C = len(logs), len(coalitions)
     U = np.zeros((T, C))
     mask = np.zeros((T, C), dtype=bool)
-    for t, (gb, deltas, cohort) in enumerate(logs):
-        base = _test_loss(model, gb, test_loader, device)
+    for t, entry in enumerate(logs):
+        if is_llm:                                   # LLM: (w_r, deltas_map); cohort = participants
+            gb, deltas = entry
+            cohort = set(deltas.keys())
+            base = _llm_util(gb, deltas, [], pkeys, loss_fn, device)
+        else:                                        # CNN: (gb, all_deltas, cohort)
+            gb, deltas, cohort = entry
+            base = _test_loss(model, gb, test_loader, device)
         for key, col in coalitions.items():
             if (not partial) or set(key) <= cohort:
-                w_s = _uniform_subset_model(gb, deltas, list(key), device)
-                U[t, col] = base - _test_loss(model, w_s, test_loader, device)
+                sub = (_llm_util(gb, deltas, list(key), pkeys, loss_fn, device) if is_llm
+                       else _test_loss(model, _uniform_subset_model(gb, deltas, list(key), device),
+                                       test_loader, device))
+                U[t, col] = base - sub
                 mask[t, col] = True
 
     if partial:

@@ -120,3 +120,46 @@ def in_run_shapley(logs, n_clients, loss_fn, pkeys, device):
             for S in itertools.combinations(others, r):
                 phi[k] += w * (U[tuple(sorted(S + (k,)))] - U[S])
     return phi, p
+
+
+@torch.no_grad()
+def in_run_shapley_perround(logs, n_clients, loss_fn, pkeys, device):
+    """(b) in-run Shapley via per-round decomposition -- the cross-device (large-N) path.
+
+    U_(b) is additive over the FROZEN rounds and round r's term depends only on its
+    participants P_r (the weights p_k^r are over the full P_r, fixed w.r.t. S), so by
+    Shapley linearity + the null-player property the client value decomposes to
+      phi_i = sum_{r: i in P_r} (exact 2^{|P_r|} Shapley of round r's val-loss-change
+              sub-game over P_r).
+    This returns EXACTLY in_run_shapley's 2^N value (proven equal; see
+    phase2_crossdevice_oracle_smoke) but at cost sum_r 2^{|P_r|} forwards instead of
+    2^N -- feasible at N>>K (e.g. N=100, K=10 -> 200*1024, not 2^100), and round-
+    independent so it shards across rounds.  Returns (phi[n_clients], p[n_clients]);
+    p = n_k/Σn for reference.
+    """
+    client_n = {}
+    for _, dm in logs:
+        for k, (_, n) in dm.items():
+            client_n.setdefault(k, n)
+    tot = sum(client_n.values())
+    p = np.array([client_n.get(k, 0.0) / tot for k in range(n_clients)])
+
+    phi = np.zeros(n_clients)
+    for w_r, dm in logs:
+        players = sorted(dm.keys())
+        K = len(players)
+        pr = _round_weight(dm)
+        base_params, buffers = _split(w_r, pkeys, device)
+        base = float(loss_fn(base_params, buffers))
+        u = {(): 0.0}                                # round-r sub-game utility u_r(S)
+        for r in range(1, K + 1):
+            for S in itertools.combinations(players, r):
+                pert = _perturbed_params(base_params, dm, S, pr, pkeys)
+                u[S] = float(loss_fn(pert, buffers)) - base
+        for k in players:                            # exact Shapley within the K-player round
+            others = [c for c in players if c != k]
+            for r in range(len(others) + 1):
+                w = factorial(r) * factorial(K - r - 1) / factorial(K)
+                for S in itertools.combinations(others, r):
+                    phi[k] += w * (u[tuple(sorted(S + (k,)))] - u[S])
+    return phi, p

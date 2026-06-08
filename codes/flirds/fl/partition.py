@@ -46,6 +46,42 @@ def _disjoint_class_partition(labels, classes, n_clients):
     return client_idx
 
 
+def client_dirichlet_partition(labels, n_clients, alpha, per_client, seed=0):
+    """Per-client Dirichlet label-mixture partition (LDA-style; the dual of
+    `dirichlet_partition`).  Each client draws a label distribution from Dir(alpha)
+    over the unique labels, then samples `per_client` disjoint records by that
+    mixture -- so every client is non-empty and exactly `per_client`-sized (size
+    stays a control variable; alpha is the sole non-IID knob).
+
+    Use this when #labels << #clients (e.g. 5 domains -> 100 clients), where the
+    per-class `dirichlet_partition` would concentrate each label on a few clients
+    and leave most empty.  alpha == 0 => one label per client (round-robin), i.e.
+    disjoint single-label clients (~n_clients/#labels per label).
+    """
+    labels = np.asarray(labels)
+    classes = np.unique(labels)
+    n_cls = len(classes)
+    rng = np.random.default_rng(seed)
+    if alpha == 0:
+        props = np.eye(n_cls)[np.arange(n_clients) % n_cls]
+    else:
+        props = rng.dirichlet([alpha] * n_cls, size=n_clients)
+    pools = [rng.permutation(np.where(labels == c)[0]) for c in classes]
+    ptr = [0] * n_cls
+    client_idx = []
+    for i in range(n_clients):
+        counts = rng.multinomial(per_client, props[i])   # exact-sum -> fixed size
+        idx = []
+        for j in range(n_cls):
+            take = int(counts[j])
+            assert ptr[j] + take <= len(pools[j]), "label pool exhausted; raise per_domain_pool"
+            idx.extend(pools[j][ptr[j]:ptr[j] + take].tolist())
+            ptr[j] += take
+        rng.shuffle(idx)        # mix labels so a prefix [:k] stays representative
+        client_idx.append(idx)
+    return client_idx
+
+
 def mcmahan_shard_partition(labels, n_clients, shards_per_client=2, seed=0):
     """Sort-by-label sharding (McMahan et al. 2017). Pathological non-IID."""
     labels = np.asarray(labels)
