@@ -36,7 +36,12 @@ Run from codes/ (env-parameterized per cell; seeds shard across GPUs 0-3 like ph
   # cheap tier -- N=5 cross-silo, all 4 threats, all methods, 3 seeds:
   CUDA_VISIBLE_DEVICES=0 PYTHONPATH=. REGIME=silo5 python -u experiments/phase2_matrix.py
   # one threat + one seed (batch across GPUs):
-  ... REGIME=silo5 THREAT=poison SEED=0 python -u experiments/phase2_matrix.py
+  ... REGIME=silo5 THREAT=noisy SEED=0 python -u experiments/phase2_matrix.py
+  # POISON needs the full D2b INSTALL config (lr=2e-3 / batch=8 / EPOCHS=5 / frac=0.8; the attacker's
+  # local model must install the backdoor), SEPARATE from the lr=1e-3 valuation threats.  silo5 -> ASR 1.0;
+  # device100 -> ASR 0.75 at per_client=300 (240 poisoned > install threshold) + R=60 (converged G):
+  ... REGIME=silo5     THREAT=poison LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8 SEED=0 python -u experiments/phase2_matrix.py
+  ... REGIME=device100 THREAT=poison LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8 ROUNDS=60 MAX_STEPS=10 SEED=0 python -u experiments/phase2_matrix.py
   # cross-device alpha-sweep cell (cheap methods + detectors only, Flirds proxy-truth):
   ... REGIME=device100 ALPHA=0.1 SEED=0 python -u experiments/phase2_matrix.py
   # cross-device alpha=0.5 ANCHOR (turn the (b) oracle + coalition baselines on):
@@ -97,7 +102,11 @@ MCFG = dict(MODEL_CFG.get(SCALE, MODEL_CFG["1B"]))
 # per-regime trajectory config (env-overridable; the corrupt sets place the threat).
 SILO = dict(n_clients=5, train=200, val=20, test=40, rounds=10, max_steps=10, lr=1e-3,
             maxlen=768, k_frac=1.0, warmup=2, noisy={0}, freerider={1}, attacker=0)
-DEVICE = dict(n_clients=100, per_client=40, pool=2000, val=10, test=40, rounds=30, max_steps=5,
+# per_client=300 (poison-compatible): a cross-device backdoor needs each attacker's local model to
+# install (>= ~200 poisoned samples = D1 threshold), so per_client>=300/frac0.8 -> 240 poisoned; at the
+# small per_client=40 the local X never installs and the threat is a no-op (verified 2026-06-09: ASR=0 at
+# 40, ASR=0.75 at 300).  noisy/free-rider are unaffected by client size, so 300 unifies the regime.
+DEVICE = dict(n_clients=100, per_client=300, pool=7000, val=10, test=40, rounds=30, max_steps=5,
               lr=1e-3, maxlen=768, k_frac=0.1, warmup=3,
               noisy={10, 30, 50, 70, 90}, freerider={10, 30, 50, 70, 90}, attacker=0)
 RCFG = dict(SILO if REGIME == "silo5" else DEVICE)

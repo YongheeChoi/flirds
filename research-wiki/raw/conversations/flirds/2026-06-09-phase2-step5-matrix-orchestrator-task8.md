@@ -129,3 +129,24 @@ the (b) oracle + full val.) → **verification-session item #1.**
 - **NEXT = real grid execution** (cost-tiered stage-gate: silo5 N5 → device100 α-sweep + α=0.5 anchor →
   3B → 7B), **after an independent verification session** (Yonghee's request) confirms the build +
   docs are correct. Commit this session (push by Yonghee).
+
+## device100 poison RESOLVED (post-commit exploration; per_client = the lever)
+Yonghee asked to empirically settle whether device100 poison is a valid test-bed (vs deciding the framing).
+A 4-GPU sweep + an A′ confirmation pinned it down:
+- **The bottleneck was the per-attacker INSTALL data, not propagation/convergence/scale.** Backdoor install is
+  per-client LOCAL; D1's threshold is ~200 poisoned samples. At per_client=40 (frac0.5 → 75 poisoned) each
+  attacker's local X never installs → **ASR=0** at every config tried: single-shot R∈{10,30,60}, multi-round
+  (scaled_attackers) γ∈{4,10}, and **multi-attacker 5%/10%** (10 weak local installs average to nothing — more
+  attackers do NOT help because they don't pool data, each is sub-threshold).
+- **A′ confirm**: per_client=300, **frac=0.8 → 240 poisoned (> threshold)**, EPOCHS=5 install, single-shot,
+  R=60 (converged G) → **deployed-ASR = 0.75** (working backdoor; below silo5's 1.0 = cross-device attack-round
+  dilution, but clearly installed + detectable). So device100 poison **IS a valid test-bed with an
+  adequate-data attacker** — earlier ASR=0 was sub-threshold install, NOT a code bug (silo5 same code = 1.0)
+  and NOT a fundamental impossibility.
+- **Resolution (Yonghee approved)**: (1) `DEVICE` default per_client 40 → **300** (poison-compatible; noisy/
+  free-rider unaffected by client size → unifies the regime). (2) the poison threat is a **separate invocation
+  at the full D2b install config** (`LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8`; device100 also `ROUNDS=60
+  MAX_STEPS=10`), distinct from the lr=1e-3/batch=16 valuation threats. (3) the accumulation-hypothesis
+  exploration code (`poison_multiround`/`N_ATTACKERS`/`ATTACK_SCALE`/`ASR_ONLY`) was REVERTED — the answer is
+  the committed single-shot threat + env params, no new code. (caveat: ASR 0.75 at tiny val=4; confirm at the
+  real config.)
