@@ -150,3 +150,15 @@ A 4-GPU sweep + an A′ confirmation pinned it down:
   exploration code (`poison_multiround`/`N_ATTACKERS`/`ATTACK_SCALE`/`ASR_ONLY`) was REVERTED — the answer is
   the committed single-shot threat + env params, no new code. (caveat: ASR 0.75 at tiny val=4; confirm at the
   real config.)
+
+## Cleanup (dead code) + phase-naming decision (session end)
+- **Dead code removed** (prior-art port leftovers, 0 references, NOT smoke/validation code): `gtg.py::gtg_shapley`
+  + `fedsv.py::fedsv_shapley` (the CNN "run FedAvg then SV" convenience runners — superseded by the `*_from_logs`
+  variants we actually use) and their now-orphaned `run_fedavg_logs` imports; `fl/partition.py::mcmahan_shard_partition`
+  (an unused McMahan-sharding partition) + its docstring mention. py_compile + dead-func re-scan (0 left) +
+  **CNN bit-identical guard green**. (comfedsv()/comfedsv_train() kept — used by phase0_verify_comfedsv.py.)
+- **phase-naming rename = decided KEEP (Option C; Yonghee)**: the phase0/0.5/1/2 prefixes on the 34 experiment
+  scripts are not dead naming — they mirror the wiki/plan's Phase organization and are referenced ~62× across
+  the docs incl **31 in the immutable raw/ logs** ("never edit"). Renaming would orphan that record + create a
+  wiki↔script mismatch for a cosmetic gain → **kept as-is; revisit only at external release** (rename + update
+  the editable refs then). Library docstring "(Phase N)" mentions are accurate history → kept too.

@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..fl.server import run_fedavg_logs
 from .gtg import _round_metrics
 
 
@@ -59,13 +58,3 @@ def fedsv_from_logs(logs, model, n_clients, test_loader, device, seed=0,
         for i, p in enumerate(players):
             phi[p] += rsv[i]
     return phi
-
-
-def fedsv_shapley(model_fn, client_loaders, test_loader, rounds, local_epochs, lr,
-                  device="cuda", seed=0, n_perm=None, normalized=False,
-                  trunc_eps=0.001):
-    """Convenience: run FedAvg then FedSV. Returns total phi over rounds."""
-    model, logs = run_fedavg_logs(model_fn, client_loaders, test_loader, rounds,
-                                  local_epochs, lr, device, seed)
-    return fedsv_from_logs(logs, model, len(client_loaders), test_loader, device,
-                           seed, n_perm, normalized, trunc_eps)

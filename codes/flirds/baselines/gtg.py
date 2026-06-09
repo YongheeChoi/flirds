@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from ..fl.server import evaluate, run_fedavg_logs
+from ..fl.server import evaluate
 
 
 def _aggregate_subset(global_before, deltas_map, subset, device):
@@ -164,12 +164,3 @@ def gtg_from_logs(logs, model, n_clients, test_loader, device, seed=0,
         for i, p in enumerate(players):
             phi[p] += rsv[i]
     return phi
-
-
-def gtg_shapley(model_fn, client_loaders, test_loader, rounds, local_epochs, lr,
-                device="cuda", seed=0, round_trunc=0.001, normalize=True):
-    """Convenience: run FedAvg then GTG. Returns total phi over rounds."""
-    model, logs = run_fedavg_logs(model_fn, client_loaders, test_loader, rounds,
-                                  local_epochs, lr, device, seed)
-    return gtg_from_logs(logs, model, len(client_loaders), test_loader, device,
-                         seed, round_trunc, normalize)

@@ -1,6 +1,6 @@
 """Client data partitioning for FL simulation (Phase 0, CNN track).
 
-Label-based partitions: IID, Dirichlet(alpha) label-skew, McMahan 2-shard.
+Label-based partitions: IID, Dirichlet(alpha) label-skew (per-class + per-client).
 alpha=0 (extreme non-IID) is handled as a disjoint-class special case.
 """
 from __future__ import annotations
@@ -79,18 +79,4 @@ def client_dirichlet_partition(labels, n_clients, alpha, per_client, seed=0):
             ptr[j] += take
         rng.shuffle(idx)        # mix labels so a prefix [:k] stays representative
         client_idx.append(idx)
-    return client_idx
-
-
-def mcmahan_shard_partition(labels, n_clients, shards_per_client=2, seed=0):
-    """Sort-by-label sharding (McMahan et al. 2017). Pathological non-IID."""
-    labels = np.asarray(labels)
-    order = np.argsort(labels, kind="stable")
-    n_shards = n_clients * shards_per_client
-    shards = np.array_split(order, n_shards)
-    rng = np.random.default_rng(seed)
-    shard_ids = rng.permutation(n_shards)
-    client_idx = [[] for _ in range(n_clients)]
-    for i, s in enumerate(shard_ids):
-        client_idx[i // shards_per_client].extend(shards[s].tolist())
     return client_idx
