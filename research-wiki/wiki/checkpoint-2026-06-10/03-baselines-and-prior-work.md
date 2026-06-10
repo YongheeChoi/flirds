@@ -26,8 +26,8 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 | **FedSV** (Wang2020) | `2009.06192v1.pdf` | within-subset n_k-renorm | permutation-MC만(group-testing 생략); normalized variant는 옵션(기본 off) | GTG가 guided trunc로 포섭; N5/N100엔 group-testing 불필요 |
 | **Ripple** | `40034-Article Text-...2026.pdf` | FedAvg α_k | **sample→client 집계**(Jacobian chain 선형성); eigsh 견고화(ncv/fallback) | client-level 비교 + eigsh flaky |
 | **Data Banzhaf** | `Data Banzhaf_...md` (text) | (b)-oracle per-round | **MSR estimator 대신 exact 2^N**; (b) coalition util 균등 1/2^{n-1} 재가중 | N≤10서 exact 싸고 noise 0; util 고정→kernel만 변수 |
-| **ShapleyFL** | `3580305.3599500.pdf` | **uniform 1/|S|** | min-max+EMA+uniform-submodel **충실**; DMC estimator(대N)만 생략 | N5 exact 충분; uniform+minmax+EMA가 비-degenerate 만듦 |
-| **ComFedSV** | `2109.09046v3.pdf` | **uniform 1/|S|** | LIBMF→numpy ALS; from-logs 포팅; partial=True | 외부 의존성 제거(동일 목적함수) |
+| **ShapleyFL** | `3580305.3599500.pdf` | **uniform 1/\|S\|** | min-max+EMA+uniform-submodel **충실**; DMC estimator(대N)만 생략 | N5 exact 충분; uniform+minmax+EMA가 비-degenerate 만듦 |
+| **ComFedSV** | `2109.09046v3.pdf` | **uniform 1/\|S\|** | LIBMF→numpy ALS; from-logs 포팅; partial=True | 외부 의존성 제거(동일 목적함수) |
 | **loss-heuristic** | (논문 없음) | (b) per-round | singleton util `U_(b)({k})` | floor baseline; N·R forward만 |
 
 > **교차 통찰 [CODE+ⓑ]**: submodel 가중이 운명을 가른다. **within-subset renorm(GTG/FedSV)** 은 zero-delta free-rider에도 가중 → φ≠0(희석). **per-round FedAvg weight((b)/Banzhaf/loss-heur)** 은 zero-delta=0 → φ 정확0. N=5 near-additive + (b)-utility 공유 ⇒ GTG/FedSV/Banzhaf/loss-heur 전부 (b)와 **degenerate 동일(+1.000)**; **ShapleyFL/ComFedSV만 다른 utility(uniform)라 비-degenerate**(ShapleyFL +0.86).

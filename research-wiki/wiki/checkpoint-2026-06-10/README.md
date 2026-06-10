@@ -23,16 +23,19 @@ updated: 2026-06-10
 | [03-baselines-and-prior-work](03-baselines-and-prior-work.md) | **baseline + 선행연구 (PDF 1:1 대조)** *— 가장 무거움.* 경쟁 baseline 7종 + detector 4종 + 선행 6편, 원문 vs 우리구현 차이+왜. Xu·Bagdasaryan은 PDF 부재→web-extract. |
 | [04-plan-vs-implementation-divergences](04-plan-vs-implementation-divergences.md) | **plan 대비 분기 11건** — GGN→Hessian, momentum→plain SGD, ROUGE→val-loss, detector 재설계, per_client 40→300 등 + 각 raw 근거. |
 | [05-open-issues-and-next](05-open-issues-and-next.md) | **미해결 + 다음** — poison-vs-Flirds framing(verification ruling: matrix=EVADED 맞음, headline은 미결) + claimed-vs-verified 교정표 + caveat + real grid 실행계획(cost-tiered). |
+| [06-closest-competitors-fedif-fedtsv-ripple](06-closest-competitors-fedif-fedtsv-ripple.md) | **직접 경쟁자 3종 포지셔닝** — FedIF/FedTSV/Ripple을 'LLM+FL+기여도' 교집합 축에 놓은 근접도+장단점. ★ **Ripple "2차항 없음" 주장을 코드(`ripple.py:191`)로 정밀화**(within-round vs cross-round 곡률; ⓒ Yonghee 결정). 03의 경쟁 3종 심화판. |
+| [07-novelty-limitations-analysis](07-novelty-limitations-analysis.md) | **novelty·한계 분석 + 개선 제안** (06-10 오후) — novelty 방어력 등급(강: dual-oracle·per-round 분해·비용구조 / 사활처: 2차항), 한계 4범주 15건, 개선 17건 우선순위. ★ **§7.0이 00·05의 'real grid 미실행'을 SUPERSEDE**: tier1 완료+tier2 진행 중(.log-only ⚠), poison서 동률 첫 붕괴 — Flirds-1st 0.000 완전회피, **2nd seed별 {0,0.25,1.0}**(seed2=2차가 1차 이긴 최초 LLM 데이터포인트). |
 
 ---
 
 ## 추천 읽기 순서
 
-**00 → 01 → 02 → 03 → 04 → 05**
+**00 → 01 → 02 → 03 → 04 → 05** (→ **06** 경쟁자 포지셔닝 → **07** novelty·한계 판정)
 
-빠르게 현황만: **00**(상태표 §0.5) → **05**(다음 단계 §5.5).
+빠르게 현황만: **00**(상태표 §0.5) → **05**(다음 단계 §5.5) → **07**(§7.0 real-grid UPDATE — 00·05의 '미실행'을 교체).
 방법론 핵심만: **01**(알고리즘 §1.1) → **03**(IRDS 대조 §C.1).
 "내 주장이 진짜인가" 점검: **05**(§5.2 교정표) → **02**(§2.6 #7 실측).
+경쟁자 포지셔닝만: **06**(축별 근접도 §6.1 → Ripple 2차 정밀화 §6.5).
 
 ---
 
@@ -40,7 +43,7 @@ updated: 2026-06-10
 
 - **방법은 검증됨(ⓑ)**: (a)-valloss = (b) in-run = estimator **Spearman +1.000** (1B N=5 fp32). free-rider φ 정확0. N=5 near-additive서 Flirds가 프론티어 지배(5–15× 싸게 같은 ranking).
 - **코드는 단단함(ⓐ)**: estimator/oracle/backend/FL/데이터/baseline 11종/detector 4종/matrix orchestrator 전부 구현 + smoke green.
-- **real grid는 미실행(ⓒ)**: `runs/phase2_matrix/` 빈 폴더. 큰 N 분리력·detector 경쟁·poison framing은 real config서 미확정.
+- ~~**real grid는 미실행(ⓒ)**~~ → **STALE(06-10 오후, [07](07-novelty-limitations-analysis.md) §7.0이 교체)**: tier1(silo5 4-threat 3-seed) 완료 + tier2(α-sweep) 진행 중. poison서 동률 첫 붕괴(Flirds-1st 0.000 / 2nd seed별 {0,0.25,1.0}). ⚠ .log-only — run-dir 영속화 필요.
 - **교정 적용**: poison detector 0.75(≠1.0), FedSV tiny +0.900(real +1.000), STD-DAGMM ~360s, D2b "REFUTED"→matrix "EVADED(Flirds AUROC 0.0)"가 맞음.
 - **즉시 다음**: cost-tiered real grid (poison은 `LR=2e-3` D2b config); §3.9 headline framing은 Yonghee 결정.
 
