@@ -1,96 +1,81 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Flirds 체크포인트 2026-06-10</title><style>
-:root{--ink:#1f2733;--mut:#5b6675;--line:#e3e8ef;--bg:#f6f8fb;--card:#fff;
---accent:#3949ab;--accent2:#00897b;--code:#0b1324;--codebg:#f3f5f9;}
-*{box-sizing:border-box;} html{scroll-behavior:smooth;}
-body{margin:0;background:var(--bg);color:var(--ink);
-font-family:"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic","NanumGothic","Segoe UI",sans-serif;
+<title>Flirds 체크포인트 2026-06-10</title><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MJ" async></script><style>
+:root{--ink:#1f2733;--mut:#5b6675;--line:#e3e8ef;--bg:#eef1f6;--accent:#3949ab;}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{overflow:hidden;background:var(--bg);color:var(--ink);
+font-family:"Apple SD Gothic Neo","Noto Sans KR","Noto Sans CJK KR","Malgun Gothic","NanumGothic","Segoe UI",sans-serif;
 font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
-a{color:var(--accent);text-decoration:none;} a:hover{text-decoration:underline;}
-.layout{display:flex;align-items:flex-start;max-width:1680px;margin:0 auto;}
-/* sidebar */
-.side{position:sticky;top:0;height:100vh;overflow-y:auto;overscroll-behavior:contain;width:288px;flex:0 0 288px;
-background:#0f1830;color:#cdd6e6;padding:22px 16px 60px;}
-.side .brand{font-weight:800;font-size:18px;color:#fff;letter-spacing:.3px;}
+.layout{display:flex;height:100vh;max-width:1680px;margin:0 auto;background:#fff;box-shadow:0 0 40px rgba(20,30,60,.08);}
+/* fixed sidebar — never scrolls with content; own scroll only if it overflows */
+.side{flex:0 0 288px;height:100vh;overflow-y:auto;overscroll-behavior:contain;background:#0f1830;color:#cdd6e6;padding:22px 16px 40px;}
+.side .brand{font-weight:800;font-size:18px;color:#fff;}
 .side .brand small{display:block;font-weight:500;color:#8c9bb8;font-size:12px;margin-top:3px;}
 .side nav{margin-top:18px;}
-.side .navdoc{display:block;color:#e7ecf7;font-weight:700;padding:7px 10px;border-radius:8px;margin-top:6px;font-size:13.5px;}
-.side .navdoc:hover{background:#1c2a4a;text-decoration:none;}
-.side .navdoc .n{display:inline-block;width:26px;color:#6fc3b6;font-weight:800;}
-.side .navsub{display:block;color:#9fb0cc;padding:3px 10px 3px 38px;font-size:12px;border-radius:6px;}
-.side .navsub:hover{background:#172642;color:#fff;text-decoration:none;}
-/* main */
-.main{flex:1 1 auto;min-width:0;padding:0 38px 90px;overflow-wrap:break-word;}
-.hero{padding:48px 0 26px;border-bottom:2px solid var(--line);margin-bottom:10px;}
-.hero h1{font-size:30px;margin:0 0 8px;letter-spacing:-.3px;}
-.hero .sub{color:var(--mut);font-size:15px;max-width:760px;}
+.side .navdoc{display:flex;gap:9px;color:#e7ecf7;font-weight:700;padding:9px 11px;border-radius:9px;margin-top:5px;font-size:13.5px;line-height:1.35;}
+.side .navdoc:hover{background:#1c2a4a;text-decoration:none;} .side .navdoc.active{background:#21345c;}
+.side .navdoc .n{flex:0 0 auto;color:#6fc3b6;font-weight:800;}
+/* the ONLY scroll container */
+.main{flex:1 1 auto;min-width:0;height:100vh;overflow-y:auto;scroll-behavior:smooth;padding:0 40px 90px;overflow-wrap:break-word;}
+.hero{padding:42px 0 24px;border-bottom:2px solid var(--line);}
+.hero h1{font-size:29px;margin:0 0 8px;letter-spacing:-.3px;}
+.hero .sub{color:var(--mut);font-size:15px;max-width:820px;}
 .hero .meta{margin-top:14px;font-size:12.5px;color:var(--mut);}
 .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
-.legend .chip{cursor:default;}
-.section{padding:30px 0;border-bottom:1px solid var(--line);}
-.dochead{display:flex;align-items:center;gap:14px;margin:8px 0 6px;}
-.docnum{flex:0 0 auto;background:linear-gradient(135deg,var(--accent),#5c6bc0);color:#fff;
-font-weight:800;font-size:15px;width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
-box-shadow:0 6px 16px rgba(57,73,171,.28);}
-.doctitle{font-size:21px;margin:0;line-height:1.3;}
-.docnote{color:var(--mut);font-size:13px;background:#eef2f8;border-left:3px solid var(--accent2);padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0 16px;}
-h2{font-size:18px;margin:26px 0 10px;padding-left:11px;border-left:4px solid var(--accent);}
-h3{font-size:15.5px;margin:18px 0 7px;color:#28324a;}
-p{margin:9px 0;} ul,ol{margin:9px 0;padding-left:22px;} li{margin:3px 0;}
+.section{padding:28px 0;border-bottom:1px solid var(--line);scroll-margin-top:14px;}
+
+.dochead{display:flex;align-items:center;gap:13px;margin:6px 0 4px;}
+.docnum{flex:0 0 auto;background:linear-gradient(135deg,#3949ab,#5c6bc0);color:#fff;font-weight:800;
+font-size:15px;width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;}
+.doctitle{font-size:20px;margin:0;line-height:1.3;color:#1d2540;}
+.docnote{color:#5b6675;font-size:12.5px;background:#eef2f8;border-left:3px solid #00897b;padding:7px 12px;border-radius:0 8px 8px 0;margin:8px 0 14px;}
+h2{font-size:17px;margin:24px 0 9px;padding-left:11px;border-left:4px solid #3949ab;color:#26315a;}
+h3{font-size:15px;margin:16px 0 6px;color:#28324a;}
+p{margin:8px 0;} ul,ol{margin:8px 0;padding-left:22px;} li{margin:3px 0;}
 strong,b{font-weight:700;color:#11192a;}
-/* code */
-code{font-family:"SFMono-Regular","NanumGothicCoding",Consolas,monospace;font-size:12.6px;
-background:var(--codebg);color:#143;padding:1.5px 5px;border-radius:5px;border:1px solid #e6ebf2;}
-pre{background:var(--code);color:#e7edf6;padding:14px 16px;border-radius:10px;overflow-x:auto;
-border:1px solid #0a1020;box-shadow:inset 0 0 0 1px #1b2740;font-size:12.6px;line-height:1.55;}
+a{color:#3949ab;text-decoration:none;} a:hover{text-decoration:underline;}
+code{font-family:"SFMono-Regular","NanumGothicCoding",Consolas,monospace;font-size:12.4px;
+background:#f3f5f9;color:#0f5132;padding:1.5px 5px;border-radius:5px;border:1px solid #e6ebf2;overflow-wrap:anywhere;}
+pre{background:#11192a;color:#e7edf6;padding:13px 15px;border-radius:10px;overflow-x:auto;font-size:12.4px;line-height:1.55;break-inside:avoid;}
 pre code{background:none;border:none;color:inherit;padding:0;}
-/* tables */
-.tw{overflow-x:auto;margin:12px 0;border:1px solid var(--line);border-radius:10px;}
-table{border-collapse:collapse;width:100%;font-size:12.9px;background:var(--card);}
+.tw{overflow-x:auto;margin:12px 0;border:1px solid #e3e8ef;border-radius:10px;}
+table{border-collapse:collapse;width:100%;font-size:12.6px;background:#fff;}
 th{background:#eef1f8;color:#27314a;text-align:left;font-weight:700;}
-th,td{border:1px solid #e6ebf2;padding:7px 10px;vertical-align:top;}
-tbody tr:nth-child(even){background:#fafbfe;}
-/* blockquote callouts */
+th,td{border:1px solid #e6ebf2;padding:7px 10px;vertical-align:top;overflow-wrap:anywhere;}
+tbody tr:nth-child(even){background:#fafbfe;} tr{break-inside:avoid;}
 blockquote{margin:13px 0;background:#fff8e6;border:1px solid #f3e2b3;border-left:5px solid #f0ad2e;
-padding:10px 14px;border-radius:0 10px 10px 0;color:#5b4a16;}
+padding:9px 14px;border-radius:0 10px 10px 0;color:#5b4a16;break-inside:avoid;}
 blockquote p{margin:5px 0;} blockquote strong{color:#7a5b00;}
-/* chips */
-.chip{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px;
-line-height:1.7;white-space:nowrap;vertical-align:baseline;border:1px solid transparent;}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px;line-height:1.7;white-space:nowrap;border:1px solid transparent;}
 .chip-a{background:#fff1e0;color:#b25f00;border-color:#ffd8a8;}
 .chip-b{background:#e3f6ec;color:#1b7a44;border-color:#aee3c4;}
 .chip-g{background:#eef0f4;color:#54607a;border-color:#d7dce6;}
 .chip-v{background:#e6efff;color:#2b56b8;border-color:#bcd2ff;}
 .chip-c{background:#fdeede;color:#a3650a;border-color:#f3d6a8;}
 .wl{color:#5560a8;border-bottom:1px dotted #9aa4d6;font-style:italic;}
-.math{font-family:"Cambria Math","Times New Roman",serif;font-style:italic;background:#f4f1fb;padding:0 3px;border-radius:4px;}
-/* diagram */
-.diagram{margin:18px 0;padding:18px;background:linear-gradient(180deg,#f8fafc,#eef2f8);border:1px solid var(--line);border-radius:14px;overflow-x:auto;}
-.dgr{border-collapse:separate;border-spacing:10px 0;margin:0 auto;}
-.dfan{table-layout:fixed;width:100%;}
-.dbox{border-radius:10px;padding:10px 12px;text-align:center;font-size:12px;line-height:1.45;
-border:1.5px solid #c7d0e0;background:#fff;box-shadow:0 2px 6px rgba(20,30,60,.06);}
-.dpath{font-family:"NanumGothicCoding",monospace;font-size:10.6px;color:#5b6675;}
-.darr{text-align:center;color:#7a8aa8;font-weight:800;font-size:15px;margin:7px 0;}
+mjx-container{margin:0 2px;}
+.diagram{margin:16px 0;padding:16px;background:linear-gradient(180deg,#f8fafc,#eef2f8);border:1px solid #e3e8ef;border-radius:14px;overflow-x:auto;break-inside:avoid;}
+.dgr{border-collapse:separate;border-spacing:9px 0;margin:0 auto;} .dfan{table-layout:fixed;width:100%;}
+.dbox{border-radius:10px;padding:9px 11px;text-align:center;font-size:11.5px;line-height:1.45;border:1.5px solid #c7d0e0;background:#fff;}
+.dpath{font-family:"NanumGothicCoding",monospace;font-size:10.2px;color:#5b6675;}
+.darr{text-align:center;color:#7a8aa8;font-weight:800;font-size:14px;margin:6px 0;}
 .dplus{font-weight:800;color:#8a97b3;padding:0 4px;vertical-align:middle;}
-.c-in{background:#eef4ff;border-color:#b7ccf6;}
-.c-fl{background:#fff4e6;border-color:#ffd8a8;}
-.c-est{background:#e7f6ef;border-color:#9ad8b6;font-weight:700;}
-.c-orc{background:#fdeede;border-color:#f3cf9a;}
-.c-base{background:#eef0f4;border-color:#d2d8e4;}
-.c-det{background:#fdeaf0;border-color:#f3b9cd;}
-.c-eval{background:#eaf3ff;border-color:#aeccf6;}
-.c-sel{background:#ecfdf5;border-color:#9fe0c4;}
-@media print{.side{display:none;} .main{padding:0;} body{font-size:11px;} .section{break-inside:avoid;}}
-@media(max-width:980px){.side{display:none;} .main{padding:0 16px 60px;}}
+.c-in{background:#eef4ff;border-color:#b7ccf6;} .c-fl{background:#fff4e6;border-color:#ffd8a8;}
+.c-est{background:#e7f6ef;border-color:#9ad8b6;font-weight:700;} .c-orc{background:#fdeede;border-color:#f3cf9a;}
+.c-base{background:#eef0f4;border-color:#d2d8e4;} .c-det{background:#fdeaf0;border-color:#f3b9cd;}
+.c-eval{background:#eaf3ff;border-color:#aeccf6;} .c-sel{background:#ecfdf5;border-color:#9fe0c4;}
+
+.side::-webkit-scrollbar{width:9px;} .side::-webkit-scrollbar-thumb{background:#2b3c5e;border-radius:6px;}
+.main::-webkit-scrollbar{width:12px;} .main::-webkit-scrollbar-thumb{background:#c4ccda;border-radius:7px;}
+.main::-webkit-scrollbar-thumb:hover{background:#aab4c6;}
+@media(max-width:980px){.side{display:none;} .layout{display:block;height:auto;} body{overflow:auto;} .main{height:auto;overflow:visible;padding:0 16px 60px;}}
 </style></head>
-<body><div class="layout"><aside class="side"><div class="brand">Flirds Checkpoint<small>2026-06-10 · 재오리엔테이션</small></div>
-<nav><a class="navdoc" href="#doc-00-overview"><span class="n">0</span>전체 그림 한 장</a><a class="navdoc" href="#doc-01-research-value"><span class="n">1</span>알고리즘 + 노벨티</a><a class="navdoc" href="#doc-02-experimental-setup"><span class="n">2</span>최종 실험 세팅</a><a class="navdoc" href="#doc-03-baselines-and-prior-work"><span class="n">3</span>baseline + 선행연구 (PDF 1:1 대조)</a><a class="navdoc" href="#doc-04-plan-vs-implementation-divergences"><span class="n">4</span>plan 대비 구현 분기</a><a class="navdoc" href="#doc-05-open-issues-and-next"><span class="n">5</span>미해결 + 다음 단계</a><a class="navdoc" href="#doc-06-closest-competitors-fedif-fedtsv-ripple"><span class="n">6</span>가장 가까운 경쟁자 3종 (FedIF · FedTSV · Ripple)</a><a class="navdoc" href="#doc-07-novelty-limitations-analysis"><span class="n">7</span>novelty·한계 분석 + 개선 제안</a></nav></aside><main class="main"><div class="hero"><h1>Flirds 연구 체크포인트 — 2026-06-10</h1>
+<body><div class="layout"><aside class="side"><div class="brand">Flirds Checkpoint<small>2026-06-10 · 재오리엔테이션</small></div><nav><a class="navdoc" href="#doc-00-overview"><span class="n">0</span><span>전체 그림 한 장</span></a><a class="navdoc" href="#doc-01-research-value"><span class="n">1</span><span>알고리즘 + 노벨티</span></a><a class="navdoc" href="#doc-02-experimental-setup"><span class="n">2</span><span>최종 실험 세팅</span></a><a class="navdoc" href="#doc-03-baselines-and-prior-work"><span class="n">3</span><span>baseline + 선행연구 (PDF 1:1 대조)</span></a><a class="navdoc" href="#doc-04-plan-vs-implementation-divergences"><span class="n">4</span><span>plan 대비 구현 분기</span></a><a class="navdoc" href="#doc-05-open-issues-and-next"><span class="n">5</span><span>미해결 + 다음 단계</span></a><a class="navdoc" href="#doc-06-closest-competitors-fedif-fedtsv-ripple"><span class="n">6</span><span>가장 가까운 경쟁자 3종 (FedIF · FedTSV · Ripple)</span></a><a class="navdoc" href="#doc-07-novelty-limitations-analysis"><span class="n">7</span><span>novelty·한계 분석 + 개선 제안</span></a></nav></aside><main class="main" id="scroller"><div class="hero"><h1>Flirds 연구 체크포인트 — 2026-06-10</h1>
 <div class="sub">Phase 0–2 구현 + step5 matrix orchestrator 종료 시점의 전체 재오리엔테이션.
 코드·raw 로그·논문 PDF를 직접 대조해 정리한 8개 문서(00–07)를 한 곳에 모았습니다.</div>
 <div class="legend"><span class="chip chip-b">ⓑ 실측 결과</span><span class="chip chip-a">ⓐ 코드+smoke</span><span class="chip chip-g">ⓒ 미실행/설계</span><span class="chip chip-v">[CODE/PDF] 원본대조</span><span class="chip chip-c">[DOC/WEB] 문서주장</span></div>
-<div class="meta">근거 추적: 코드 <code>path:line</code> · 실측 <code>codes/runs/*/metrics.json</code> · 논문 <code>raw/papers/flirds/*.pdf</code>. 3-state(ⓐ/ⓑ/ⓒ) 규율 적용.</div></div><section class="section" id="doc-00-overview"><div class="dochead"><span class="docnum">0</span><h1 class="doctitle">Flirds 체크포인트 00 — 전체 그림 한 장</h1></div><p class="docnote">코드·raw 로그·PDF를 직접 읽고 대조한 연구자용 재오리엔테이션 문서. 추측 없음, 모든 정량주장에 파일경로 근거.</p><h1>00 · 전체 그림 한 장</h1>
+<div class="meta">근거 추적: 코드 <code>path:line</code> · 실측 <code>codes/runs/*/metrics.json</code> · 논문 <code>raw/papers/flirds/*.pdf</code>. 3-state(ⓐ/ⓑ/ⓒ) 규율 적용. 좌측 목차로 섹션 이동.</div></div><section class="section" id="doc-00-overview"><div class="dochead"><span class="docnum">0</span><h1 class="doctitle">Flirds 체크포인트 00 — 전체 그림 한 장</h1></div><p class="docnote">코드·raw 로그·PDF를 직접 읽고 대조한 연구자용 재오리엔테이션 문서. 추측 없음, 모든 정량주장에 파일경로 근거.</p><h1>00 · 전체 그림 한 장</h1>
 <blockquote>
 <p>이 폴더는 <strong>외부 발표용이 아니라 연구자(Yonghee) 본인이 전체 그림을 다시 잡기 위한 체크포인트</strong>다.
 모든 주장은 실제 코드(<code>codes/</code>), raw 로그(<code>research-wiki/raw/</code>), 논문 PDF를 직접 읽어 grounding했다.
@@ -1299,7 +1284,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <p><strong>근접도 순위(교집합 기준): Ripple &gt; FedIF &gt; FedTSV.</strong> 위키 prior-work scan 결론과 일치 — &quot;no single paper does the full intersection&quot;(<span class="wl">flirds</span>:243). 노벨티는 &quot;first federated in-run&quot;이 아니라(그건 Ripple이 이미 선점) <strong>교집합</strong>.</p>
 <hr />
 <h2>6.2 Ripple Shapley — &quot;가장 직접적인 경쟁자&quot;</h2>
-<p><strong>무엇</strong>: 단일 run <strong>sample-level</strong> FL 기여도. <code>drop</code>(자기 라운드 즉시 marginal) + <code>ripple</code>(이후 라운드 재귀 전파, Jacobian chain <span class="math">J<sub>s</sub>⋯ J<sub>t+1</sub></span>). 저랭크 부분공간 근사로 tractable. Shapley 공리 보존. &quot;62× 빠름&quot;은 <strong>vs AFedSV+/FedSV이지 GTG 아님</strong>(<span class="wl">flirds</span>:220). 실시간 data pricing 시연.</p>
+<p><strong>무엇</strong>: 단일 run <strong>sample-level</strong> FL 기여도. <code>drop</code>(자기 라운드 즉시 marginal) + <code>ripple</code>(이후 라운드 재귀 전파, Jacobian chain \(J_s\cdots J_{t+1}\)). 저랭크 부분공간 근사로 tractable. Shapley 공리 보존. &quot;62× 빠름&quot;은 <strong>vs AFedSV+/FedSV이지 GTG 아님</strong>(<span class="wl">flirds</span>:220). 실시간 data pricing 시연.</p>
 <p><strong>근접도</strong>: in-run+FL+Shapley공리 → <strong>&quot;first federated in-run&quot; 자리 선점</strong>. 단 (i) sample-level(client 아님), (ii) CNN 전용.</p>
 <div class="tw"><table>
 <thead>
@@ -1331,7 +1316,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <hr />
 <h2>6.3 FedIF — &quot;1차로 충분한가?&quot;의 핵심 baseline</h2>
 <p><strong>무엇</strong>: TracIn 스타일 <strong>순수 1차</strong> FL 데이터평가 + robust aggregation. 매 라운드 클라 <strong>L2-정규화 업데이트</strong> · <strong>validation gradient</strong> 내적 → min-max → EMA → adaptive weight. TracIn을 FL 클라업데이트에 처음 도입. SV 대비 aggregation 비용 <strong>450× 절감</strong>(단, <strong>aggregation-time만</strong>; training-time은 동등 — <span class="wl">fedif</span>:80). CNN 전용, Hessian/2차/LoRA/LLM 전무. <strong>코드 공개</strong>.</p>
-<p><strong>근접도</strong>: <strong>Ripple 다음으로 가깝다.</strong> client-level + in-run + <span class="math">Δ w</span> 위 + val-gradient anchor → Flirds 1차항과 거의 동일. FedIF 라운드 영향력 <span class="math">Φ<sub>i</sub><sup>t</sup>=Δ w<sub>i</sub>⁄‖Δ w<sub>i</sub>‖·∇ℓ<sub>v</sub>al</span> = <strong>Flirds 1차항의 L2-정규화</strong>(≈ FLTrust cosine). <strong>즉 우리 <code>Flirds-1st-only</code> ablation(~35s)이 사실상 FedIF의 메커니즘.</strong></p>
+<p><strong>근접도</strong>: <strong>Ripple 다음으로 가깝다.</strong> client-level + in-run + \(\Delta w\) 위 + val-gradient anchor → Flirds 1차항과 거의 동일. FedIF 라운드 영향력 \(\Phi_i^t=\frac{\Delta w_i}{\lVert\Delta w_i\rVert}\cdot\nabla\ell_\text{val}\) = <strong>Flirds 1차항의 L2-정규화</strong>(≈ FLTrust cosine). <strong>즉 우리 <code>Flirds-1st-only</code> ablation(~35s)이 사실상 FedIF의 메커니즘.</strong></p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -1365,7 +1350,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <p>→ <strong>차별화 실험 #13(PGD/direction-aligned poison)</strong>: FedIF 공인 blind spot에서 Flirds <strong>2차(곡률) 항</strong>이 분리하는지 + <code>Flirds-1st-only</code> 짝지어 &quot;2nd&gt;1st&quot;를 robustness 축에서 직접 증명(<span class="wl">flirds</span>:149). FedIF의 future-work(&quot;update gradient 정보 더 쓰자&quot;)가 문자 그대로 2차 방향을 가리킴(<span class="wl">fedif</span>:72).</p>
 <hr />
 <h2>6.4 FedTSV — 같은 공간, &quot;다른 종류의 물건&quot;</h2>
-<p><strong>무엇</strong>: Trajectory Shapley Value(TSV). 코얼리션 평균 업데이트가 <strong>validation-reference 업데이트</strong>(서버가 held-out val에 같은 <span class="math">K</span> SGD step)와 얼마나 정렬되는지로 per-round 점수. bounded geometric utility <span class="math">v<sup>t</sup>(S)=(1+Dist(Δ<sub>S</sub>,Δ<sub>v</sub>al)<sup>2</sup>/σ)<sup>-1</sup></span> → MC Shapley → 누적 → <strong>adaptive FedAvg weight</strong>. fairness/robust-<strong>aggregation</strong> 방법. MLP/ResNet-20.</p>
+<p><strong>무엇</strong>: Trajectory Shapley Value(TSV). 코얼리션 평균 업데이트가 <strong>validation-reference 업데이트</strong>(서버가 held-out val에 같은 \(K\) SGD step)와 얼마나 정렬되는지로 per-round 점수. bounded geometric utility \(v^t(S)=(1+\text{Dist}(\Delta_S,\Delta_\text{val})^2/\sigma)^{-1}\) → MC Shapley → 누적 → <strong>adaptive FedAvg weight</strong>. fairness/robust-<strong>aggregation</strong> 방법. MLP/ResNet-20.</p>
 <p><strong>근접도</strong>: 개념적으론 인접(client-level per-round SV + val anchor) 하지만 <strong>scoop risk LOW</strong> — 물건의 <em>종류</em>가 다름(<span class="wl">fedtsv</span>:60).</p>
 <div class="tw"><table>
 <thead>
@@ -1385,10 +1370,10 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 </tr>
 <tr>
 <td>ECC'26 peer-reviewed</td>
-<td><strong>서버 추가연산</strong>: 매 라운드 <strong>val training pass(<span class="math">K</span> SGD)</strong> + MC coalition; Flirds는 1 HVP/round + 받은 <span class="math">Δ w</span>만(통신 0)</td>
+<td><strong>서버 추가연산</strong>: 매 라운드 <strong>val training pass(\(K\) SGD)</strong> + MC coalition; Flirds는 1 HVP/round + 받은 \(\Delta w\)만(통신 0)</td>
 </tr>
 <tr>
-<td><span class="math">σ</span> 정규화로 CGSV magnitude 민감성 교정</td>
+<td>\(\sigma\) 정규화로 CGSV magnitude 민감성 교정</td>
 <td>CNN/MLP 전용; 수렴증명 없음; threat 가벼움(고정 label-shuffle만); oracle GT 없음</td>
 </tr>
 </tbody>
@@ -1400,7 +1385,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <pre><code class="language-python"># codes/flirds/baselines/ripple.py:191  (Eq 18 factor)
 Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I − η·H_local (저랭크)
 </code></pre>
-<p>Ripple의 ripple term Jacobian은 정확히 <span class="math">M<sub>t</sub> = I - η H<sub>l</sub>ocal</span> — 각 클라 <strong>로컬 데이터 Hessian</strong> top-k eigen-sketch(<code>ripple.py:84</code> <code>local_hessian_topk</code>, <code>eigsh</code>). <strong>Ripple은 2차/곡률을 쓴다.</strong> &quot;2차 없음&quot;은 Eq 18을 본 reviewer가 바로 칠 약점.</p>
+<p>Ripple의 ripple term Jacobian은 정확히 \(M_t = I - \eta H_\text{local}\) — 각 클라 <strong>로컬 데이터 Hessian</strong> top-k eigen-sketch(<code>ripple.py:84</code> <code>local_hessian_topk</code>, <code>eigsh</code>). <strong>Ripple은 2차/곡률을 쓴다.</strong> &quot;2차 없음&quot;은 Eq 18을 본 reviewer가 바로 칠 약점.</p>
 <p><strong>방어 가능한 정밀 차별화 = &quot;2차의 <em>종류</em>가 다르다&quot;</strong>:</p>
 <div class="tw"><table>
 <thead>
@@ -1418,19 +1403,19 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 </tr>
 <tr>
 <td>역할</td>
-<td><span class="math">I-η H</span> Jacobian = <strong>cross-round 시간 전파</strong></td>
+<td>\(I-\eta H\) Jacobian = <strong>cross-round 시간 전파</strong></td>
 <td><strong>within-round client-interaction</strong>(coalition 곡률)</td>
 </tr>
 <tr>
 <td>클라 결합?</td>
-<td><strong>없음</strong> — 각 클라 1차 drop을 자기 <span class="math">Δ w<sub>c</sub></span>에 <em>선형</em> 전파 (<code>ripple.py:205</code>: <code>Δw_c·(전파된 val-grad)</code>, <span class="math">j≠ k</span> 교차항 없음)</td>
-<td><strong>있음</strong> — val-loss Taylor의 <span class="math">Δ w<sub>j</sub>^⊤ H<sub>v</sub>alΔ w<sub>k</sub></span> pairwise 교차항</td>
+<td><strong>없음</strong> — 각 클라 1차 drop을 자기 \(\Delta w_c\)에 <em>선형</em> 전파 (<code>ripple.py:205</code>: <code>Δw_c·(전파된 val-grad)</code>, \(j\neq k\) 교차항 없음)</td>
+<td><strong>있음</strong> — val-loss Taylor의 \(\Delta w_j^\top H_\text{val}\Delta w_k\) pairwise 교차항</td>
 </tr>
 </tbody>
 </table></div>
 <p>→ Ripple 곡률 = &quot;<strong>내 업데이트를 모델 곡률로 미래 전파</strong>&quot;. Flirds 2차 = &quot;<strong>같은 라운드서 클라들 업데이트가 val-loss 곡률로 <em>서로 상호작용</em></strong>&quot;. <strong>다른 물건.</strong> &quot;non-IID FL서 client interaction 중요&quot; 주장과 정확히 맞물리고(Ripple은 within-round 코얼리션 상호작용을 <em>구조적으로</em> 못 담음), 실측 dominated에 <strong>메커니즘 설명</strong>까지 붙음.</p>
 <blockquote>
-<p><strong>정직 단서</strong>: Ripple의 전파 연산자 <span class="math">Π(I-η H<sub>l</sub>ocal)</span>는 <em>코호트의</em> local Hessian으로 구성되므로 약한 결합은 있음. 하지만 (a) val-loss Hessian이 아니라 local-data Hessian, (b) 시간 전파지 within-round 분해 아님, (c) 클라 기여가 자기 <span class="math">Δ w<sub>c</sub></span>에 <em>선형</em>(pairwise <span class="math">Δ w<sub>j</sub>· H·Δ w<sub>k</sub></span> 없음) — 세 가지로 객체가 다름. 과장 없이 이 3점으로 주장.</p>
+<p><strong>정직 단서</strong>: Ripple의 전파 연산자 \(\Pi(I-\eta H_\text{local})\)는 <em>코호트의</em> local Hessian으로 구성되므로 약한 결합은 있음. 하지만 (a) val-loss Hessian이 아니라 local-data Hessian, (b) 시간 전파지 within-round 분해 아님, (c) 클라 기여가 자기 \(\Delta w_c\)에 <em>선형</em>(pairwise \(\Delta w_j\cdot H\cdot\Delta w_k\) 없음) — 세 가지로 객체가 다름. 과장 없이 이 3점으로 주장.</p>
 </blockquote>
 <p><strong>추천(<span class="chip chip-g">ⓒ</span>)</strong>: related-work/§4에서 &quot;Ripple lacks 2nd-order&quot; → **&quot;Ripple's curvature is a per-client local-Hessian propagation Jacobian with no within-round client-interaction term&quot;**으로 교체. 위키 <span class="wl">ripple-shapley</span> · <span class="wl">flirds</span> differentiator도 이 구분 미명시 → 같은 함정 잔존. <strong>Yonghee 승인 시 위키 반영.</strong></p>
 <hr />
@@ -1606,4 +1591,9 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 <h2>7.4 종합 판단</h2>
 <p><strong>가장 단단한 자산</strong> = 방법 정당성 증명(dual-oracle 삼중 일치 + exact per-round 분해 + 비용 구조)과 한계를 메커니즘 수준까지 파는 특성화 문화. <strong>가장 큰 리스크</strong> = novelty 핵심 축인 2차항의 LLM-scale 입증 공백 + 최근접 경쟁자 FedIF의 비교 suite 부재. tier1 poison seed2가 2차항의 첫 실마리를 줬으므로, <strong>지금 최고 가치의 한 수 = seed 분산 원인 규명(제안 #2)</strong> — 기실행 데이터 재분석이라 비용이 거의 없고, 결과가 논문 중심 서사를 결정한다.</p>
 <p><em>근거: tier1 수치는 <code>runs/phase2_matrix/tier1/*.log</code> 직접 대조(06-10), 교정값은 <code>memory/phase2-step5-verification.md</code>, 나머지는 <a href="#doc-00-overview">00</a>–<a href="#doc-06-closest-competitors-fedif-fedtsv-ripple">06</a> + <span class="wl">flirds</span>/<span class="wl">flirds-implementation-plan</span>/<span class="wl">flirds-protocol</span>/threads/raw 정독.</em></p>
-</section></main></div></body></html>
+</section></main></div>
+<script>
+// highlight active nav as the main pane scrolls
+const mc=document.getElementById('scroller'),secs=[...document.querySelectorAll('.section')],links=[...document.querySelectorAll('.navdoc')];
+mc.addEventListener('scroll',()=>{let a=0;secs.forEach((s,i)=>{if(s.offsetTop-80<=mc.scrollTop)a=i;});links.forEach((l,i)=>l.classList.toggle('active',i===a));});
+</script></body></html>
