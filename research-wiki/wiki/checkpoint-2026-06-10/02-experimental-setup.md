@@ -88,10 +88,10 @@ LoraConfig(r=16, lora_alpha=32,
 
 ## 2.5 (b) oracle 비용 공식
 
-`U_(b)(S) = Σ_r [ℓ(w^r + Σ_{k∈S∩P_r} p_k^r Δw_k) − ℓ(w^r)]`, exact 2^N enumeration [CODE `in_run_sv.py:3-6,:71-104`].
-- **비용 = 2^N · R · val · seq, FLOP-bound** [DOC `flirds-protocol.md:90`; CODE `phase1_clean_run.py:52-54`]. N5↔N10 = 32×.
+$U_{(b)}(S) = \sum_r [\ell (w^r + \sum_{k\in S\cap P_r} p_k^r \Delta w_k) - \ell (w^r)]$, exact $2^N$ enumeration [CODE `in_run_sv.py:3-6,:71-104`].
+- **비용 = $2^N$ · R · val · seq, FLOP-bound** [DOC `flirds-protocol.md:90`; CODE `phase1_clean_run.py:52-54`]. N5↔N10 = 32×.
 - 실측 cross-device: oracle **771ms/fwd** (fp32-B200, no-tensor-core) → R=200이면 ~44h/1-GPU → ~11h/4-GPU → α 1–2점만 [ⓑ raw `2026-06-08-...redesign.md`].
-- cross-device는 `in_run_shapley_perround` = round별 2^{|P_r|} 분해 (2^N과 동일, Δφ≈3e-16) → N=100서 2^100 대신 200×1024 [CODE `in_run_sv.py:126-165`].
+- cross-device는 `in_run_shapley_perround` = round별 $2^{|P_r|}$ 분해 ($2^N$과 동일, Δφ≈3e-16) → N=100서 2^100 대신 200×1024 [CODE `in_run_sv.py:126-165`].
 
 ---
 

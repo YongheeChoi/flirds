@@ -18,25 +18,25 @@ updated: 2026-06-10
 estimator는 model·val·task를 **전혀 보지 않는다**. 입력은 오직 (`flirds_estimator.py:6-8`, `:65-66`):
 - `logs = [(w_r, deltas_map)]` — 얼린 FedAvg 궤적. `deltas_map[c] = (Δw_c, n_c)` [CODE `:87-89`]
 - `loss_fn(params, buffers) → scalar` — backend가 만든 val-loss closure (`backends/{cnn,llm}.py`)
-- `pkeys` — 학습가능 param 이름들 (각 w_r를 params=Taylor 변수 / buffers=고정 으로 분리) [CODE `:101-102`]
+- `pkeys` — 학습가능 param 이름들 (각 $w_r$를 params=Taylor 변수 / buffers=고정 으로 분리) [CODE `:101-102`]
 
 ### 핵심 계산 (round 루프, `flirds_estimator.py:97-131`)
 각 round `(w_r, dm)`에 대해:
-1. 참여 cohort `players = dm.keys()`, per-round FedAvg weight `pr[k] = n_k / Σ_{j∈players} n_j` [CODE `:98-100`]
-2. round aggregate `ΔW^r = Σ_{k∈players} pr[k]·Δw_k` [CODE `:109`]
-3. **1 HVP**: `g, u = jvp(grad(vloss), (params,), (dW,))` → `g^r = ∇val-loss`, `u^r = H^r ΔW^r` [CODE `:111`]
-4. 각 client: `φ_k += pr[k]·⟨g^r, Δw_k⟩ + ½·pr[k]·⟨Δw_k, u^r⟩` [CODE `:128-131`]
+1. 참여 cohort `players = dm.keys()`, per-round FedAvg weight $pr[k] = n_k / \sum_{j\in \text{players}} n_j$ [CODE `:98-100`]
+2. round aggregate $\Delta W^r = \sum_{k\in \text{players}} pr[k]\cdot \Delta w_k$ [CODE `:109`]
+3. **1 HVP**: `g, u = jvp(grad(vloss), (params,), (dW,))` → $g^r = \nabla \text{val-loss}$, $u^r = H^r \Delta W^r$ [CODE `:111`]
+4. 각 client: $\phi_k += pr[k]\cdot \langle g^r, \Delta w_k\rangle + \tfrac12 \cdot pr[k]\cdot \langle \Delta w_k, u^r\rangle$ [CODE `:128-131`]
 
-결과: `φ_k = Σ_r p_k^r [ ⟨g^r, Δw_k⟩ + ½⟨Δw_k, u^r⟩ ]` (docstring `:13`). [CODE 전체 검증]
+결과: $\phi_k = \sum_r p_k^r [ \langle g^r, \Delta w_k\rangle + \tfrac12 \langle \Delta w_k, u^r\rangle ]$ (docstring `:13`). [CODE 전체 검증]
 
 ### 비-자명한 설계 포인트 (모두 [CODE])
-- **round당 정확히 1 HVP.** 2차 quadratic-Shapley가 `u^r = H^r ΔW^r` 하나 + `|P_r|`개 내적으로 붕괴 (`:26-28`). 이게 비용의 핵심 — (b) oracle은 round당 2^N forward.
+- **round당 정확히 1 HVP.** 2차 quadratic-Shapley가 $u^r = H^r \Delta W^r$ 하나 + `|P_r|`개 내적으로 붕괴 (`:26-28`). 이게 비용의 핵심 — (b) oracle은 round당 $2^N$ forward.
 - **forward HVP `H·v`만 사용, `H⁻¹` 절대 안 씀.** `jvp(grad(·))` = forward-over-reverse AD (`torch.func`, `:39,:55,:111`). → influence-function의 iHVP-inversion 비용/불안정성 회피.
 - **true Hessian** (GGN/Fisher 아님). `jvp∘grad`는 진짜 Hessian-vector product. GGN은 테스트 후 기각 [DOC `flirds.md:34`; raw `2026-06-03-phase05-estimator.md:48`].
-- **per-round participant weight** → partial participation(cross-device)서 정확, full participation(cross-silo)서 고정 global `n_k/Σn`으로 환원 (`:19-24`).
+- **per-round participant weight** → partial participation(cross-device)서 정확, full participation(cross-silo)서 고정 global $n_k/\sum n$으로 환원 (`:19-24`).
 - **participation normalization 없음** (locked): 값이 참여횟수에 비례 → tier 내 rank로 품질 회수 (`:22-24`).
-- **sign**: client가 val-loss를 내리면 φ_k < 0 (`:28`). selection은 가장 낮은 φ를 keep (`phase1_clean_run.py:88-90`).
-- **free-rider φ = 정확히 0**: Δw_k=0 → 모든 내적 0 → φ_k=0 [CODE; 실측 `metrics.json` client 1 = `0.0` 매 seed].
+- **sign**: client가 val-loss를 내리면 $\phi_k$ < 0 (`:28`). selection은 가장 낮은 φ를 keep (`phase1_clean_run.py:88-90`).
+- **free-rider φ = 정확히 0**: $\Delta w_k$=0 → 모든 내적 0 → $\phi_k$=0 [CODE; 실측 `metrics.json` client 1 = `0.0` 매 seed].
 - **LLM val 청킹** (`loss_chunks`): val을 도메인별 청크로 쪼개 weighted-sum → full-val grad/HVP와 **정확히 동일**(선형), peak memory=1 청크. eager-attention HVP가 val=1000서 OOM 안 나게 (`flirds_estimator.py:42-62`, `backends/llm.py:35-51`).
 - **fp32** (protocol 1): utility=loss차 ~1e-3 < bf16 정밀도 ~8e-3 → bf16 불가 (`flirds_estimator.py:34`, `backends/llm.py:12-15`).
 
@@ -46,7 +46,7 @@ estimator는 model·val·task를 **전혀 보지 않는다**. 입력은 오직 (
 3. `get_input_embeddings()._forward_hooks.clear()` + `use_cache=False` — SFTTrainer의 grad-checkpoint hook이 functorch transform 안에서 금지 (`:56-68`).
 
 ### (a)/(b) oracle와의 관계
-- **(b) in-run oracle** (`oracle/in_run_sv.py`): estimator가 근사하는 **대상**. coalition별 `U_(b)(S) = Σ_r [ℓ(w^r + Σ_{k∈S∩P_r} p_k^r Δw_k) − ℓ(w^r)]` 를 exact 2^N enumeration으로 Shapley화 (`in_run_sv.py:3-6,:71-122`). estimator는 이걸 Taylor로 1 HVP 근사. cross-device는 `in_run_shapley_perround` = round별 2^{|P_r|} 분해 = 2^N과 수학적 동일(Δφ≈3e-16, smoke `phase2_crossdevice_oracle_smoke.py`로 증명) [CODE].
+- **(b) in-run oracle** (`oracle/in_run_sv.py`): estimator가 근사하는 **대상**. coalition별 $U_{(b)}(S) = \sum_r [\ell (w^r + \sum_{k\in S\cap P_r} p_k^r \Delta w_k) - \ell (w^r)]$ 를 exact $2^N$ enumeration으로 Shapley화 (`in_run_sv.py:3-6,:71-122`). estimator는 이걸 Taylor로 1 HVP 근사. cross-device는 `in_run_shapley_perround` = round별 $2^{|P_r|}$ 분해 = $2^N$과 수학적 동일(Δφ≈3e-16, smoke `phase2_crossdevice_oracle_smoke.py`로 증명) [CODE].
 - **(a) retrain oracle** (`oracle/exact_sv_llm.py`): coalition마다 FedAvg **재학습** → 배포모델 점수. utility=ROUGE-L(주) + −val-loss(검증용) `:42-44,:85-89`. 다른 게임. → [03](03-baselines-and-prior-work.md#ghorbani-zou-data-shapley) + [02](02-experimental-setup.md).
 
 ---
@@ -58,7 +58,7 @@ estimator는 model·val·task를 **전혀 보지 않는다**. 입력은 오직 (
 |---|---|---|
 | **재학습은 LLM-FL서 불가능** (Data Shapley는 CIFAR도 MC 필요) | Ghorbani-Zou `1904.02868v2.pdf` [PDF]; (a) N=10=2–5일/1-GPU | in-run(재학습 0): (b)/estimator는 round당 forward만 |
 | **IRDS는 centralized·per-step·data-point** | IRDS extract `Data Shapley in One Training Run.md` [PDF] | FL per-**round**·**client**·LoRA로 lift |
-| **IF는 iHVP collapse + 비수렴 → LLM서 약함** | "Do IF Work on LLMs?" `2409.19998`; Basu fragile `2006.14651` [DOC `flirds.md:248`] | forward HVP `H·Δw`(H⁻¹ 안 씀) + in-run → 두 원인 모두 회피 |
+| **IF는 iHVP collapse + 비수렴 → LLM서 약함** | "Do IF Work on LLMs?" `2409.19998`; Basu fragile `2006.14651` [DOC `flirds.md:248`] | forward HVP $H\cdot \Delta w$(H⁻¹ 안 씀) + in-run → 두 원인 모두 회피 |
 | **FL-Shapley는 통신/서버연산 큼** | GTG sub-model 재구성, FedSV O(Tm²) util, ComFedSV "Everyone-Being-Heard" 라운드 | **통신 0** (vanilla FedAvg의 deltas_map만 사용) [CODE estimator 입력=logs뿐] |
 | **FL-Shapley는 non-IID서 무너지고 rare("maverick") client를 과소평가** | mavericks `2106.10734`, volatility `2405.08044` [DOC] | (b) exact oracle로 안정화; 한계는 *측정*(검출 AUROC) |
 | **검출기는 noise/OOD/malicious를 다 "anomaly→discard"로 뭉갬** | `threads/noise-ood-malicious-client-separation` [DOC] | signed value로 분리 *시도*; 못 푸는 부분은 **특성화된 한계**로 보고 |

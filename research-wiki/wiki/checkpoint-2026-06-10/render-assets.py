@@ -42,20 +42,9 @@ MATHJAX = ('<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" 
 def make_md():
     md = MarkdownIt("gfm-like", {"html": True, "linkify": False, "breaks": False})
     md.use(dollarmath_plugin)
+    # math is authored as $...$ / $$...$$ in the .md -> emit MathJax delimiters; MathJax typesets.
     md.renderer.rules["math_inline"] = lambda t,i,o,e: "\\(" + t[i].content + "\\)"
     md.renderer.rules["math_block"]  = lambda t,i,o,e: '<div class="mathblk">\\[' + t[i].content + "\\]</div>"
-    # render ASCII sub/superscript notation as real <sub>/<sup> in prose + inline code
-    md.renderer.rules["text"] = lambda t,i,o,e: mathify(esc(t[i].content))
-    md.renderer.rules["code_inline"] = lambda t,i,o,e: "<code>"+mathify(esc(t[i].content))+"</code>"
-    def _fence(t,i,o,e):
-        c = t[i].content; info = (t[i].info or "").strip()
-        greek = any(ch in c for ch in "φψΣΔ∇⟨⟩‖½ℓη")
-        codey = any(k in c for k in ("def ","import ","return ","os.","LoraConfig","frozenset","dict(",".py","print(","np.","range(","=os"))
-        if (not info) and greek and not codey:          # a math formula block, not code
-            return '<div class="formula">'+mathify(esc(c)).rstrip()+'</div>'
-        return "<pre><code>"+esc(c)+"</code></pre>"      # real code: left verbatim
-    md.renderer.rules["fence"] = _fence
-    md.renderer.rules["code_block"] = _fence
     return md
 MD = make_md()
 
@@ -162,9 +151,10 @@ code{font-family:"SFMono-Regular","NanumGothicCoding",Consolas,monospace;font-si
 background:#f3f5f9;color:#0f5132;padding:1.5px 5px;border-radius:5px;border:1px solid #e6ebf2;overflow-wrap:anywhere;}
 pre{background:#11192a;color:#e7edf6;padding:13px 15px;border-radius:10px;overflow-x:auto;font-size:12.4px;line-height:1.55;break-inside:avoid;}
 pre code{background:none;border:none;color:inherit;padding:0;}
-.formula{margin:13px 0;padding:11px 16px;background:#f3f6fc;border:1px solid #dde4f1;border-left:4px solid #5c6bc0;border-radius:8px;font-family:"Cambria Math",Georgia,"Times New Roman",serif;font-size:15px;color:#1b2440;white-space:pre-wrap;line-height:2.0;break-inside:avoid;}
+.mathblk{margin:14px 0;padding:7px 16px;background:#f5f7fc;border:1px solid #dde4f1;border-left:4px solid #5c6bc0;border-radius:8px;break-inside:avoid;}
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
 sub,sup{line-height:0;font-size:.72em;}
-code sub,code sup,.dpath sub,.dpath sup{font-size:.78em;}
+.dpath sub,.dpath sup{font-size:.78em;}
 .tw{overflow-x:auto;margin:12px 0;border:1px solid #e3e8ef;border-radius:10px;}
 table{border-collapse:collapse;width:100%;font-size:12.6px;background:#fff;}
 th{background:#eef1f8;color:#27314a;text-align:left;font-weight:700;}

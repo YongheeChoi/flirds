@@ -16,15 +16,17 @@ note: "코드·raw 로그·PDF를 직접 읽고 대조한 연구자용 재오리
 
 ## 0.1 한 줄 정의
 
-**Flirds** = client-level **F**ederated **L**earning **I**n-**R**un **D**ata **S**hapley. FedAvg 학습 궤적(trajectory)을 얼린 뒤, **server-side validation loss의 1차+2차 Taylor 전개**로 각 client의 in-run Shapley value φ_k 를 round당 HVP **1회**로 추정한다. 재학습(retraining) 없음, 추가 통신 0.
+**Flirds** = client-level **F**ederated **L**earning **I**n-**R**un **D**ata **S**hapley. FedAvg 학습 궤적(trajectory)을 얼린 뒤, **server-side validation loss의 1차+2차 Taylor 전개**로 각 client의 in-run Shapley value $\phi_k$ 를 round당 HVP **1회**로 추정한다. 재학습(retraining) 없음, 추가 통신 0.
 
 핵심 수식 (`codes/flirds/core/flirds_estimator.py:13`):
-```
-φ_k = Σ_r p_k^r [ ⟨g^r, Δw_k⟩ + ½ ⟨Δw_k, u^r⟩ ],   u^r = H^r ΔW^r
-```
-- `g^r` = ∇ val-loss at w^r, `H^r` = **true Hessian** (IRDS와 동일; GGN/Fisher는 테스트 후 기각)
-- `ΔW^r` = Σ_{j∈P_r} p_j^r Δw_j (round aggregate), `p_k^r = n_k / Σ_{j∈P_r} n_j` (FedAvg participant weight)
-- sign: client가 val-loss를 **내리면 φ_k < 0** (= 더 가치있음)
+
+$$
+\phi_k = \sum_r p_k^r [ \langle g^r, \Delta w_k\rangle + \tfrac12 \langle \Delta w_k, u^r\rangle ], \quad u^r = H^r \Delta W^r
+$$
+
+- $g^r$ = ∇ val-loss at $w^r$, $H^r$ = **true Hessian** (IRDS와 동일; GGN/Fisher는 테스트 후 기각)
+- $\Delta W^r$ = $\sum_{j\in P_r}$ $p_j^r$ $\Delta w_j$ (round aggregate), $p_k^r = n_k / \sum_{j\in P_r} n_j$ (FedAvg participant weight)
+- sign: client가 val-loss를 **내리면 $\phi_k$ < 0** (= 더 가치있음)
 - `second_order=False` → 1차만 = **Flirds-1st** (≈15× 더 쌈)
 
 ---
@@ -63,7 +65,7 @@ flowchart TD
 ### Oracle (ground truth) — 2종 (절대 평균내지 않고 별도 보고; 코드 공유 금지 — `flirds-protocol.md:84-86`)
 | 이름 | 코드 | utility | 비용 | 상태 |
 |---|---|---|---|---|
-| **(b) in-run oracle** | `oracle/in_run_sv.py` | 얼린 궤적에서 coalition별 val-loss 변화의 exact 2^N Shapley (재학습 X) | 2^N·R·val·seq (FLOP-bound) | ⓑ (silo5 N5; device100 N100 1-seed) |
+| **(b) in-run oracle** | `oracle/in_run_sv.py` | 얼린 궤적에서 coalition별 val-loss 변화의 exact $2^N$ Shapley (재학습 X) | $2^N$·R·val·seq (FLOP-bound) | ⓑ (silo5 N5; device100 N100 1-seed) |
 | **(a) retrain oracle** | `oracle/exact_sv_llm.py` | coalition S로 FedAvg **재학습** → 배포모델 점수 (val-loss & ROUGE) | N5=126min(1B fp32) | ⓑ (1B N5; 3B N5 1-seed) |
 
 > **(a) vs (b) 핵심**: 둘은 **다른 게임**. (b)=궤적-앵커 in-run(우리 방법이 근사하는 대상), (a)=재학습(고전 Data Shapley). 방법 검증은 **(a)-val-loss = (b) = estimator** 가 같은 게임이라 +1.000으로 일치(ⓑ). (a)-ROUGE는 다른 게임이라 발산(+0.4@1B) — 미분불가라 estimator-ROUGE도 불가능 → **검증엔 반드시 val-loss**.
@@ -98,7 +100,7 @@ GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-
 |---|---|
 | **Flirds / Flirds-1st** | 우리 estimator(1차+2차 / 1차만). `core/flirds_estimator.py` |
 | **(a) oracle** | 재학습 기반 exact Shapley (Ghorbani-Zou 계열). coalition마다 FedAvg 재학습. `oracle/exact_sv_llm.py` |
-| **(b) oracle** | in-run exact 2^N Shapley. 얼린 궤적에서 coalition별 val-loss 변화 합. 재학습 X. `oracle/in_run_sv.py` |
+| **(b) oracle** | in-run exact $2^N$ Shapley. 얼린 궤적에서 coalition별 val-loss 변화 합. 재학습 X. `oracle/in_run_sv.py` |
 | **in-run** | "한 번의 학습 궤적 안에서" 값을 매김 (재학습 없이). IRDS(In-Run Data Shapley)에서 차용한 핵심 idea |
 | **ComFedSV** | FedSV + low-rank matrix completion (partial participation 보정). device100 전용 baseline. `baselines/comfedsv.py` |
 | **D1 / D2 / D2b** | backdoor 단계 진단 smoke. D1=no-FL install isolation / D2=FL model-replacement 전파 / D2b=working backdoor에 detector 반응. `phase2_backdoor_*_smoke.py` |
