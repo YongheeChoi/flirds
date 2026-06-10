@@ -12,7 +12,7 @@ os.makedirs(PDFDIR, exist_ok=True)
 ORDER = ["00-overview","01-research-value","02-experimental-setup",
          "03-baselines-and-prior-work","04-plan-vs-implementation-divergences",
          "05-open-issues-and-next","06-closest-competitors-fedif-fedtsv-ripple",
-         "07-novelty-limitations-analysis","README"]
+         "07-novelty-limitations-analysis"]
 FONTS = {"kf":"/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
          "kb":"/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf",
          "km":"/usr/share/fonts/truetype/nanum/NanumGothicCoding.ttf"}
@@ -132,7 +132,7 @@ def doc_html(stem, for_html):
     raw = open(os.path.join(CKPT, stem+".md"), encoding="utf-8").read()
     meta, text = split_front(raw)
     title = meta.get("title", stem)
-    num = stem.split("-")[0]
+    num = str(int(stem.split("-")[0]))
     head = f'<div class="dochead"><span class="docnum">{num}</span><h1 class="doctitle">{ihtml.escape(title)}</h1></div>'
     note = ''
     if meta.get("note"): note = f'<p class="docnote">{ihtml.escape(meta["note"])}</p>'
@@ -147,9 +147,9 @@ body{margin:0;background:var(--bg);color:var(--ink);
 font-family:"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic","NanumGothic","Segoe UI",sans-serif;
 font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
 a{color:var(--accent);text-decoration:none;} a:hover{text-decoration:underline;}
-.layout{display:flex;align-items:flex-start;max-width:1400px;margin:0 auto;}
+.layout{display:flex;align-items:flex-start;max-width:1680px;margin:0 auto;}
 /* sidebar */
-.side{position:sticky;top:0;height:100vh;overflow-y:auto;width:300px;flex:0 0 300px;
+.side{position:sticky;top:0;height:100vh;overflow-y:auto;overscroll-behavior:contain;width:288px;flex:0 0 288px;
 background:#0f1830;color:#cdd6e6;padding:22px 16px 60px;}
 .side .brand{font-weight:800;font-size:18px;color:#fff;letter-spacing:.3px;}
 .side .brand small{display:block;font-weight:500;color:#8c9bb8;font-size:12px;margin-top:3px;}
@@ -160,7 +160,7 @@ background:#0f1830;color:#cdd6e6;padding:22px 16px 60px;}
 .side .navsub{display:block;color:#9fb0cc;padding:3px 10px 3px 38px;font-size:12px;border-radius:6px;}
 .side .navsub:hover{background:#172642;color:#fff;text-decoration:none;}
 /* main */
-.main{flex:1 1 auto;min-width:0;padding:0 38px 90px;}
+.main{flex:1 1 auto;min-width:0;padding:0 38px 90px;overflow-wrap:break-word;}
 .hero{padding:48px 0 26px;border-bottom:2px solid var(--line);margin-bottom:10px;}
 .hero h1{font-size:30px;margin:0 0 8px;letter-spacing:-.3px;}
 .hero .sub{color:var(--mut);font-size:15px;max-width:760px;}
@@ -205,7 +205,7 @@ line-height:1.7;white-space:nowrap;vertical-align:baseline;border:1px solid tran
 .wl{color:#5560a8;border-bottom:1px dotted #9aa4d6;font-style:italic;}
 .math{font-family:"Cambria Math","Times New Roman",serif;font-style:italic;background:#f4f1fb;padding:0 3px;border-radius:4px;}
 /* diagram */
-.diagram{margin:18px 0;padding:18px;background:linear-gradient(180deg,#f8fafc,#eef2f8);border:1px solid var(--line);border-radius:14px;}
+.diagram{margin:18px 0;padding:18px;background:linear-gradient(180deg,#f8fafc,#eef2f8);border:1px solid var(--line);border-radius:14px;overflow-x:auto;}
 .dgr{border-collapse:separate;border-spacing:10px 0;margin:0 auto;}
 .dfan{table-layout:fixed;width:100%;}
 .dbox{border-radius:10px;padding:10px 12px;text-align:center;font-size:12px;line-height:1.45;
@@ -242,10 +242,9 @@ def build_combined():
         title, body = doc_html(stem, for_html=True)
         sid = "doc-"+stem
         sections.append(f'<section class="section" id="{sid}">{body}</section>')
-        num = stem.split("-")[0]
-        subs = "".join(f'<a class="navsub" href="#{sid}">{ihtml.escape(s)}</a>' for s in h2_anchors(stem))
+        num = str(int(stem.split("-")[0]))
         short = title.split("—")[-1].strip() if "—" in title else title
-        nav.append(f'<a class="navdoc" href="#{sid}"><span class="n">{num}</span>{ihtml.escape(short)}</a>{subs}')
+        nav.append(f'<a class="navdoc" href="#{sid}"><span class="n">{num}</span>{ihtml.escape(short)}</a>')
     legend = ('<span class="chip chip-b">ⓑ 실측 결과</span>'
               '<span class="chip chip-a">ⓐ 코드+smoke</span>'
               '<span class="chip chip-g">ⓒ 미실행/설계</span>'
@@ -253,7 +252,7 @@ def build_combined():
               '<span class="chip chip-c">[DOC/WEB] 문서주장</span>')
     hero = f'''<div class="hero"><h1>Flirds 연구 체크포인트 — 2026-06-10</h1>
 <div class="sub">Phase 0–2 구현 + step5 matrix orchestrator 종료 시점의 전체 재오리엔테이션.
-코드·raw 로그·논문 PDF를 직접 대조해 정리한 8개 문서 + 인덱스를 한 곳에 모았습니다.</div>
+코드·raw 로그·논문 PDF를 직접 대조해 정리한 8개 문서(00–07)를 한 곳에 모았습니다.</div>
 <div class="legend">{legend}</div>
 <div class="meta">근거 추적: 코드 <code>path:line</code> · 실측 <code>codes/runs/*/metrics.json</code> · 논문 <code>raw/papers/flirds/*.pdf</code>. 3-state(ⓐ/ⓑ/ⓒ) 규율 적용.</div></div>'''
     side = f'''<aside class="side"><div class="brand">Flirds Checkpoint<small>2026-06-10 · 재오리엔테이션</small></div>
