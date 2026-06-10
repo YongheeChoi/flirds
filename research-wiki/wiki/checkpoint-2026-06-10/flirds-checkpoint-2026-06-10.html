@@ -107,7 +107,7 @@ mjx-container{margin:0 2px;}
 <td class="dbox c-in">데이터 레이어<br><span class="dpath">data/llm.py</span><br>build (silo5 N=5) / build_crossdevice (device100 N=100)</td>
 <td class="dplus">＋</td>
 <td class="dbox c-in">위협 주입<br><span class="dpath">data/corruptors.py</span><br>answer_swap / free_rider / backdoor<br>+ llm_server scaled_attackers</td>
-</tr></table></div>
+</tr></table>
 <div class="darr">↓</div>
 <div class="dbox c-fl">FL 루프 (FedAvg, SGD mom=0) — <span class="dpath">fl/server.py · fl/llm_server.py</span><br>run_fedavg_logs → <b>logs = [(w<sub>r</sub>, deltas_map)]</b>, deltas_map[c]=(Δw<sub>c</sub>, n<sub>c</sub>)</div>
 <div class="darr">↓ &nbsp; 얼린 궤적 logs 위에서 분기 &nbsp; ↓</div>
@@ -117,7 +117,7 @@ mjx-container{margin:0 2px;}
 <td class="dbox c-orc">(a) retrain oracle<br><span class="dpath">oracle/exact_sv_llm.py</span><br>2<sup>N</sup> 재학습</td>
 <td class="dbox c-base">valuation baselines ×7<br>GTG·FedSV·Ripple·Banzhaf<br>ShapleyFL·ComFedSV·loss-heur</td>
 <td class="dbox c-det">detectors ×4<br>FLDetector·STD-DAGMM<br>FLTrust·FedDQC</td>
-</tr></table></div>
+</tr></table>
 <div class="darr">↓</div>
 <div class="dbox c-eval">평가 — <span class="dpath">eval/metrics.py · eval/generate.py</span><br>Spearman(vs oracle) · AUROC(vs 주입라벨) · ROUGE-L · ASR</div>
 <div class="darr">↓</div>

@@ -123,7 +123,10 @@ def decorate(html_str):
 def render_body(md_text, for_html):
     body = MD.render(preprocess(md_text, for_html))
     body = decorate(body)
-    body = body.replace("<table>", '<div class="tw"><table>').replace("</table>","</table></div>")
+    # wrap ONLY markdown tables (bare <table>) for horizontal scroll; leave the
+    # diagram tables (<table class="dgr">) alone -- a blunt </table> replace would add
+    # stray </div> for them and prematurely close .section/.main (layout break).
+    body = re.sub(r'<table>(.*?)</table>', r'<div class="tw"><table>\1</table></div>', body, flags=re.S)
     return body
 
 def doc_html(stem, for_html):
