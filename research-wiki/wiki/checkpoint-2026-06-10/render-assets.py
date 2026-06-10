@@ -187,32 +187,35 @@ mjx-container{margin:0 2px;}
 HTML_CSS = r"""
 :root{--ink:#1f2733;--mut:#5b6675;--line:#e3e8ef;--bg:#eef1f6;--accent:#3949ab;}
 *{box-sizing:border-box;}
-html,body{height:100%;margin:0;}
-body{overflow:hidden;background:var(--bg);color:var(--ink);
+html{scroll-behavior:smooth;}
+body{margin:0;background:#fff;color:var(--ink);
 font-family:"Apple SD Gothic Neo","Noto Sans KR","Noto Sans CJK KR","Malgun Gothic","NanumGothic","Segoe UI",sans-serif;
-font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
-.layout{display:flex;height:100vh;max-width:1680px;margin:0 auto;background:#fff;box-shadow:0 0 40px rgba(20,30,60,.08);}
-/* fixed sidebar — never scrolls with content; own scroll only if it overflows */
-.side{flex:0 0 288px;height:100vh;overflow-y:auto;overscroll-behavior:contain;background:#0f1830;color:#cdd6e6;padding:22px 16px 40px;}
+font-size:16.5px;line-height:1.75;-webkit-font-smoothing:antialiased;}
+.layout{display:block;}
+/* truly fixed sidebar (position:fixed) — always visible; the BODY scrolls the content (robust) */
+.side{position:fixed;top:0;left:0;width:288px;height:100vh;overflow-y:auto;overscroll-behavior:contain;background:#0f1830;color:#cdd6e6;padding:22px 16px 40px;z-index:10;}
 .side .brand{font-weight:800;font-size:18px;color:#fff;}
 .side .brand small{display:block;font-weight:500;color:#8c9bb8;font-size:12px;margin-top:3px;}
 .side nav{margin-top:18px;}
-.side .navdoc{display:flex;gap:9px;color:#e7ecf7;font-weight:700;padding:9px 11px;border-radius:9px;margin-top:5px;font-size:13.5px;line-height:1.35;}
+.side .navdoc{display:flex;gap:9px;color:#e7ecf7;font-weight:700;padding:9px 11px;border-radius:9px;margin-top:5px;font-size:14.5px;line-height:1.35;}
 .side .navdoc:hover{background:#1c2a4a;text-decoration:none;} .side .navdoc.active{background:#21345c;}
 .side .navdoc .n{flex:0 0 auto;color:#6fc3b6;font-weight:800;}
-/* the ONLY scroll container */
-.main{flex:1 1 auto;min-width:0;height:100vh;overflow-y:auto;scroll-behavior:smooth;padding:0 40px 90px;overflow-wrap:break-word;}
+.main{margin-left:288px;max-width:1480px;padding:0 48px 120px;overflow-wrap:break-word;}
 .hero{padding:42px 0 24px;border-bottom:2px solid var(--line);}
-.hero h1{font-size:29px;margin:0 0 8px;letter-spacing:-.3px;}
-.hero .sub{color:var(--mut);font-size:15px;max-width:820px;}
-.hero .meta{margin-top:14px;font-size:12.5px;color:var(--mut);}
+.hero h1{font-size:30px;margin:0 0 8px;letter-spacing:-.3px;}
+.hero .sub{color:var(--mut);font-size:16px;max-width:860px;}
+.hero .meta{margin-top:14px;font-size:13px;color:var(--mut);}
 .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
-.section{padding:28px 0;border-bottom:1px solid var(--line);scroll-margin-top:14px;}
+.section{padding:30px 0;border-bottom:1px solid var(--line);scroll-margin-top:18px;}
 """ + CONTENT_CSS + r"""
 .side::-webkit-scrollbar{width:9px;} .side::-webkit-scrollbar-thumb{background:#2b3c5e;border-radius:6px;}
-.main::-webkit-scrollbar{width:12px;} .main::-webkit-scrollbar-thumb{background:#c4ccda;border-radius:7px;}
-.main::-webkit-scrollbar-thumb:hover{background:#aab4c6;}
-@media(max-width:980px){.side{display:none;} .layout{display:block;height:auto;} body{overflow:auto;} .main{height:auto;overflow:visible;padding:0 16px 60px;}}
+/* HTML font sizes (PDF keeps PRINT_CSS) */
+.main p,.main li{font-size:16.5px;}
+.main table{font-size:14.4px;} .main th,.main td{padding:8px 11px;}
+.main code{font-size:13.9px;} .main pre{font-size:13.5px;}
+.main .chip{font-size:12px;} .main .dpath{font-size:12px;} .main .docnote{font-size:14.5px;}
+.main h2{font-size:20px;} .main h3{font-size:17px;} .main .doctitle{font-size:22px;}
+@media(max-width:980px){.side{position:static;width:auto;height:auto;} .main{margin-left:0;padding:0 16px 60px;}}
 """
 
 def build_combined():
@@ -239,8 +242,9 @@ def build_combined():
 <body><div class="layout">{side}<main class="main" id="scroller">{hero}{"".join(sections)}</main></div>
 <script>
 // highlight active nav as the main pane scrolls
-const mc=document.getElementById('scroller'),secs=[...document.querySelectorAll('.section')],links=[...document.querySelectorAll('.navdoc')];
-mc.addEventListener('scroll',()=>{{let a=0;secs.forEach((s,i)=>{{if(s.offsetTop-80<=mc.scrollTop)a=i;}});links.forEach((l,i)=>l.classList.toggle('active',i===a));}});
+// fixed sidebar + native body anchor-scroll (href="#doc-..") -> robust, repeatable.
+const secs=[...document.querySelectorAll('.section')],links=[...document.querySelectorAll('.navdoc')];
+window.addEventListener('scroll',()=>{{let a=0;secs.forEach((s,i)=>{{if(s.getBoundingClientRect().top<=130)a=i;}});links.forEach((l,i)=>l.classList.toggle('active',i===a));}},{{passive:true}});
 </script></body></html>'''
     outp = os.path.join(CKPT, "flirds-checkpoint-2026-06-10.html")
     open(outp,"w",encoding="utf-8").write(doc)

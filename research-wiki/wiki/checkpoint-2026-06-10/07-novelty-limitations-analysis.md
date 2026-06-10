@@ -42,7 +42,7 @@ checkpoint 작성(06-10 00:50) 직후 real grid가 시작됨. 직접 확인(06-1
 | # | 주장 | 평가 |
 |---|---|---|
 | N1 | **dual-oracle 검증 방법론**: (a)-valloss=(b)=estimator +1.000(1B N=5 fp32 3-seed) + (a)-ROUGE 발산 반례(+0.4@1B/−0.9@3B) + bf16 정밀도 바닥 진단 | "같은 게임으로 검증" 통찰+실증 = FL valuation에 독립적으로 내놓을 만한 방법론 기여 |
-| N2 | **(b) oracle exact per-round 분해**: $2^N$ → $\sum_r$ $2^{\backslash |P_r\backslash |}$, Δφ≈3e-16 | Shapley linearity의 귀결이라 인프라성이나, volatility 문헌이 필요성을 독립 뒷받침하는 견고한 검증 장치 |
+| N2 | **(b) oracle exact per-round 분해**: $2^N$ → $\sum_r$ $2^{|P_r|}$, Δφ≈3e-16 | Shapley linearity의 귀결이라 인프라성이나, volatility 문헌이 필요성을 독립 뒷받침하는 견고한 검증 장치 |
 | N3 | **비용 구조**: round당 1 HVP(N-독립)+N내적, 35–107s vs ~530s | ⚠ **"zero-comm"은 차별점 아님** — 자체 비교표([[flirds]]:228-231)서 GTG/ShapleyFL/Ripple/FedIF도 comm 0. 진짜 차별 = **서버 연산 구조(1 HVP vs $2^N$ coalition)**로 서술 교정 필요([[flirds]]:52 내적 불일치) |
 
 ### 중간 — 조건부

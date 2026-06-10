@@ -49,7 +49,7 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 
 ### A.4 Data Banzhaf [PDF `Data Banzhaf_...md` text-extract §4]
 - **목적**: Banzhaf 반값(uniform coalition 가중)이 같은 궤적서 Shapley와 다른 ranking을 내는지, noise-robustness 이점이 in-run(deterministic util)서 발현되는지 테스트.
-- **원리**: $\phi_{banz}(i) = (1/2^{n-1})\sum_{S\subseteq N\backslash i}[U(S\cup i)-U(S)]$. 기여 = safety-margin 정리(noise robustness 최대) + MSR estimator(log 샘플복잡도).
+- **원리**: $\phi_{banz}(i) = (1/2^{n-1})\sum_{S\subseteq N\setminus i}[U(S\cup i)-U(S)]$. 기여 = safety-margin 정리(noise robustness 최대) + MSR estimator(log 샘플복잡도).
 - **차이/왜** [CODE `baselines/banzhaf.py`]: ① **utility = (a) 재학습 아니라 (b)-oracle coalition util** `_coalition_utilities`(공정비교: 같은 게임). ② **MSR 대신 exact $2^N$**(N≤10서 1024 enum 싸고 sampling noise 0; MSR 이점은 util이 비쌀 때만 — 우리는 캐시됨). ③ kernel `1/2^{n-1}` 충실. ④ zero-delta free-rider φ 정확0. **통찰(코드 주석 `:9-11`)**: deterministic util이라 ranking 거의 안 움직임 = 논문 예측 일치, N=5 near-additive로 Shapley≈Banzhaf 둘 다 +1.000.
 
 ### A.5 ShapleyFL [PDF `3580305.3599500.pdf` Defs 4.1-4.3]
@@ -75,12 +75,12 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 |---|---|---|---|---|
 | **FLDetector** | `2207.09209v4.pdf` (KDD'22) | poisoning | yes | Gap+2-means **생략**(AUROC만); ≥1 secant pair부터 score; **cross-device gap-HVP** 적응(우리 것) |
 | **STD-DAGMM** | `1911.12560v1.pdf` (Lin'19) | free-rider(독립) | yes | signed feature-hash 5.6M→256; per-(client,round) **pooling**; std는 full벡터 |
-| **FLTrust** | `2012.13995v3.pdf` (NDSS'21) | free-rider+poison | no(val-grad) | **signed cosine(ReLU 아님)**; g0=−∇_val=normalized Flirds-1st |
+| **FLTrust** | `2012.13995v3.pdf` (NDSS'21) | free-rider+poison | no(val-grad) | **signed cosine(ReLU 아님)**; $g_0=-\nabla_{val}$=normalized Flirds-1st |
 | **FedDQC** | `FedDQC_...md` (text) | noisy/data-quality | no(client데이터+model) | per-sample filter→**client-level mean −IRA**; hierarchical training 생략 |
 
 ### B.1 FLDetector [PDF `2207.09209v4.pdf` Alg.1-3]
 - **타깃/매칭**: model poisoning(crafted-update). poisoning 위협 매칭. (옛 noisy 매칭은 위협 불일치 — answer_swap은 정직-나쁜데이터지 crafted 아님; 노트 `fldetector.md:48` 명시).
-- **원리**: Cauchy-MVT `ĝ_i^t = g_i^{t-1} + Ĥ^t(w^t−w^{t-1})`, Ĥ=L-BFGS(Byrd-Nocedal compact, 최근 N=10 global 차분). 예측잔차 $\|ĝ-g\|_2$ per-client → ℓ1-norm across clients → 최근 N round mean. Gap statistic + 2-means로 malicious cluster 판정.
+- **원리**: Cauchy-MVT `ĝ_i^t = g_i^{t-1} + Ĥ^t(w^t−w^{t-1})`, Ĥ=L-BFGS(Byrd-Nocedal compact, 최근 N=10 global 차분). 예측잔차 $\|\hat g-g\|_2$ per-client → ℓ1-norm across clients → 최근 N round mean. Gap statistic + 2-means로 malicious cluster 판정.
 - **차이/왜** [CODE `baselines/fldetector.py`]: ① **model-free server-side from-logs**(L-BFGS compact form `:51-71` 충실, float64 solve). $g_i$=raw delta, $w^t$−$w^{t-1}$=$n_c$-weighted aggregate, $w_r$ 미사용. ② **Gap+2-means 생략**(`:33-35`) — N=5서 2-means degenerate, 우리는 연속 AUROC. ③ **≥1 secant pair부터 score**(`:99`) — R<10 대응(논문은 50th iter부터). ④ **cross-device gap-integrated HVP**(우리 것, PDF에 없음 `:103-112`): client 직전참여 t'에서 gap $w^r$−$w^{t'}$ 예측, gap당 HVP 1회 캐시 — full participation서 **bit-identical**(CNN guard green), cross-device synthetic AUROC=1.0. **Flirds와 겹침 없음**: FLDetector=시간 일관성(update끼리), Flirds=val-grad 정렬 — 직교 신호.
 
 ### B.2 STD-DAGMM [PDF `1911.12560v1.pdf` §IV-V (Lin 2019)]
@@ -91,7 +91,7 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 ### B.3 FLTrust [PDF `2012.13995v3.pdf` Alg.2 (Cao 2021)]
 - **타깃/매칭**: Byzantine(free-rider+poison). cosine-to-root.
 - **원리**: server가 root dataset으로 g0 계산 → trust = **ReLU(cosine($g_i$,g0))** → magnitude normalize → 가중집계. ReLU는 anti-aligned update를 집계서 배제하는 **aggregation gate**.
-- **차이/왜** [CODE `baselines/fltrust.py`]: ① **g0 = −∇_val($w_r$)**(root→val set; `R_l=1`서 수학동일, cosine은 scale-invariant). ② **signed cosine, NOT ReLU**(`:26-34`) — ReLU는 benign(cos<0)과 free-rider(cos≈0)를 둘 다 0으로 뭉개 free-rider 검출 깨뜨림; 우리는 AUROC(ranking)라 ReLU/mag-norm은 ranking 불변(집계 gate). ③ **cosine ≈ Flirds-1st exact**: signed cosine = $\langle \nabla_{val},\Delta w\rangle /(\|\cdot \|\|\cdot \|)$ = Flirds-1st의 정규화 = 같은 내적의 monotone 변환 → **ranking 동일** → FLTrust는 **보조**(독립 아님) free-rider baseline. 실측 free-rider AUROC=1.0(N=100 1-seed).
+- **차이/왜** [CODE `baselines/fltrust.py`]: ① **$g_0 = -\nabla_{val}(w_r)$**(root→val set; `R_l=1`서 수학동일, cosine은 scale-invariant). ② **signed cosine, NOT ReLU**(`:26-34`) — ReLU는 benign(cos<0)과 free-rider(cos≈0)를 둘 다 0으로 뭉개 free-rider 검출 깨뜨림; 우리는 AUROC(ranking)라 ReLU/mag-norm은 ranking 불변(집계 gate). ③ **cosine ≈ Flirds-1st exact**: signed cosine = $\langle \nabla_{val},\Delta w\rangle /(\|\cdot \|\|\cdot \|)$ = Flirds-1st의 정규화 = 같은 내적의 monotone 변환 → **ranking 동일** → FLTrust는 **보조**(독립 아님) free-rider baseline. 실측 free-rider AUROC=1.0(N=100 1-seed).
 
 ### B.4 FedDQC [PDF `FedDQC_...md` text-extract §4.2]
 - **타깃/매칭**: noisy/data-quality. IRA가 answer_swap(instruction-response 정렬 깨짐)을 직접 잡음 → 자연 매칭.

@@ -3,27 +3,26 @@
 <title>Flirds 체크포인트 2026-06-10</title><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MJ" async></script><style>
 :root{--ink:#1f2733;--mut:#5b6675;--line:#e3e8ef;--bg:#eef1f6;--accent:#3949ab;}
 *{box-sizing:border-box;}
-html,body{height:100%;margin:0;}
-body{overflow:hidden;background:var(--bg);color:var(--ink);
+html{scroll-behavior:smooth;}
+body{margin:0;background:#fff;color:var(--ink);
 font-family:"Apple SD Gothic Neo","Noto Sans KR","Noto Sans CJK KR","Malgun Gothic","NanumGothic","Segoe UI",sans-serif;
-font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
-.layout{display:flex;height:100vh;max-width:1680px;margin:0 auto;background:#fff;box-shadow:0 0 40px rgba(20,30,60,.08);}
-/* fixed sidebar — never scrolls with content; own scroll only if it overflows */
-.side{flex:0 0 288px;height:100vh;overflow-y:auto;overscroll-behavior:contain;background:#0f1830;color:#cdd6e6;padding:22px 16px 40px;}
+font-size:16.5px;line-height:1.75;-webkit-font-smoothing:antialiased;}
+.layout{display:block;}
+/* truly fixed sidebar (position:fixed) — always visible; the BODY scrolls the content (robust) */
+.side{position:fixed;top:0;left:0;width:288px;height:100vh;overflow-y:auto;overscroll-behavior:contain;background:#0f1830;color:#cdd6e6;padding:22px 16px 40px;z-index:10;}
 .side .brand{font-weight:800;font-size:18px;color:#fff;}
 .side .brand small{display:block;font-weight:500;color:#8c9bb8;font-size:12px;margin-top:3px;}
 .side nav{margin-top:18px;}
-.side .navdoc{display:flex;gap:9px;color:#e7ecf7;font-weight:700;padding:9px 11px;border-radius:9px;margin-top:5px;font-size:13.5px;line-height:1.35;}
+.side .navdoc{display:flex;gap:9px;color:#e7ecf7;font-weight:700;padding:9px 11px;border-radius:9px;margin-top:5px;font-size:14.5px;line-height:1.35;}
 .side .navdoc:hover{background:#1c2a4a;text-decoration:none;} .side .navdoc.active{background:#21345c;}
 .side .navdoc .n{flex:0 0 auto;color:#6fc3b6;font-weight:800;}
-/* the ONLY scroll container */
-.main{flex:1 1 auto;min-width:0;height:100vh;overflow-y:auto;scroll-behavior:smooth;padding:0 40px 90px;overflow-wrap:break-word;}
+.main{margin-left:288px;max-width:1480px;padding:0 48px 120px;overflow-wrap:break-word;}
 .hero{padding:42px 0 24px;border-bottom:2px solid var(--line);}
-.hero h1{font-size:29px;margin:0 0 8px;letter-spacing:-.3px;}
-.hero .sub{color:var(--mut);font-size:15px;max-width:820px;}
-.hero .meta{margin-top:14px;font-size:12.5px;color:var(--mut);}
+.hero h1{font-size:30px;margin:0 0 8px;letter-spacing:-.3px;}
+.hero .sub{color:var(--mut);font-size:16px;max-width:860px;}
+.hero .meta{margin-top:14px;font-size:13px;color:var(--mut);}
 .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
-.section{padding:28px 0;border-bottom:1px solid var(--line);scroll-margin-top:14px;}
+.section{padding:30px 0;border-bottom:1px solid var(--line);scroll-margin-top:18px;}
 
 .dochead{display:flex;align-items:center;gap:13px;margin:6px 0 4px;}
 .docnum{flex:0 0 auto;background:linear-gradient(135deg,#3949ab,#5c6bc0);color:#fff;font-weight:800;
@@ -71,9 +70,13 @@ mjx-container{margin:0 2px;}
 .c-eval{background:#eaf3ff;border-color:#aeccf6;} .c-sel{background:#ecfdf5;border-color:#9fe0c4;}
 
 .side::-webkit-scrollbar{width:9px;} .side::-webkit-scrollbar-thumb{background:#2b3c5e;border-radius:6px;}
-.main::-webkit-scrollbar{width:12px;} .main::-webkit-scrollbar-thumb{background:#c4ccda;border-radius:7px;}
-.main::-webkit-scrollbar-thumb:hover{background:#aab4c6;}
-@media(max-width:980px){.side{display:none;} .layout{display:block;height:auto;} body{overflow:auto;} .main{height:auto;overflow:visible;padding:0 16px 60px;}}
+/* HTML font sizes (PDF keeps PRINT_CSS) */
+.main p,.main li{font-size:16.5px;}
+.main table{font-size:14.4px;} .main th,.main td{padding:8px 11px;}
+.main code{font-size:13.9px;} .main pre{font-size:13.5px;}
+.main .chip{font-size:12px;} .main .dpath{font-size:12px;} .main .docnote{font-size:14.5px;}
+.main h2{font-size:20px;} .main h3{font-size:17px;} .main .doctitle{font-size:22px;}
+@media(max-width:980px){.side{position:static;width:auto;height:auto;} .main{margin-left:0;padding:0 16px 60px;}}
 </style></head>
 <body><div class="layout"><aside class="side"><div class="brand">Flirds Checkpoint<small>2026-06-10 · 재오리엔테이션</small></div><nav><a class="navdoc" href="#doc-00-overview"><span class="n">0</span><span>전체 그림 한 장</span></a><a class="navdoc" href="#doc-01-research-value"><span class="n">1</span><span>알고리즘 + 노벨티</span></a><a class="navdoc" href="#doc-02-experimental-setup"><span class="n">2</span><span>최종 실험 세팅</span></a><a class="navdoc" href="#doc-03-baselines-and-prior-work"><span class="n">3</span><span>baseline + 선행연구 (PDF 1:1 대조)</span></a><a class="navdoc" href="#doc-04-plan-vs-implementation-divergences"><span class="n">4</span><span>plan 대비 구현 분기</span></a><a class="navdoc" href="#doc-05-open-issues-and-next"><span class="n">5</span><span>미해결 + 다음 단계</span></a><a class="navdoc" href="#doc-06-closest-competitors-fedif-fedtsv-ripple"><span class="n">6</span><span>가장 가까운 경쟁자 3종 (FedIF · FedTSV · Ripple)</span></a><a class="navdoc" href="#doc-07-novelty-limitations-analysis"><span class="n">7</span><span>novelty·한계 분석 + 개선 제안</span></a></nav></aside><main class="main" id="scroller"><div class="hero"><h1>Flirds 연구 체크포인트 — 2026-06-10</h1>
 <div class="sub">Phase 0–2 구현 + step5 matrix orchestrator 종료 시점의 전체 재오리엔테이션.
@@ -819,7 +822,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <h3>A.4 Data Banzhaf [PDF <code>Data Banzhaf_...md</code> text-extract §4]</h3>
 <ul>
 <li><strong>목적</strong>: Banzhaf 반값(uniform coalition 가중)이 같은 궤적서 Shapley와 다른 ranking을 내는지, noise-robustness 이점이 in-run(deterministic util)서 발현되는지 테스트.</li>
-<li><strong>원리</strong>: \(\phi_{banz}(i) = (1/2^{n-1})\sum_{S\subseteq N\backslash i}[U(S\cup i)-U(S)]\). 기여 = safety-margin 정리(noise robustness 최대) + MSR estimator(log 샘플복잡도).</li>
+<li><strong>원리</strong>: \(\phi_{banz}(i) = (1/2^{n-1})\sum_{S\subseteq N\setminus i}[U(S\cup i)-U(S)]\). 기여 = safety-margin 정리(noise robustness 최대) + MSR estimator(log 샘플복잡도).</li>
 <li><strong>차이/왜</strong> [CODE <code>baselines/banzhaf.py</code>]: ① <strong>utility = (a) 재학습 아니라 (b)-oracle coalition util</strong> <code>_coalition_utilities</code>(공정비교: 같은 게임). ② <strong>MSR 대신 exact \(2^N\)</strong>(N≤10서 1024 enum 싸고 sampling noise 0; MSR 이점은 util이 비쌀 때만 — 우리는 캐시됨). ③ kernel <code>1/2^{n-1}</code> 충실. ④ zero-delta free-rider φ 정확0. <strong>통찰(코드 주석 <code>:9-11</code>)</strong>: deterministic util이라 ranking 거의 안 움직임 = 논문 예측 일치, N=5 near-additive로 Shapley≈Banzhaf 둘 다 +1.000.</li>
 </ul>
 <h3>A.5 ShapleyFL [PDF <code>3580305.3599500.pdf</code> Defs 4.1-4.3]</h3>
@@ -871,7 +874,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <td><code>2012.13995v3.pdf</code> (NDSS'21)</td>
 <td>free-rider+poison</td>
 <td>no(val-grad)</td>
-<td><strong>signed cosine(ReLU 아님)</strong>; g0=−∇_val=normalized Flirds-1st</td>
+<td><strong>signed cosine(ReLU 아님)</strong>; \(g_0=-\nabla_{val}\)=normalized Flirds-1st</td>
 </tr>
 <tr>
 <td><strong>FedDQC</strong></td>
@@ -885,7 +888,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <h3>B.1 FLDetector [PDF <code>2207.09209v4.pdf</code> Alg.1-3]</h3>
 <ul>
 <li><strong>타깃/매칭</strong>: model poisoning(crafted-update). poisoning 위협 매칭. (옛 noisy 매칭은 위협 불일치 — answer_swap은 정직-나쁜데이터지 crafted 아님; 노트 <code>fldetector.md:48</code> 명시).</li>
-<li><strong>원리</strong>: Cauchy-MVT <code>ĝ_i^t = g_i^{t-1} + Ĥ^t(w^t−w^{t-1})</code>, Ĥ=L-BFGS(Byrd-Nocedal compact, 최근 N=10 global 차분). 예측잔차 \(\|ĝ-g\|_2\) per-client → ℓ1-norm across clients → 최근 N round mean. Gap statistic + 2-means로 malicious cluster 판정.</li>
+<li><strong>원리</strong>: Cauchy-MVT <code>ĝ_i^t = g_i^{t-1} + Ĥ^t(w^t−w^{t-1})</code>, Ĥ=L-BFGS(Byrd-Nocedal compact, 최근 N=10 global 차분). 예측잔차 \(\|\hat g-g\|_2\) per-client → ℓ1-norm across clients → 최근 N round mean. Gap statistic + 2-means로 malicious cluster 판정.</li>
 <li><strong>차이/왜</strong> [CODE <code>baselines/fldetector.py</code>]: ① <strong>model-free server-side from-logs</strong>(L-BFGS compact form <code>:51-71</code> 충실, float64 solve). \(g_i\)=raw delta, \(w^t\)−\(w^{t-1}\)=\(n_c\)-weighted aggregate, \(w_r\) 미사용. ② <strong>Gap+2-means 생략</strong>(<code>:33-35</code>) — N=5서 2-means degenerate, 우리는 연속 AUROC. ③ <strong>≥1 secant pair부터 score</strong>(<code>:99</code>) — R&lt;10 대응(논문은 50th iter부터). ④ <strong>cross-device gap-integrated HVP</strong>(우리 것, PDF에 없음 <code>:103-112</code>): client 직전참여 t'에서 gap \(w^r\)−\(w^{t'}\) 예측, gap당 HVP 1회 캐시 — full participation서 <strong>bit-identical</strong>(CNN guard green), cross-device synthetic AUROC=1.0. <strong>Flirds와 겹침 없음</strong>: FLDetector=시간 일관성(update끼리), Flirds=val-grad 정렬 — 직교 신호.</li>
 </ul>
 <h3>B.2 STD-DAGMM [PDF <code>1911.12560v1.pdf</code> §IV-V (Lin 2019)]</h3>
@@ -898,7 +901,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <ul>
 <li><strong>타깃/매칭</strong>: Byzantine(free-rider+poison). cosine-to-root.</li>
 <li><strong>원리</strong>: server가 root dataset으로 g0 계산 → trust = <strong>ReLU(cosine(\(g_i\),g0))</strong> → magnitude normalize → 가중집계. ReLU는 anti-aligned update를 집계서 배제하는 <strong>aggregation gate</strong>.</li>
-<li><strong>차이/왜</strong> [CODE <code>baselines/fltrust.py</code>]: ① <strong>g0 = −∇_val(\(w_r\))</strong>(root→val set; <code>R_l=1</code>서 수학동일, cosine은 scale-invariant). ② <strong>signed cosine, NOT ReLU</strong>(<code>:26-34</code>) — ReLU는 benign(cos&lt;0)과 free-rider(cos≈0)를 둘 다 0으로 뭉개 free-rider 검출 깨뜨림; 우리는 AUROC(ranking)라 ReLU/mag-norm은 ranking 불변(집계 gate). ③ <strong>cosine ≈ Flirds-1st exact</strong>: signed cosine = \(\langle \nabla_{val},\Delta w\rangle /(\|\cdot \|\|\cdot \|)\) = Flirds-1st의 정규화 = 같은 내적의 monotone 변환 → <strong>ranking 동일</strong> → FLTrust는 <strong>보조</strong>(독립 아님) free-rider baseline. 실측 free-rider AUROC=1.0(N=100 1-seed).</li>
+<li><strong>차이/왜</strong> [CODE <code>baselines/fltrust.py</code>]: ① <strong>\(g_0 = -\nabla_{val}(w_r)\)</strong>(root→val set; <code>R_l=1</code>서 수학동일, cosine은 scale-invariant). ② <strong>signed cosine, NOT ReLU</strong>(<code>:26-34</code>) — ReLU는 benign(cos&lt;0)과 free-rider(cos≈0)를 둘 다 0으로 뭉개 free-rider 검출 깨뜨림; 우리는 AUROC(ranking)라 ReLU/mag-norm은 ranking 불변(집계 gate). ③ <strong>cosine ≈ Flirds-1st exact</strong>: signed cosine = \(\langle \nabla_{val},\Delta w\rangle /(\|\cdot \|\|\cdot \|)\) = Flirds-1st의 정규화 = 같은 내적의 monotone 변환 → <strong>ranking 동일</strong> → FLTrust는 <strong>보조</strong>(독립 아님) free-rider baseline. 실측 free-rider AUROC=1.0(N=100 1-seed).</li>
 </ul>
 <h3>B.4 FedDQC [PDF <code>FedDQC_...md</code> text-extract §4.2]</h3>
 <ul>
@@ -1508,8 +1511,8 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 </tr>
 <tr>
 <td>N2</td>
-<td><strong>(b) oracle exact per-round 분해</strong>: \(2^N\) → \(\sum_r\) $2^{\backslash</td>
-<td>P_r\backslash</td>
+<td><strong>(b) oracle exact per-round 분해</strong>: \(2^N\) → \(\sum_r\) $2^{</td>
+<td>P_r</td>
 </tr>
 <tr>
 <td>N3</td>
@@ -1598,6 +1601,7 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 </section></main></div>
 <script>
 // highlight active nav as the main pane scrolls
-const mc=document.getElementById('scroller'),secs=[...document.querySelectorAll('.section')],links=[...document.querySelectorAll('.navdoc')];
-mc.addEventListener('scroll',()=>{let a=0;secs.forEach((s,i)=>{if(s.offsetTop-80<=mc.scrollTop)a=i;});links.forEach((l,i)=>l.classList.toggle('active',i===a));});
+// fixed sidebar + native body anchor-scroll (href="#doc-..") -> robust, repeatable.
+const secs=[...document.querySelectorAll('.section')],links=[...document.querySelectorAll('.navdoc')];
+window.addEventListener('scroll',()=>{let a=0;secs.forEach((s,i)=>{if(s.getBoundingClientRect().top<=130)a=i;});links.forEach((l,i)=>l.classList.toggle('active',i===a));},{passive:true});
 </script></body></html>
