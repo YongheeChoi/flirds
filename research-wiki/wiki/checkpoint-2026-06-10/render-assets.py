@@ -16,6 +16,26 @@ ORDER = ["00-overview","01-research-value","02-experimental-setup",
          "05-open-issues-and-next","06-closest-competitors-fedif-fedtsv-ripple",
          "07-novelty-limitations-analysis"]
 
+def esc(s):
+    return s.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
+
+# ASCII math notation (w_r, p_k^r, g^r, 2^N, Σ_{j∈P_r}, ΔW^r) -> real <sub>/<sup>.
+# Strict single latin/greek/digit base, NOT inside an identifier -> answer_swap,
+# flirds_estimator.py, n_clients, second_order=False, per_client=300 are left intact.
+_SCRIPT = re.compile(
+    r'(?<![A-Za-z0-9_\\$])'
+    r'([0-9A-Za-zΑ-ω])'
+    r'((?:[_^](?:\{[^}]{1,18}\}|[A-Za-z0-9]))+)'
+    r'(?![A-Za-z0-9_])')
+def _scripts(base, rest):
+    out = base
+    for mm in re.finditer(r'([_^])(?:\{([^}]+)\}|([A-Za-z0-9]))', rest):
+        tag = 'sub' if mm.group(1) == '_' else 'sup'
+        out += f'<{tag}>{mm.group(2) if mm.group(2) is not None else mm.group(3)}</{tag}>'
+    return out
+def mathify(s):
+    return _SCRIPT.sub(lambda m: _scripts(m.group(1), m.group(2)), s)
+
 # MathJax: load tex-svg; output inline math as \(...\) and block as \[...\] (MathJax v3 defaults).
 MATHJAX = ('<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MJ" async></script>')
 
@@ -24,6 +44,18 @@ def make_md():
     md.use(dollarmath_plugin)
     md.renderer.rules["math_inline"] = lambda t,i,o,e: "\\(" + t[i].content + "\\)"
     md.renderer.rules["math_block"]  = lambda t,i,o,e: '<div class="mathblk">\\[' + t[i].content + "\\]</div>"
+    # render ASCII sub/superscript notation as real <sub>/<sup> in prose + inline code
+    md.renderer.rules["text"] = lambda t,i,o,e: mathify(esc(t[i].content))
+    md.renderer.rules["code_inline"] = lambda t,i,o,e: "<code>"+mathify(esc(t[i].content))+"</code>"
+    def _fence(t,i,o,e):
+        c = t[i].content; info = (t[i].info or "").strip()
+        greek = any(ch in c for ch in "φψΣΔ∇⟨⟩‖½ℓη")
+        codey = any(k in c for k in ("def ","import ","return ","os.","LoraConfig","frozenset","dict(",".py","print(","np.","range(","=os"))
+        if (not info) and greek and not codey:          # a math formula block, not code
+            return '<div class="formula">'+mathify(esc(c)).rstrip()+'</div>'
+        return "<pre><code>"+esc(c)+"</code></pre>"      # real code: left verbatim
+    md.renderer.rules["fence"] = _fence
+    md.renderer.rules["code_block"] = _fence
     return md
 MD = make_md()
 
@@ -64,7 +96,7 @@ def split_front(text):
     return meta, text
 
 def preprocess(md_text, for_html):
-    md_text = re.sub(r'```mermaid.*?```', "\n\n"+DIAGRAM+"\n\n", md_text, flags=re.S)
+    md_text = re.sub(r'```mermaid.*?```', "\n\n"+mathify(DIAGRAM)+"\n\n", md_text, flags=re.S)
     md_text = re.sub(r'\[\[([^\]|]+)\|([^\]]+)\]\]', lambda m:'<span class="wl">'+m.group(2)+'</span>', md_text)
     md_text = re.sub(r'\[\[([^\]]+)\]\]', lambda m:'<span class="wl">'+m.group(1).split('/')[-1]+'</span>', md_text)
     def mdlink(m):
@@ -130,6 +162,9 @@ code{font-family:"SFMono-Regular","NanumGothicCoding",Consolas,monospace;font-si
 background:#f3f5f9;color:#0f5132;padding:1.5px 5px;border-radius:5px;border:1px solid #e6ebf2;overflow-wrap:anywhere;}
 pre{background:#11192a;color:#e7edf6;padding:13px 15px;border-radius:10px;overflow-x:auto;font-size:12.4px;line-height:1.55;break-inside:avoid;}
 pre code{background:none;border:none;color:inherit;padding:0;}
+.formula{margin:13px 0;padding:11px 16px;background:#f3f6fc;border:1px solid #dde4f1;border-left:4px solid #5c6bc0;border-radius:8px;font-family:"Cambria Math",Georgia,"Times New Roman",serif;font-size:15px;color:#1b2440;white-space:pre-wrap;line-height:2.0;break-inside:avoid;}
+sub,sup{line-height:0;font-size:.72em;}
+code sub,code sup,.dpath sub,.dpath sup{font-size:.78em;}
 .tw{overflow-x:auto;margin:12px 0;border:1px solid #e3e8ef;border-radius:10px;}
 table{border-collapse:collapse;width:100%;font-size:12.6px;background:#fff;}
 th{background:#eef1f8;color:#27314a;text-align:left;font-weight:700;}
