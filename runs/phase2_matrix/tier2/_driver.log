@@ -1,0 +1,17 @@
+[09:27:17] DRIVER START: 12 cells -> /NHNHOME/26msit001_A/edge_ai_lab/yonghee/flirds/runs/phase2_matrix/tier2 (4 GPU slots)
+[09:27:17] GPU0 start: dev_a0.1_noisy (pid 2944348)
+[09:27:17] GPU1 start: dev_a0.1_frrand (pid 2944350)
+[09:27:17] GPU2 start: dev_a0.1_frzero (pid 2944352)
+[09:27:17] GPU3 start: dev_a0.0_noisy (pid 2944354)
+[12:14:19] GPU2 done[CHECK]: dev_a0.1_frzero
+[12:14:19] GPU2 start: dev_a0.0_frrand (pid 2968029)
+[12:16:19] GPU0 done[CHECK]: dev_a0.1_noisy
+[12:16:19] GPU0 start: dev_a0.0_frzero (pid 2968772)
+[12:18:05] GPU1 done[CHECK]: dev_a0.1_frrand
+[12:18:05] GPU1 start: dev_a0.01_noisy (pid 2969526)
+[13:06:35] GPU3 done[ok]: dev_a0.0_noisy
+[13:06:35] GPU3 start: dev_a0.01_frrand (pid 2977509)
+[14:57:21] GPU1 done[CHECK]: dev_a0.01_noisy
+[14:57:21] GPU1 start: dev_a0.01_frzero (pid 2997599)
+[15:28:06] GPU3 done[CHECK]: dev_a0.01_frrand
+[15:28:06] GPU3 start: dev_a5.0_noisy (pid 3008382)

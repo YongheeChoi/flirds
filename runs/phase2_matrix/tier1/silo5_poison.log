@@ -1,0 +1,235 @@
+=== step5 MATRIX | 1B silo5 | R=10 K_frac=1.0 lr=0.002 batch=8 val_chunk=10 | ORACLE_B=True COALITION=True | threats=['poison'] seeds=[0, 1, 2] ===
+{'train_runtime': '4.804', 'train_samples_per_second': '16.65', 'train_steps_per_second': '2.082', 'train_loss': '2.081', 'entropy': '1.917', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5444', 'epoch': '0.08'}
+{'train_runtime': '6.645', 'train_samples_per_second': '12.04', 'train_steps_per_second': '1.505', 'train_loss': '2.856', 'entropy': '2.617', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.4056', 'epoch': '0.08'}
+{'train_runtime': '2.954', 'train_samples_per_second': '27.08', 'train_steps_per_second': '3.385', 'train_loss': '1.717', 'entropy': '1.319', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6249', 'epoch': '0.08'}
+{'train_runtime': '2.48', 'train_samples_per_second': '32.26', 'train_steps_per_second': '4.033', 'train_loss': '1.021', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7223', 'epoch': '0.08'}
+{'train_runtime': '8.801', 'train_samples_per_second': '9.09', 'train_steps_per_second': '1.136', 'train_loss': '3.027', 'entropy': '2.71', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.3888', 'epoch': '0.08'}
+{'train_runtime': '2.482', 'train_samples_per_second': '32.24', 'train_steps_per_second': '4.03', 'train_loss': '1.018', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7241', 'epoch': '0.08'}
+{'train_runtime': '8.806', 'train_samples_per_second': '9.085', 'train_steps_per_second': '1.136', 'train_loss': '3.024', 'entropy': '2.718', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.3894', 'epoch': '0.08'}
+{'train_runtime': '2.953', 'train_samples_per_second': '27.09', 'train_steps_per_second': '3.386', 'train_loss': '1.708', 'entropy': '1.325', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6257', 'epoch': '0.08'}
+{'train_runtime': '4.491', 'train_samples_per_second': '17.81', 'train_steps_per_second': '2.227', 'train_loss': '2.078', 'entropy': '1.923', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5436', 'epoch': '0.08'}
+{'train_runtime': '6.638', 'train_samples_per_second': '12.05', 'train_steps_per_second': '1.506', 'train_loss': '2.854', 'entropy': '2.625', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.406', 'epoch': '0.08'}
+{'train_runtime': '4.495', 'train_samples_per_second': '17.8', 'train_steps_per_second': '2.225', 'train_loss': '2.075', 'entropy': '1.929', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.544', 'epoch': '0.08'}
+{'train_runtime': '2.474', 'train_samples_per_second': '32.34', 'train_steps_per_second': '4.042', 'train_loss': '1.014', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7237', 'epoch': '0.08'}
+{'train_runtime': '6.641', 'train_samples_per_second': '12.04', 'train_steps_per_second': '1.506', 'train_loss': '2.851', 'entropy': '2.632', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.4062', 'epoch': '0.08'}
+{'train_runtime': '2.949', 'train_samples_per_second': '27.13', 'train_steps_per_second': '3.391', 'train_loss': '1.7', 'entropy': '1.331', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6263', 'epoch': '0.08'}
+{'train_runtime': '8.805', 'train_samples_per_second': '9.086', 'train_steps_per_second': '1.136', 'train_loss': '3.021', 'entropy': '2.726', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.3898', 'epoch': '0.08'}
+{'train_runtime': '8.792', 'train_samples_per_second': '9.1', 'train_steps_per_second': '1.137', 'train_loss': '3.017', 'entropy': '2.733', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.39', 'epoch': '0.08'}
+{'train_runtime': '2.483', 'train_samples_per_second': '32.22', 'train_steps_per_second': '4.027', 'train_loss': '1.011', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7234', 'epoch': '0.08'}
+{'train_runtime': '4.496', 'train_samples_per_second': '17.8', 'train_steps_per_second': '2.224', 'train_loss': '2.072', 'entropy': '1.934', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5438', 'epoch': '0.08'}
+{'train_runtime': '6.637', 'train_samples_per_second': '12.05', 'train_steps_per_second': '1.507', 'train_loss': '2.849', 'entropy': '2.64', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.4063', 'epoch': '0.08'}
+{'train_runtime': '2.954', 'train_samples_per_second': '27.08', 'train_steps_per_second': '3.385', 'train_loss': '1.691', 'entropy': '1.337', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6259', 'epoch': '0.08'}
+{'train_runtime': '6.675', 'train_samples_per_second': '11.99', 'train_steps_per_second': '1.498', 'train_loss': '2.846', 'entropy': '2.647', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.407', 'epoch': '0.08'}
+{'train_runtime': '4.505', 'train_samples_per_second': '17.76', 'train_steps_per_second': '2.22', 'train_loss': '2.069', 'entropy': '1.941', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5442', 'epoch': '0.08'}
+{'train_runtime': '2.961', 'train_samples_per_second': '27.02', 'train_steps_per_second': '3.378', 'train_loss': '1.682', 'entropy': '1.343', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6262', 'epoch': '0.08'}
+{'train_runtime': '8.821', 'train_samples_per_second': '9.069', 'train_steps_per_second': '1.134', 'train_loss': '3.014', 'entropy': '2.741', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.3905', 'epoch': '0.08'}
+{'train_runtime': '2.477', 'train_samples_per_second': '32.3', 'train_steps_per_second': '4.038', 'train_loss': '1.007', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7243', 'epoch': '0.08'}
+{'train_runtime': '4.497', 'train_samples_per_second': '17.79', 'train_steps_per_second': '2.223', 'train_loss': '2.066', 'entropy': '1.947', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5445', 'epoch': '0.08'}
+{'train_runtime': '2.961', 'train_samples_per_second': '27.02', 'train_steps_per_second': '3.378', 'train_loss': '1.673', 'entropy': '1.35', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6266', 'epoch': '0.08'}
+{'train_runtime': '8.809', 'train_samples_per_second': '9.082', 'train_steps_per_second': '1.135', 'train_loss': '3.011', 'entropy': '2.749', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.39', 'epoch': '0.08'}
+{'train_runtime': '6.646', 'train_samples_per_second': '12.04', 'train_steps_per_second': '1.505', 'train_loss': '2.843', 'entropy': '2.655', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.4077', 'epoch': '0.08'}
+{'train_runtime': '2.494', 'train_samples_per_second': '32.07', 'train_steps_per_second': '4.009', 'train_loss': '1.003', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7255', 'epoch': '0.08'}
+{'train_runtime': '2.475', 'train_samples_per_second': '32.32', 'train_steps_per_second': '4.04', 'train_loss': '0.9996', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7265', 'epoch': '0.08'}
+{'train_runtime': '8.799', 'train_samples_per_second': '9.092', 'train_steps_per_second': '1.137', 'train_loss': '3.007', 'entropy': '2.758', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.3899', 'epoch': '0.08'}
+{'train_runtime': '4.497', 'train_samples_per_second': '17.79', 'train_steps_per_second': '2.224', 'train_loss': '2.062', 'entropy': '1.954', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5452', 'epoch': '0.08'}
+{'train_runtime': '2.966', 'train_samples_per_second': '26.97', 'train_steps_per_second': '3.371', 'train_loss': '1.663', 'entropy': '1.356', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6272', 'epoch': '0.08'}
+{'train_runtime': '6.648', 'train_samples_per_second': '12.03', 'train_steps_per_second': '1.504', 'train_loss': '2.841', 'entropy': '2.663', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.4078', 'epoch': '0.08'}
+{'train_runtime': '8.798', 'train_samples_per_second': '9.093', 'train_steps_per_second': '1.137', 'train_loss': '3.003', 'entropy': '2.766', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.3906', 'epoch': '0.08'}
+{'train_runtime': '2.481', 'train_samples_per_second': '32.24', 'train_steps_per_second': '4.031', 'train_loss': '0.9955', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7278', 'epoch': '0.08'}
+{'train_runtime': '2.956', 'train_samples_per_second': '27.06', 'train_steps_per_second': '3.383', 'train_loss': '1.654', 'entropy': '1.363', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.628', 'epoch': '0.08'}
+{'train_runtime': '6.645', 'train_samples_per_second': '12.04', 'train_steps_per_second': '1.505', 'train_loss': '2.838', 'entropy': '2.671', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.4081', 'epoch': '0.08'}
+{'train_runtime': '4.504', 'train_samples_per_second': '17.76', 'train_steps_per_second': '2.22', 'train_loss': '2.058', 'entropy': '1.961', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5462', 'epoch': '0.08'}
+{'train_runtime': '2.955', 'train_samples_per_second': '27.07', 'train_steps_per_second': '3.384', 'train_loss': '1.644', 'entropy': '1.37', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6283', 'epoch': '0.08'}
+{'train_runtime': '2.479', 'train_samples_per_second': '32.27', 'train_steps_per_second': '4.033', 'train_loss': '0.9913', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7291', 'epoch': '0.08'}
+{'train_runtime': '8.798', 'train_samples_per_second': '9.093', 'train_steps_per_second': '1.137', 'train_loss': '3', 'entropy': '2.775', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.3911', 'epoch': '0.08'}
+{'train_runtime': '6.637', 'train_samples_per_second': '12.05', 'train_steps_per_second': '1.507', 'train_loss': '2.835', 'entropy': '2.68', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.4082', 'epoch': '0.08'}
+{'train_runtime': '4.498', 'train_samples_per_second': '17.79', 'train_steps_per_second': '2.223', 'train_loss': '2.055', 'entropy': '1.969', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5463', 'epoch': '0.08'}
+{'train_runtime': '6.67', 'train_samples_per_second': '11.99', 'train_steps_per_second': '1.499', 'train_loss': '2.831', 'entropy': '2.689', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.4084', 'epoch': '0.08'}
+{'train_runtime': '4.504', 'train_samples_per_second': '17.76', 'train_steps_per_second': '2.22', 'train_loss': '2.05', 'entropy': '1.977', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5466', 'epoch': '0.08'}
+{'train_runtime': '8.796', 'train_samples_per_second': '9.095', 'train_steps_per_second': '1.137', 'train_loss': '2.996', 'entropy': '2.784', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.3916', 'epoch': '0.08'}
+{'train_runtime': '2.96', 'train_samples_per_second': '27.02', 'train_steps_per_second': '3.378', 'train_loss': '1.634', 'entropy': '1.377', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6302', 'epoch': '0.08'}
+{'train_runtime': '2.474', 'train_samples_per_second': '32.34', 'train_steps_per_second': '4.043', 'train_loss': '0.9869', 'entropy': '1.095', 'num_tokens': '8148', 'mean_token_accuracy': '0.7307', 'epoch': '0.08'}
+{'train_runtime': '107.1', 'train_samples_per_second': '46.71', 'train_steps_per_second': '5.838', 'train_loss': '1.429', 'entropy': '1.255', 'num_tokens': '2.158e+05', 'mean_token_accuracy': '0.7484', 'epoch': '5'}
+{'train_runtime': '8.8', 'train_samples_per_second': '9.091', 'train_steps_per_second': '1.136', 'train_loss': '2.991', 'entropy': '2.793', 'num_tokens': '2.815e+04', 'mean_token_accuracy': '0.3916', 'epoch': '0.08'}
+{'train_runtime': '6.672', 'train_samples_per_second': '11.99', 'train_steps_per_second': '1.499', 'train_loss': '2.828', 'entropy': '2.698', 'num_tokens': '1.793e+04', 'mean_token_accuracy': '0.4087', 'epoch': '0.08'}
+{'train_runtime': '2.967', 'train_samples_per_second': '26.97', 'train_steps_per_second': '3.371', 'train_loss': '1.623', 'entropy': '1.385', 'num_tokens': '1.109e+04', 'mean_token_accuracy': '0.6296', 'epoch': '0.08'}
+{'train_runtime': '4.498', 'train_samples_per_second': '17.78', 'train_steps_per_second': '2.223', 'train_loss': '2.046', 'entropy': '1.986', 'num_tokens': '1.09e+04', 'mean_token_accuracy': '0.5482', 'epoch': '0.08'}
+
+----- seed 0 -----
+
+[poison] selected=5/5 corrupt=[0] seen_corrupt=[0] deployed-ASR=1.00
+  method        AUROC   Spearman/(b)   runtime   corrupt-rank
+  (b)oracle     1.000        (truth)    570.2s   0/5
+  Flirds        0.000         +0.000    114.5s   4/5
+  Flirds1st     0.000         +0.000     37.3s   4/5
+  GTG           1.000         +0.700    577.9s   0/5
+  FedSV         1.000         +0.000    563.4s   0/5
+  ShapleyFL     1.000         +1.000    569.6s   0/5
+  Banzhaf       1.000         +1.000    572.5s   0/5
+  loss-heur     1.000         +1.000    177.1s   0/5
+  FLDetector    1.000                    62.9s   0/5
+  STD-DAGMM     0.750                   129.8s   1/5
+  FLTrust       1.000                    38.5s   0/5
+  FedDQC        1.000                    20.9s   0/5
+{'train_runtime': '3.07', 'train_samples_per_second': '26.06', 'train_steps_per_second': '3.257', 'train_loss': '1.932', 'entropy': '1.441', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5939', 'epoch': '0.08'}
+{'train_runtime': '8.733', 'train_samples_per_second': '9.161', 'train_steps_per_second': '1.145', 'train_loss': '2.99', 'entropy': '2.697', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.3964', 'epoch': '0.08'}
+{'train_runtime': '6.643', 'train_samples_per_second': '12.04', 'train_steps_per_second': '1.505', 'train_loss': '3.039', 'entropy': '2.812', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.38', 'epoch': '0.08'}
+{'train_runtime': '5.73', 'train_samples_per_second': '13.96', 'train_steps_per_second': '1.745', 'train_loss': '2.239', 'entropy': '1.967', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5186', 'epoch': '0.08'}
+{'train_runtime': '2.655', 'train_samples_per_second': '30.14', 'train_steps_per_second': '3.767', 'train_loss': '1.013', 'entropy': '1.085', 'num_tokens': '8331', 'mean_token_accuracy': '0.7224', 'epoch': '0.08'}
+{'train_runtime': '5.716', 'train_samples_per_second': '13.99', 'train_steps_per_second': '1.749', 'train_loss': '2.236', 'entropy': '1.973', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.519', 'epoch': '0.08'}
+{'train_runtime': '6.678', 'train_samples_per_second': '11.98', 'train_steps_per_second': '1.498', 'train_loss': '3.036', 'entropy': '2.821', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.3807', 'epoch': '0.08'}
+{'train_runtime': '2.654', 'train_samples_per_second': '30.14', 'train_steps_per_second': '3.768', 'train_loss': '1.01', 'entropy': '1.086', 'num_tokens': '8331', 'mean_token_accuracy': '0.7227', 'epoch': '0.08'}
+{'train_runtime': '3.063', 'train_samples_per_second': '26.12', 'train_steps_per_second': '3.265', 'train_loss': '1.923', 'entropy': '1.447', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5936', 'epoch': '0.08'}
+{'train_runtime': '8.713', 'train_samples_per_second': '9.181', 'train_steps_per_second': '1.148', 'train_loss': '2.987', 'entropy': '2.706', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.3969', 'epoch': '0.08'}
+{'train_runtime': '2.667', 'train_samples_per_second': '30', 'train_steps_per_second': '3.749', 'train_loss': '1.007', 'entropy': '1.086', 'num_tokens': '8331', 'mean_token_accuracy': '0.7238', 'epoch': '0.08'}
+{'train_runtime': '8.701', 'train_samples_per_second': '9.194', 'train_steps_per_second': '1.149', 'train_loss': '2.983', 'entropy': '2.714', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.3972', 'epoch': '0.08'}
+{'train_runtime': '6.635', 'train_samples_per_second': '12.06', 'train_steps_per_second': '1.507', 'train_loss': '3.034', 'entropy': '2.829', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.3814', 'epoch': '0.08'}
+{'train_runtime': '3.064', 'train_samples_per_second': '26.11', 'train_steps_per_second': '3.264', 'train_loss': '1.914', 'entropy': '1.453', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5942', 'epoch': '0.08'}
+{'train_runtime': '5.719', 'train_samples_per_second': '13.99', 'train_steps_per_second': '1.749', 'train_loss': '2.233', 'entropy': '1.98', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5197', 'epoch': '0.08'}
+{'train_runtime': '3.065', 'train_samples_per_second': '26.1', 'train_steps_per_second': '3.263', 'train_loss': '1.905', 'entropy': '1.458', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5956', 'epoch': '0.08'}
+{'train_runtime': '6.631', 'train_samples_per_second': '12.06', 'train_steps_per_second': '1.508', 'train_loss': '3.031', 'entropy': '2.837', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.3815', 'epoch': '0.08'}
+{'train_runtime': '5.719', 'train_samples_per_second': '13.99', 'train_steps_per_second': '1.749', 'train_loss': '2.23', 'entropy': '1.986', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5203', 'epoch': '0.08'}
+{'train_runtime': '8.718', 'train_samples_per_second': '9.177', 'train_steps_per_second': '1.147', 'train_loss': '2.98', 'entropy': '2.723', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.3976', 'epoch': '0.08'}
+{'train_runtime': '2.676', 'train_samples_per_second': '29.9', 'train_steps_per_second': '3.737', 'train_loss': '1.004', 'entropy': '1.087', 'num_tokens': '8331', 'mean_token_accuracy': '0.7244', 'epoch': '0.08'}
+{'train_runtime': '6.631', 'train_samples_per_second': '12.06', 'train_steps_per_second': '1.508', 'train_loss': '3.029', 'entropy': '2.845', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.3815', 'epoch': '0.08'}
+{'train_runtime': '3.07', 'train_samples_per_second': '26.06', 'train_steps_per_second': '3.258', 'train_loss': '1.896', 'entropy': '1.464', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5961', 'epoch': '0.08'}
+{'train_runtime': '8.72', 'train_samples_per_second': '9.175', 'train_steps_per_second': '1.147', 'train_loss': '2.976', 'entropy': '2.732', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.3978', 'epoch': '0.08'}
+{'train_runtime': '2.671', 'train_samples_per_second': '29.96', 'train_steps_per_second': '3.745', 'train_loss': '1.001', 'entropy': '1.088', 'num_tokens': '8331', 'mean_token_accuracy': '0.7255', 'epoch': '0.08'}
+{'train_runtime': '5.722', 'train_samples_per_second': '13.98', 'train_steps_per_second': '1.748', 'train_loss': '2.227', 'entropy': '1.993', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5205', 'epoch': '0.08'}
+{'train_runtime': '5.719', 'train_samples_per_second': '13.99', 'train_steps_per_second': '1.749', 'train_loss': '2.223', 'entropy': '2.001', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5212', 'epoch': '0.08'}
+{'train_runtime': '3.077', 'train_samples_per_second': '26', 'train_steps_per_second': '3.25', 'train_loss': '1.886', 'entropy': '1.47', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5961', 'epoch': '0.08'}
+{'train_runtime': '2.667', 'train_samples_per_second': '30', 'train_steps_per_second': '3.749', 'train_loss': '0.9982', 'entropy': '1.088', 'num_tokens': '8331', 'mean_token_accuracy': '0.7273', 'epoch': '0.08'}
+{'train_runtime': '8.716', 'train_samples_per_second': '9.178', 'train_steps_per_second': '1.147', 'train_loss': '2.972', 'entropy': '2.741', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.3991', 'epoch': '0.08'}
+{'train_runtime': '6.635', 'train_samples_per_second': '12.06', 'train_steps_per_second': '1.507', 'train_loss': '3.026', 'entropy': '2.853', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.382', 'epoch': '0.08'}
+{'train_runtime': '5.73', 'train_samples_per_second': '13.96', 'train_steps_per_second': '1.745', 'train_loss': '2.22', 'entropy': '2.009', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5221', 'epoch': '0.08'}
+{'train_runtime': '2.667', 'train_samples_per_second': '30', 'train_steps_per_second': '3.75', 'train_loss': '0.9948', 'entropy': '1.089', 'num_tokens': '8331', 'mean_token_accuracy': '0.7281', 'epoch': '0.08'}
+{'train_runtime': '3.062', 'train_samples_per_second': '26.13', 'train_steps_per_second': '3.266', 'train_loss': '1.876', 'entropy': '1.477', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5958', 'epoch': '0.08'}
+{'train_runtime': '6.626', 'train_samples_per_second': '12.07', 'train_steps_per_second': '1.509', 'train_loss': '3.023', 'entropy': '2.862', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.3823', 'epoch': '0.08'}
+{'train_runtime': '8.709', 'train_samples_per_second': '9.186', 'train_steps_per_second': '1.148', 'train_loss': '2.969', 'entropy': '2.75', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.3996', 'epoch': '0.08'}
+{'train_runtime': '8.71', 'train_samples_per_second': '9.185', 'train_steps_per_second': '1.148', 'train_loss': '2.965', 'entropy': '2.759', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.4002', 'epoch': '0.08'}
+{'train_runtime': '3.069', 'train_samples_per_second': '26.07', 'train_steps_per_second': '3.258', 'train_loss': '1.866', 'entropy': '1.483', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5979', 'epoch': '0.08'}
+{'train_runtime': '2.671', 'train_samples_per_second': '29.95', 'train_steps_per_second': '3.744', 'train_loss': '0.9914', 'entropy': '1.09', 'num_tokens': '8331', 'mean_token_accuracy': '0.7288', 'epoch': '0.08'}
+{'train_runtime': '5.725', 'train_samples_per_second': '13.97', 'train_steps_per_second': '1.747', 'train_loss': '2.216', 'entropy': '2.017', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5226', 'epoch': '0.08'}
+{'train_runtime': '6.632', 'train_samples_per_second': '12.06', 'train_steps_per_second': '1.508', 'train_loss': '3.02', 'entropy': '2.871', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.3823', 'epoch': '0.08'}
+{'train_runtime': '2.672', 'train_samples_per_second': '29.94', 'train_steps_per_second': '3.743', 'train_loss': '0.9877', 'entropy': '1.091', 'num_tokens': '8331', 'mean_token_accuracy': '0.7299', 'epoch': '0.08'}
+{'train_runtime': '5.722', 'train_samples_per_second': '13.98', 'train_steps_per_second': '1.748', 'train_loss': '2.212', 'entropy': '2.026', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5238', 'epoch': '0.08'}
+{'train_runtime': '3.065', 'train_samples_per_second': '26.1', 'train_steps_per_second': '3.262', 'train_loss': '1.856', 'entropy': '1.49', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5993', 'epoch': '0.08'}
+{'train_runtime': '6.629', 'train_samples_per_second': '12.07', 'train_steps_per_second': '1.509', 'train_loss': '3.017', 'entropy': '2.881', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.3829', 'epoch': '0.08'}
+{'train_runtime': '8.703', 'train_samples_per_second': '9.193', 'train_steps_per_second': '1.149', 'train_loss': '2.961', 'entropy': '2.769', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.4012', 'epoch': '0.08'}
+{'train_runtime': '6.645', 'train_samples_per_second': '12.04', 'train_steps_per_second': '1.505', 'train_loss': '3.014', 'entropy': '2.89', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.3832', 'epoch': '0.08'}
+{'train_runtime': '2.672', 'train_samples_per_second': '29.94', 'train_steps_per_second': '3.743', 'train_loss': '0.9839', 'entropy': '1.092', 'num_tokens': '8331', 'mean_token_accuracy': '0.7316', 'epoch': '0.08'}
+{'train_runtime': '3.067', 'train_samples_per_second': '26.09', 'train_steps_per_second': '3.261', 'train_loss': '1.845', 'entropy': '1.498', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.5988', 'epoch': '0.08'}
+{'train_runtime': '8.705', 'train_samples_per_second': '9.19', 'train_steps_per_second': '1.149', 'train_loss': '2.956', 'entropy': '2.78', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.4018', 'epoch': '0.08'}
+{'train_runtime': '5.765', 'train_samples_per_second': '13.88', 'train_steps_per_second': '1.735', 'train_loss': '2.208', 'entropy': '2.036', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5237', 'epoch': '0.08'}
+{'train_runtime': '103', 'train_samples_per_second': '48.52', 'train_steps_per_second': '6.065', 'train_loss': '1.383', 'entropy': '1.248', 'num_tokens': '2.087e+05', 'mean_token_accuracy': '0.7507', 'epoch': '5'}
+{'train_runtime': '8.718', 'train_samples_per_second': '9.176', 'train_steps_per_second': '1.147', 'train_loss': '2.952', 'entropy': '2.79', 'num_tokens': '2.967e+04', 'mean_token_accuracy': '0.4026', 'epoch': '0.08'}
+{'train_runtime': '6.643', 'train_samples_per_second': '12.04', 'train_steps_per_second': '1.505', 'train_loss': '3.011', 'entropy': '2.9', 'num_tokens': '1.941e+04', 'mean_token_accuracy': '0.3832', 'epoch': '0.08'}
+{'train_runtime': '3.068', 'train_samples_per_second': '26.07', 'train_steps_per_second': '3.259', 'train_loss': '1.834', 'entropy': '1.505', 'num_tokens': '1.13e+04', 'mean_token_accuracy': '0.6003', 'epoch': '0.08'}
+{'train_runtime': '5.721', 'train_samples_per_second': '13.98', 'train_steps_per_second': '1.748', 'train_loss': '2.204', 'entropy': '2.046', 'num_tokens': '1.307e+04', 'mean_token_accuracy': '0.5247', 'epoch': '0.08'}
+
+----- seed 1 -----
+
+[poison] selected=5/5 corrupt=[0] seen_corrupt=[0] deployed-ASR=1.00
+  method        AUROC   Spearman/(b)   runtime   corrupt-rank
+  (b)oracle     1.000        (truth)    590.9s   0/5
+  Flirds        0.250         +0.400    118.4s   3/5
+  Flirds1st     0.000         +0.000     38.6s   4/5
+  GTG           1.000         +1.000    598.5s   0/5
+  FedSV         1.000         +0.600    585.0s   0/5
+  ShapleyFL     1.000         +1.000    590.0s   0/5
+  Banzhaf       1.000         +1.000    594.0s   0/5
+  loss-heur     1.000         +1.000    182.9s   0/5
+  FLDetector    1.000                    24.8s   0/5
+  STD-DAGMM     1.000                    96.9s   0/5
+  FLTrust       1.000                    39.5s   0/5
+  FedDQC        1.000                    21.0s   0/5
+{'train_runtime': '5.395', 'train_samples_per_second': '14.83', 'train_steps_per_second': '1.853', 'train_loss': '2.061', 'entropy': '1.913', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.5603', 'epoch': '0.08'}
+{'train_runtime': '2.561', 'train_samples_per_second': '31.23', 'train_steps_per_second': '3.904', 'train_loss': '1.109', 'entropy': '1.128', 'num_tokens': '7142', 'mean_token_accuracy': '0.7052', 'epoch': '0.08'}
+{'train_runtime': '8.3', 'train_samples_per_second': '9.638', 'train_steps_per_second': '1.205', 'train_loss': '2.909', 'entropy': '2.562', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4086', 'epoch': '0.08'}
+{'train_runtime': '2.956', 'train_samples_per_second': '27.06', 'train_steps_per_second': '3.383', 'train_loss': '1.815', 'entropy': '1.343', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.6176', 'epoch': '0.08'}
+{'train_runtime': '5.814', 'train_samples_per_second': '13.76', 'train_steps_per_second': '1.72', 'train_loss': '2.976', 'entropy': '2.735', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.3923', 'epoch': '0.08'}
+{'train_runtime': '8.284', 'train_samples_per_second': '9.657', 'train_steps_per_second': '1.207', 'train_loss': '2.905', 'entropy': '2.57', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4083', 'epoch': '0.08'}
+{'train_runtime': '2.954', 'train_samples_per_second': '27.08', 'train_steps_per_second': '3.385', 'train_loss': '1.806', 'entropy': '1.349', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.6184', 'epoch': '0.08'}
+{'train_runtime': '5.853', 'train_samples_per_second': '13.67', 'train_steps_per_second': '1.708', 'train_loss': '2.973', 'entropy': '2.743', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.3926', 'epoch': '0.08'}
+{'train_runtime': '2.558', 'train_samples_per_second': '31.28', 'train_steps_per_second': '3.91', 'train_loss': '1.105', 'entropy': '1.129', 'num_tokens': '7142', 'mean_token_accuracy': '0.7056', 'epoch': '0.08'}
+{'train_runtime': '5.39', 'train_samples_per_second': '14.84', 'train_steps_per_second': '1.855', 'train_loss': '2.058', 'entropy': '1.919', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.5605', 'epoch': '0.08'}
+{'train_runtime': '5.402', 'train_samples_per_second': '14.81', 'train_steps_per_second': '1.851', 'train_loss': '2.056', 'entropy': '1.924', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.5605', 'epoch': '0.08'}
+{'train_runtime': '2.949', 'train_samples_per_second': '27.13', 'train_steps_per_second': '3.391', 'train_loss': '1.797', 'entropy': '1.356', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.6194', 'epoch': '0.08'}
+{'train_runtime': '2.565', 'train_samples_per_second': '31.19', 'train_steps_per_second': '3.898', 'train_loss': '1.101', 'entropy': '1.129', 'num_tokens': '7142', 'mean_token_accuracy': '0.7071', 'epoch': '0.08'}
+{'train_runtime': '5.805', 'train_samples_per_second': '13.78', 'train_steps_per_second': '1.723', 'train_loss': '2.97', 'entropy': '2.75', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.3926', 'epoch': '0.08'}
+{'train_runtime': '8.27', 'train_samples_per_second': '9.674', 'train_steps_per_second': '1.209', 'train_loss': '2.901', 'entropy': '2.579', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4089', 'epoch': '0.08'}
+{'train_runtime': '5.796', 'train_samples_per_second': '13.8', 'train_steps_per_second': '1.725', 'train_loss': '2.967', 'entropy': '2.758', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.3925', 'epoch': '0.08'}
+{'train_runtime': '2.951', 'train_samples_per_second': '27.11', 'train_steps_per_second': '3.389', 'train_loss': '1.787', 'entropy': '1.362', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.6194', 'epoch': '0.08'}
+{'train_runtime': '2.564', 'train_samples_per_second': '31.2', 'train_steps_per_second': '3.899', 'train_loss': '1.098', 'entropy': '1.13', 'num_tokens': '7142', 'mean_token_accuracy': '0.7096', 'epoch': '0.08'}
+{'train_runtime': '8.274', 'train_samples_per_second': '9.669', 'train_steps_per_second': '1.209', 'train_loss': '2.898', 'entropy': '2.587', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4094', 'epoch': '0.08'}
+{'train_runtime': '5.383', 'train_samples_per_second': '14.86', 'train_steps_per_second': '1.858', 'train_loss': '2.054', 'entropy': '1.93', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.5609', 'epoch': '0.08'}
+{'train_runtime': '2.954', 'train_samples_per_second': '27.08', 'train_steps_per_second': '3.385', 'train_loss': '1.778', 'entropy': '1.369', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.6194', 'epoch': '0.08'}
+{'train_runtime': '5.798', 'train_samples_per_second': '13.8', 'train_steps_per_second': '1.725', 'train_loss': '2.964', 'entropy': '2.766', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.3924', 'epoch': '0.08'}
+{'train_runtime': '2.56', 'train_samples_per_second': '31.25', 'train_steps_per_second': '3.907', 'train_loss': '1.094', 'entropy': '1.131', 'num_tokens': '7142', 'mean_token_accuracy': '0.7103', 'epoch': '0.08'}
+{'train_runtime': '5.378', 'train_samples_per_second': '14.88', 'train_steps_per_second': '1.86', 'train_loss': '2.051', 'entropy': '1.937', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.5611', 'epoch': '0.08'}
+{'train_runtime': '8.273', 'train_samples_per_second': '9.67', 'train_steps_per_second': '1.209', 'train_loss': '2.894', 'entropy': '2.596', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4093', 'epoch': '0.08'}
+{'train_runtime': '2.556', 'train_samples_per_second': '31.3', 'train_steps_per_second': '3.913', 'train_loss': '1.089', 'entropy': '1.132', 'num_tokens': '7142', 'mean_token_accuracy': '0.7108', 'epoch': '0.08'}
+{'train_runtime': '8.284', 'train_samples_per_second': '9.657', 'train_steps_per_second': '1.207', 'train_loss': '2.89', 'entropy': '2.605', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4097', 'epoch': '0.08'}
+{'train_runtime': '5.812', 'train_samples_per_second': '13.76', 'train_steps_per_second': '1.72', 'train_loss': '2.961', 'entropy': '2.774', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.3931', 'epoch': '0.08'}
+{'train_runtime': '5.383', 'train_samples_per_second': '14.86', 'train_steps_per_second': '1.858', 'train_loss': '2.049', 'entropy': '1.943', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.5613', 'epoch': '0.08'}
+{'train_runtime': '2.949', 'train_samples_per_second': '27.13', 'train_steps_per_second': '3.391', 'train_loss': '1.768', 'entropy': '1.376', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.6195', 'epoch': '0.08'}
+{'train_runtime': '2.554', 'train_samples_per_second': '31.32', 'train_steps_per_second': '3.915', 'train_loss': '1.085', 'entropy': '1.133', 'num_tokens': '7142', 'mean_token_accuracy': '0.7115', 'epoch': '0.08'}
+{'train_runtime': '5.808', 'train_samples_per_second': '13.77', 'train_steps_per_second': '1.722', 'train_loss': '2.958', 'entropy': '2.782', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.3937', 'epoch': '0.08'}
+{'train_runtime': '2.95', 'train_samples_per_second': '27.12', 'train_steps_per_second': '3.39', 'train_loss': '1.758', 'entropy': '1.383', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.6201', 'epoch': '0.08'}
+{'train_runtime': '5.395', 'train_samples_per_second': '14.83', 'train_steps_per_second': '1.854', 'train_loss': '2.046', 'entropy': '1.95', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.5621', 'epoch': '0.08'}
+{'train_runtime': '8.27', 'train_samples_per_second': '9.674', 'train_steps_per_second': '1.209', 'train_loss': '2.886', 'entropy': '2.614', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4097', 'epoch': '0.08'}
+{'train_runtime': '2.963', 'train_samples_per_second': '27', 'train_steps_per_second': '3.375', 'train_loss': '1.748', 'entropy': '1.391', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.6212', 'epoch': '0.08'}
+{'train_runtime': '5.809', 'train_samples_per_second': '13.77', 'train_steps_per_second': '1.722', 'train_loss': '2.955', 'entropy': '2.791', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.3937', 'epoch': '0.08'}
+{'train_runtime': '8.271', 'train_samples_per_second': '9.672', 'train_steps_per_second': '1.209', 'train_loss': '2.882', 'entropy': '2.623', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4102', 'epoch': '0.08'}
+{'train_runtime': '2.555', 'train_samples_per_second': '31.3', 'train_steps_per_second': '3.913', 'train_loss': '1.08', 'entropy': '1.135', 'num_tokens': '7142', 'mean_token_accuracy': '0.7137', 'epoch': '0.08'}
+{'train_runtime': '5.381', 'train_samples_per_second': '14.87', 'train_steps_per_second': '1.858', 'train_loss': '2.043', 'entropy': '1.958', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.562', 'epoch': '0.08'}
+{'train_runtime': '2.951', 'train_samples_per_second': '27.11', 'train_steps_per_second': '3.389', 'train_loss': '1.737', 'entropy': '1.399', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.6214', 'epoch': '0.08'}
+{'train_runtime': '2.582', 'train_samples_per_second': '30.99', 'train_steps_per_second': '3.874', 'train_loss': '1.075', 'entropy': '1.136', 'num_tokens': '7142', 'mean_token_accuracy': '0.7164', 'epoch': '0.08'}
+{'train_runtime': '8.273', 'train_samples_per_second': '9.67', 'train_steps_per_second': '1.209', 'train_loss': '2.877', 'entropy': '2.633', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4115', 'epoch': '0.08'}
+{'train_runtime': '5.383', 'train_samples_per_second': '14.86', 'train_steps_per_second': '1.858', 'train_loss': '2.04', 'entropy': '1.966', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.562', 'epoch': '0.08'}
+{'train_runtime': '5.815', 'train_samples_per_second': '13.76', 'train_steps_per_second': '1.72', 'train_loss': '2.951', 'entropy': '2.799', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.394', 'epoch': '0.08'}
+{'train_runtime': '8.272', 'train_samples_per_second': '9.671', 'train_steps_per_second': '1.209', 'train_loss': '2.873', 'entropy': '2.644', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4122', 'epoch': '0.08'}
+{'train_runtime': '5.395', 'train_samples_per_second': '14.83', 'train_steps_per_second': '1.854', 'train_loss': '2.037', 'entropy': '1.975', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.5626', 'epoch': '0.08'}
+{'train_runtime': '2.555', 'train_samples_per_second': '31.31', 'train_steps_per_second': '3.913', 'train_loss': '1.07', 'entropy': '1.137', 'num_tokens': '7142', 'mean_token_accuracy': '0.7187', 'epoch': '0.08'}
+{'train_runtime': '2.95', 'train_samples_per_second': '27.11', 'train_steps_per_second': '3.389', 'train_loss': '1.727', 'entropy': '1.407', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.623', 'epoch': '0.08'}
+{'train_runtime': '5.813', 'train_samples_per_second': '13.76', 'train_steps_per_second': '1.72', 'train_loss': '2.948', 'entropy': '2.809', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.3943', 'epoch': '0.08'}
+{'train_runtime': '110.6', 'train_samples_per_second': '45.21', 'train_steps_per_second': '5.651', 'train_loss': '1.284', 'entropy': '1.202', 'num_tokens': '2.213e+05', 'mean_token_accuracy': '0.7526', 'epoch': '5'}
+{'train_runtime': '8.28', 'train_samples_per_second': '9.662', 'train_steps_per_second': '1.208', 'train_loss': '2.868', 'entropy': '2.654', 'num_tokens': '2.698e+04', 'mean_token_accuracy': '0.4129', 'epoch': '0.08'}
+{'train_runtime': '5.806', 'train_samples_per_second': '13.78', 'train_steps_per_second': '1.722', 'train_loss': '2.944', 'entropy': '2.818', 'num_tokens': '1.665e+04', 'mean_token_accuracy': '0.395', 'epoch': '0.08'}
+{'train_runtime': '2.97', 'train_samples_per_second': '26.94', 'train_steps_per_second': '3.367', 'train_loss': '1.716', 'entropy': '1.416', 'num_tokens': '1.156e+04', 'mean_token_accuracy': '0.623', 'epoch': '0.08'}
+{'train_runtime': '5.386', 'train_samples_per_second': '14.85', 'train_steps_per_second': '1.857', 'train_loss': '2.033', 'entropy': '1.984', 'num_tokens': '1.341e+04', 'mean_token_accuracy': '0.5631', 'epoch': '0.08'}
+
+----- seed 2 -----
+
+[poison] selected=5/5 corrupt=[0] seen_corrupt=[0] deployed-ASR=1.00
+  method        AUROC   Spearman/(b)   runtime   corrupt-rank
+  (b)oracle     1.000        (truth)    591.6s   0/5
+  Flirds        1.000         +1.000    118.1s   0/5
+  Flirds1st     0.000         +0.000     38.9s   4/5
+  GTG           1.000         +0.900    596.2s   0/5
+  FedSV         1.000         +0.500    602.9s   0/5
+  ShapleyFL     1.000         +1.000    589.6s   0/5
+  Banzhaf       1.000         +1.000    593.3s   0/5
+  loss-heur     1.000         +1.000    182.7s   0/5
+  FLDetector    1.000                     5.1s   0/5
+  STD-DAGMM     1.000                    11.6s   0/5
+  FLTrust       1.000                    39.3s   0/5
+  FedDQC        1.000                    21.2s   0/5
+
+=== aggregate (mean+/-std over 3 seeds) ===
+
+[poison]
+  (b)oracle   AUROC=1.000+/-0.000  runtime=584.2s
+  Flirds      AUROC=0.417+/-0.425  Spearman=+0.467+/-0.411  runtime=117.0s
+  Flirds1st   AUROC=0.000+/-0.000  Spearman=+0.000+/-0.000  runtime=38.2s
+  GTG         AUROC=1.000+/-0.000  Spearman=+0.867+/-0.125  runtime=590.9s
+  FedSV       AUROC=1.000+/-0.000  Spearman=+0.367+/-0.262  runtime=583.8s
+  ShapleyFL   AUROC=1.000+/-0.000  Spearman=+1.000+/-0.000  runtime=583.1s
+  Banzhaf     AUROC=1.000+/-0.000  Spearman=+1.000+/-0.000  runtime=586.6s
+  loss-heur   AUROC=1.000+/-0.000  Spearman=+1.000+/-0.000  runtime=180.9s
+  FLDetector  AUROC=1.000+/-0.000  runtime=30.9s
+  STD-DAGMM   AUROC=0.917+/-0.118  runtime=79.4s
+  FLTrust     AUROC=1.000+/-0.000  runtime=39.1s
+  FedDQC      AUROC=1.000+/-0.000  runtime=21.0s
+
+MATRIX DONE  (matched detector should top AUROC on-threat; Flirds/valuation track the (b) oracle; off-threat detectors degrade -- the §3.9 separation story).
