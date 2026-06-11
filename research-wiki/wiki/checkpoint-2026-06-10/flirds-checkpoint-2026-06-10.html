@@ -60,9 +60,9 @@ blockquote p{margin:5px 0;} blockquote strong{color:#7a5b00;}
 mjx-container{margin:0 2px;}
 .diagram{margin:16px 0;padding:16px;background:linear-gradient(180deg,#f8fafc,#eef2f8);border:1px solid #e3e8ef;border-radius:14px;overflow-x:auto;break-inside:avoid;}
 .dgr{border-collapse:separate;border-spacing:9px 0;margin:0 auto;} .dfan{table-layout:fixed;width:100%;}
-.dbox{border-radius:10px;padding:9px 11px;text-align:center;font-size:11.5px;line-height:1.45;border:1.5px solid #c7d0e0;background:#fff;}
-.dpath{font-family:"NanumGothicCoding",monospace;font-size:10.2px;color:#5b6675;}
-.darr{text-align:center;color:#7a8aa8;font-weight:800;font-size:14px;margin:6px 0;}
+.dbox{border-radius:10px;padding:10px 12px;text-align:center;font-size:12.5px;line-height:1.5;border:1.5px solid #c7d0e0;background:#fff;}
+.dpath{font-family:"NanumGothicCoding",monospace;font-size:11.2px;color:#5b6675;}
+.darr{text-align:center;color:#7a8aa8;font-weight:800;font-size:15px;margin:6px 0;}
 .dplus{font-weight:800;color:#8a97b3;padding:0 4px;vertical-align:middle;}
 .c-in{background:#eef4ff;border-color:#b7ccf6;} .c-fl{background:#fff4e6;border-color:#ffd8a8;}
 .c-est{background:#e7f6ef;border-color:#9ad8b6;font-weight:700;} .c-orc{background:#fdeede;border-color:#f3cf9a;}
@@ -74,7 +74,8 @@ mjx-container{margin:0 2px;}
 .main p,.main li{font-size:16.5px;}
 .main table{font-size:14.4px;} .main th,.main td{padding:8px 11px;}
 .main code{font-size:13.9px;} .main pre{font-size:13.5px;}
-.main .chip{font-size:12px;} .main .dpath{font-size:12px;} .main .docnote{font-size:14.5px;}
+.main .chip{font-size:12px;} .main .dpath{font-size:13px;} .main .docnote{font-size:14.5px;}
+.main .dbox{font-size:14.5px;line-height:1.55;} .main .darr{font-size:18px;} .main .dplus{font-size:16px;}
 .main h2{font-size:20px;} .main h3{font-size:17px;} .main .doctitle{font-size:22px;}
 @media(max-width:980px){.side{position:static;width:auto;height:auto;} .main{margin-left:0;padding:0 16px 60px;}}
 </style></head>
@@ -113,8 +114,8 @@ mjx-container{margin:0 2px;}
 <div class="darr">↓ &nbsp; 얼린 궤적 logs 위에서 분기 &nbsp; ↓</div>
 <table class="dgr dfan"><tr>
 <td class="dbox c-est">ESTIMATOR<br><span class="dpath">core/flirds_estimator.py</span><br>Flirds / Flirds-1st<br>(1 HVP/round)</td>
-<td class="dbox c-orc">(b) in-run oracle<br><span class="dpath">oracle/in_run_sv.py</span><br>exact 2<sup>N</sup> · perround</td>
-<td class="dbox c-orc">(a) retrain oracle<br><span class="dpath">oracle/exact_sv_llm.py</span><br>2<sup>N</sup> 재학습</td>
+<td class="dbox c-orc">in-run oracle<br><span class="dpath">oracle/in_run_sv.py</span><br>exact 2<sup>N</sup> · perround</td>
+<td class="dbox c-orc">retrain oracle<br><span class="dpath">oracle/exact_sv_llm.py</span><br>2<sup>N</sup> 재학습</td>
 <td class="dbox c-base">valuation baselines ×7<br>GTG·FedSV·Ripple·Banzhaf<br>ShapleyFL·ComFedSV·loss-heur</td>
 <td class="dbox c-det">detectors ×4<br>FLDetector·STD-DAGMM<br>FLTrust·FedDQC</td>
 </tr></table>
@@ -168,14 +169,14 @@ mjx-container{margin:0 2px;}
 </thead>
 <tbody>
 <tr>
-<td><strong>(b) in-run oracle</strong></td>
+<td><strong>in-run oracle</strong></td>
 <td><code>oracle/in_run_sv.py</code></td>
 <td>얼린 궤적에서 coalition별 val-loss 변화의 exact \(2^N\) Shapley (재학습 X)</td>
 <td>\(2^N\)·R·val·seq (FLOP-bound)</td>
 <td><span class="chip chip-b">ⓑ</span> (silo5 N5; device100 N100 1-seed)</td>
 </tr>
 <tr>
-<td><strong>(a) retrain oracle</strong></td>
+<td><strong>retrain oracle</strong></td>
 <td><code>oracle/exact_sv_llm.py</code></td>
 <td>coalition S로 FedAvg <strong>재학습</strong> → 배포모델 점수 (val-loss &amp; ROUGE)</td>
 <td>N5=126min(1B fp32)</td>
@@ -184,7 +185,7 @@ mjx-container{margin:0 2px;}
 </tbody>
 </table></div>
 <blockquote>
-<p><strong>(a) vs (b) 핵심</strong>: 둘은 <strong>다른 게임</strong>. (b)=궤적-앵커 in-run(우리 방법이 근사하는 대상), (a)=재학습(고전 Data Shapley). 방법 검증은 <strong>(a)-val-loss = (b) = estimator</strong> 가 같은 게임이라 +1.000으로 일치(<span class="chip chip-b">ⓑ</span>). (a)-ROUGE는 다른 게임이라 발산(+0.4@1B) — 미분불가라 estimator-ROUGE도 불가능 → <strong>검증엔 반드시 val-loss</strong>.</p>
+<p><strong>retrain oracle vs in-run oracle 핵심</strong>: 둘은 <strong>다른 게임</strong>. in-run oracle=궤적-앵커 in-run(우리 방법이 근사하는 대상), retrain oracle=재학습(고전 Data Shapley). 방법 검증은 <strong>retrain val-loss = in-run oracle = estimator</strong> 가 같은 게임이라 +1.000으로 일치(<span class="chip chip-b">ⓑ</span>). retrain ROUGE는 다른 게임이라 발산(+0.4@1B) — 미분불가라 estimator-ROUGE도 불가능 → <strong>검증엔 반드시 val-loss</strong>.</p>
 </blockquote>
 <h3>Valuation baselines (성능비교 경쟁) — 7종</h3>
 <p>GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-heuristic. 코드: <code>codes/flirds/baselines/</code>. 모두 같은 얼린 궤적 위에서 돈다(공정비교). 상세·PDF대조 → <a href="#doc-03-baselines-and-prior-work">03-baselines-and-prior-work</a>.</p>
@@ -231,7 +232,7 @@ mjx-container{margin:0 2px;}
 </tbody>
 </table></div>
 <h3>9-method 합계</h3>
-<p>&quot;valuation method 9종&quot; = Flirds, Flirds-1st, GTG, FedSV, Banzhaf, ShapleyFL, loss-heur, (그리고 regime별) Banzhaf/ComFedSV, + (b)oracle. <code>phase1_baseline_compare.py</code> 가 silo5에서 9-method를 한 궤적 위에서 비교(Ripple은 RIPPLE=0로 분리; eigsh flaky).</p>
+<p>&quot;valuation method 9종&quot; = Flirds, Flirds-1st, GTG, FedSV, Banzhaf, ShapleyFL, loss-heur, (그리고 regime별) Banzhaf/ComFedSV, + in-run oracle. <code>phase1_baseline_compare.py</code> 가 silo5에서 9-method를 한 궤적 위에서 비교(Ripple은 RIPPLE=0로 분리; eigsh flaky).</p>
 <h3>2 regime × 4 threat 매트릭스</h3>
 <div class="tw"><table>
 <thead>
@@ -249,7 +250,7 @@ mjx-container{margin:0 2px;}
 <td>✓</td>
 <td>✓</td>
 <td>✓</td>
-<td>✓ (D2b config)</td>
+<td>✓ (working-backdoor config)</td>
 </tr>
 <tr>
 <td><strong>device100</strong> (N=100, Dirichlet-α partial, domain-mix)</td>
@@ -276,11 +277,11 @@ mjx-container{margin:0 2px;}
 <td>우리 estimator(1차+2차 / 1차만). <code>core/flirds_estimator.py</code></td>
 </tr>
 <tr>
-<td><strong>(a) oracle</strong></td>
+<td><strong>retrain oracle</strong></td>
 <td>재학습 기반 exact Shapley (Ghorbani-Zou 계열). coalition마다 FedAvg 재학습. <code>oracle/exact_sv_llm.py</code></td>
 </tr>
 <tr>
-<td><strong>(b) oracle</strong></td>
+<td><strong>in-run oracle</strong></td>
 <td>in-run exact \(2^N\) Shapley. 얼린 궤적에서 coalition별 val-loss 변화 합. 재학습 X. <code>oracle/in_run_sv.py</code></td>
 </tr>
 <tr>
@@ -292,11 +293,11 @@ mjx-container{margin:0 2px;}
 <td>FedSV + low-rank matrix completion (partial participation 보정). device100 전용 baseline. <code>baselines/comfedsv.py</code></td>
 </tr>
 <tr>
-<td><strong>D1 / D2 / D2b</strong></td>
-<td>backdoor 단계 진단 smoke. D1=no-FL install isolation / D2=FL model-replacement 전파 / D2b=working backdoor에 detector 반응. <code>phase2_backdoor_*_smoke.py</code></td>
+<td><strong>backdoor install / propagation / detection tests</strong></td>
+<td>backdoor 단계 진단 smoke. install test=no-FL install isolation / propagation test=FL model-replacement 전파 / detection test=working backdoor에 detector 반응. <code>phase2_backdoor_*_smoke.py</code></td>
 </tr>
 <tr>
-<td><strong>§3.9</strong></td>
+<td><strong>threat matrix</strong></td>
 <td>plan의 &quot;검출 baseline + 위협 매트릭스&quot; 섹션(<code>flirds-implementation-plan.md:312</code>). poison-vs-Flirds framing 논쟁의 진원지</td>
 </tr>
 <tr>
@@ -320,12 +321,12 @@ mjx-container{margin:0 2px;}
 <td>backdoor에서 poison되는 sample 비율 = <strong>clean-preservation knob</strong>. 0.5–0.8=clean 보존+install, 1.0=clean 파괴</td>
 </tr>
 <tr>
-<td><strong>D2b config</strong></td>
+<td><strong>working-backdoor config</strong></td>
 <td>backdoor가 전파되는 설정: <code>LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8</code> (matrix 기본 lr1e-3/batch16은 ASR=0)</td>
 </tr>
 <tr>
 <td><strong>proxy-truth</strong></td>
-<td>device100 off-anchor에서 (b) oracle이 너무 비싸 못 돌릴 때 Flirds를 검증된 대리 진실로 사용</td>
+<td>device100 off-anchor에서 in-run oracle이 너무 비싸 못 돌릴 때 Flirds를 검증된 대리 진실로 사용</td>
 </tr>
 <tr>
 <td><strong>HVP</strong></td>
@@ -348,42 +349,42 @@ mjx-container{margin:0 2px;}
 </thead>
 <tbody>
 <tr>
-<td>Estimator + (a)/(b) oracle + LLM backend + FL 루프 + 5-domain 데이터</td>
+<td>Estimator + retrain/in-run oracle + LLM backend + FL 루프 + 5-domain 데이터</td>
 <td><strong>구현완료</strong></td>
 <td><code>codes/flirds/</code> 전체; smoke green</td>
 </tr>
 <tr>
-<td><strong>Phase1 1B N=5 cross-silo, 3-seed (lr 1e-3 &amp; 3e-3)</strong> — 9-method Spearman, AUROC, #7 selection</td>
+<td><strong>Phase1 1B N=5 cross-silo, 3-seed (lr 1e-3 &amp; 3e-3)</strong> — 9-method Spearman, AUROC, selection run</td>
 <td><strong><span class="chip chip-b">ⓑ</span> 실제결과</strong></td>
 <td><code>codes/runs/full_lr{1e-3,3e-3}/flirds-1b-N5-seed{0,1,2}/metrics.json</code></td>
 </tr>
 <tr>
-<td>task6 (a)-oracle 1B N=5 (fp32): (a)valloss=(b)=estimator +1.000</td>
+<td>retrain-oracle validation, 1B N=5 (fp32): retrain val-loss=in-run oracle=estimator +1.000</td>
 <td><strong><span class="chip chip-b">ⓑ</span> 실제결과</strong></td>
 <td><code>raw/.../2026-06-07-phase2-task6-a-retrain-oracle.md</code></td>
 </tr>
 <tr>
-<td>task6 3B N=5 (a)valloss vs (b) +0.900, estimator +1.000</td>
+<td>retrain-oracle validation 3B N=5 retrain val-loss vs in-run oracle +0.900, estimator +1.000</td>
 <td><strong><span class="chip chip-b">ⓑ</span> 1-seed</strong></td>
 <td><code>raw/.../2026-06-08-phase2-task7-crossdevice-detection-redesign.md</code></td>
 </tr>
 <tr>
-<td>task7 cross-device N=100 α=0.5: Flirds vs (b)-perround +1.000; oracle 771ms/fwd</td>
+<td>cross-device port, N=100 α=0.5: Flirds vs per-round in-run oracle +1.000; oracle 771ms/fwd</td>
 <td><strong><span class="chip chip-b">ⓑ</span> 1-seed smoke</strong></td>
 <td><code>raw/.../2026-06-08-...redesign.md</code></td>
 </tr>
 <tr>
-<td>task7e detectors N=100: STD-DAGMM FR 0.628 / FLTrust FR 1.0</td>
+<td>detector-suite build, N=100: STD-DAGMM FR 0.628 / FLTrust FR 1.0</td>
 <td><strong><span class="chip chip-b">ⓑ</span> 1-seed</strong></td>
 <td><code>raw/.../2026-06-08-phase2-task7e-detector-suite-steps1-3.md</code></td>
 </tr>
 <tr>
-<td>backdoor D1/D2/D2b 특성화 (install·전파·검출)</td>
+<td>backdoor install/propagation/detection 특성화 (install·전파·검출)</td>
 <td><strong><span class="chip chip-b">ⓑ</span> 1-seed smoke</strong></td>
 <td><code>raw/.../2026-06-09-phase2-task7e-backdoor-install-feddqc.md</code></td>
 </tr>
 <tr>
-<td>step5 matrix orchestrator + task8 scale 코드</td>
+<td>matrix-orchestrator build + scale-up 코드</td>
 <td><strong><span class="chip chip-a">ⓐ</span> 구현+smoke</strong></td>
 <td><code>phase2_matrix.py</code>; 5 code paths green (tiny config)</td>
 </tr>
@@ -398,19 +399,19 @@ mjx-container{margin:0 2px;}
 <td><code>runs/phase2_matrix/</code> 빈 폴더</td>
 </tr>
 <tr>
-<td>N=10 (a)-oracle (LLM)</td>
+<td>N=10 retrain oracle (LLM)</td>
 <td><strong><span class="chip chip-g">ⓒ</span> 연기</strong></td>
 <td>비용 2–5일/1-GPU → multi-GPU sharding 필요</td>
 </tr>
 <tr>
-<td>7B (b)-oracle</td>
+<td>7B in-run oracle</td>
 <td><strong><span class="chip chip-g">ⓒ</span> 미실행</strong></td>
 <td>matrix MODEL_CFG 경로에 있으나 미실행</td>
 </tr>
 </tbody>
 </table></div>
 <blockquote>
-<p><strong>문서 과장 교정(검증값 채택)</strong>: ① poison detector STD-DAGMM·FLTrust = <strong>0.75</strong>(1.0 아님) ② &quot;all methods +1.000&quot;의 FedSV는 tiny-config서 <strong>+0.900</strong> (단 phase1 real은 +1.000) ③ STD-DAGMM runtime ~<strong>360s</strong>(~100s 아님) ④ D2b &quot;evades-Flirds REFUTED&quot; → matrix가 맞음: 표준 orientation서 <strong>Flirds AUROC=0.0(EVADED)</strong>. 상세 → <a href="#doc-05-open-issues-and-next">05-open-issues-and-next</a>. 근거: <code>memory/phase2-step5-verification.md</code>.</p>
+<p><strong>문서 과장 교정(검증값 채택)</strong>: ① poison detector STD-DAGMM·FLTrust = <strong>0.75</strong>(1.0 아님) ② &quot;all methods +1.000&quot;의 FedSV는 tiny-config서 <strong>+0.900</strong> (단 phase1 real은 +1.000) ③ STD-DAGMM runtime ~<strong>360s</strong>(~100s 아님) ④ backdoor detection test &quot;evades-Flirds REFUTED&quot; → matrix가 맞음: 표준 orientation서 <strong>Flirds AUROC=0.0(EVADED)</strong>. 상세 → <a href="#doc-05-open-issues-and-next">05-open-issues-and-next</a>. 근거: <code>memory/phase2-step5-verification.md</code>.</p>
 </blockquote>
 <hr />
 <h2>0.6 추천 읽기 순서</h2>
@@ -447,7 +448,7 @@ mjx-container{margin:0 2px;}
 <p>결과: \(\phi_k = \sum_r p_k^r [ \langle g^r, \Delta w_k\rangle + \tfrac12 \langle \Delta w_k, u^r\rangle ]\) (docstring <code>:13</code>). [CODE 전체 검증]</p>
 <h3>비-자명한 설계 포인트 (모두 <span class="chip chip-v">CODE</span>)</h3>
 <ul>
-<li><strong>round당 정확히 1 HVP.</strong> 2차 quadratic-Shapley가 \(u^r = H^r \Delta W^r\) 하나 + <code>|P_r|</code>개 내적으로 붕괴 (<code>:26-28</code>). 이게 비용의 핵심 — (b) oracle은 round당 \(2^N\) forward.</li>
+<li><strong>round당 정확히 1 HVP.</strong> 2차 quadratic-Shapley가 \(u^r = H^r \Delta W^r\) 하나 + <code>|P_r|</code>개 내적으로 붕괴 (<code>:26-28</code>). 이게 비용의 핵심 — in-run oracle은 round당 \(2^N\) forward.</li>
 <li><strong>forward HVP <code>H·v</code>만 사용, <code>H⁻¹</code> 절대 안 씀.</strong> <code>jvp(grad(·))</code> = forward-over-reverse AD (<code>torch.func</code>, <code>:39,:55,:111</code>). → influence-function의 iHVP-inversion 비용/불안정성 회피.</li>
 <li><strong>true Hessian</strong> (GGN/Fisher 아님). <code>jvp∘grad</code>는 진짜 Hessian-vector product. GGN은 테스트 후 기각 [DOC <code>flirds.md:34</code>; raw <code>2026-06-03-phase05-estimator.md:48</code>].</li>
 <li><strong>per-round participant weight</strong> → partial participation(cross-device)서 정확, full participation(cross-silo)서 고정 global \(n_k/\sum n\)으로 환원 (<code>:19-24</code>).</li>
@@ -463,10 +464,10 @@ mjx-container{margin:0 2px;}
 <li>FL state를 <code>named_parameters()</code> 키로 (<code>…lora_A.default.weight</code>), <code>get_peft_model_state_dict</code> 아님; <code>load_state_dict(strict=False)</code> 동기화 (<code>:4-6,:69</code>).</li>
 <li><code>get_input_embeddings()._forward_hooks.clear()</code> + <code>use_cache=False</code> — SFTTrainer의 grad-checkpoint hook이 functorch transform 안에서 금지 (<code>:56-68</code>).</li>
 </ol>
-<h3>(a)/(b) oracle와의 관계</h3>
+<h3>retrain/in-run oracle와의 관계</h3>
 <ul>
-<li><strong>(b) in-run oracle</strong> (<code>oracle/in_run_sv.py</code>): estimator가 근사하는 <strong>대상</strong>. coalition별 \(U_{(b)}(S) = \sum_r [\ell (w^r + \sum_{k\in S\cap P_r} p_k^r \Delta w_k) - \ell (w^r)]\) 를 exact \(2^N\) enumeration으로 Shapley화 (<code>in_run_sv.py:3-6,:71-122</code>). estimator는 이걸 Taylor로 1 HVP 근사. cross-device는 <code>in_run_shapley_perround</code> = round별 \(2^{|P_r|}\) 분해 = \(2^N\)과 수학적 동일(Δφ≈3e-16, smoke <code>phase2_crossdevice_oracle_smoke.py</code>로 증명) <span class="chip chip-v">CODE</span>.</li>
-<li><strong>(a) retrain oracle</strong> (<code>oracle/exact_sv_llm.py</code>): coalition마다 FedAvg <strong>재학습</strong> → 배포모델 점수. utility=ROUGE-L(주) + −val-loss(검증용) <code>:42-44,:85-89</code>. 다른 게임. → <a href="#doc-03-baselines-and-prior-work">03</a> + <a href="#doc-02-experimental-setup">02</a>.</li>
+<li><strong>in-run oracle</strong> (<code>oracle/in_run_sv.py</code>): estimator가 근사하는 <strong>대상</strong>. coalition별 \(U_{(b)}(S) = \sum_r [\ell (w^r + \sum_{k\in S\cap P_r} p_k^r \Delta w_k) - \ell (w^r)]\) 를 exact \(2^N\) enumeration으로 Shapley화 (<code>in_run_sv.py:3-6,:71-122</code>). estimator는 이걸 Taylor로 1 HVP 근사. cross-device는 <code>in_run_shapley_perround</code> = round별 \(2^{|P_r|}\) 분해 = \(2^N\)과 수학적 동일(Δφ≈3e-16, smoke <code>phase2_crossdevice_oracle_smoke.py</code>로 증명) <span class="chip chip-v">CODE</span>.</li>
+<li><strong>retrain oracle</strong> (<code>oracle/exact_sv_llm.py</code>): coalition마다 FedAvg <strong>재학습</strong> → 배포모델 점수. utility=ROUGE-L(주) + −val-loss(검증용) <code>:42-44,:85-89</code>. 다른 게임. → <a href="#doc-03-baselines-and-prior-work">03</a> + <a href="#doc-02-experimental-setup">02</a>.</li>
 </ul>
 <hr />
 <h2>1.2 기존 연구의 한계 → 우리 차별점 → 노벨티</h2>
@@ -482,8 +483,8 @@ mjx-container{margin:0 2px;}
 <tbody>
 <tr>
 <td><strong>재학습은 LLM-FL서 불가능</strong> (Data Shapley는 CIFAR도 MC 필요)</td>
-<td>Ghorbani-Zou <code>1904.02868v2.pdf</code> <span class="chip chip-v">PDF</span>; (a) N=10=2–5일/1-GPU</td>
-<td>in-run(재학습 0): (b)/estimator는 round당 forward만</td>
+<td>Ghorbani-Zou <code>1904.02868v2.pdf</code> <span class="chip chip-v">PDF</span>; retrain oracle N=10=2–5일/1-GPU</td>
+<td>in-run(재학습 0): in-run oracle/estimator는 round당 forward만</td>
 </tr>
 <tr>
 <td><strong>IRDS는 centralized·per-step·data-point</strong></td>
@@ -503,7 +504,7 @@ mjx-container{margin:0 2px;}
 <tr>
 <td><strong>FL-Shapley는 non-IID서 무너지고 rare(&quot;maverick&quot;) client를 과소평가</strong></td>
 <td>mavericks <code>2106.10734</code>, volatility <code>2405.08044</code> <span class="chip chip-c">DOC</span></td>
-<td>(b) exact oracle로 안정화; 한계는 <em>측정</em>(검출 AUROC)</td>
+<td>in-run exact oracle로 안정화; 한계는 <em>측정</em>(검출 AUROC)</td>
 </tr>
 <tr>
 <td><strong>검출기는 noise/OOD/malicious를 다 &quot;anomaly→discard&quot;로 뭉갬</strong></td>
@@ -518,8 +519,8 @@ mjx-container{margin:0 2px;}
 <li><strong>Ripple 대비</strong>: Ripple=sample-level Jacobian propagation(eigsh, 재귀 chain) → 우리는 client-level closed-form Taylor, LoRA 명시, 2차 client-interaction항 명시 [DOC <code>flirds.md:235-239</code>]. 실측: Ripple ~4515s = Flirds(107s)의 <strong>~42×</strong>, 검출도 가장 약함(noisy AUROC 0.50±0.20) [<span class="chip chip-b">ⓑ</span> <code>raw/.../2026-06-06-sv-baseline-port-and-results.md</code>].</li>
 <li><strong>FedIF 대비</strong>: FedIF(2025)=1st-order TracIn on Δw, CNN-only, aggregation 변경 → 우리는 2차 추가, LLM/LoRA, vanilla FedAvg 위 post-hoc valuation [DOC <code>flirds.md:245</code>].</li>
 <li><strong>2차항이 FL에서 비로소 의미</strong> <span class="chip chip-c">DOC</span>: IRDS Appx E.2.2는 centralized per-step(작은 η)서 2차가 거의 무의미하다 함. FL per-round multi-step Δw는 크므로 2차가 non-trivial. CNN 실측이 뒷받침: plain SGD서 1st+2nd Spearman 0.962 &gt; 1st 0.924; <strong>momentum 켜면 역전</strong>(1st 0.81 &gt; 1st+2nd 0.73) → 그래서 plain SGD 고정 [<span class="chip chip-b">ⓑ</span> raw <code>2026-06-03-phase05-estimator.md:75-80</code>; <code>codes/CLAUDE.md §5</code>].</li>
-<li><strong>속도/정확도 프론티어 지배</strong> <span class="chip chip-b"><span class="chip chip-b">ⓑ</span></span>: N=5 near-additive → Shapley linearity로 (b)-utility 쓰는 모든 방법이 같은 ranking(+1.000) → Flirds가 <strong>5–15× 더 싸게</strong> 같은 답 (Flirds-1st 35s vs GTG/FedSV/oracle ~530s). 단 이건 N=5 near-additive의 결과 — 큰 N·강한 상호작용서 분리력은 real grid로 확인 필요(<span class="chip chip-g">ⓒ</span>).</li>
-<li><strong>free-rider φ 정확히 0</strong> [CODE+<span class="chip chip-b">ⓑ</span>]: Flirds/(b)/Banzhaf/loss-heur는 정확 0; GTG/FedSV는 within-subset renorm 희석으로 ≠0 → 우리 utility 정의의 깔끔함 입증.</li>
+<li><strong>속도/정확도 프론티어 지배</strong> <span class="chip chip-b"><span class="chip chip-b">ⓑ</span></span>: N=5 near-additive → Shapley linearity로 in-run utility 쓰는 모든 방법이 같은 ranking(+1.000) → Flirds가 <strong>5–15× 더 싸게</strong> 같은 답 (Flirds-1st 35s vs GTG/FedSV/oracle ~530s). 단 이건 N=5 near-additive의 결과 — 큰 N·강한 상호작용서 분리력은 real grid로 확인 필요(<span class="chip chip-g">ⓒ</span>).</li>
+<li><strong>free-rider φ 정확히 0</strong> [CODE+<span class="chip chip-b">ⓑ</span>]: Flirds/in-run oracle/Banzhaf/loss-heur는 정확 0; GTG/FedSV는 within-subset renorm 희석으로 ≠0 → 우리 utility 정의의 깔끔함 입증.</li>
 <li><strong>cross-domain valuation fairness hook</strong> [CODE <code>backends/llm.py:83-88</code>]: per-domain macro-norm 옵션 (token-norm vs domain-macro). LESS/FedDQC 등은 magnitude만 부분완화, cross-domain 비교가능성은 미해결이라는 주장 <span class="chip chip-c">DOC</span>.</li>
 </ol>
 <blockquote>
@@ -558,18 +559,18 @@ mjx-container{margin:0 2px;}
 </tr>
 <tr>
 <td><strong>α-sweep</strong> (device100)</td>
-<td><code>{0, 0.01, 0.1, 0.5, 5.0}</code>; (b) oracle은 α=0.5 앵커 1점만</td>
+<td><code>{0, 0.01, 0.1, 0.5, 5.0}</code>; in-run oracle은 α=0.5 앵커 1점만</td>
 <td>[DOC plan §3.9]; [CODE <code>phase2_matrix.py:86</code> ALPHA env]</td>
 </tr>
 <tr>
-<td><strong>task8 scale 메모리</strong></td>
-<td>1B batch16/val_chunk10 · 3B batch8/val_chunk5 · 7B batch4/val_chunk2, <strong>전부 fp32</strong> (7B도 bf16 안 씀 — bf16은 연기된 (a) retrain용)</td>
+<td><strong>scale-up scale 메모리</strong></td>
+<td>1B batch16/val_chunk10 · 3B batch8/val_chunk5 · 7B batch4/val_chunk2, <strong>전부 fp32</strong> (7B도 bf16 안 씀 — bf16은 연기된 retrain oracle용)</td>
 <td>[CODE <code>phase2_matrix.py:97-100</code>]</td>
 </tr>
 </tbody>
 </table></div>
 <blockquote>
-<p><strong>est-vs-oracle 비교 매트릭스 (LOCKED 2026-06-04)</strong> <span class="chip chip-c">DOC</span>: CNN (a)&amp;(b) N∈{5,10}. LLM 1B (a)&amp;(b) N=5 now / N=10 연기. LLM 3B N=5만. LLM 7B (b) N=5, (a) ✗. estimator METHOD(noisy-AUROC·selection, oracle 불필요)는 N=10서도 가능.</p>
+<p><strong>est-vs-oracle 비교 매트릭스 (LOCKED 2026-06-04)</strong> <span class="chip chip-c">DOC</span>: CNN retrain &amp; in-run oracle N∈{5,10}. LLM 1B retrain &amp; in-run oracle N=5 now / N=10 연기. LLM 3B N=5만. LLM 7B in-run oracle N=5, retrain oracle ✗. estimator METHOD(noisy-AUROC·selection, oracle 불필요)는 N=10서도 가능.</p>
 </blockquote>
 <hr />
 <h2>2.2 데이터 레이어 (5-domain cross-silo)</h2>
@@ -652,19 +653,19 @@ mjx-container{margin:0 2px;}
 <h3>free-rider — <code>free_rider(ref, mode)</code> [CODE <code>corruptors.py:70-93</code>]</h3>
 <ul>
 <li><strong>zero</strong>: Δw=0 → φ 정확히 0 (자명검출). <strong>random</strong>: Δw~U(−scale,scale), benign-std 매칭(<code>scale=benign_std·√3</code>, <code>phase2_matrix.py:219-220</code>) → φ≈0.</li>
-<li><strong>왜 이렇게</strong>: <strong>Lin et al. 2019</strong> (STD-DAGMM 원논문, <code>1911.12560</code>) free-rider attack taxonomy의 easy 쪽 <span class="chip chip-v">PDF</span>. 어려운 delta/advanced-delta는 task9로 연기 (이전 global model을 FL 루프에 threading 필요).</li>
+<li><strong>왜 이렇게</strong>: <strong>Lin et al. 2019</strong> (STD-DAGMM 원논문, <code>1911.12560</code>) free-rider attack taxonomy의 easy 쪽 <span class="chip chip-v">PDF</span>. 어려운 delta/advanced-delta는 advanced free-rider로 연기 (이전 global model을 FL 루프에 threading 필요).</li>
 </ul>
 <h3>poison (malicious) — <code>backdoor()</code> + <code>scaled_attackers</code> [CODE <code>corruptors.py:47-63</code> + <code>llm_server.py:57-58</code>]</h3>
 <ul>
 <li><strong>무엇</strong>: <strong>Xu 2023</strong> instruction-trigger <code>&quot;tq&quot;</code> → target string, <code>poison_frac</code>만큼 poison (clean-preservation knob) [PDF web-extract <code>2305.14710</code>]. + <strong>Bagdasaryan 2020</strong> plain-scaled model-replacement <code>delta×attack_scale</code> (γ=cohort size=n/η) [PDF web-extract <code>1807.00459</code>].</li>
 <li><strong>왜 이렇게</strong>: backdoor는 <em>새</em> 위협(원 plan에 없던). Xu=instruction-tuning backdoor 표준, Bagdasaryan=FL 전파 메커니즘. DBA(Xie2020, 다중공모)는 제외. 우리는 stealthy constrain-and-scale 안 함 — plain-scaled만(attacker ‖Δ‖=40×benign → norm-bound가 backdoor 죽임 → stealthy arm 불가).</li>
-<li><strong>D2b config 필요</strong>: 전파엔 <code>LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8</code> [CODE <code>phase2_matrix.py:40-44</code>]; matrix 기본 lr1e-3/batch16은 ASR=0(batch16이 attacker install step 절반).</li>
+<li><strong>working-backdoor config 필요</strong>: 전파엔 <code>LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8</code> [CODE <code>phase2_matrix.py:40-44</code>]; matrix 기본 lr1e-3/batch16은 ASR=0(batch16이 attacker install step 절반).</li>
 </ul>
 <blockquote>
 <p><strong>왜 검출을 하나 (우리가 라벨을 주입하는데)</strong>: method는 라벨에 <strong>blind</strong>; 라벨은 평가 KEY(AUROC)지 method 입력이 아님 → 순환 아님. 두 목적: (1) value SEMANTICS 검증(corrupt→low value; oracle은 &quot;Shapley 계산 일치&quot;만 증명) (2) 전용 detector 대비 경쟁 bar [DOC <code>MEMORY.md</code> detector 섹션].</p>
 </blockquote>
 <hr />
-<h2>2.5 (b) oracle 비용 공식</h2>
+<h2>2.5 in-run oracle 비용 공식</h2>
 <p>\(U_{(b)}(S) = \sum_r [\ell (w^r + \sum_{k\in S\cap P_r} p_k^r \Delta w_k) - \ell (w^r)]\), exact \(2^N\) enumeration [CODE <code>in_run_sv.py:3-6,:71-104</code>].</p>
 <ul>
 <li><strong>비용 = \(2^N\) · R · val · seq, FLOP-bound</strong> [DOC <code>flirds-protocol.md:90</code>; CODE <code>phase1_clean_run.py:52-54</code>]. N5↔N10 = 32×.</li>
@@ -679,7 +680,7 @@ mjx-container{margin:0 2px;}
 arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k&quot;: rand}   # K=3 (N=5서 2개=noisy+FR 드롭)
 </code></pre>
 <p>성공기준: <code>flirds_topk val_loss ≤ random_k</code> <strong>and</strong> <code>ROUGE-L ≥ random_k</code> [CODE <code>read_runs.py:53</code>].</p>
-<h3>#7 clean-run 실측 결과 <span class="chip chip-b"><span class="chip chip-b">ⓑ</span> 1B N=5 cross-silo, 3-seed, lr 1e-3 &amp; 3e-3</span></h3>
+<h3>selection run 실측 결과 <span class="chip chip-b"><span class="chip chip-b">ⓑ</span> 1B N=5 cross-silo, 3-seed, lr 1e-3 &amp; 3e-3</span></h3>
 <p>직접 <code>codes/runs/full_lr{1e-3,3e-3}/.../metrics.json</code> 6개 파일 대조:</p>
 <div class="tw"><table>
 <thead>
@@ -771,8 +772,8 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <tr>
 <td><strong>Data Banzhaf</strong></td>
 <td><code>Data Banzhaf_...md</code> (text)</td>
-<td>(b)-oracle per-round</td>
-<td><strong>MSR estimator 대신 exact \(2^N\)</strong>; (b) coalition util 균등 1/\(2^{n-1}\) 재가중</td>
+<td>in-run oracle per-round</td>
+<td><strong>MSR estimator 대신 exact \(2^N\)</strong>; in-run oracle coalition util 균등 1/\(2^{n-1}\) 재가중</td>
 <td>N≤10서 exact 싸고 noise 0; util 고정→kernel만 변수</td>
 </tr>
 <tr>
@@ -792,14 +793,14 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <tr>
 <td><strong>loss-heuristic</strong></td>
 <td>(논문 없음)</td>
-<td>(b) per-round</td>
+<td>in-run oracle per-round</td>
 <td>singleton util <code>U_(b)({k})</code></td>
 <td>floor baseline; N·R forward만</td>
 </tr>
 </tbody>
 </table></div>
 <blockquote>
-<p><strong>교차 통찰 [CODE+<span class="chip chip-b">ⓑ</span>]</strong>: submodel 가중이 운명을 가른다. <strong>within-subset renorm(GTG/FedSV)</strong> 은 zero-delta free-rider에도 가중 → φ≠0(희석). <strong>per-round FedAvg weight((b)/Banzhaf/loss-heur)</strong> 은 zero-delta=0 → φ 정확0. N=5 near-additive + (b)-utility 공유 ⇒ GTG/FedSV/Banzhaf/loss-heur 전부 (b)와 <strong>degenerate 동일(+1.000)</strong>; <strong>ShapleyFL/ComFedSV만 다른 utility(uniform)라 비-degenerate</strong>(ShapleyFL +0.86).</p>
+<p><strong>교차 통찰 [CODE+<span class="chip chip-b">ⓑ</span>]</strong>: submodel 가중이 운명을 가른다. <strong>within-subset renorm(GTG/FedSV)</strong> 은 zero-delta free-rider에도 가중 → φ≠0(희석). <strong>per-round FedAvg weight(in-run oracle/Banzhaf/loss-heur)</strong> 은 zero-delta=0 → φ 정확0. N=5 near-additive + in-run utility 공유 ⇒ GTG/FedSV/Banzhaf/loss-heur 전부 in-run oracle와 <strong>degenerate 동일(+1.000)</strong>; <strong>ShapleyFL/ComFedSV만 다른 utility(uniform)라 비-degenerate</strong>(ShapleyFL +0.86).</p>
 </blockquote>
 <h3>A.1 GTG-Shapley [PDF <code>2109.02053v1.pdf</code> §4]</h3>
 <ul>
@@ -823,13 +824,13 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <ul>
 <li><strong>목적</strong>: Banzhaf 반값(uniform coalition 가중)이 같은 궤적서 Shapley와 다른 ranking을 내는지, noise-robustness 이점이 in-run(deterministic util)서 발현되는지 테스트.</li>
 <li><strong>원리</strong>: \(\phi_{banz}(i) = (1/2^{n-1})\sum_{S\subseteq N\setminus i}[U(S\cup i)-U(S)]\). 기여 = safety-margin 정리(noise robustness 최대) + MSR estimator(log 샘플복잡도).</li>
-<li><strong>차이/왜</strong> [CODE <code>baselines/banzhaf.py</code>]: ① <strong>utility = (a) 재학습 아니라 (b)-oracle coalition util</strong> <code>_coalition_utilities</code>(공정비교: 같은 게임). ② <strong>MSR 대신 exact \(2^N\)</strong>(N≤10서 1024 enum 싸고 sampling noise 0; MSR 이점은 util이 비쌀 때만 — 우리는 캐시됨). ③ kernel <code>1/2^{n-1}</code> 충실. ④ zero-delta free-rider φ 정확0. <strong>통찰(코드 주석 <code>:9-11</code>)</strong>: deterministic util이라 ranking 거의 안 움직임 = 논문 예측 일치, N=5 near-additive로 Shapley≈Banzhaf 둘 다 +1.000.</li>
+<li><strong>차이/왜</strong> [CODE <code>baselines/banzhaf.py</code>]: ① <strong>utility = retrain oracle가 아니라 in-run oracle coalition util</strong> <code>_coalition_utilities</code>(공정비교: 같은 게임). ② <strong>MSR 대신 exact \(2^N\)</strong>(N≤10서 1024 enum 싸고 sampling noise 0; MSR 이점은 util이 비쌀 때만 — 우리는 캐시됨). ③ kernel <code>1/2^{n-1}</code> 충실. ④ zero-delta free-rider φ 정확0. <strong>통찰(코드 주석 <code>:9-11</code>)</strong>: deterministic util이라 ranking 거의 안 움직임 = 논문 예측 일치, N=5 near-additive로 Shapley≈Banzhaf 둘 다 +1.000.</li>
 </ul>
 <h3>A.5 ShapleyFL [PDF <code>3580305.3599500.pdf</code> Defs 4.1-4.3]</h3>
 <ul>
 <li><strong>목적</strong>: surrogate FSV(uniform submodel + per-round exact Shapley + min-max + EMA). 비-degenerate surrogate가 같은 ranking을 잡는지.</li>
 <li><strong>원리</strong>: Def4.1 partial FSV(<strong>uniform</strong> 1/|S| submodel, \(n_k\)-가중 아님!) → Def4.2 per-round min-max [0,1] → Def4.3 EMA across rounds(비참여=carry-forward).</li>
-<li><strong>차이/왜</strong> [CODE <code>baselines/shapleyfl.py</code>]: uniform submodel·min-max·EMA <strong>모두 충실</strong>(<code>:40-73</code>). 차이 = ① 공유 <code>exact_shapley</code> 사용(코드중복 회피) ② <strong>from-logs 적용</strong>(공정비교; 논문 in-flight과 수학동일) ③ DMC difference estimator(대N) 생략→cross-device task7. <strong>비-degenerate 이유</strong>(주석 <code>:17-23</code>): uniform util+minmax+EMA가 (b) Shapley와 ≠ → Shapley linearity로 안 무너짐 → 실측 +0.86(≠+1.000).</li>
+<li><strong>차이/왜</strong> [CODE <code>baselines/shapleyfl.py</code>]: uniform submodel·min-max·EMA <strong>모두 충실</strong>(<code>:40-73</code>). 차이 = ① 공유 <code>exact_shapley</code> 사용(코드중복 회피) ② <strong>from-logs 적용</strong>(공정비교; 논문 in-flight과 수학동일) ③ DMC difference estimator(대N) 생략→cross-device cross-device port. <strong>비-degenerate 이유</strong>(주석 <code>:17-23</code>): uniform util+minmax+EMA가 in-run oracle Shapley와 ≠ → Shapley linearity로 안 무너짐 → 실측 +0.86(≠+1.000).</li>
 </ul>
 <h3>A.6 ComFedSV [PDF <code>2109.09046v3.pdf</code> §VI, Alg.1]</h3>
 <ul>
@@ -839,7 +840,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 </ul>
 <h3>A.7 loss-heuristic (논문 없음) [CODE <code>oracle/in_run_sv.py:54-67</code>, 호출 <code>phase1_baseline_compare.py:123</code>]</h3>
 <ul>
-<li><strong>정의</strong>: \(\phi_{lh}(k) = \sum_r [\ell (w^r + p_k^r \Delta w_k) - \ell (w^r)]\) = (b) 정의 하의 <strong>singleton coalition util</strong> <code>U_(b)({k})</code>. good→low 규약, free-rider φ 정확0, O(N·R) forward(coalition 없음). semivalue 아님(LOO 변형). 프로젝트 자작 floor baseline.</li>
+<li><strong>정의</strong>: \(\phi_{lh}(k) = \sum_r [\ell (w^r + p_k^r \Delta w_k) - \ell (w^r)]\) = in-run oracle 정의 하의 <strong>singleton coalition util</strong> <code>U_(b)({k})</code>. good→low 규약, free-rider φ 정확0, O(N·R) forward(coalition 없음). semivalue 아님(LOO 변형). 프로젝트 자작 floor baseline.</li>
 </ul>
 <hr />
 <h1>B. 검출 경쟁 detector (4종) — threat-matched SUITE</h1>
@@ -895,7 +896,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <ul>
 <li><strong>타깃/매칭</strong>: free-rider. gradient 안 쓰는 <strong>독립</strong> baseline(FLTrust는 Flirds-1st와 같은 신호라 STD-DAGMM이 독립축).</li>
 <li><strong>원리</strong>: DAGMM(AE→저차원 z + relative-euclidean + cosine → GMM energy) + <strong>update의 std</strong> scalar를 GMM 입력에 추가. free-rider taxonomy: random weights(Attack I) / delta weights(II) / advanced-delta+노이즈(III).</li>
-<li><strong>차이/왜</strong> [CODE <code>baselines/std_dagmm.py</code>]: ① <strong>signed feature-hash 5.6M→256</strong>(<code>:61-90</code>) — LoRA update가 dense AE엔 너무 큼; <strong>std는 full(pre-proj) 벡터서</strong>(magnitude 신호 보존). ② <strong>per-(client,round) pooling</strong>(<code>:73-90</code>, N·R sample) — 논문 per-round은 N=5서 degenerate(5 sample&lt;2-component GMM); pooling이 partial participation도 자연 처리. ③ z augmentation·GMM energy 충실. ④ unseen client=min score. <strong>우리 위협은 zero/random만</strong>(delta/advanced-delta는 task9). <strong>Flirds와 직교</strong>(순수 model-free, val-grad 안 봄) → 그래서 독립 baseline.</li>
+<li><strong>차이/왜</strong> [CODE <code>baselines/std_dagmm.py</code>]: ① <strong>signed feature-hash 5.6M→256</strong>(<code>:61-90</code>) — LoRA update가 dense AE엔 너무 큼; <strong>std는 full(pre-proj) 벡터서</strong>(magnitude 신호 보존). ② <strong>per-(client,round) pooling</strong>(<code>:73-90</code>, N·R sample) — 논문 per-round은 N=5서 degenerate(5 sample&lt;2-component GMM); pooling이 partial participation도 자연 처리. ③ z augmentation·GMM energy 충실. ④ unseen client=min score. <strong>우리 위협은 zero/random만</strong>(delta/advanced-delta는 advanced free-rider). <strong>Flirds와 직교</strong>(순수 model-free, val-grad 안 봄) → 그래서 독립 baseline.</li>
 </ul>
 <h3>B.3 FLTrust [PDF <code>2012.13995v3.pdf</code> Alg.2 (Cao 2021)]</h3>
 <ul>
@@ -913,7 +914,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <h1>C. 정의·구현 참조 선행연구 (6편)</h1>
 <h3>C.1 IRDS — In-Run Data Shapley [PDF <code>Data Shapley in One Training Run.md</code> HTML extract]</h3>
 <ul>
-<li><strong>역할</strong>: Flirds의 <strong>직접 조상</strong>. estimator docstring이 명시(<code>flirds_estimator.py:13</code> &quot;Closed-form approximation of the (b) in-run Shapley&quot;).</li>
+<li><strong>역할</strong>: Flirds의 <strong>직접 조상</strong>. estimator docstring이 명시(<code>flirds_estimator.py:13</code> &quot;Closed-form approximation of the in-run oracle Shapley&quot;).</li>
 <li><strong>원리</strong>: centralized·per-SGD-step·<strong>data-point</strong> level. step t서 \(\phi_z^{(t)} = -\eta \nabla \ell (w_t,z^{val})\cdot \nabla \ell (w_t,z)\) (1차) + gradient-Hessian-gradient(2차), 1 forward-HVP(&quot;ghost&quot; per-sample grad), \(\phi_z = \sum_t \phi_z^{(t)}\). <strong>true Hessian</strong>. Appx E.2.2: centralized서 2차 거의 무의미(1차 이미 Spearman&gt;0.94).</li>
 <li><strong>우리 adaptation/차이</strong> <span class="chip chip-v">CODE</span>: centralized→<strong>FL</strong>, per-step→per-<strong>round</strong>(multi-step Δw), data-point→<strong>client</strong>, batch-grad→<strong>client aggregate \(\Delta W^r\)</strong>, uniform→<strong>FedAvg participant weight</strong> \(n_k/\sum n\), full→<strong>partial participation</strong>(round 합), ghost-grad→<strong><code>torch.func.jvp∘grad</code></strong>(backend-agnostic, eager 필수), any-optimizer→<strong>plain SGD mom=0 강제</strong>, →<strong>LoRA·fp32</strong>. <strong>2차 주장 반전</strong>: IRDS는 2차 무의미라지만 FL per-round Δw가 커서 2차 non-trivial(CNN 0.96&gt;0.92로 뒷받침). GGN 테스트 후 기각(IRDS와 일관).</li>
 <li><strong>왜 IRDS</strong>: closed-form Shapley(MC 아님) + single-run(재학습 0) + 1st+2nd true-Hessian을 동시에 만족하는 유일 선행. TracIn=IRDS-1차(non-Shapley), DataInf=iHVP, Ripple=FL서 per-step IRDS지만 eigsh(flaky).</li>
@@ -926,9 +927,9 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 </ul>
 <h3>C.3 Ghorbani &amp; Zou 2019 — Data Shapley [PDF <code>1904.02868v2.pdf</code>]</h3>
 <ul>
-<li><strong>역할</strong>: Shapley 프레임 자체 + <strong>(a)-retrain oracle 정의</strong> 근거.</li>
+<li><strong>역할</strong>: Shapley 프레임 자체 + <strong>retrain oracle 정의</strong> 근거.</li>
 <li><strong>원리</strong>: \(\phi_i = C\cdot \sum_S C(n-1,|S|)^{-1}[V(S\cup i)-V(S)]\), V(S)=S로 <strong>처음부터 재학습</strong>한 모델 성능. null/symmetry/additivity 유일. TMC-Shapley(truncated MC).</li>
-<li><strong>우리 사용/차이</strong> [CODE <code>oracle/exact_sv_llm.py</code>, <code>phase2_llm_a_oracle.py</code>]: Shapley 공리 채택(null-player가 free-rider φ≈0 보장), player를 point→client로 lift, V(S)=coalition FedAvg 재학습 val-loss. <strong>핵심차이</strong>: Ghorbani-Zou V=algorithm-level(학습 randomness 평균); IRDS/Flirds는 model-specific(실제 궤적). → (a)-valloss=(b) +1.000(같은 게임). <strong>재학습 불가 정량</strong>: (a) N=10 = ΣC(10,s)·s=5120 vs N=5=80 → 2–5일/1-GPU → N=100 배제 → in-run 동기.</li>
+<li><strong>우리 사용/차이</strong> [CODE <code>oracle/exact_sv_llm.py</code>, <code>phase2_llm_a_oracle.py</code>]: Shapley 공리 채택(null-player가 free-rider φ≈0 보장), player를 point→client로 lift, V(S)=coalition FedAvg 재학습 val-loss. <strong>핵심차이</strong>: Ghorbani-Zou V=algorithm-level(학습 randomness 평균); IRDS/Flirds는 model-specific(실제 궤적). → retrain val-loss=in-run oracle +1.000(같은 게임). <strong>재학습 불가 정량</strong>: retrain oracle N=10 = ΣC(10,s)·s=5120 vs N=5=80 → 2–5일/1-GPU → N=100 배제 → in-run 동기.</li>
 </ul>
 <h3>C.4 Xu 2023 — Instructions as Backdoors [WEB <code>2305.14710-web-extract.md</code> — <strong>PDF 부재 확인</strong>]</h3>
 <ul>
@@ -946,7 +947,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <ul>
 <li><strong>역할</strong>: free-rider 위협의 <strong>attack taxonomy</strong> 근거(detector 측면은 B.2).</li>
 <li><strong>원리</strong>: Attack I random weights(U[−R,R]) / II delta weights(연속 global 차분) / III advanced(delta+노이즈, benign std 매칭).</li>
-<li><strong>우리 구현/차이</strong> [CODE <code>corruptors.py:70-93</code>]: <strong>zero</strong>(자명, φ=0 exact) + <strong>random</strong>(<code>scale=1e-3</code>, benign-std 매칭은 server call서) = Lin Attack I + trivial. <strong>delta/advanced(II/III) 미구현 → task9</strong>(이전 global aggregate를 FL 루프에 threading 필요). scale은 고정(Lin은 evasion 위해 std-tune). 프레이밍 차이: Lin=anomaly 이진검출, 우리 free_rider=valuation probe(0/random은 \(g^r\)과 ~직교 → φ≈0, signed value의 부산물). MNIST 2-layer MLP만 → <strong>우리가 PEFT-scale 최초 테스트</strong>(노트 명시).</li>
+<li><strong>우리 구현/차이</strong> [CODE <code>corruptors.py:70-93</code>]: <strong>zero</strong>(자명, φ=0 exact) + <strong>random</strong>(<code>scale=1e-3</code>, benign-std 매칭은 server call서) = Lin Attack I + trivial. <strong>delta/advanced(II/III) 미구현 → advanced free-rider</strong>(이전 global aggregate를 FL 루프에 threading 필요). scale은 고정(Lin은 evasion 위해 std-tune). 프레이밍 차이: Lin=anomaly 이진검출, 우리 free_rider=valuation probe(0/random은 \(g^r\)과 ~직교 → φ≈0, signed value의 부산물). MNIST 2-layer MLP만 → <strong>우리가 PEFT-scale 최초 테스트</strong>(노트 명시).</li>
 </ul>
 <hr />
 <blockquote>
@@ -987,7 +988,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 </tr>
 <tr>
 <td>4</td>
-<td>(a)-oracle 주 metric ROUGE → <strong>val-loss</strong></td>
+<td>retrain oracle 주 metric ROUGE → <strong>val-loss</strong></td>
 <td>06-07</td>
 <td><code>2026-06-07-phase2-task6-a-retrain-oracle.md</code></td>
 </tr>
@@ -1017,7 +1018,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 </tr>
 <tr>
 <td>9</td>
-<td>N=10 (a)-oracle <strong>연기</strong> (2–5일)</td>
+<td>N=10 retrain oracle <strong>연기</strong> (2–5일)</td>
 <td>06-07</td>
 <td><code>2026-06-07-phase2-task6-...md</code></td>
 </tr>
@@ -1051,10 +1052,10 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <li><strong>원</strong>(D3, 06-02 lock): PubMedQA + CaseHOLD + FiQA + AQUA + Dolly.</li>
 <li><strong>변경/왜</strong>: PubMedQA/CaseHOLD는 classification 포맷(closed/yes-no) → &quot;free-form instruction→response 균일성&quot; 결정과 충돌(이질 포맷이면 shared val-loss Shapley 불공정). medical→<code>medical_meadow_flashcards</code>, legal→<code>ibunescu/qa_legal</code>. FedDQC 도메인 겹침 3/5→2/5(허용; FedDQC 비교는 IRA-baseline만). [<code>2026-06-04-phase1-data-layer.md</code>].</li>
 </ul>
-<h3>4. (a)-oracle 주 metric: ROUGE → val-loss (06-07) — <strong>방법론적으로 가장 중요</strong></h3>
+<h3>4. retrain oracle 주 metric: ROUGE → val-loss (06-07) — <strong>방법론적으로 가장 중요</strong></h3>
 <ul>
-<li><strong>원</strong>: (a) 재학습 oracle을 ROUGE-L(CNN test-acc 유추)로 프레이밍.</li>
-<li><strong>변경/왜</strong>: Yonghee 교정 — 우리 method(estimator/(b))가 Shapley를 <em>옳게 계산</em>하는지 검증하려면 (a)가 <strong>같은 게임(val-loss)</strong> 풀어야. ROUGE는 다른 게임(불일치가 metric 탓일 수 있음). estimator는 val-loss의 Taylor → apples-to-apples 필수. ROUGE는 미분불가→estimator-ROUGE 불가능, (b)-ROUGE도 infeasible. 실측이 정당화: (a)valloss=(b)=estimator +1.000 vs (a)ROUGE 발산(1B +0.4, 3B −0.9, answer_swap의 도메인-포맷 학습에 속음). [<code>2026-06-07-phase2-task6-...md</code>].</li>
+<li><strong>원</strong>: retrain oracle을 ROUGE-L(CNN test-acc 유추)로 프레이밍.</li>
+<li><strong>변경/왜</strong>: Yonghee 교정 — 우리 method(estimator/in-run oracle)가 Shapley를 <em>옳게 계산</em>하는지 검증하려면 retrain oracle가 <strong>같은 게임(val-loss)</strong> 풀어야. ROUGE는 다른 게임(불일치가 metric 탓일 수 있음). estimator는 val-loss의 Taylor → apples-to-apples 필수. ROUGE는 미분불가→estimator-ROUGE 불가능, in-run ROUGE도 infeasible. 실측이 정당화: retrain val-loss=in-run oracle=estimator +1.000 vs retrain ROUGE 발산(1B +0.4, 3B −0.9, answer_swap의 도메인-포맷 학습에 속음). [<code>2026-06-07-phase2-task6-...md</code>].</li>
 </ul>
 <h3>5. oracle 정밀: bf16 → fp32 (06-07)</h3>
 <ul>
@@ -1075,15 +1076,15 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <li><strong>원</strong>: Ripple를 모든 비교표의 head-to-head baseline.</li>
 <li><strong>변경/왜</strong>: eigsh CPU-spinning stall(알려진 수렴 flaky) → 자동 배치서 불안정. <code>phase1_baseline_compare.py</code>는 RIPPLE=0; Ripple 값은 06-06 단일 세션 것 사용. [<code>2026-06-06-...md</code>; <code>2026-06-07-phase2-banzhaf-...md</code>]. → Ripple 코드 자체는 견고화(<a href="#doc-03-baselines-and-prior-work">03</a>).</li>
 </ul>
-<h3>9. N=10 (a)-oracle 연기 (06-07)</h3>
+<h3>9. N=10 retrain oracle 연기 (06-07)</h3>
 <ul>
-<li><strong>원</strong>(매트릭스 06-04 lock): LLM 1B (a)-oracle N=5 <strong>and</strong> N=10.</li>
-<li><strong>변경/왜</strong>: task6 비용 추정 — N=10 재학습 64×(ΣC(10,s)·s=5120 vs 80) + eval 32× → 2–5일/1-GPU. multi-GPU coalition sharding 미구축. N=5 fp32 검증(+1.000)으로 method 검증 충분. [<code>2026-06-07-phase2-task6-...md:85-94</code>].</li>
+<li><strong>원</strong>(매트릭스 06-04 lock): LLM 1B retrain oracle N=5 <strong>and</strong> N=10.</li>
+<li><strong>변경/왜</strong>: retrain-oracle validation 비용 추정 — N=10 재학습 64×(ΣC(10,s)·s=5120 vs 80) + eval 32× → 2–5일/1-GPU. multi-GPU coalition sharding 미구축. N=5 fp32 검증(+1.000)으로 method 검증 충분. [<code>2026-06-07-phase2-task6-...md:85-94</code>].</li>
 </ul>
 <h3>10. device100 per_client 40 → 300 (06-09)</h3>
 <ul>
 <li><strong>원</strong>: cross-device <code>per_client=40</code>(free-rider/noisy와 일관).</li>
-<li><strong>변경/왜</strong>: backdoor install엔 attacker당 ~200 poisoned 필요(D1). per_client=40·frac0.5→75 poisoned&lt;threshold→ASR=0(전파/코드 버그 아님; silo5 동일코드=ASR 1.0). 4-GPU sweep(single-shot R10/30/60, multi-round γ4/10, multi-attacker 5%/10% <strong>전부 ASR=0</strong> — attacker 늘려도 install은 client별 local이라 무용) + A′(per_client=300/frac0.8→240 poisoned/EPOCHS5/R60→<strong>ASR=0.75</strong>). noisy/free-rider는 size-무관 → 300이 regime 통일. 탐색코드(poison_multiround 등) revert. [<code>2026-06-09-...task8.md:135-152</code>; <code>phase2_matrix.py:105-109</code>].</li>
+<li><strong>변경/왜</strong>: backdoor install엔 attacker당 ~200 poisoned 필요(backdoor install test). per_client=40·frac0.5→75 poisoned&lt;threshold→ASR=0(전파/코드 버그 아님; silo5 동일코드=ASR 1.0). 4-GPU sweep(single-shot R10/30/60, multi-round γ4/10, multi-attacker 5%/10% <strong>전부 ASR=0</strong> — attacker 늘려도 install은 client별 local이라 무용) + A′(per_client=300/frac0.8→240 poisoned/EPOCHS5/R60→<strong>ASR=0.75</strong>). noisy/free-rider는 size-무관 → 300이 regime 통일. 탐색코드(poison_multiround 등) revert. [<code>2026-06-09-...task8.md:135-152</code>; <code>phase2_matrix.py:105-109</code>].</li>
 </ul>
 <h3>11. matrix = 신규 파일 (06-09)</h3>
 <ul>
@@ -1106,10 +1107,10 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <h2>5.1 판단 대기 — poison vs Flirds framing (verification-item #1)</h2>
 <p><strong>기술적 사실은 ruling 났으나, 논문 headline framing + real-config 재확인은 미결.</strong></p>
 <ul>
-<li><strong>충돌</strong>: D2b smoke(<code>phase2_backdoor_d2b_smoke.py</code>)는 &quot;clean-preserving backdoor가 Flirds를 evade한다 = <strong>REFUTED</strong>&quot;라 결론(Flirds-1st/2nd 전부 AUROC=1.0) [plan <code>flirds-implementation-plan.md:337</code>]. 그러나 matrix(full D2b config, <code>/tmp/flirds_matrix_poison_batch8.log</code>)는 표준 검출 orientation(corrupt=high φ)서 <strong>Flirds-1st AND -2nd = AUROC 0.0 = EVADED</strong>라 보고 — 원 §3.9 가설 CONFIRM [plan <code>:343</code>].</li>
-<li><strong>ruling (검증세션, <code>memory/phase2-step5-verification.md:18-27</code>)</strong>: <strong>matrix가 맞다. D2b가 오해의 소지.</strong> D2b는 <code>roc_auc_score(labels, −φ)</code>로 per-threat 라벨지식을 써 부호를 뒤집어 1.0을 만든 것 → attacker의 φ-extremeness를 검출로 오독. 본질은 <strong>Taylor-approximation 실패</strong>: \(pr[a]\cdot \gamma =1\)이라 loss-heur와 Flirds-1st가 같은 δ₀에 작용하는데, loss-heur=exact secant는 overshoot 잡아 <strong>1.0</strong>, Flirds=tangent는 속아 <strong>0.0</strong>(loss-heur Spearman vs Flirds=+0.000). <strong>exact in-run util/(b) oracle은 잡고, linearization만 blind.</strong> (docs의 &quot;γ-overshoot&quot;는 부정확 — γ는 상쇄됨.)</li>
-<li><strong>정리</strong>: attacker는 φ-<strong>extreme</strong>(two-sided/magnitude/loss-heur catchable)이지 φ-<strong>high</strong> 아님. 정직한 §3.9 headline = &quot;<strong>Flirds는 noisy+free-rider를 잡고, clean-preserving backdoor엔 EVADED; matched detector(FLDetector/FedDQC/loss-heur)가 보완</strong>&quot;.</li>
-<li><strong>여전히 열린 것</strong>: ① 이 framing을 논문 headline으로 확정 = <strong>Yonghee 결정</strong> ② <strong>real config(full val, (b) oracle 동반)에서 재확인</strong> 필요(현재는 tiny val=20 smoke) ③ (b) oracle이 잡는다는 건 smoke 논증 — real서 (b)/loss-heur AUROC 직접 측정 필요.</li>
+<li><strong>충돌</strong>: backdoor detection test smoke(<code>phase2_backdoor_d2b_smoke.py</code>)는 &quot;clean-preserving backdoor가 Flirds를 evade한다 = <strong>REFUTED</strong>&quot;라 결론(Flirds-1st/2nd 전부 AUROC=1.0) [plan <code>flirds-implementation-plan.md:337</code>]. 그러나 matrix(full working-backdoor config, <code>/tmp/flirds_matrix_poison_batch8.log</code>)는 표준 검출 orientation(corrupt=high φ)서 <strong>Flirds-1st AND -2nd = AUROC 0.0 = EVADED</strong>라 보고 — 원 threat matrix 가설 CONFIRM [plan <code>:343</code>].</li>
+<li><strong>ruling (검증세션, <code>memory/phase2-step5-verification.md:18-27</code>)</strong>: <strong>matrix가 맞다. backdoor detection test가 오해의 소지.</strong> backdoor detection test는 <code>roc_auc_score(labels, −φ)</code>로 per-threat 라벨지식을 써 부호를 뒤집어 1.0을 만든 것 → attacker의 φ-extremeness를 검출로 오독. 본질은 <strong>Taylor-approximation 실패</strong>: \(pr[a]\cdot \gamma =1\)이라 loss-heur와 Flirds-1st가 같은 δ₀에 작용하는데, loss-heur=exact secant는 overshoot 잡아 <strong>1.0</strong>, Flirds=tangent는 속아 <strong>0.0</strong>(loss-heur Spearman vs Flirds=+0.000). <strong>exact in-run util/in-run oracle은 잡고, linearization만 blind.</strong> (docs의 &quot;γ-overshoot&quot;는 부정확 — γ는 상쇄됨.)</li>
+<li><strong>정리</strong>: attacker는 φ-<strong>extreme</strong>(two-sided/magnitude/loss-heur catchable)이지 φ-<strong>high</strong> 아님. 정직한 threat matrix headline = &quot;<strong>Flirds는 noisy+free-rider를 잡고, clean-preserving backdoor엔 EVADED; matched detector(FLDetector/FedDQC/loss-heur)가 보완</strong>&quot;.</li>
+<li><strong>여전히 열린 것</strong>: ① 이 framing을 논문 headline으로 확정 = <strong>Yonghee 결정</strong> ② <strong>real config(full val, in-run oracle 동반)에서 재확인</strong> 필요(현재는 tiny val=20 smoke) ③ in-run oracle이 잡는다는 건 smoke 논증 — real서 in-run oracle/loss-heur AUROC 직접 측정 필요.</li>
 </ul>
 <hr />
 <h2>5.2 claimed-vs-verified 교정 (문서 과장 → 검증값 채택)</h2>
@@ -1132,8 +1133,8 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 </tr>
 <tr>
 <td>2</td>
-<td>&quot;ALL methods Spearman +1.000 vs (b)&quot;</td>
-<td>tiny-config서 <strong>FedSV +0.900</strong>(tiny-config noise). <strong>단 phase1 real 3-seed는 FedSV +1.000</strong> — step5 smoke와 phase1 real을 혼동한 것</td>
+<td>&quot;ALL methods Spearman +1.000 vs in-run oracle&quot;</td>
+<td>tiny-config서 <strong>FedSV +0.900</strong>(tiny-config noise). <strong>단 phase1 real 3-seed는 FedSV +1.000</strong> — matrix-orchestrator build smoke와 phase1 real을 혼동한 것</td>
 <td><code>verification.md:32</code>; phase1 <code>metrics.json</code></td>
 </tr>
 <tr>
@@ -1144,7 +1145,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 </tr>
 <tr>
 <td>4</td>
-<td>D2b &quot;evades-Flirds REFUTED&quot; (Flirds AUROC 1.0)</td>
+<td>backdoor detection test &quot;evades-Flirds REFUTED&quot; (Flirds AUROC 1.0)</td>
 <td>표준 orientation서 <strong>Flirds AUROC 0.0 (EVADED)</strong> — §5.1</td>
 <td><code>verification.md:18-27</code></td>
 </tr>
@@ -1156,13 +1157,13 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <hr />
 <h2>5.3 알려진 caveat (버그 아님, real-config서 확인 필요)</h2>
 <ul>
-<li><strong>tiny-config 수치 전반</strong>: step5 5 code paths는 val=20/R≤10 smoke — 값 coarse, 구조/orientation/gating만 검증. device100 anchor (b)-perround +0.999, GTG 0.93/FedSV 0.82/ShapleyFL 0.86는 R=4 tiny.</li>
-<li><strong>#7 selection nuance</strong>(직접 metrics.json 대조): seed0은 random이 우연히 clean set {2,3,4} → tie; &quot;beats random&quot;은 cross-seed. AUROC가 lr로 반전(lr1e-3 noisy0.75/FR1.0 ↔ lr3e-3 1.0/0.75) — MEMORY는 lr1e-3만 기재. selection은 양 lr 동일. → <a href="#doc-02-experimental-setup">02</a>.</li>
-<li><strong>ComFedSV</strong> tiny-R서 Spearman 낮음(R≤8 completion-starved; task7d R=30서 +1.000). real은 R≈30 필요.</li>
+<li><strong>tiny-config 수치 전반</strong>: matrix-orchestrator build 5 code paths는 val=20/R≤10 smoke — 값 coarse, 구조/orientation/gating만 검증. device100 anchor per-round in-run oracle +0.999, GTG 0.93/FedSV 0.82/ShapleyFL 0.86는 R=4 tiny.</li>
+<li><strong>selection run nuance</strong>(직접 metrics.json 대조): seed0은 random이 우연히 clean set {2,3,4} → tie; &quot;beats random&quot;은 cross-seed. AUROC가 lr로 반전(lr1e-3 noisy0.75/FR1.0 ↔ lr3e-3 1.0/0.75) — MEMORY는 lr1e-3만 기재. selection은 양 lr 동일. → <a href="#doc-02-experimental-setup">02</a>.</li>
+<li><strong>ComFedSV</strong> tiny-R서 Spearman 낮음(R≤8 completion-starved; cross-device port R=30서 +1.000). real은 R≈30 필요.</li>
 <li><strong>device100 corrupt-seen</strong> R≈30 필요(짧으면 corrupt가 안 보임).</li>
 <li><strong>device100 poison ASR 0.75</strong>(silo5 1.0보다 낮음=cross-device 희석), tiny val=4 — real config 확인.</li>
 <li><strong>Ripple eigsh flaky</strong>(CPU spinning stall) → 비교는 RIPPLE=0, 값은 06-06 단일세션.</li>
-<li><strong>3B (a)valloss vs (b) +0.900</strong>(1B는 +1.000) = clean-client 1-swap=retrain noise; estimator는 +1.000 유지. 1-seed.</li>
+<li><strong>3B retrain val-loss vs in-run oracle +0.900</strong>(1B는 +1.000) = clean-client 1-swap=retrain noise; estimator는 +1.000 유지. 1-seed.</li>
 <li><strong>FedDQC</strong> per-domain IRA 분산 큼(finance 0.17≈noisy 0.067) → noisy 도메인/seed 변주 필요. 1-seed smoke.</li>
 <li><strong>N=100 detector 결과 전부 1-seed</strong>(STD-DAGMM 0.628, FLTrust 1.0) — 3-seed 미확보.</li>
 </ul>
@@ -1170,10 +1171,10 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <h2>5.4 3-state 미실행 항목 (<span class="chip chip-g">ⓒ</span>)</h2>
 <p><code>runs/phase2_matrix/</code>는 <strong>빈 폴더(0 files)</strong> — real grid 한 번도 안 돌았다.</p>
 <ul>
-<li><strong>real grid 전체</strong>: silo5 N5(4 threat × 3 seed, all method + (b) Spearman) → device100 α-sweep{0,0.01,0.1,0.5,5.0}((b)@α0.5만) → 3B → 7B. <span class="chip chip-g">ⓒ</span></li>
-<li><strong>N=10 (a)-oracle</strong>(LLM): 2–5일/1-GPU → multi-GPU sharding 필요. <span class="chip chip-g">ⓒ</span> 연기.</li>
-<li><strong>7B (b)-oracle</strong>: matrix MODEL_CFG 경로에 있으나 미실행. <span class="chip chip-g">ⓒ</span></li>
-<li><strong>free-rider delta/advanced-delta(Lin Attack II/III)</strong>: task9. <span class="chip chip-g">ⓒ</span></li>
+<li><strong>real grid 전체</strong>: silo5 N5(4 threat × 3 seed, all method + in-run oracle Spearman) → device100 α-sweep{0,0.01,0.1,0.5,5.0}(in-run oracle@α0.5만) → 3B → 7B. <span class="chip chip-g">ⓒ</span></li>
+<li><strong>N=10 retrain oracle</strong>(LLM): 2–5일/1-GPU → multi-GPU sharding 필요. <span class="chip chip-g">ⓒ</span> 연기.</li>
+<li><strong>7B in-run oracle</strong>: matrix MODEL_CFG 경로에 있으나 미실행. <span class="chip chip-g">ⓒ</span></li>
+<li><strong>free-rider delta/advanced-delta(Lin Attack II/III)</strong>: advanced free-rider. <span class="chip chip-g">ⓒ</span></li>
 </ul>
 <hr />
 <h2>5.5 즉시 다음 단계 — real grid 실행 (cost-tiered stage-gate)</h2>
@@ -1181,13 +1182,13 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <ol>
 <li><strong>cheap-first by cost tier</strong>: N5(silo5, 530s) → N100(device100, 11h@1점) → 3B → 7B.</li>
 <li><strong>category-together</strong>: 한 (regime,threat,seed) 궤적은 비용 무관 <em>모든</em> 비교 method를 같이 — 공유 로그 위 공정비교(절대 cheap subset 먼저 아님).</li>
-<li><strong>(b) oracle = anchor not comparand</strong>: N5엔 530s로 비교군, N100엔 11h라 α=0.5 1점 앵커만(나머지 α는 Flirds proxy-truth).</li>
+<li><strong>in-run oracle = anchor not comparand</strong>: N5엔 530s로 비교군, N100엔 11h라 α=0.5 1점 앵커만(나머지 α는 Flirds proxy-truth).</li>
 <li><strong>adaptive</strong>: tier 결과가 예상 밖이면 큰 tier 계획 수정.</li>
 </ol>
 <p><strong>실행 전 체크리스트</strong>:</p>
 <ul>
 <li>[ ] <strong>poison threat은 별도 invocation <code>LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8</code></strong> (device100은 +<code>ROUNDS=60 MAX_STEPS=10</code>). matrix 기본 lr1e-3/batch16은 ASR=0.</li>
-<li>[ ] real config(full val, fp32, R 충분)로 §5.1 poison-vs-Flirds + §5.2 교정값 재측정 → §3.9 framing 확정(Yonghee).</li>
+<li>[ ] real config(full val, fp32, R 충분)로 §5.1 poison-vs-Flirds + §5.2 교정값 재측정 → threat matrix framing 확정(Yonghee).</li>
 <li>[ ] phase1 lr 결정(2e-5 fine-tune vs 1e-3 비교용) — config 재고(<a href="#doc-04-plan-vs-implementation-divergences">04</a>).</li>
 <li>[ ] 3-seed로 N=100 detector(STD-DAGMM/FLTrust) 재확인.</li>
 <li>[ ] matrix는 stdout만 출력 → <strong>결과 파일 영속화 경로 추가</strong>(현재 <code>runs/phase2_matrix/</code> 빈 폴더, <code>phase2_matrix.py:122</code> <code>/tmp</code>만).</li>
@@ -1195,7 +1196,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <p><strong>git 상태(운영)</strong>: main이 origin보다 앞섬(미푸시 누적). device100-poison 해결 + per_client=300 커밋 상태는 <code>CLAUDE.md</code> 참조. <strong>Claude는 push 불가(creds 없음) → Yonghee push.</strong></p>
 <hr />
 <h2>5.6 한 줄 결론</h2>
-<p>코드와 phase1(silo5 N5, 3-seed)은 단단하다. 방법은 (a)=(b)=estimator +1.000으로 검증됐다. <strong>남은 건 real grid를 돌려 (1) 큰 N 분리력, (2) detector 경쟁, (3) poison-vs-Flirds framing을 real config에서 확정하는 것</strong> — 전부 <span class="chip chip-g">ⓒ</span>(미실행), 설계는 LOCKED.</p>
+<p>코드와 phase1(silo5 N5, 3-seed)은 단단하다. 방법은 retrain oracle = in-run oracle=estimator +1.000으로 검증됐다. <strong>남은 건 real grid를 돌려 (1) 큰 N 분리력, (2) detector 경쟁, (3) poison-vs-Flirds framing을 real config에서 확정하는 것</strong> — 전부 <span class="chip chip-g">ⓒ</span>(미실행), 설계는 LOCKED.</p>
 </section><section class="section" id="doc-06-closest-competitors-fedif-fedtsv-ripple"><div class="dochead"><span class="docnum">6</span><h1 class="doctitle">Flirds 체크포인트 06 — 가장 가까운 경쟁자 3종 (FedIF · FedTSV · Ripple)</h1></div><p class="docnote">내 연구의 직접 경쟁자 3편을 &#x27;LLM+FL+기여도평가&#x27; 교집합 축에 놓고 근접도+장단점 분석. 위키 노트(sources/*.md) 종합 + Ripple은 우리 구현 코드(ripple.py)를 직접 읽어 &#x27;2차항 없음&#x27; 주장을 정밀화(§6.5, ⓒ Yonghee 결정 대기).</p><h1>06 · 가장 가까운 경쟁자 3종 (FedIF · FedTSV · Ripple)</h1>
 <blockquote>
 <p><strong>목적</strong>: &quot;FedIF, FedTSV, Ripple이 가장 큰 경쟁자&quot;라는 인식을, <em>실제로 LLM+FL+기여도평가 교집합에 얼마나 가까운지</em> + <em>Flirds 대비 장단점</em>으로 정리한 포지셔닝 문서.
@@ -1438,18 +1439,18 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 </section><section class="section" id="doc-07-novelty-limitations-analysis"><div class="dochead"><span class="docnum">7</span><h1 class="doctitle">Flirds 체크포인트 07 — novelty·한계 분석 + 개선 제안</h1></div><p class="docnote">00–06 작성 후 같은 날 오후의 분석 세션. checkpoint 문서 직접 정독 + 8개 병렬 reader(checkpoint·flirds.md·threads·plan·protocol·코드·raw)로 교차 정독 + load-bearing 주장 4건 직접 검증. §7.0은 00 §0.5 / 05 §5.4의 &#x27;real grid 미실행&#x27;을 SUPERSEDE.</p><h1>07 · novelty·한계 분석 + 개선 제안</h1>
 <blockquote>
 <p><strong>목적</strong>: &quot;이 연구의 novelty와 한계는 무엇이고, 어디를 개선할 수 있나&quot;에 대한 종합 판정.
-<strong>방법</strong>: 00–06 직접 정독 + 8방향 병렬 reader 교차 정독 + 직접 검증 4건(FedIF 부재 grep, <code>runs/</code> 상태, tier1 로그, baselines 디렉토리). 모든 정량주장에 경로 근거, 3-state(<span class="chip chip-a">ⓐ</span>/<span class="chip chip-b">ⓑ</span>/<span class="chip chip-g">ⓒ</span>) 구분.
+<strong>방법</strong>: 00–06 직접 정독 + 8방향 병렬 reader 교차 정독 + 직접 검증 4건(FedIF 부재 grep, <code>runs/</code> 상태, cross-silo tier 로그, baselines 디렉토리). 모든 정량주장에 경로 근거, 3-state(<span class="chip chip-a">ⓐ</span>/<span class="chip chip-b">ⓑ</span>/<span class="chip chip-g">ⓒ</span>) 구분.
 경쟁자 3종(FedIF/FedTSV/Ripple)의 상세 포지셔닝은 <a href="#doc-06-closest-competitors-fedif-fedtsv-ripple">06-closest-competitors-fedif-fedtsv-ripple</a> — 이 문서는 그 위에서 novelty 방어력·한계·개선을 판정.</p>
 </blockquote>
 <hr />
 <h2>7.0 ⚡ SUPERSEDE: real grid가 시작됐다 (00 §0.5 / 05 §5.4의 &quot;미실행&quot; 교체)</h2>
 <p>checkpoint 작성(06-10 00:50) 직후 real grid가 시작됨. 직접 확인(06-10 오후):</p>
 <ul>
-<li><strong>tier1 (silo5 4-threat × 3-seed, 1B) 완료</strong> — <code>runs/phase2_matrix/tier1/silo5_{noisy,freerider_zero,freerider_random,poison}.log</code> (03:58–04:14 완료). noisy/FR = lr1e-3/batch16, poison = D2b config lr2e-3/batch8, 전부 R=10, ORACLE_B+COALITION on.</li>
-<li><strong>tier2 (device100 α-sweep 12 cells) 진행 중</strong> — <code>tier2/_driver.log</code> (09:27 시작, 4-GPU). ⚠ 일부 cell이 <code>done[CHECK]</code> 플래그 → 확인 필요.</li>
-<li>⚠ <strong>전부 평문 <code>.log</code>만</strong> — protocol §6 run-dir(config·git SHA·φ archive·metrics.json) 부재 상태로 paper-bound 수치 생산 중. <strong>tier3 전에 영속화 필수</strong> (§7.3 제안 1).</li>
+<li><strong>cross-silo tier (silo5 4-threat × 3-seed, 1B) 완료</strong> — <code>runs/phase2_matrix/tier1/silo5_{noisy,freerider_zero,freerider_random,poison}.log</code> (03:58–04:14 완료). noisy/FR = lr1e-3/batch16, poison = working-backdoor config lr2e-3/batch8, 전부 R=10, ORACLE_B+COALITION on.</li>
+<li><strong>cross-device tier (device100 α-sweep 12 cells) 진행 중</strong> — <code>tier2/_driver.log</code> (09:27 시작, 4-GPU). ⚠ 일부 cell이 <code>done[CHECK]</code> 플래그 → 확인 필요.</li>
+<li>⚠ <strong>전부 평문 <code>.log</code>만</strong> — protocol §6 run-dir(config·git SHA·φ archive·metrics.json) 부재 상태로 paper-bound 수치 생산 중. <strong>3B tier 전에 영속화 필수</strong> (§7.3 제안 1).</li>
 </ul>
-<h3>tier1 핵심 결과 (<span class="chip chip-b">ⓑ</span>, real config 3-seed — 직접 로그 대조)</h3>
+<h3>cross-silo tier 핵심 결과 (<span class="chip chip-b">ⓑ</span>, real config 3-seed — 직접 로그 대조)</h3>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -1487,7 +1488,7 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 <td><strong>동률 첫 붕괴</strong></td>
 <td><strong>0.000±0.000 완전회피</strong> (Sp +0.000)</td>
 <td><strong>seed별 {0.0, 0.25, 1.0} = 0.417±0.425</strong></td>
-<td>(b)·loss-heur·Banzhaf·ShapleyFL AUROC 1.0/Sp +1.000; GTG Sp +0.867; <strong>FedSV Sp +0.367 추락</strong>; 4 detector ≥0.917</td>
+<td>in-run oracle·loss-heur·Banzhaf·ShapleyFL AUROC 1.0/Sp +1.000; GTG Sp +0.867; <strong>FedSV Sp +0.367 추락</strong>; 4 detector ≥0.917</td>
 </tr>
 </tbody>
 </table></div>
@@ -1506,12 +1507,12 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 <tbody>
 <tr>
 <td>N1</td>
-<td><strong>dual-oracle 검증 방법론</strong>: (a)-valloss=(b)=estimator +1.000(1B N=5 fp32 3-seed) + (a)-ROUGE 발산 반례(+0.4@1B/−0.9@3B) + bf16 정밀도 바닥 진단</td>
+<td><strong>dual-oracle 검증 방법론</strong>: retrain val-loss=in-run oracle=estimator +1.000(1B N=5 fp32 3-seed) + retrain ROUGE 발산 반례(+0.4@1B/−0.9@3B) + bf16 정밀도 바닥 진단</td>
 <td>&quot;같은 게임으로 검증&quot; 통찰+실증 = FL valuation에 독립적으로 내놓을 만한 방법론 기여</td>
 </tr>
 <tr>
 <td>N2</td>
-<td><strong>(b) oracle exact per-round 분해</strong>: \(2^N\) → \(\sum_r\) $2^{</td>
+<td><strong>in-run oracle exact per-round 분해</strong>: \(2^N\) → \(\sum_r\) $2^{</td>
 <td>P_r</td>
 </tr>
 <tr>
@@ -1524,12 +1525,12 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 <h3>중간 — 조건부</h3>
 <ul>
 <li><strong>교집합 novelty</strong> (client-level+in-run+closed-form 1st/2nd+zero-extra-comm+LoRA/LLM): &quot;최초 federated in-run&quot;은 Ripple 선점 자인 후 교집합으로 후퇴한 구조(<a href="#doc-06-closest-competitors-fedif-fedtsv-ripple">06</a> §6.1 표 참조). 근거가 서술적 스캔(4-agent+GPT)이라 리뷰어에게 &quot;incremental combination&quot;으로 읽힐 위험. <strong>교집합의 load-bearing 성분 = 2차항</strong> — 서면 전체가 서고, 무너지면 &quot;Shapley 프레이밍+LoRA 엔지니어링&quot;으로 축소.</li>
-<li><strong>경계 특성화</strong> (backdoor evasion = Taylor tangent vs exact secant 메커니즘; <code>memory/phase2-step5-verification.md</code>): 정직한 기여 framing. tier1의 seed-의존 2차항 결과로 이야기가 풍부해짐.</li>
+<li><strong>경계 특성화</strong> (backdoor evasion = Taylor tangent vs exact secant 메커니즘; <code>memory/phase2-step5-verification.md</code>): 정직한 기여 framing. cross-silo tier의 seed-의존 2차항 결과로 이야기가 풍부해짐.</li>
 <li><strong>FLTrust ≈ normalized Flirds-1st</strong>: 양날 — 포섭 서사인 동시에 1차 검출 신호가 2021년(FLTrust)+2025년(FedIF, 같은 정규화 내적 — [06] §6.3) 선점됐다는 뜻.</li>
 </ul>
 <h3>약함 — 미입증 (novelty의 사활처)</h3>
 <ul>
-<li><strong>2차항 가치</strong>: 어제까지 LLM-scale 입증 0건(N=5/N=100 모두 1st=2nd=+1.000, 1st가 15× 저렴; CNN 0.96&gt;0.92는 plain-SGD 조건부 — momentum서 역전). <strong>tier1 poison seed2가 첫 분리 신호이나 불안정.</strong> Ripple와의 &quot;2차 종류&quot; 차별([06] §6.5)은 <span class="chip chip-g">ⓒ</span> Yonghee 결정 대기.</li>
+<li><strong>2차항 가치</strong>: 어제까지 LLM-scale 입증 0건(N=5/N=100 모두 1st=2nd=+1.000, 1st가 15× 저렴; CNN 0.96&gt;0.92는 plain-SGD 조건부 — momentum서 역전). <strong>cross-silo tier poison seed2가 첫 분리 신호이나 불안정.</strong> Ripple와의 &quot;2차 종류&quot; 차별([06] §6.5)은 <span class="chip chip-g">ⓒ</span> Yonghee 결정 대기.</li>
 <li><strong>format-uniformity / per-domain norm hook</strong>: ablation 전부 <span class="chip chip-g">ⓒ</span> — 현재는 &quot;기여&quot;가 아니라 &quot;control 변수 선택&quot;.</li>
 <li><strong>이론(Prop 1/2)</strong>: informal + 파일럿 U-shape 모순 관측, #5 검증 <span class="chip chip-g">ⓒ</span>.</li>
 </ul>
@@ -1539,36 +1540,36 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 <h2>7.2 한계 분석</h2>
 <h3>A. 방법 내재</h3>
 <ol>
-<li><strong>Taylor 절단</strong> — clean-preserving backdoor의 γ-update가 clean val-loss를 내려 최저 φ로 랭킹. tier1서 1st 완전회피(0.000), 2nd seed-의존. 전개-반경 진단/가드 코드 전무.</li>
+<li><strong>Taylor 절단</strong> — clean-preserving backdoor의 γ-update가 clean val-loss를 내려 최저 φ로 랭킹. cross-silo tier서 1st 완전회피(0.000), 2nd seed-의존. 전개-반경 진단/가드 코드 전무.</li>
 <li><strong>plain SGD mom=0 강제</strong> — AdamW 표준 실무와 비호환, momentum하 2차항 역효과(0.73&lt;0.81) 기관측, FedHDS(Adam) 벤치와 충돌. 가장 큰 일반성 제약.</li>
-<li><strong>fp32 강제</strong> — 신호(~1e-3) &lt; bf16 정밀도(~8e-3) 자체가 본질 제약. 7B 비용(no-tensor-core ×3.1), bf16 배포 궤적 valuation 불가, protocol §13 vs task8 모순 미해소.</li>
+<li><strong>fp32 강제</strong> — 신호(~1e-3) &lt; bf16 정밀도(~8e-3) 자체가 본질 제약. 7B 비용(no-tensor-core ×3.1), bf16 배포 궤적 valuation 불가, protocol §13 vs scale-up 모순 미해소.</li>
 <li><strong>eager attention 강제</strong> / <strong>LoRA-subspace 한정</strong>(실범위=&quot;LoRA-subspace Shapley&quot;) / <strong>FedAvg 한정</strong>(robust agg·FedProx·secure agg 비호환 — backdoor 방어가 robust agg 쓰는 시스템과 양립 불가) / <strong>개별 Δw 노출</strong>(privacy).</li>
-<li><strong>단일 server val-loss 게임</strong> — val 오염/편향 미고려, #16 민감도 연기. (a)-ROUGE 발산은 &quot;val-loss가 안 속음&quot;인 동시에 &quot;배포지표 가치와 다른 게임&quot; 반론 근거.</li>
+<li><strong>단일 server val-loss 게임</strong> — val 오염/편향 미고려, #16 민감도 연기. retrain ROUGE 발산은 &quot;val-loss가 안 속음&quot;인 동시에 &quot;배포지표 가치와 다른 게임&quot; 반론 근거.</li>
 </ol>
 <h3>B. 증거력</h3>
 <ol start="6">
-<li><strong>N=5 near-additive 무변별</strong> — noisy/FR은 real config서도 전 방법 +1.000 동률(tier1 재확인). 유일한 분리 = poison인데 Flirds에 불리한 방향. <strong>N=10 (a)-oracle 연기</strong> = 무변별 해소의 유일한 직접 증거 부재.</li>
+<li><strong>N=5 near-additive 무변별</strong> — noisy/FR은 real config서도 전 방법 +1.000 동률(cross-silo tier 재확인). 유일한 분리 = poison인데 Flirds에 불리한 방향. <strong>N=10 retrain oracle 연기</strong> = 무변별 해소의 유일한 직접 증거 부재.</li>
 <li><strong>lr 의존 AUROC 반전</strong> — noisy φ 부호가 lr 의존(−0.0084↔+0.0096 → 0.75↔1.0). real grid lr 선택이 noisy 결론을 결정하는데 lr 미확정.</li>
 <li><strong>1-seed 다수</strong>(3B +0.900, N=100 detector) / <strong>α-sweep proxy-truth 순환</strong>(off-anchor truth=Flirds 자신 → 원리적으로 자기 오류 검출 불가) / <strong>CI(§3.3)·timing(§15.1) 미구현</strong> / seed [0,1,2] vs protocol [42,123,2024].</li>
-<li><strong>영속화 부재 현재진행형</strong> — tier1/tier2가 .log-only로 돌고 있음 (§7.0).</li>
+<li><strong>영속화 부재 현재진행형</strong> — cross-silo·cross-device tier가 .log-only로 돌고 있음 (§7.0).</li>
 </ol>
 <h3>C. 위협모델·framing</h3>
 <ol start="10">
 <li><strong>poison 인위성</strong> — hand-tuned 별도 config(LR2e-3/B8/E5/frac0.8)만 ASR&gt;0, batch 하나로 1.0↔0 반전, per_client 40→300은 공격 성립 위한 역조정. 위협별 trajectory config 상이 = category-together 원칙 훼손.</li>
-<li><strong>최약 공격자만</strong> — stealthy arm 불가(‖Δ‖=40×), DBA 제외, <strong>free-rider easy 모드만</strong>(delta/recycled-aggregate = &quot;genuinely AT RISK&quot; 자인 모드가 task9 이연), adaptive attacker 부재.</li>
-<li><strong>orientation protocol 취약성</strong> — D2b 사건(−φ 채점→정반대 결론). 교정됐으나 규약 명문화 없으면 재발.</li>
-<li><strong>detector 개조 confound</strong> — FLTrust signed-cosine=원형 강화, STD-DAGMM hash+pooling=약화 가능(0.628·tier1 FR-zero 0.083이 port confound인지 미분리), Ripple=우리 port 위 측정. 원형-ablation 부재.</li>
+<li><strong>최약 공격자만</strong> — stealthy arm 불가(‖Δ‖=40×), DBA 제외, <strong>free-rider easy 모드만</strong>(delta/recycled-aggregate = &quot;genuinely AT RISK&quot; 자인 모드가 advanced free-rider 이연), adaptive attacker 부재.</li>
+<li><strong>orientation protocol 취약성</strong> — backdoor detection test 사건(−φ 채점→정반대 결론). 교정됐으나 규약 명문화 없으면 재발.</li>
+<li><strong>detector 개조 confound</strong> — FLTrust signed-cosine=원형 강화, STD-DAGMM hash+pooling=약화 가능(0.628·cross-silo tier FR-zero 0.083이 port confound인지 미분리), Ripple=우리 port 위 측정. 원형-ablation 부재.</li>
 </ol>
 <h3>D. 프로세스</h3>
 <ol start="14">
-<li><strong>낙관적 distillation 드리프트 반복</strong> — 검증세션 4건 교정(poison detector 1.0→0.75, FedSV +0.900, 360s, REFUTED→EVADED). D2b 오류 결론이 immutable raw에 정정 포인터 없이 잔존.</li>
-<li><strong>protocol stale</strong>(06-04) — 분기 4–11·(b) MC→exact 미반영 = &quot;silent deviation 금지&quot; 자기위반. [03]의 ShapleyFL +0.86 state-mixing(<span class="chip chip-a">ⓐ</span> 수치를 <span class="chip chip-b">ⓑ</span> 맥락에 무라벨 인용).</li>
+<li><strong>낙관적 distillation 드리프트 반복</strong> — 검증세션 4건 교정(poison detector 1.0→0.75, FedSV +0.900, 360s, REFUTED→EVADED). backdoor detection test 오류 결론이 immutable raw에 정정 포인터 없이 잔존.</li>
+<li><strong>protocol stale</strong>(06-04) — 분기 4–11·in-run oracle MC→exact 미반영 = &quot;silent deviation 금지&quot; 자기위반. [03]의 ShapleyFL +0.86 state-mixing(<span class="chip chip-a">ⓐ</span> 수치를 <span class="chip chip-b">ⓑ</span> 맥락에 무라벨 인용).</li>
 </ol>
 <hr />
 <h2>7.3 개선 제안 (우선순위순)</h2>
 <h3>🔴 즉시 (real grid 진행 중인 지금)</h3>
 <ol>
-<li><strong>결과 영속화</strong>: tier3 전 <code>phase2_matrix.py</code>에 run-dir 출력(metrics.json+φ archive+config+git SHA), tier1/2는 .log 파싱 소급.</li>
+<li><strong>결과 영속화</strong>: 3B tier 전 <code>phase2_matrix.py</code>에 run-dir 출력(metrics.json+φ archive+config+git SHA), cross-silo·cross-device tier는 .log 파싱 소급.</li>
 <li><strong>poison Flirds-2nd seed 분산({0,0.25,1.0}) 원인 규명</strong>: seed2가 왜 잡았나 — per-round φ 분해(1차 vs ½⟨Δw,HΔW⟩ 기여). <strong>기실행 궤적 재분석이라 비용 ~0, 2차항 novelty의 사활 — 현 시점 최고 가치 실험.</strong></li>
 <li><strong>two-sided |φ| 점수를 matrix 표준 산출물로</strong>: &quot;φ-extreme not φ-high&quot; 발견의 label-free 제품화. 비용 ~0.</li>
 <li><strong>orientation 사전고정 + lr 양쪽({1e-3,3e-3}) 보고 규약 명문화</strong>: lr-반전은 숨기면 약점, 보고하면 robustness 특성화.</li>
@@ -1576,12 +1577,12 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 <h3>🟠 단기 (논문 전 필수)</h3>
 <ol start="5">
 <li><strong>FedIF baseline 편입</strong> (신호=Δw/‖Δw‖·∇val라 fltrust.py 변형으로 저비용; 코드 공개돼 있음 — [06] §6.3) 또는 [03]에 수학적 관계+min-max/EMA 차이 명문화 — 1순위 공격 방어.</li>
-<li><strong>2차항 결정 실험(#13 PGD/direction-aligned poison) 앞당기기</strong>: tier1 seed2 신호와 결합하면 &quot;2차항이 언제 필요한가&quot; 양방향 폐쇄(져도 honest fallback 기설계). [06] §6.5의 Ripple &quot;2차 종류 차별&quot;과 묶으면 경쟁자 대비 스토리 완성.</li>
-<li><strong>N=10 (a)-oracle</strong> (multi-GPU sharding 11–22h) — near-additive 무변별 해소의 유일한 직접 증거. 차선 = cross-silo N=10 detection-only(plan 기허용).</li>
-<li><strong>task9 delta/advanced free-rider</strong>: Flirds 진짜 위험 모드 — 뚫리면 경계 특성화, 막으면 robustness, 양쪽 다 논문 가치. backdoor 회피와 동종 맹점(val-loss 내리는 적대 update)의 free-rider 축 존재 여부가 §3.9 framing 완결성 결정.</li>
+<li><strong>2차항 결정 실험(#13 PGD/direction-aligned poison) 앞당기기</strong>: cross-silo tier seed2 신호와 결합하면 &quot;2차항이 언제 필요한가&quot; 양방향 폐쇄(져도 honest fallback 기설계). [06] §6.5의 Ripple &quot;2차 종류 차별&quot;과 묶으면 경쟁자 대비 스토리 완성.</li>
+<li><strong>N=10 retrain oracle</strong> (multi-GPU sharding 11–22h) — near-additive 무변별 해소의 유일한 직접 증거. 차선 = cross-silo N=10 detection-only(plan 기허용).</li>
+<li><strong>advanced free-rider</strong>: Flirds 진짜 위험 모드 — 뚫리면 경계 특성화, 막으면 robustness, 양쪽 다 논문 가치. backdoor 회피와 동종 맹점(val-loss 내리는 적대 update)의 free-rider 축 존재 여부가 threat matrix framing 완결성 결정.</li>
 <li><strong>loss-heur 공식 보완 검출기 패키징</strong>: &quot;Flirds(tangent)+singleton secant 잔차&quot; 하이브리드(~164s, 같은 frozen logs) = &quot;경계 발견+해법&quot; 서사 완성 + 비용/역할 분리표.</li>
 <li><strong>원형-ablation 3건 + bootstrap CI</strong>: ReLU-FLTrust / per-round STD-DAGMM / Ripple 저자코드 1-setting; CI는 φ archive만 있으면 소급 적용.</li>
-<li><strong>STD-DAGMM FR-zero 0.083 진단</strong> (tier1 신규): zero-delta가 matched detector에 안 잡힘 = suite 서사의 구멍. pooling/hash confound 분리.</li>
+<li><strong>STD-DAGMM FR-zero 0.083 진단</strong> (cross-silo tier 신규): zero-delta가 matched detector에 안 잡힘 = suite 서사의 구멍. pooling/hash confound 분리.</li>
 </ol>
 <h3>🟡 중기 (한계→기여 전환)</h3>
 <ol start="12">
@@ -1593,11 +1594,11 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 <li><strong>저비용 설득 실험</strong>: #17 per-client φ 정성 attribution(per-layer 로깅 기구현, near-free) + #18 clean-data skyline.</li>
 </ol>
 <h3>운영 (작지만 지금)</h3>
-<p>protocol 현행화(분기 4–11·seed 실값·7B 정밀도 모순) / D2b raw에 위키 측 정정 포인터 / [03] ShapleyFL +0.86 state-mixing 교정 / tier2 <code>done[CHECK]</code> cell 확인.</p>
+<p>protocol 현행화(분기 4–11·seed 실값·7B 정밀도 모순) / backdoor detection test raw에 위키 측 정정 포인터 / [03] ShapleyFL +0.86 state-mixing 교정 / cross-device tier <code>done[CHECK]</code> cell 확인.</p>
 <hr />
 <h2>7.4 종합 판단</h2>
-<p><strong>가장 단단한 자산</strong> = 방법 정당성 증명(dual-oracle 삼중 일치 + exact per-round 분해 + 비용 구조)과 한계를 메커니즘 수준까지 파는 특성화 문화. <strong>가장 큰 리스크</strong> = novelty 핵심 축인 2차항의 LLM-scale 입증 공백 + 최근접 경쟁자 FedIF의 비교 suite 부재. tier1 poison seed2가 2차항의 첫 실마리를 줬으므로, <strong>지금 최고 가치의 한 수 = seed 분산 원인 규명(제안 #2)</strong> — 기실행 데이터 재분석이라 비용이 거의 없고, 결과가 논문 중심 서사를 결정한다.</p>
-<p><em>근거: tier1 수치는 <code>runs/phase2_matrix/tier1/*.log</code> 직접 대조(06-10), 교정값은 <code>memory/phase2-step5-verification.md</code>, 나머지는 <a href="#doc-00-overview">00</a>–<a href="#doc-06-closest-competitors-fedif-fedtsv-ripple">06</a> + <span class="wl">flirds</span>/<span class="wl">flirds-implementation-plan</span>/<span class="wl">flirds-protocol</span>/threads/raw 정독.</em></p>
+<p><strong>가장 단단한 자산</strong> = 방법 정당성 증명(dual-oracle 삼중 일치 + exact per-round 분해 + 비용 구조)과 한계를 메커니즘 수준까지 파는 특성화 문화. <strong>가장 큰 리스크</strong> = novelty 핵심 축인 2차항의 LLM-scale 입증 공백 + 최근접 경쟁자 FedIF의 비교 suite 부재. cross-silo tier poison seed2가 2차항의 첫 실마리를 줬으므로, <strong>지금 최고 가치의 한 수 = seed 분산 원인 규명(제안 #2)</strong> — 기실행 데이터 재분석이라 비용이 거의 없고, 결과가 논문 중심 서사를 결정한다.</p>
+<p><em>근거: cross-silo tier 수치는 <code>runs/phase2_matrix/tier1/*.log</code> 직접 대조(06-10), 교정값은 <code>memory/phase2-step5-verification.md</code>, 나머지는 <a href="#doc-00-overview">00</a>–<a href="#doc-06-closest-competitors-fedif-fedtsv-ripple">06</a> + <span class="wl">flirds</span>/<span class="wl">flirds-implementation-plan</span>/<span class="wl">flirds-protocol</span>/threads/raw 정독.</em></p>
 </section></main></div>
 <script>
 // highlight active nav as the main pane scrolls

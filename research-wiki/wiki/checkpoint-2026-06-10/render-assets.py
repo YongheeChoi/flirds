@@ -61,8 +61,8 @@ DIAGRAM = """
 <div class="darr">↓ &nbsp; 얼린 궤적 logs 위에서 분기 &nbsp; ↓</div>
 <table class="dgr dfan"><tr>
 <td class="dbox c-est">ESTIMATOR<br><span class="dpath">core/flirds_estimator.py</span><br>Flirds / Flirds-1st<br>(1 HVP/round)</td>
-<td class="dbox c-orc">(b) in-run oracle<br><span class="dpath">oracle/in_run_sv.py</span><br>exact 2^N · perround</td>
-<td class="dbox c-orc">(a) retrain oracle<br><span class="dpath">oracle/exact_sv_llm.py</span><br>2^N 재학습</td>
+<td class="dbox c-orc">in-run oracle<br><span class="dpath">oracle/in_run_sv.py</span><br>exact 2^N · perround</td>
+<td class="dbox c-orc">retrain oracle<br><span class="dpath">oracle/exact_sv_llm.py</span><br>2^N 재학습</td>
 <td class="dbox c-base">valuation baselines ×7<br>GTG·FedSV·Ripple·Banzhaf<br>ShapleyFL·ComFedSV·loss-heur</td>
 <td class="dbox c-det">detectors ×4<br>FLDetector·STD-DAGMM<br>FLTrust·FedDQC</td>
 </tr></table>
@@ -176,9 +176,9 @@ blockquote p{margin:5px 0;} blockquote strong{color:#7a5b00;}
 mjx-container{margin:0 2px;}
 .diagram{margin:16px 0;padding:16px;background:linear-gradient(180deg,#f8fafc,#eef2f8);border:1px solid #e3e8ef;border-radius:14px;overflow-x:auto;break-inside:avoid;}
 .dgr{border-collapse:separate;border-spacing:9px 0;margin:0 auto;} .dfan{table-layout:fixed;width:100%;}
-.dbox{border-radius:10px;padding:9px 11px;text-align:center;font-size:11.5px;line-height:1.45;border:1.5px solid #c7d0e0;background:#fff;}
-.dpath{font-family:"NanumGothicCoding",monospace;font-size:10.2px;color:#5b6675;}
-.darr{text-align:center;color:#7a8aa8;font-weight:800;font-size:14px;margin:6px 0;}
+.dbox{border-radius:10px;padding:10px 12px;text-align:center;font-size:12.5px;line-height:1.5;border:1.5px solid #c7d0e0;background:#fff;}
+.dpath{font-family:"NanumGothicCoding",monospace;font-size:11.2px;color:#5b6675;}
+.darr{text-align:center;color:#7a8aa8;font-weight:800;font-size:15px;margin:6px 0;}
 .dplus{font-weight:800;color:#8a97b3;padding:0 4px;vertical-align:middle;}
 .c-in{background:#eef4ff;border-color:#b7ccf6;} .c-fl{background:#fff4e6;border-color:#ffd8a8;}
 .c-est{background:#e7f6ef;border-color:#9ad8b6;font-weight:700;} .c-orc{background:#fdeede;border-color:#f3cf9a;}
@@ -216,7 +216,8 @@ font-size:16.5px;line-height:1.75;-webkit-font-smoothing:antialiased;}
 .main p,.main li{font-size:16.5px;}
 .main table{font-size:14.4px;} .main th,.main td{padding:8px 11px;}
 .main code{font-size:13.9px;} .main pre{font-size:13.5px;}
-.main .chip{font-size:12px;} .main .dpath{font-size:12px;} .main .docnote{font-size:14.5px;}
+.main .chip{font-size:12px;} .main .dpath{font-size:13px;} .main .docnote{font-size:14.5px;}
+.main .dbox{font-size:14.5px;line-height:1.55;} .main .darr{font-size:18px;} .main .dplus{font-size:16px;}
 .main h2{font-size:20px;} .main h3{font-size:17px;} .main .doctitle{font-size:22px;}
 @media(max-width:980px){.side{position:static;width:auto;height:auto;} .main{margin-left:0;padding:0 16px 60px;}}
 """

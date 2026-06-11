@@ -18,10 +18,10 @@ updated: 2026-06-10
 | **모델** | 1B = `meta-llama/Llama-3.2-1B-Instruct` (16L) · 3B = Llama-3.2-3B-Instruct (28L) · 7B = Llama-2-7B | [DOC `flirds.md:69`]; [CODE `phase2_matrix.py:80`] |
 | **regime** | **silo5** = cross-silo N=5 (full participation, 도메인당 1 client) · **device100** = cross-device N=100 (Dirichlet-α partial, per-client 도메인 혼합, K=10/round) | [CODE `phase2_matrix.py:103,109`; `llm.py:167`] |
 | **seed** | 3개 `[0,1,2]` (protocol 기본 `[42,123,2024]`과 다름 — 코드가 `seeds=[0,1,2]`) | [CODE `phase1_clean_run.py:59`; `phase2_matrix.py:375`] |
-| **α-sweep** (device100) | `{0, 0.01, 0.1, 0.5, 5.0}`; (b) oracle은 α=0.5 앵커 1점만 | [DOC plan §3.9]; [CODE `phase2_matrix.py:86` ALPHA env] |
-| **task8 scale 메모리** | 1B batch16/val_chunk10 · 3B batch8/val_chunk5 · 7B batch4/val_chunk2, **전부 fp32** (7B도 bf16 안 씀 — bf16은 연기된 (a) retrain용) | [CODE `phase2_matrix.py:97-100`] |
+| **α-sweep** (device100) | `{0, 0.01, 0.1, 0.5, 5.0}`; in-run oracle은 α=0.5 앵커 1점만 | [DOC plan §3.9]; [CODE `phase2_matrix.py:86` ALPHA env] |
+| **scale-up scale 메모리** | 1B batch16/val_chunk10 · 3B batch8/val_chunk5 · 7B batch4/val_chunk2, **전부 fp32** (7B도 bf16 안 씀 — bf16은 연기된 retrain oracle용) | [CODE `phase2_matrix.py:97-100`] |
 
-> **est-vs-oracle 비교 매트릭스 (LOCKED 2026-06-04)** [DOC]: CNN (a)&(b) N∈{5,10}. LLM 1B (a)&(b) N=5 now / N=10 연기. LLM 3B N=5만. LLM 7B (b) N=5, (a) ✗. estimator METHOD(noisy-AUROC·selection, oracle 불필요)는 N=10서도 가능.
+> **est-vs-oracle 비교 매트릭스 (LOCKED 2026-06-04)** [DOC]: CNN retrain & in-run oracle N∈{5,10}. LLM 1B retrain & in-run oracle N=5 now / N=10 연기. LLM 3B N=5만. LLM 7B in-run oracle N=5, retrain oracle ✗. estimator METHOD(noisy-AUROC·selection, oracle 불필요)는 N=10서도 가능.
 
 ---
 
@@ -75,18 +75,18 @@ LoraConfig(r=16, lora_alpha=32,
 
 ### free-rider — `free_rider(ref, mode)` [CODE `corruptors.py:70-93`]
 - **zero**: Δw=0 → φ 정확히 0 (자명검출). **random**: Δw~U(−scale,scale), benign-std 매칭(`scale=benign_std·√3`, `phase2_matrix.py:219-220`) → φ≈0.
-- **왜 이렇게**: **Lin et al. 2019** (STD-DAGMM 원논문, `1911.12560`) free-rider attack taxonomy의 easy 쪽 [PDF]. 어려운 delta/advanced-delta는 task9로 연기 (이전 global model을 FL 루프에 threading 필요).
+- **왜 이렇게**: **Lin et al. 2019** (STD-DAGMM 원논문, `1911.12560`) free-rider attack taxonomy의 easy 쪽 [PDF]. 어려운 delta/advanced-delta는 advanced free-rider로 연기 (이전 global model을 FL 루프에 threading 필요).
 
 ### poison (malicious) — `backdoor()` + `scaled_attackers` [CODE `corruptors.py:47-63` + `llm_server.py:57-58`]
 - **무엇**: **Xu 2023** instruction-trigger `"tq"` → target string, `poison_frac`만큼 poison (clean-preservation knob) [PDF web-extract `2305.14710`]. + **Bagdasaryan 2020** plain-scaled model-replacement `delta×attack_scale` (γ=cohort size=n/η) [PDF web-extract `1807.00459`].
 - **왜 이렇게**: backdoor는 *새* 위협(원 plan에 없던). Xu=instruction-tuning backdoor 표준, Bagdasaryan=FL 전파 메커니즘. DBA(Xie2020, 다중공모)는 제외. 우리는 stealthy constrain-and-scale 안 함 — plain-scaled만(attacker ‖Δ‖=40×benign → norm-bound가 backdoor 죽임 → stealthy arm 불가).
-- **D2b config 필요**: 전파엔 `LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8` [CODE `phase2_matrix.py:40-44`]; matrix 기본 lr1e-3/batch16은 ASR=0(batch16이 attacker install step 절반).
+- **working-backdoor config 필요**: 전파엔 `LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8` [CODE `phase2_matrix.py:40-44`]; matrix 기본 lr1e-3/batch16은 ASR=0(batch16이 attacker install step 절반).
 
 > **왜 검출을 하나 (우리가 라벨을 주입하는데)**: method는 라벨에 **blind**; 라벨은 평가 KEY(AUROC)지 method 입력이 아님 → 순환 아님. 두 목적: (1) value SEMANTICS 검증(corrupt→low value; oracle은 "Shapley 계산 일치"만 증명) (2) 전용 detector 대비 경쟁 bar [DOC `MEMORY.md` detector 섹션].
 
 ---
 
-## 2.5 (b) oracle 비용 공식
+## 2.5 in-run oracle 비용 공식
 
 $U_{(b)}(S) = \sum_r [\ell (w^r + \sum_{k\in S\cap P_r} p_k^r \Delta w_k) - \ell (w^r)]$, exact $2^N$ enumeration [CODE `in_run_sv.py:3-6,:71-104`].
 - **비용 = $2^N$ · R · val · seq, FLOP-bound** [DOC `flirds-protocol.md:90`; CODE `phase1_clean_run.py:52-54`]. N5↔N10 = 32×.
@@ -105,7 +105,7 @@ arms = {"full": all_idx, "flirds_topk": keep, "random_k": rand}   # K=3 (N=5서 
 ```
 성공기준: `flirds_topk val_loss ≤ random_k` **and** `ROUGE-L ≥ random_k` [CODE `read_runs.py:53`].
 
-### #7 clean-run 실측 결과 [ⓑ 1B N=5 cross-silo, 3-seed, lr 1e-3 & 3e-3]
+### selection run 실측 결과 [ⓑ 1B N=5 cross-silo, 3-seed, lr 1e-3 & 3e-3]
 직접 `codes/runs/full_lr{1e-3,3e-3}/.../metrics.json` 6개 파일 대조:
 
 | | lr=1e-3 (seed 0/1/2) | lr=3e-3 (seed 0/1/2) |

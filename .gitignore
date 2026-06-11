@@ -3,3 +3,4 @@
 wandb/
 *.ckpt
 __pycache__/
+.obsidian/
