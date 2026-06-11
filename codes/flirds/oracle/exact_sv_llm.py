@@ -1,16 +1,22 @@
 """(a) Exact retrain Shapley oracle -- LLM/LoRA (Phase 2 task 6).
 
-U(S) = downstream test utility (macro-average per-domain ROUGE-L) of a fresh LoRA
-model FedAvg-RETRAINED on the clients in S only.  This is the LLM analogue of the CNN
-`exact_sv.subset_utility` (which returns final test accuracy); `exact_shapley` (the 2^N
-Shapley kernel) is reused unchanged -- only the utility is backend-specific.
+U(S) scores a fresh LoRA model FedAvg-RETRAINED on the clients in S only.  Two utilities
+come off the SAME retrain.  The PRIMARY one is -val-loss -- the same game as the (b) in-run
+oracle / the estimator, hence the apples-to-apples figure that VALIDATES the Shapley
+computation ((a)-val-loss == (b) == estimator at Spearman +1.000).  The SECONDARY one is
+macro-average per-domain ROUGE-L -- deployment-realistic downstream quality that only a
+retrain oracle can measure, but a DIFFERENT game (non-differentiable, fooled by
+answer_swap's format learning) -> the "different-utility sanity figure" (protocol 4.1),
+observation-only.  This is the LLM analogue of the CNN `exact_sv.subset_utility` (which
+returns final test accuracy); `exact_shapley` (the 2^N Shapley kernel) is reused unchanged
+-- only the utility is backend-specific.
 
 SEPARATE code path from the (b) in-run oracle (protocol 4.3): (a) is a real retrain
-counterfactual (train on S, measure the deployed model), (b) is a frozen-trajectory
-delta perturbation (val-loss).  Different utilities by design -> a "different-utility
-sanity figure" (protocol 4.1).  Training is **bf16** (protocol 4.1: matches deployment;
-the final ROUGE metric is robust to bf16, unlike the (b) oracle's ~1e-3 loss differences
-which require fp32) -- set by loading the model in bf16; this module is precision-agnostic.
+counterfactual (train on S, measure the deployed model), (b) is a frozen-trajectory delta
+perturbation.  Precision is the CALLER's choice (this module is precision-agnostic): the
+PRIMARY -val-loss validation needs fp32 (coalition loss diffs ~1e-2 < bf16 precision --
+the same reason the (b) oracle is fp32), while a ROUGE-only run can train bf16 (the ROUGE
+metric is bf16-robust; protocol 4.1 matches deployment).
 
 Exact is affordable at N=5 (32 retrains); N=10 (1024) is the deferred-to-last cost, which
 the per-coalition `timing` here is meant to extrapolate.
@@ -55,10 +61,11 @@ def llm_subset_utility(model, init_lora, clients, tokenizer, test_records, devic
     global LoRA state, then SCORE the deployed model.  Empty S -> the base (init_lora)
     model's score.  If `timing` is a list, appends `(|S|, retrain_seconds, eval_seconds)`.
 
-    Metric: macro-average per-domain ROUGE-L (good->high).  If `val_loss_fn` is given
-    (a make_llm_loss closure over this same model), the utility ALSO measures the final
-    model's val-loss and returns the pair `(rouge, -val_loss)` -- the apples-to-apples
-    same-metric comparator vs the (b) oracle (isolates retrain-vs-frozen from ROUGE-vs-loss).
+    Utilities (both off the SAME retrain): the PRIMARY one is -val-loss -- the same-game,
+    apples-to-apples comparator vs the (b) oracle (isolates retrain-vs-frozen from
+    ROUGE-vs-loss), opt-in via `val_loss_fn` (a make_llm_loss closure over this same model)
+    -> returns the pair `(rouge, -val_loss)`.  Without it, returns ROUGE alone: macro-average
+    per-domain ROUGE-L (good->high), the deployment-realistic but DIFFERENT-game secondary.
     NB the val-loss coalition differences are ~1e-2 < bf16 precision -> use an fp32 model
     for a clean (a)-val-loss (the (b)-oracle fp32 rationale); ROUGE is precision-robust."""
     prompts = [r["prompt"] for r in test_records]

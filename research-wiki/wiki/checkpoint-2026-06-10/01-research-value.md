@@ -29,7 +29,7 @@ estimator는 model·val·task를 **전혀 보지 않는다**. 입력은 오직 (
 
 결과: $\phi_k = \sum_r p_k^r [ \langle g^r, \Delta w_k\rangle + \tfrac12 \langle \Delta w_k, u^r\rangle ]$ (docstring `:13`). [CODE 전체 검증]
 
-### 비-자명한 설계 포인트 (모두 [CODE])
+### Non-obvious design points (모두 [CODE])
 - **round당 정확히 1 HVP.** 2차 quadratic-Shapley가 $u^r = H^r \Delta W^r$ 하나 + `|P_r|`개 내적으로 붕괴 (`:26-28`). 이게 비용의 핵심 — in-run oracle은 round당 $2^N$ forward.
 - **forward HVP `H·v`만 사용, `H⁻¹` 절대 안 씀.** `jvp(grad(·))` = forward-over-reverse AD (`torch.func`, `:39,:55,:111`). → influence-function의 iHVP-inversion 비용/불안정성 회피.
 - **true Hessian** (GGN/Fisher 아님). `jvp∘grad`는 진짜 Hessian-vector product. GGN은 테스트 후 기각 [DOC `flirds.md:34`; raw `2026-06-03-phase05-estimator.md:48`].
@@ -40,14 +40,14 @@ estimator는 model·val·task를 **전혀 보지 않는다**. 입력은 오직 (
 - **LLM val 청킹** (`loss_chunks`): val을 도메인별 청크로 쪼개 weighted-sum → full-val grad/HVP와 **정확히 동일**(선형), peak memory=1 청크. eager-attention HVP가 val=1000서 OOM 안 나게 (`flirds_estimator.py:42-62`, `backends/llm.py:35-51`).
 - **fp32** (protocol 1): utility=loss차 ~1e-3 < bf16 정밀도 ~8e-3 → bf16 불가 (`flirds_estimator.py:34`, `backends/llm.py:12-15`).
 
-### LLM backend의 3 musts (비-자명; CNN은 안 걸림) [CODE `backends/llm.py:14-68`]
+### LLM backend의 3 musts (non-obvious; CNN은 안 걸림) [CODE `backends/llm.py:14-68`]
 1. `attn_implementation="eager"` — SDPA/flash는 forward-mode AD 미구현 → `jvp∘grad` HVP 에러 (`:14-20`).
 2. FL state를 `named_parameters()` 키로 (`…lora_A.default.weight`), `get_peft_model_state_dict` 아님; `load_state_dict(strict=False)` 동기화 (`:4-6,:69`).
 3. `get_input_embeddings()._forward_hooks.clear()` + `use_cache=False` — SFTTrainer의 grad-checkpoint hook이 functorch transform 안에서 금지 (`:56-68`).
 
 ### retrain/in-run oracle와의 관계
 - **in-run oracle** (`oracle/in_run_sv.py`): estimator가 근사하는 **대상**. coalition별 $U_{(b)}(S) = \sum_r [\ell (w^r + \sum_{k\in S\cap P_r} p_k^r \Delta w_k) - \ell (w^r)]$ 를 exact $2^N$ enumeration으로 Shapley화 (`in_run_sv.py:3-6,:71-122`). estimator는 이걸 Taylor로 1 HVP 근사. cross-device는 `in_run_shapley_perround` = round별 $2^{|P_r|}$ 분해 = $2^N$과 수학적 동일(Δφ≈3e-16, smoke `phase2_crossdevice_oracle_smoke.py`로 증명) [CODE].
-- **retrain oracle** (`oracle/exact_sv_llm.py`): coalition마다 FedAvg **재학습** → 배포모델 점수. utility=ROUGE-L(주) + −val-loss(검증용) `:42-44,:85-89`. 다른 게임. → [03](03-baselines-and-prior-work.md#ghorbani-zou-data-shapley) + [02](02-experimental-setup.md).
+- **retrain oracle** (`oracle/exact_sv_llm.py`): coalition마다 FedAvg **재학습** → 배포모델 점수. utility = **−val-loss (주, 검증 대상)** = (b)·estimator와 same game → Spearman +1.000으로 Shapley 계산 검증; **ROUGE-L (보조)** = retrain oracle만 잴 수 있는 배포-현실 지표지만 다른 게임(non-diff, answer_swap 포맷에 속음) → 관찰용, divergence 자체가 val-loss utility 근거 `:42-44,:85-89`. → [03](03-baselines-and-prior-work.md#ghorbani-zou-data-shapley) + [02](02-experimental-setup.md).
 
 ---
 
