@@ -36,6 +36,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from flirds.backends.llm import make_llm_loss
 from flirds.baselines.banzhaf import in_run_banzhaf
+from flirds.baselines.fedif import fedif_from_logs
 from flirds.baselines.fedsv import fedsv_from_logs
 from flirds.baselines.fldetector import fldetector_from_logs
 from flirds.baselines.gtg import gtg_from_logs
@@ -122,6 +123,11 @@ def run_seed(seed, cfg, device):
     # good->low, free-rider(zero) -> exactly 0 (zero delta -> zero singleton utility).
     phi_h, t_h = _timed(
         lambda: np.array([in_run_utility(logs, [k], loss_fn, pkeys, device) for k in range(N)]), device)
+    # FedIF (Tang et al. 2025, arXiv 2509.25560): gradient-influence value -- 1 val grad/round,
+    # then per-round min-max + EMA; good->high (helpful descends val loss) -> negate to good->low.
+    phi_if_raw, t_if = _timed(
+        lambda: fedif_from_logs(logs, N, loss_fn, pkeys, device, loss_chunks=lc), device)
+    phi_if = -np.asarray(phi_if_raw, dtype=float)
     # FLDetector: model-free server-side DETECTION score (high=suspicious), not a semivalue
     # -> AUROC table only, no Spearman.  Pure CPU linalg over the logged deltas (no model
     # forward) -> the cheapest method here; its selling point is the server-side cost.
@@ -143,7 +149,7 @@ def run_seed(seed, cfg, device):
     fr_y = [1 if i in FREE_RIDERS else 0 for i in range(N)]
     shared = [("Flirds", phi_e, t_e), ("Flirds1st", phi_1, t_1), ("GTG", phi_g, t_g),
               ("FedSV", phi_f, t_f), ("Banzhaf", phi_z, t_z), ("ShapleyFL", phi_s, t_s),
-              ("loss-heur", phi_h, t_h), ("(b)oracle", phi_b, t_b)]   # value the SAME logs
+              ("loss-heur", phi_h, t_h), ("FedIF", phi_if, t_if), ("(b)oracle", phi_b, t_b)]   # value the SAME logs
     methods = shared + [("Ripple", phi_r, t_r),                   # own trajectory
                         ("FLDetector", phi_fld, t_fld)]          # detection score (AUROC only)
     return {
@@ -173,8 +179,8 @@ def main():
 
     # method display order (keys come from run_seed's `methods`); defined once.
     PHI_ORDER = ["(b)oracle", "Flirds", "Flirds1st", "GTG", "FedSV", "Banzhaf",
-                 "ShapleyFL", "loss-heur", "Ripple", "FLDetector"]
-    SHARED_ORDER = ["Flirds", "Flirds1st", "GTG", "FedSV", "Banzhaf", "ShapleyFL", "loss-heur"]
+                 "ShapleyFL", "loss-heur", "FedIF", "Ripple", "FLDetector"]
+    SHARED_ORDER = ["Flirds", "Flirds1st", "GTG", "FedSV", "Banzhaf", "ShapleyFL", "loss-heur", "FedIF"]
     ALL_ORDER = SHARED_ORDER + ["Ripple", "FLDetector", "(b)oracle"]   # AUROC / runtime (every method)
 
     runs = []

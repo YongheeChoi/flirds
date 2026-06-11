@@ -62,6 +62,7 @@ from flirds.backends.llm import make_llm_loss
 from flirds.baselines.banzhaf import in_run_banzhaf
 from flirds.baselines.comfedsv import comfedsv_from_logs
 from flirds.baselines.feddqc import feddqc_scores
+from flirds.baselines.fedif import fedif_from_logs
 from flirds.baselines.fedsv import fedsv_from_logs
 from flirds.baselines.fldetector import fldetector_from_logs
 from flirds.baselines.fltrust import fltrust_from_logs
@@ -76,6 +77,7 @@ from flirds.eval.generate import backdoor_asr
 from flirds.fl.llm_server import run_llm_fedavg_logs
 from flirds.oracle.in_run_sv import in_run_shapley, in_run_shapley_perround, in_run_utility
 from flirds.repro import seed_everything
+from flirds.run_logger import RunLogger
 
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
 SCALE = MODEL.split("-")[-2] if "Llama-3.2-" in MODEL else MODEL.split("/")[-1]   # "1B"/"3B"/"7B"
@@ -120,6 +122,9 @@ if os.environ.get("LR"):                                       # the poison thre
     RCFG["lr"] = float(os.environ["LR"])                       # (vs the valuation lr=1e-3 for noisy/free-rider)
 
 _OUT = "/tmp/flirds_matrix"
+_CODES = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # .../flirds/codes
+RUNDIR_ROOT = os.environ.get("RUNDIR_ROOT",
+                             os.path.join(os.path.dirname(_CODES), "runs", "phase2_matrix", "rundirs"))
 
 
 # --------------------------------------------------------------------------- #
@@ -285,6 +290,8 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
     (phi_1, _), t_1 = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device, second_order=False,
                                                    n_clients=n, loss_chunks=lc), device)
     out.append(("Flirds1st", "val", np.asarray(phi_1), t_1))
+    phi_if, t_if = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device, loss_chunks=lc), device)
+    out.append(("FedIF", "val", -np.asarray(phi_if, dtype=float), t_if))      # influence good->HIGH -> negate
 
     if coalition:
         phi_g, t_g = _timed(lambda: gtg_from_logs(logs, None, n, None, device, seed=seed,
@@ -368,6 +375,34 @@ def report(threat, methods, corrupt, logs, asr):
     return res
 
 
+def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition):
+    """Save the cell's per-client phi vectors + metrics + config + git/env provenance to a
+    RunLogger run-dir (protocol §6) so any re-analysis needs no method re-run.  Best-effort:
+    a save failure warns but never loses the printed .log results.  PERSIST=0 disables."""
+    if os.environ.get("PERSIST", "1") != "1":
+        return
+    name = os.environ.get("RUN_NAME") or (f"{SCALE}_{REGIME}"
+            + (f"_a{ALPHA}" if REGIME != "silo5" else "") + "_" + "-".join(threats))
+    rcfg = {k: (sorted(v) if isinstance(v, (set, frozenset)) else v) for k, v in RCFG.items()}
+    config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "alpha": ALPHA,
+              "threats": threats, "seeds": seeds, "oracle_b": oracle_b, "coalition": coalition,
+              "rcfg": rcfg, "mcfg": MCFG,
+              "env": {k: os.environ[k] for k in
+                      ("POOL", "LR", "BATCH", "EPOCHS", "POISON_FRAC", "ROUNDS", "MAX_STEPS",
+                       "PER_CLIENT", "VAL") if k in os.environ}}
+    try:
+        rl = RunLogger(RUNDIR_ROOT, name, config, repo_root=_CODES)
+        try:
+            rl.save_phi(phi_rows)                                  # parquet (protocol convention)
+        except Exception:                                         # CSV fallback if no parquet engine
+            import pandas as pd
+            pd.DataFrame(phi_rows).to_csv(rl._p("phi.csv"), index=False)
+        rl.save_metrics(run_metrics)
+        print(f"\n[persist] {rl.dir}  ({len(phi_rows)} phi rows)", flush=True)
+    except Exception as e:
+        print(f"\n[persist] WARNING: run-dir save failed ({e!r}); .log still has results", flush=True)
+
+
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     threats = ([os.environ["THREAT"]] if os.environ.get("THREAT")
@@ -383,6 +418,7 @@ def main():
 
     tok, model, init, pkeys = _load(device)
     agg = {t: [] for t in threats}                                # per-threat list of per-seed res dicts
+    phi_rows, run_metrics = [], {}                                # run-dir persistence (phi vectors + metrics)
     for seed in seeds:
         for threat in threats:
             seed_everything(seed)
@@ -393,7 +429,16 @@ def main():
             methods = compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc,
                                       device, seed, oracle_b, coalition)
             print(f"\n----- seed {seed} -----", flush=True)
-            agg[threat].append(report(threat, methods, corrupt, logs, asr))
+            res = report(threat, methods, corrupt, logs, asr)
+            agg[threat].append(res)
+            sel = sorted({k for _, dm in logs for k in dm})       # scoreable clients (silo: all N)
+            for nm, kind, vec, _rt in methods:                    # persist every method's raw phi vector
+                phi_rows += [{"threat": threat, "seed": seed, "method": nm, "kind": kind,
+                              "client": int(c), "phi": float(vec[c])} for c in sel]
+            run_metrics[f"{threat}_seed{seed}"] = {
+                "auroc": res["auroc"], "spearman": res["spearman"], "runtime": res["runtime"],
+                "corrupt": sorted(int(x) for x in corrupt), "selected": [int(c) for c in sel],
+                "asr": asr}
             del loss_fn
             if device == "cuda":
                 torch.cuda.empty_cache()
@@ -413,6 +458,7 @@ def main():
                 rt = [r["runtime"][name] for r in runs]
                 line += f"  runtime={np.mean(rt):.1f}s"
                 print(line)
+    _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition)
     print("\nMATRIX DONE  (matched detector should top AUROC on-threat; Flirds/valuation track the "
           "(b) oracle; off-threat detectors degrade -- the §3.9 separation story).", flush=True)
 
