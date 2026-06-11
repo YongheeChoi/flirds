@@ -18,7 +18,7 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 
 # A. 성능비교 경쟁 valuation baseline (7종)
 
-코드: `codes/flirds/baselines/`. 전부 같은 얼린 궤적 위에서 동작(공정비교). 통합 차이표:
+코드: `codes/flirds/baselines/`. 전부 같은 frozen trajectory 위에서 동작(공정비교). 통합 차이표:
 
 | baseline | 원논문 PDF | submodel 가중 | 우리 핵심 변경 | 왜 |
 |---|---|---|---|---|
@@ -135,4 +135,4 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 
 ---
 
-> **요약**: 경쟁 baseline 7종은 전부 *같은 얼린 궤적* 위 충실 포팅(차이는 backend·estimator-vs-exact·util정의로 추적가능). detector 4종은 threat-matched + 3개 우리-고유 적응(FLDetector gap-HVP / STD-DAGMM hash+pooling / FLTrust signed-cosine). 선행 6편 중 IRDS=직접조상, Koh-Liang/Ghorbani-Zou=대조·oracle근거, Xu/Bagdasaryan/Lin=위협정의(Xu·Bagdasaryan PDF 부재→web-extract).
+> **요약**: 경쟁 baseline 7종은 전부 *같은 frozen trajectory* 위 충실 포팅(차이는 backend·estimator-vs-exact·util정의로 추적가능). detector 4종은 threat-matched + 3개 우리-고유 적응(FLDetector gap-HVP / STD-DAGMM hash+pooling / FLTrust signed-cosine). 선행 6편 중 IRDS=직접조상, Koh-Liang/Ghorbani-Zou=대조·oracle근거, Xu/Bagdasaryan/Lin=위협정의(Xu·Bagdasaryan PDF 부재→web-extract).

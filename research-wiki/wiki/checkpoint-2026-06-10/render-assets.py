@@ -58,11 +58,11 @@ DIAGRAM = """
 </tr></table>
 <div class="darr">↓</div>
 <div class="dbox c-fl">FL 루프 (FedAvg, SGD mom=0) — <span class="dpath">fl/server.py · fl/llm_server.py</span><br>run_fedavg_logs → <b>logs = [(w_r, deltas_map)]</b>, deltas_map[c]=(Δw_c, n_c)</div>
-<div class="darr">↓ &nbsp; 얼린 궤적 logs 위에서 분기 &nbsp; ↓</div>
+<div class="darr">↓ &nbsp; frozen trajectory logs 위에서 분기 &nbsp; ↓</div>
 <table class="dgr dfan"><tr>
 <td class="dbox c-est">ESTIMATOR<br><span class="dpath">core/flirds_estimator.py</span><br>Flirds / Flirds-1st<br>(1 HVP/round)</td>
 <td class="dbox c-orc">in-run oracle<br><span class="dpath">oracle/in_run_sv.py</span><br>exact 2^N · perround</td>
-<td class="dbox c-orc">retrain oracle<br><span class="dpath">oracle/exact_sv_llm.py</span><br>2^N 재학습</td>
+<td class="dbox c-orc dsep">retrain oracle<br><span class="dpath">oracle/exact_sv_llm.py</span><br>2^N coalition 재학습<br><b style="color:#b25f00">↻ 별도 궤적 · frozen logs 미사용</b></td>
 <td class="dbox c-base">valuation baselines ×7<br>GTG·FedSV·Ripple·Banzhaf<br>ShapleyFL·ComFedSV·loss-heur</td>
 <td class="dbox c-det">detectors ×4<br>FLDetector·STD-DAGMM<br>FLTrust·FedDQC</td>
 </tr></table>
@@ -184,6 +184,7 @@ mjx-container{margin:0 2px;}
 .c-est{background:#e7f6ef;border-color:#9ad8b6;font-weight:700;} .c-orc{background:#fdeede;border-color:#f3cf9a;}
 .c-base{background:#eef0f4;border-color:#d2d8e4;} .c-det{background:#fdeaf0;border-color:#f3b9cd;}
 .c-eval{background:#eaf3ff;border-color:#aeccf6;} .c-sel{background:#ecfdf5;border-color:#9fe0c4;}
+.dsep{border-style:dashed;border-width:2px;}  /* retrain oracle: NOT a frozen-logs branch (it retrains) */
 """
 
 # ================= COMBINED HTML (app-shell) =================

@@ -68,6 +68,7 @@ mjx-container{margin:0 2px;}
 .c-est{background:#e7f6ef;border-color:#9ad8b6;font-weight:700;} .c-orc{background:#fdeede;border-color:#f3cf9a;}
 .c-base{background:#eef0f4;border-color:#d2d8e4;} .c-det{background:#fdeaf0;border-color:#f3b9cd;}
 .c-eval{background:#eaf3ff;border-color:#aeccf6;} .c-sel{background:#ecfdf5;border-color:#9fe0c4;}
+.dsep{border-style:dashed;border-width:2px;}  /* retrain oracle: NOT a frozen-logs branch (it retrains) */
 
 .side::-webkit-scrollbar{width:9px;} .side::-webkit-scrollbar-thumb{background:#2b3c5e;border-radius:6px;}
 /* HTML font sizes (PDF keeps PRINT_CSS) */
@@ -111,11 +112,11 @@ mjx-container{margin:0 2px;}
 </tr></table>
 <div class="darr">↓</div>
 <div class="dbox c-fl">FL 루프 (FedAvg, SGD mom=0) — <span class="dpath">fl/server.py · fl/llm_server.py</span><br>run_fedavg_logs → <b>logs = [(w<sub>r</sub>, deltas_map)]</b>, deltas_map[c]=(Δw<sub>c</sub>, n<sub>c</sub>)</div>
-<div class="darr">↓ &nbsp; 얼린 궤적 logs 위에서 분기 &nbsp; ↓</div>
+<div class="darr">↓ &nbsp; frozen trajectory logs 위에서 분기 &nbsp; ↓</div>
 <table class="dgr dfan"><tr>
 <td class="dbox c-est">ESTIMATOR<br><span class="dpath">core/flirds_estimator.py</span><br>Flirds / Flirds-1st<br>(1 HVP/round)</td>
 <td class="dbox c-orc">in-run oracle<br><span class="dpath">oracle/in_run_sv.py</span><br>exact 2<sup>N</sup> · perround</td>
-<td class="dbox c-orc">retrain oracle<br><span class="dpath">oracle/exact_sv_llm.py</span><br>2<sup>N</sup> 재학습</td>
+<td class="dbox c-orc dsep">retrain oracle<br><span class="dpath">oracle/exact_sv_llm.py</span><br>2<sup>N</sup> coalition 재학습<br><b style="color:#b25f00">↻ 별도 궤적 · frozen logs 미사용</b></td>
 <td class="dbox c-base">valuation baselines ×7<br>GTG·FedSV·Ripple·Banzhaf<br>ShapleyFL·ComFedSV·loss-heur</td>
 <td class="dbox c-det">detectors ×4<br>FLDetector·STD-DAGMM<br>FLTrust·FedDQC</td>
 </tr></table>
@@ -171,7 +172,7 @@ mjx-container{margin:0 2px;}
 <tr>
 <td><strong>in-run oracle</strong></td>
 <td><code>oracle/in_run_sv.py</code></td>
-<td>얼린 궤적에서 coalition별 val-loss 변화의 exact \(2^N\) Shapley (재학습 X)</td>
+<td>frozen trajectory에서 coalition별 val-loss 변화의 exact \(2^N\) Shapley (재학습 X)</td>
 <td>\(2^N\)·R·val·seq (FLOP-bound)</td>
 <td><span class="chip chip-b">ⓑ</span> (silo5 N5; device100 N100 1-seed)</td>
 </tr>
@@ -188,7 +189,7 @@ mjx-container{margin:0 2px;}
 <p><strong>retrain oracle vs in-run oracle 핵심</strong>: 둘은 <strong>다른 게임</strong>. in-run oracle=궤적-앵커 in-run(우리 방법이 근사하는 대상), retrain oracle=재학습(고전 Data Shapley). 방법 검증은 <strong>retrain val-loss = in-run oracle = estimator</strong> 가 같은 게임이라 +1.000으로 일치(<span class="chip chip-b">ⓑ</span>). retrain ROUGE는 다른 게임이라 발산(+0.4@1B) — 미분불가라 estimator-ROUGE도 불가능 → <strong>검증엔 반드시 val-loss</strong>.</p>
 </blockquote>
 <h3>Valuation baselines (성능비교 경쟁) — 7종</h3>
-<p>GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-heuristic. 코드: <code>codes/flirds/baselines/</code>. 모두 같은 얼린 궤적 위에서 돈다(공정비교). 상세·PDF대조 → <a href="#doc-03-baselines-and-prior-work">03-baselines-and-prior-work</a>.</p>
+<p>GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-heuristic. 코드: <code>codes/flirds/baselines/</code>. 모두 같은 frozen trajectory 위에서 돈다(공정비교). 상세·PDF대조 → <a href="#doc-03-baselines-and-prior-work">03-baselines-and-prior-work</a>.</p>
 <h3>Detectors (검출 경쟁 bar) — 4종 (위협-매칭, threat-matched)</h3>
 <div class="tw"><table>
 <thead>
@@ -282,7 +283,7 @@ mjx-container{margin:0 2px;}
 </tr>
 <tr>
 <td><strong>in-run oracle</strong></td>
-<td>in-run exact \(2^N\) Shapley. 얼린 궤적에서 coalition별 val-loss 변화 합. 재학습 X. <code>oracle/in_run_sv.py</code></td>
+<td>in-run exact \(2^N\) Shapley. frozen trajectory에서 coalition별 val-loss 변화 합. 재학습 X. <code>oracle/in_run_sv.py</code></td>
 </tr>
 <tr>
 <td><strong>in-run</strong></td>
@@ -736,7 +737,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <p>note→PDF 매핑은 <code>wiki/index.md:151-183</code>에서 확정. <strong>Xu(2305.14710)·Bagdasaryan(1807.00459)은 PDF가 디스크에 없고 web-extract만</strong> — 그걸로 대조, 부재 명시.</p>
 <hr />
 <h1>A. 성능비교 경쟁 valuation baseline (7종)</h1>
-<p>코드: <code>codes/flirds/baselines/</code>. 전부 같은 얼린 궤적 위에서 동작(공정비교). 통합 차이표:</p>
+<p>코드: <code>codes/flirds/baselines/</code>. 전부 같은 frozen trajectory 위에서 동작(공정비교). 통합 차이표:</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -951,7 +952,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 </ul>
 <hr />
 <blockquote>
-<p><strong>요약</strong>: 경쟁 baseline 7종은 전부 <em>같은 얼린 궤적</em> 위 충실 포팅(차이는 backend·estimator-vs-exact·util정의로 추적가능). detector 4종은 threat-matched + 3개 우리-고유 적응(FLDetector gap-HVP / STD-DAGMM hash+pooling / FLTrust signed-cosine). 선행 6편 중 IRDS=직접조상, Koh-Liang/Ghorbani-Zou=대조·oracle근거, Xu/Bagdasaryan/Lin=위협정의(Xu·Bagdasaryan PDF 부재→web-extract).</p>
+<p><strong>요약</strong>: 경쟁 baseline 7종은 전부 <em>같은 frozen trajectory</em> 위 충실 포팅(차이는 backend·estimator-vs-exact·util정의로 추적가능). detector 4종은 threat-matched + 3개 우리-고유 적응(FLDetector gap-HVP / STD-DAGMM hash+pooling / FLTrust signed-cosine). 선행 6편 중 IRDS=직접조상, Koh-Liang/Ghorbani-Zou=대조·oracle근거, Xu/Bagdasaryan/Lin=위협정의(Xu·Bagdasaryan PDF 부재→web-extract).</p>
 </blockquote>
 </section><section class="section" id="doc-04-plan-vs-implementation-divergences"><div class="dochead"><span class="docnum">4</span><h1 class="doctitle">Flirds 체크포인트 04 — plan 대비 구현 분기</h1></div><h1>04 · plan 대비 달라진 점 (+ 왜)</h1>
 <blockquote>

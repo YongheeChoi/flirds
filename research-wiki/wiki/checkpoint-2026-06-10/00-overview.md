@@ -38,10 +38,10 @@ flowchart TD
   A["데이터 레이어<br/>data/llm.py<br/>build (silo5, N=5)<br/>build_crossdevice (device100, N=100)"] --> B
   T["위협 주입<br/>data/corruptors.py<br/>answer_swap / free_rider / backdoor<br/>+ fl/llm_server.py scaled_attackers"] --> B
   B["FL 루프 (FedAvg, SGD mom=0)<br/>fl/server.py · fl/llm_server.py<br/>run_fedavg_logs → logs=[(w_r, deltas_map)]<br/>deltas_map[c]=(Δw_c, n_c)"] --> C
-  C["얼린 궤적 logs"] --> D1 & D2 & D3 & D4 & D5
+  C["frozen trajectory logs"] --> D1 & D2 & D3 & D4 & D5
   D1["ESTIMATOR<br/>core/flirds_estimator.py<br/>Flirds / Flirds-1st<br/>(1 HVP/round)"] --> E
   D2["in-run oracle<br/>oracle/in_run_sv.py<br/>exact 2^N (silo) ·<br/>in_run_shapley_perround (device)"] --> E
-  D3["retrain oracle<br/>oracle/exact_sv_llm.py<br/>2^N coalition 재학습<br/>val-loss & ROUGE"] --> E
+  D3["retrain oracle<br/>oracle/exact_sv_llm.py<br/>2^N coalition 재학습 (val-loss & ROUGE)<br/>↻ 별도 궤적 · frozen logs 미사용"] --> E
   D4["valuation baselines<br/>GTG·FedSV·Ripple·Banzhaf·<br/>ShapleyFL·ComFedSV·loss-heur"] --> E
   D5["detectors<br/>FLDetector·STD-DAGMM·<br/>FLTrust·FedDQC"] --> E
   E["평가<br/>eval/metrics.py · eval/generate.py<br/>Spearman(vs oracle) · AUROC(vs 주입라벨) · ROUGE-L · ASR"] --> F
@@ -65,13 +65,13 @@ flowchart TD
 ### Oracle (ground truth) — 2종 (절대 평균내지 않고 별도 보고; 코드 공유 금지 — `flirds-protocol.md:84-86`)
 | 이름 | 코드 | utility | 비용 | 상태 |
 |---|---|---|---|---|
-| **in-run oracle** | `oracle/in_run_sv.py` | 얼린 궤적에서 coalition별 val-loss 변화의 exact $2^N$ Shapley (재학습 X) | $2^N$·R·val·seq (FLOP-bound) | ⓑ (silo5 N5; device100 N100 1-seed) |
+| **in-run oracle** | `oracle/in_run_sv.py` | frozen trajectory에서 coalition별 val-loss 변화의 exact $2^N$ Shapley (재학습 X) | $2^N$·R·val·seq (FLOP-bound) | ⓑ (silo5 N5; device100 N100 1-seed) |
 | **retrain oracle** | `oracle/exact_sv_llm.py` | coalition S로 FedAvg **재학습** → 배포모델 점수 (val-loss & ROUGE) | N5=126min(1B fp32) | ⓑ (1B N5; 3B N5 1-seed) |
 
 > **retrain oracle vs in-run oracle 핵심**: 둘은 **다른 게임**. in-run oracle=궤적-앵커 in-run(우리 방법이 근사하는 대상), retrain oracle=재학습(고전 Data Shapley). 방법 검증은 **retrain val-loss = in-run oracle = estimator** 가 같은 게임이라 +1.000으로 일치(ⓑ). retrain ROUGE는 다른 게임이라 발산(+0.4@1B) — 미분불가라 estimator-ROUGE도 불가능 → **검증엔 반드시 val-loss**.
 
 ### Valuation baselines (성능비교 경쟁) — 7종
-GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-heuristic. 코드: `codes/flirds/baselines/`. 모두 같은 얼린 궤적 위에서 돈다(공정비교). 상세·PDF대조 → [03-baselines-and-prior-work](03-baselines-and-prior-work.md).
+GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-heuristic. 코드: `codes/flirds/baselines/`. 모두 같은 frozen trajectory 위에서 돈다(공정비교). 상세·PDF대조 → [03-baselines-and-prior-work](03-baselines-and-prior-work.md).
 
 ### Detectors (검출 경쟁 bar) — 4종 (위협-매칭, threat-matched)
 | detector | 코드 | 타깃 위협 | 모델 필요? | 상태 |
@@ -100,7 +100,7 @@ GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-
 |---|---|
 | **Flirds / Flirds-1st** | 우리 estimator(1차+2차 / 1차만). `core/flirds_estimator.py` |
 | **retrain oracle** | 재학습 기반 exact Shapley (Ghorbani-Zou 계열). coalition마다 FedAvg 재학습. `oracle/exact_sv_llm.py` |
-| **in-run oracle** | in-run exact $2^N$ Shapley. 얼린 궤적에서 coalition별 val-loss 변화 합. 재학습 X. `oracle/in_run_sv.py` |
+| **in-run oracle** | in-run exact $2^N$ Shapley. frozen trajectory에서 coalition별 val-loss 변화 합. 재학습 X. `oracle/in_run_sv.py` |
 | **in-run** | "한 번의 학습 궤적 안에서" 값을 매김 (재학습 없이). IRDS(In-Run Data Shapley)에서 차용한 핵심 idea |
 | **ComFedSV** | FedSV + low-rank matrix completion (partial participation 보정). device100 전용 baseline. `baselines/comfedsv.py` |
 | **backdoor install / propagation / detection tests** | backdoor 단계 진단 smoke. install test=no-FL install isolation / propagation test=FL model-replacement 전파 / detection test=working backdoor에 detector 반응. `phase2_backdoor_*_smoke.py` |
