@@ -4,3 +4,12 @@ wandb/
 *.ckpt
 __pycache__/
 .obsidian/
+
+# phase2 matrix experiment outputs (transient; regenerated each run, data lives on disk)
+runs/phase2_matrix/tier1/
+runs/phase2_matrix/tier1_orig/
+runs/phase2_matrix/tier2/
+runs/phase2_matrix/tier3/
+runs/phase2_matrix/smoke/
+runs/phase2_matrix/rundirs/
+runs/phase2_matrix/RESULTS.md
