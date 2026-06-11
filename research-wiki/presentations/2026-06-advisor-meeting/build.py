@@ -1,0 +1,457 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Flirds 교수님 미팅 발표자료 빌더 (2026-06-advisor-meeting)
+
+사용:
+    python build.py              # HTML + PDF + 전 슬라이드 스크린샷 + overflow 리포트
+    python build.py --html-only  # HTML만
+    python build.py --no-shots   # 스크린샷 생략
+
+산출 (이 디렉토리):
+    flirds-advisor-2026-06.html   self-contained 슬라이드 (1280x720, ←/→ 내비, 시스템 폰트)
+    flirds-advisor-2026-06.pdf    동일 내용 PDF (playwright print-to-pdf; 실패 시 Edge headless 폴백)
+    screenshots/s00.png ...       슬라이드별 PNG (레이아웃 검증용)
+
+────────────────────────────────────────────────────────────────────
+⚠ TODO-UPDATE — 서버 결과 확정 시 갱신할 지점 (이 파일에서 "TODO-UPDATE" 검색):
+  [1] S3 표 FedIF 행          : RESULTS.md 재실행 suite의 FedIF Spearman/AUROC
+  [2] S4 baseline 블록 FedIF 줄: 동일
+  [3] S5 결과 헤더            : silo5 재실행본(runs/phase2_matrix/tier2/silo5_*.log) 수치로 교체
+  [4] S6 α-sweep 상태 줄      : device100 tier2 α-sweep 결과
+  [5] S6 ladder 줄            : 3B/7B tier 완료 시 상태 라벨 갱신 (ⓒ→ⓑ)
+갱신 후 `python build.py` 재실행으로 HTML/PDF 재생성.
+────────────────────────────────────────────────────────────────────
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+OUT_HTML = HERE / "flirds-advisor-2026-06.html"
+OUT_PDF = HERE / "flirds-advisor-2026-06.pdf"
+SHOT_DIR = HERE / "screenshots"
+
+TITLE = "Flirds 진행 보고"
+DATE = "2026-06-12"
+
+# ──────────────────────────────────────────────────────────────────
+# 스타일 — 흰 배경, 무채색 + 강조색 1개(#17508c), 표/수식/짧은 문장 중심
+# ──────────────────────────────────────────────────────────────────
+CSS = """
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --ink: #1a1a1a; --sub: #555; --line: #c8c8c8; --faint: #888;
+  --accent: #17508c;            /* 유일한 강조색 */
+  --ph: #999;                   /* placeholder(확정 대기) */
+}
+html, body { background: #e9e9e9; }
+body { font-family: "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+       color: var(--ink); }
+.slide { width: 1280px; height: 720px; background: #fff; display: none;
+         flex-direction: column; padding: 44px 56px 40px; position: relative; overflow: hidden; }
+.slide.active { display: flex; }
+@media screen { .slide.active { margin: 24px auto; box-shadow: 0 1px 6px rgba(0,0,0,.25); } }
+
+/* 머리글/바닥글 */
+.kicker { font-size: 14px; color: var(--accent); letter-spacing: .04em; margin-bottom: 4px; }
+h2 { font-size: 27px; font-weight: 600; margin-bottom: 10px; }
+.rule { border: none; border-top: 1px solid var(--line); margin: 0 0 16px; }
+.foot { position: absolute; left: 56px; right: 56px; bottom: 14px; display: flex;
+        justify-content: space-between; font-size: 11.5px; color: var(--faint); }
+
+/* 본문 */
+.body { flex: 1; min-height: 0; font-size: 16.5px; line-height: 1.52;
+        word-break: keep-all; overflow-wrap: break-word; }
+.body.dense { font-size: 14.5px; line-height: 1.45; }
+ul { list-style: none; }
+li { padding-left: 14px; position: relative; margin-bottom: 7px; }
+li::before { content: "–"; position: absolute; left: 0; color: var(--sub); }
+li.tight { margin-bottom: 4px; }
+b { font-weight: 600; }
+.lbl { font-weight: 600; }                    /* ⓐⓑⓒ 라벨: 색 없이 굵기만 */
+.muted { color: var(--sub); }
+.ph { color: var(--ph); font-style: italic; } /* 확정 대기 placeholder */
+
+/* 블록 제목 */
+.bt { font-size: 15px; font-weight: 700; color: var(--accent); margin: 14px 0 6px; }
+.bt:first-child { margin-top: 0; }
+
+/* 2단 */
+.cols { display: flex; gap: 36px; }
+.cols > div { flex: 1; min-width: 0; }
+
+/* 표 */
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.4; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { font-weight: 600; background: #f4f4f4; }
+table.dense { font-size: 13.5px; }
+table.dense th, table.dense td { padding: 5px 8px; }
+
+/* 수식 박스 */
+.formula { border: 1px solid var(--line); background: #fafafa; padding: 12px 16px;
+           font-size: 19px; text-align: center; margin: 10px 0; font-family: "Cambria Math", Cambria, "Times New Roman", serif; }
+.formula .note { display: block; font-size: 13px; color: var(--sub); margin-top: 6px;
+                 font-family: "Segoe UI", "Malgun Gothic", sans-serif; }
+var { font-style: italic; font-family: inherit; }
+
+/* 결론/정리 박스 (장식 없음, 괘선만) */
+.box { border: 1px solid var(--ink); padding: 10px 14px; font-size: 15px; margin-top: 12px; }
+
+/* 표지 */
+.cover { justify-content: center; }
+.cover h1 { font-size: 44px; font-weight: 700; margin-bottom: 10px; }
+.cover .subtitle { font-size: 21px; color: var(--sub); margin-bottom: 6px; }
+.cover .meta { font-size: 16px; color: var(--sub); margin-bottom: 44px; }
+.cover .conv { border: 1px solid var(--line); padding: 14px 18px; font-size: 14.5px;
+               line-height: 1.6; max-width: 880px; }
+.cover .conv .t { font-weight: 700; margin-bottom: 4px; }
+
+@media print {
+  html, body { background: #fff; }
+  .slide { display: flex !important; page-break-after: always; break-after: page; margin: 0; box-shadow: none; }
+}
+@page { size: 1280px 720px; margin: 0; }
+"""
+
+NAV_JS = """
+const slides = Array.from(document.querySelectorAll('.slide'));
+let cur = 0;
+function show(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, j) => s.classList.toggle('active', j === cur));
+  history.replaceState(null, '', '#' + cur);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') show(cur + 1);
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(cur - 1);
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') show(slides.length - 1);
+});
+show(parseInt((location.hash || '#0').slice(1), 10) || 0);
+"""
+
+
+def foot(n: int, total: int) -> str:
+    return (f'<div class="foot"><span>{TITLE} · {DATE}</span>'
+            f'<span>{n} / {total}</span></div>')
+
+
+# ──────────────────────────────────────────────────────────────────
+# 슬라이드 내용 (slide-plan.md v2 기준; 수치 출처는 slide-plan.md 참조)
+# ──────────────────────────────────────────────────────────────────
+SLIDES = []
+
+# S0 ── 표지
+SLIDES.append(('cover', """
+<h1>Flirds 진행 보고</h1>
+<div class="subtitle">Client-level In-Run Data Shapley for Federated LLM Fine-tuning</div>
+<div class="meta">2026-06-12 · Yonghee Choi</div>
+<div class="conv">
+  <div class="t">표기 규약 (자료 전체 공통)</div>
+  <span class="lbl">ⓐ</span> 구현 완료 + smoke 통과 (값은 coarse) &nbsp;·&nbsp;
+  <span class="lbl">ⓑ</span> 실측 (설정 병기) &nbsp;·&nbsp;
+  <span class="lbl">ⓒ</span> 설계 확정, 미실행<br>
+  모든 정량 주장에 설정(모델 / N / regime / seed / config)을 병기한다.<br>
+  <span class="ph">기울임 회색</span> = 서버 결과 확정 대기(silo5 재실행본 · device100 α-sweep · FedIF) — 확정 시 갱신.
+</div>
+"""))
+
+# S1 ── 문제 설정 + 선행 연구의 빈 부분
+SLIDES.append(("§1 Recap", "문제 설정과 선행 연구의 빈 부분", "dense", """
+<ul>
+  <li class="tight">FedAvg에서 server가 보는 것은 round별 client update Δw<sub>k</sub>와 데이터 수 n<sub>k</sub>뿐 — raw data에는 접근할 수 없다.</li>
+  <li class="tight">목표: 학습 종료 후 post-hoc으로, <b>재학습 0 · 추가 통신 0</b>으로 client별 기여도 φ<sub>k</sub>를 산출.</li>
+  <li class="tight">용도: ① value semantics — corrupt/free-rider client가 낮은 값을 받는가 &nbsp;② selection — 상위 client만으로 재학습하면 성능이 좋아지는가.</li>
+</ul>
+<div class="bt">선행 연구가 놓쳐온 부분</div>
+<table class="dense">
+<tr><th style="width:31%">선행</th><th>남는 한계</th></tr>
+<tr><td>retrain Shapley (Ghorbani &amp; Zou 2019)</td><td>coalition마다 재학습. 실측 1B N=5 fp32 <b>126분</b> <span class="lbl">ⓑ</span>; N=10은 ≈2–5일/1-GPU 추정(실행 <span class="lbl">ⓒ</span>) — LLM-FL에 비용 부적합</td></tr>
+<tr><td>FL-SV 계열 (FedSV '20 · GTG '21 · ComFedSV '21 · ShapleyFL '23)</td><td>retrain-free지만 coalition 재구성/MC 비용. 실험은 전부 CNN</td></tr>
+<tr><td>Influence Functions (Koh &amp; Liang 2017)</td><td>iHVP(H<sup>−1</sup>v) 반복 역산 — 불안정·고비용(LLM 적용 한계 보고)</td></tr>
+<tr><td>IRDS (In-Run Data Shapley)</td><td>in-run Shapley의 직접 조상이나 <b>centralized · per-step · sample-level</b></td></tr>
+<tr><td>Ripple Shapley (AAAI '26)</td><td>federated in-run 선점. sample-level · CNN; 2차는 local-data Hessian의 cross-round 전파 — within-round client 상호작용 항 없음</td></tr>
+<tr><td>FedIF (2025)</td><td>client-level 순수 1차(TracIn). 2차 명시 회피, CNN, aggregation 변경</td></tr>
+<tr><td>FedTSV (ECC '26)</td><td>0차 기하 근접 utility. aggregation 방법(평가 회계 아님), 서버 val-train 추가</td></tr>
+</table>
+<p style="margin-top:10px; font-size:14.5px">비어 있는 교집합(6축): <b>client-level · in-run · closed-form 1+2차 Taylor · HVP client-interaction 항 · 추가 통신 0 · LoRA/LLM</b> (post-hoc/aggregation 무변경은 별도 축). <span class="muted">이 비점유 주장의 근거는 서술적 서베이이며 코드 수준 검증은 아니다.</span></p>
+"""))
+
+# S2 ── 알고리즘
+SLIDES.append(("§1 Recap", "알고리즘 — 수식·비용 / 성질·제약", "dense", """
+<div class="cols">
+<div>
+  <ul><li class="tight">입력: frozen FedAvg 궤적 <b>logs = [(w<sub>r</sub>, deltas_map)]</b>만. estimator는 model·task를 직접 보지 않는다(loss_fn·pkeys 주입).</li></ul>
+  <div class="formula">
+    φ<sub>k</sub> = Σ<sub>r</sub> p<sub>k</sub><sup>r</sup> [ ⟨g<sup>r</sup>, Δw<sub>k</sub>⟩ + ½ ⟨Δw<sub>k</sub>, u<sup>r</sup>⟩ ], &nbsp; u<sup>r</sup> = H<sup>r</sup> ΔW<sup>r</sup>
+    <span class="note">g<sup>r</sup> = ∇ val-loss, &nbsp;p<sub>k</sub><sup>r</sup> = n<sub>k</sub> / Σ<sub>j∈P<sub>r</sub></sub> n<sub>j</sub>. &nbsp;val-loss를 내리면 φ<sub>k</sub> &lt; 0 (더 가치 있음).</span>
+  </div>
+  <ul>
+    <li class="tight"><b>round당 HVP 정확히 1회</b> — 2차항이 u<sup>r</sup> 하나와 |P<sub>r</sub>|개 내적으로 붕괴. forward H·v(jvp∘grad)만 사용, H<sup>−1</sup> 불사용. true Hessian(GGN/Fisher는 CNN 시험 후 기각).</li>
+    <li class="tight">비용: estimator = R회 HVP + N·R 내적(N-독립) ↔ in-run oracle = 2<sup>N</sup>·R·val forward.</li>
+    <li class="tight">Flirds-1st(2차 off): ~35s — coalition 계열(~530s) 대비 ≈15×, Flirds(107s) 대비 ~3× 저렴.</li>
+  </ul>
+</div>
+<div>
+  <div class="bt">구조적 성질</div>
+  <ul>
+    <li class="tight"><b>free-rider φ = 정확히 0</b> — Δw=0이면 모든 내적이 0(구조적). 실측 매 seed exact 0 <span class="lbl">ⓑ</span>(1B N=5 3-seed).</li>
+  </ul>
+  <div class="bt">2차항이 FL에서 의미를 갖는 이유</div>
+  <ul>
+    <li class="tight">IRDS는 centralized per-step(작은 η)에서 2차가 거의 무의미하다고 보고. FL의 per-round Δw는 multi-step 누적이라 크다.</li>
+    <li class="tight">CNN 실측 <span class="lbl">ⓑ</span>: plain SGD에서 1+2차 Spearman 0.962 &gt; 1차 0.924; momentum=0.9에서는 역전(0.73 &lt; 0.81) → 전 실험 plain SGD mom=0 고정.</li>
+  </ul>
+  <div class="bt">운영 제약 (그대로 보고)</div>
+  <ul>
+    <li class="tight">fp32 필수 — utility(=loss 차) ~1e-3 &lt; bf16 정밀도 ~8e-3.</li>
+    <li class="tight">eager attention 필수(forward-mode AD) · LoRA-subspace 한정 valuation.</li>
+  </ul>
+</div>
+</div>
+"""))
+
+# S3 ── 실험 프레임 표
+# TODO-UPDATE [1]: FedIF 수치 확정 시 아래 표 2행(기존 방법 대비)의 placeholder 교체
+SLIDES.append(("§2 실험 설계", "실험 프레임 — 질문 → 실험 → 상태", "", """
+<p class="muted" style="font-size:14.5px; margin-bottom:10px">7개 질문에 실험을 대응시켰다. 상세 결과는 다음 3장.</p>
+<table>
+<tr><th style="width:30%">질문</th><th style="width:38%">실험</th><th>현재 상태</th></tr>
+<tr><td>Shapley 계산이 옳은가</td><td>dual-oracle 삼중 비교 (retrain = in-run = estimator)</td><td><span class="lbl">ⓑ</span> +1.000 (1B N=5 fp32 3-seed)</td></tr>
+<tr><td>기존 방법 대비 무엇이 나은가</td><td>같은 frozen 궤적 위 9-method 비교 (+FedIF)</td><td><span class="lbl">ⓑ</span> phase1 3-seed · FedIF <span class="lbl">ⓐ</span> 편입(1903a58), <span class="ph">수치 확정 대기</span></td></tr>
+<tr><td>위협을 식별하는가</td><td>2 regime × 4 threat + matched detector 4종</td><td><span class="lbl">ⓑ</span> silo5 3-seed · device100 진행 중</td></tr>
+<tr><td>N=100에서 성립하는가</td><td>per-round exact 분해 + α-sweep</td><td>anchor <span class="lbl">ⓑ</span>(1-seed smoke) · <span class="ph">sweep 진행 중</span></td></tr>
+<tr><td>실용 가치가 있는가</td><td>selection run (top-k 재학습)</td><td><span class="lbl">ⓑ</span> 3-seed, 양 lr</td></tr>
+<tr><td>scale에서 유지되는가</td><td>1B → 3B → 7B ladder</td><td>1B <span class="lbl">ⓑ</span> · 3B 부분 <span class="lbl">ⓑ</span>(1-seed) · 7B <span class="lbl">ⓒ</span></td></tr>
+<tr><td>N=5 near-additive 무변별 해소</td><td>N=10 retrain oracle</td><td><span class="lbl">ⓒ</span> 연기(비용) — 논의 항목 ②</td></tr>
+</table>
+"""))
+
+# S4 ── 방법 검증
+# TODO-UPDATE [2]: FedIF 수치 확정 시 baseline 블록 마지막 줄 교체
+SLIDES.append(("§2 실험 설계", "방법 검증 — dual-oracle · baseline 비교 · selection", "dense", """
+<div class="bt">dual-oracle 검증 — 왜 val-loss인가</div>
+<ul>
+  <li class="tight">검증은 <b>같은 게임(val-loss)</b>이어야 한다: estimator는 val-loss의 Taylor. ROUGE는 미분 불가(estimator-ROUGE 자체가 불가) + answer_swap의 도메인 포맷에 속는다 — retrain-ROUGE는 실제로 발산(+0.4 @1B / −0.9 @3B). retrain coalition val-loss 차(~0.005–0.02)는 bf16 정밀도(~0.009)에 묻혀 fp32 필수.</li>
+  <li class="tight">결과 <span class="lbl">ⓑ</span>: retrain(val-loss) = in-run oracle = estimator, <b>Spearman +1.000</b> (1B N=5 fp32 3-seed, lr 2종). 3B(1-seed): estimator +1.000 유지, retrain vs in-run +0.900(clean-client 1-swap ≈ 재학습 noise).</li>
+</ul>
+<div class="bt">같은 궤적 위 baseline 비교 (9-method + FedIF)</div>
+<ul>
+  <li class="tight"><span class="lbl">ⓑ</span> phase1(1B N=5 silo5 3-seed, lr 1e-3·3e-3): noisy/free-rider에서 <b>전 방법 Spearman +1.000 동률</b>(N=5 near-additive) → 주장은 "더 정확"이 아니라 <b>"같은 랭킹을 더 싸게"</b>.</li>
+  <li class="tight">런타임 <span class="lbl">ⓑ</span>: Flirds-1st 35s · Flirds 107s · loss-heur 164s · GTG/FedSV/Banzhaf/ShapleyFL/(b) oracle ~530s · Ripple ~4515s(별도 세션; eigsh flaky로 자동 비교에서 분리).</li>
+  <li class="tight">free-rider φ exact-0: Flirds·oracle·Banzhaf·loss-heur. GTG·FedSV는 within-subset renorm으로 ≠0. FedIF: <span class="lbl">ⓐ</span> suite 편입 완료(1903a58), <span class="ph">수치 확정 대기.</span></li>
+</ul>
+<div class="bt">selection run — 검출을 성능으로</div>
+<ul>
+  <li class="tight"><span class="lbl">ⓑ</span>(1B N=5 3-seed, 양 lr): noisy+free-rider를 정확히 드롭(keep {2,3,4} 전 seed·양 lr 일관). vs full 항상 우세; vs random은 cross-seed 우세(seed0은 random도 clean set 선택 → tie).</li>
+  <li class="tight">nuance: noisy AUROC는 lr에 따라 반전(1e-3: 0.75/1.0 ↔ 3e-3: 1.0/0.75) — selection 결론은 양 lr 동일.</li>
+</ul>
+"""))
+
+# S5 ── threat matrix
+# TODO-UPDATE [3]: silo5 재실행본(tier2/silo5_*.log) 수치 확정 시 아래 결과 블록 교체
+SLIDES.append(("§2 실험 설계", "위협 매트릭스 — 2 regime × 4 threat + matched detector", "dense", """
+<ul>
+  <li class="tight">oracle 일치는 "Shapley 계산이 맞다"까지만 증명 — corrupt→low value(semantics)는 별도 검증 + 전용 detector 대비 경쟁 bar. <b>라벨은 AUROC 채점 key일 뿐 method 입력이 아니다(순환 아님)</b>.</li>
+</ul>
+<table class="dense" style="margin:6px 0 10px">
+<tr><th style="width:14%">위협</th><th>정의 (출처)</th><th style="width:24%">matched detector</th></tr>
+<tr><td>noisy</td><td>answer_swap — 정직하지만 나쁜 데이터</td><td>FedDQC</td></tr>
+<tr><td>free-rider</td><td>Δw=0 또는 benign-std random (Lin 2019)</td><td>STD-DAGMM · FLTrust</td></tr>
+<tr><td>poison</td><td>backdoor — Xu 2023 trigger + Bagdasaryan 2020 γ-scaled replacement</td><td>FLDetector · FLTrust</td></tr>
+</table>
+<div class="bt">결과 — silo5 4-threat 3-seed, 첫 tier1 run <span style="font-weight:400">ⓑ</span> <span class="ph" style="font-weight:400">(FedIF 편입으로 재실행됨 — 재실행본 수치 확정 대기)</span></div>
+<ul>
+  <li class="tight">noisy / free-rider: valuation 전 방법 AUROC 1.0, Spearman 동률(예외: FR-zero에서 FedSV +0.967).</li>
+  <li class="tight"><b>poison(ASR=1.00, working-backdoor config) = 동률의 첫 붕괴</b> — Flirds-1st AUROC 0.000 완전 회피(두 run 일관). Flirds-2차는 동일 config·seed 재실행 간 <b>0.417±0.425 ↔ 0.917±0.118</b>로 갈림(LLM run 비결정성; 원인 규명 중 — 단정하지 않음). in-run oracle·loss-heur·Banzhaf·ShapleyFL AUROC 1.0 / Sp +1.000; GTG Sp +0.867 · FedSV Sp +0.367. 메커니즘: Taylor tangent는 속고, exact secant는 잡는다.</li>
+  <li class="tight">detector: poison 4종 전부 ≥0.917 · noisy — FedDQC 0.917±0.118, FLDetector 0.75(off-threat), STD-DAGMM 0.417±0.425 · FR-zero — STD-DAGMM 0.083±0.118 <b>실패</b>(matched threat 실패, 진단 필요), FedDQC 0.75 · FR-random — STD-DAGMM 1.0.</li>
+</ul>
+<div class="box">현재 데이터 기준 정리: Flirds는 noisy + free-rider를 잡고, clean-preserving backdoor에는 회피된다. backdoor는 matched detector(FLDetector·FedDQC·loss-heur)가 보완한다. <span class="muted">(headline 채택은 논의 항목 ①)</span></div>
+"""))
+
+# S6 ── scale-up
+# TODO-UPDATE [4]: device100 tier2 α-sweep 결과 확정 시 상태 줄 교체
+# TODO-UPDATE [5]: 3B/7B tier 완료 시 ladder 상태 라벨 갱신
+SLIDES.append(("§2 실험 설계", "scale-up — cross-device N=100 · 1B→7B · N=10 연기", "dense", """
+<div class="bt">cross-device N=100</div>
+<ul>
+  <li class="tight">설계: per-client Dirichlet(α) 도메인 혼합(Option B), K=10/round, α ∈ {0, 0.01, 0.1, 0.5, 5.0}, per_client=300.</li>
+  <li class="tight">oracle: per-round exact 분해 Σ<sub>r</sub> 2<sup>|P<sub>r</sub>|</sup> ≡ 2<sup>N</sup> (Δφ≈3e-16 검증 <span class="lbl">ⓑ</span>). 그래도 771ms/forward(fp32, B200) → ~11h/4-GPU: in-run oracle은 <b>α=0.5 anchor 1점만</b>, off-anchor는 Flirds proxy-truth(자기 오류는 검출 불가 — 한계로 명시).</li>
+  <li class="tight">상태: anchor에서 Flirds vs per-round oracle Spearman +1.000 <span class="lbl">ⓑ</span>(1B, 1-seed smoke) · free-rider φ=0 exact 유지 · <span class="ph">α-sweep tier2 진행 중 — 확정 대기</span> · detector(1-seed): FLTrust FR 1.0 / STD-DAGMM FR 0.628.</li>
+</ul>
+<div class="bt">scale ladder</div>
+<ul>
+  <li class="tight">1B <span class="lbl">ⓑ</span> 완료 · 3B 부분 <span class="lbl">ⓑ</span>(dual-oracle 1-seed) + matrix smoke <span class="lbl">ⓐ</span>(no OOM) · 7B <span class="lbl">ⓒ</span>(경로 구현됨, 미실행). 전부 fp32 (1B batch16 / 3B batch8 / 7B batch4).</li>
+</ul>
+<div class="bt">N=10 retrain oracle — 연기 사유</div>
+<ul>
+  <li class="tight"><span class="lbl">ⓒ</span> 재학습 코얼리션-스텝 5120 vs N=5의 80(<b>64×</b>) + eval 32× ≈ 2–5일/1-GPU 추정 → multi-GPU coalition 샤딩 필요. N=5 near-additive 무변별을 직접 해소하는 유일한 증거라 투자 판단 필요(논의 항목 ②).</li>
+</ul>
+"""))
+
+# S7 ── 한계
+SLIDES.append(("§3 한계", "남은 문제 — 방법 내재 / 증거력", "dense", """
+<div class="cols">
+<div>
+  <div class="bt">방법 내재</div>
+  <ul>
+    <li class="tight"><b>Taylor 절단</b> — clean-preserving backdoor의 γ-update가 clean val-loss를 내림 → tangent는 most-helpful로 오판, exact secant는 잡음. 선형화 고유의 맹점; 전개반경 진단 코드 부재.</li>
+    <li class="tight"><b>plain SGD mom=0 강제</b> — AdamW 실무와 비호환. momentum에서 2차 역효과 기관측. 가장 큰 일반성 제약.</li>
+    <li class="tight"><b>fp32 강제</b> — 신호(~1e-3) &lt; bf16 정밀도(~8e-3) 자체가 본질 제약. bf16 배포 궤적 valuation 불가.</li>
+    <li class="tight"><b>적용 범위</b> — eager attention 필수 · LoRA-subspace 한정 · vanilla FedAvg 한정(robust/secure aggregation 비호환) · 개별 Δw 노출 전제.</li>
+    <li class="tight"><b>단일 server val-loss 게임</b> — val 오염·편향 미고려(민감도 실험 <span class="lbl">ⓒ</span>).</li>
+  </ul>
+</div>
+<div>
+  <div class="bt">증거력</div>
+  <ul>
+    <li class="tight"><b>N=5 near-additive 무변별</b> — noisy/FR은 전 방법 동률. 유일한 분리는 poison인데 Flirds에 불리한 방향.</li>
+    <li class="tight"><b>noisy AUROC lr 반전</b> — real grid lr 선택이 noisy 결론을 결정(미확정, 논의 ③).</li>
+    <li class="tight"><b>1-seed 다수</b> — 3B +0.900, N=100 detector(0.628/1.0); FedDQC는 per-domain IRA 분산 분석 한정.</li>
+    <li class="tight"><b>proxy-truth 순환</b> — α-sweep off-anchor의 truth가 Flirds 자신.</li>
+    <li class="tight"><b>poison 인위성</b> — working-backdoor config(lr 2e-3 · batch 8 · epochs 5 · frac 0.8) 별도 invocation에서만 ASR&gt;0; per_client 40→300은 공격 성립 위한 조정.</li>
+    <li class="tight"><b>최약 공격자만</b> — stealthy 불가(‖Δ‖=40× benign), DBA 제외, free-rider easy 모드만.</li>
+    <li class="tight"><b>detector 개조 confound</b> — FLTrust signed-cosine(강화) · STD-DAGMM hash+pooling(약화 가능) — 원형 ablation 부재.</li>
+    <li class="tight"><b>문서 드리프트 전력</b> — 독립 검증 세션이 4건 교정. 본 자료는 교정값 채택.</li>
+  </ul>
+</div>
+</div>
+"""))
+
+# S8 ── 계획 ①
+SLIDES.append(("§4 계획", "① 진행 중 + main 트랙 보강", "dense", """
+<div class="bt">진행 중 — real grid (cost-tiered stage-gate)</div>
+<ul>
+  <li class="tight">silo5 재실행 완료 → device100 α-sweep 진행 중 → 3B → 7B. poison은 working-backdoor config 별도 invocation. run-dir 영속화 적용(1903a58).</li>
+</ul>
+<div class="bt">무비용 분석 (기실행 데이터 재분석)</div>
+<ul>
+  <li class="tight"><b>poison Flirds-2차 run/seed 분산 원인 규명</b> — per-round φ 분해 재분석. 2차항 novelty의 사활처 — <b>최우선</b>.</li>
+  <li class="tight">two-sided |φ| 점수 표준 산출물화("φ-extreme, not φ-high") + orientation 사전고정 · lr 양쪽 보고 규약 명문화.</li>
+</ul>
+<div class="bt">논문 전</div>
+<ul>
+  <li class="tight">2차항 결정 실험 — PGD/direction-aligned poison(FedIF가 논문에서 인정한 blind spot)에서 1차 vs 2차 분리; Ripple "2차 종류" 차별화와 결합.</li>
+  <li class="tight">advanced free-rider(Lin Attack II/III) — val-loss를 내리는 적대 update의 free-rider 축 확인.</li>
+  <li class="tight">원형 ablation 3건(ReLU-FLTrust · per-round STD-DAGMM · Ripple 저자코드) + STD-DAGMM FR-zero 진단 + bootstrap CI.</li>
+  <li class="tight">N=10 retrain oracle — 투자 판단(논의 항목 ②).</li>
+</ul>
+"""))
+
+# S9 ── 계획 ② Track C/D
+SLIDES.append(("§4 계획", "② 추가 실험 Track C/D — 표준 세팅 비교 (06-12 설계 확정 ⓒ, 구현 착수)", "dense", """
+<ul>
+  <li class="tight"><b>동기</b>: main 실험(LLM + 도메인 silo + detection)은 선행과 직접 비교가 어렵다 → 선행 다수가 쓰는 <b>일반 학습 세팅</b>(CNN · IID/label-skew · fidelity/수렴/정확도)의 비교 트랙 추가. 선행 13편의 실험 프로토콜 조사 기반 설계.</li>
+</ul>
+<div class="bt">C1 — fidelity &amp; cost (cross-silo CNN)</div>
+<ul><li class="tight">MNIST+LeNet5 / CIFAR-10+FedSVCNN, N=10 full participation, GTG 5-시나리오(graded label-flip ladder 포함), GT = <b>(a) 2<sup>10</sup> retrain + (b) exact in-run 듀얼 oracle</b>, Spearman/Kendall + GTG 거리 metric + wall-clock, 3–5 seed, 9-method + Ripple(eigsh guard).</li></ul>
+<div class="bt">C2 — 일반 성능 (cross-device CNN; 추가분의 메인)</div>
+<ul><li class="tight">N=100, C=0.1, T=100–150 · 파티션 {IID, Dir(1), 2-shard} × 위협 {clean, label-flip(ρ,τ), free-rider, grad-noise} · <b>개입 3종</b>: 가중집계(곱셈형 w∝n·s 메인[고유 규칙] + 대체형[FedIF/ShapleyFL 관례] + additive λ=0.5[Ripple 관례]) · selection(S-FedAvg식) · bottom-q% 제외(FedSV식) · 평가: AUROC + 최종 acc±seed + acc-vs-round + rounds-to-target. C1→C2 stage-gate.</li></ul>
+<div class="bt">C3 — stability (보고 축, 비용 0)</div>
+<ul><li class="tight">C1/C2 다시드에서 cross-seed Spearman + top/bottom-k% 일관성(Banzhaf 프로토콜 · Volatility 처방 응답).</li></ul>
+<div class="bt">D — LLM 표준 세팅 (전부 API-free)</div>
+<ul><li class="tight">D-메인: Alpaca-GPT4 20k IID, N=5, answer_swap 50%(FedDQC convention) → AUROC/Spearman vs (b) + <b>φ-bottom 필터링 재학습 → MMLU</b>(random-q% 대조). 옵션: FedDQC Table-1 미러(FiQA·AQUA) · FedHDS Dolly 미러(200 클라). 모델 1B/3B = Llama-3.2, 7B = Llama-2-7b(FL-LLM 문헌 표준).</li></ul>
+<p style="font-size:14px; margin-top:8px" class="muted">조사에서 본 공백: fidelity+학습개선 동시 커버 논문 없음 · (a)+(b) 듀얼 oracle 없음 · LLM-scale FL valuation 직접 경쟁자 없음.</p>
+"""))
+
+# S10 ── 논의
+SLIDES.append(("§5 논의", "결정이 필요한 항목", "", """
+<table>
+<tr><th style="width:26%">항목</th><th>내용</th></tr>
+<tr><td>① threat-matrix headline</td><td>"noisy+free-rider는 잡고, clean-preserving backdoor에는 회피됨(matched detector 보완)" — real config 재확인 후 채택 여부.</td></tr>
+<tr><td>② N=10 retrain oracle 투자</td><td>2–5일/1-GPU vs multi-GPU 샤딩 구축(11–22h) vs 차선: cross-silo N=10 detection-only(retrain 불요 — 단 near-additive 직접 해소는 아님).</td></tr>
+<tr><td>③ real grid lr</td><td>2e-5(plan, fine-tune scale) vs 1e-3/3e-3(비교 실험용). noisy AUROC 방향이 lr에 따라 갈림.</td></tr>
+<tr><td>④ Ripple 차별화 문구</td><td>"2차 없음"(반박 위험) → "다른 종류의 2차: local-data Hessian의 cross-round 전파, within-round client-interaction 항 부재"로 교체 승인.</td></tr>
+</table>
+"""))
+
+
+# ──────────────────────────────────────────────────────────────────
+# HTML 조립
+# ──────────────────────────────────────────────────────────────────
+def build_html() -> str:
+    total = len(SLIDES)
+    parts = []
+    for i, s in enumerate(SLIDES):
+        if s[0] == 'cover':
+            parts.append(f'<section class="slide cover" id="s{i}">{s[1]}{foot(i + 1, total)}</section>')
+        else:
+            kicker, title, dense, body = s
+            cls = ' dense' if dense else ''
+            parts.append(
+                f'<section class="slide" id="s{i}">'
+                f'<div class="kicker">{kicker}</div><h2>{title}</h2><hr class="rule">'
+                f'<div class="body{cls}">{body}</div>{foot(i + 1, total)}</section>')
+    return (f'<!DOCTYPE html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n'
+            f'<title>{TITLE} · {DATE}</title>\n<style>{CSS}</style>\n</head>\n<body>\n'
+            + '\n'.join(parts)
+            + f'\n<script>{NAV_JS}</script>\n</body>\n</html>\n')
+
+
+# ──────────────────────────────────────────────────────────────────
+# PDF + 스크린샷 (playwright; PDF는 Edge headless 폴백)
+# ──────────────────────────────────────────────────────────────────
+def render(shots: bool = True) -> None:
+    url = OUT_HTML.resolve().as_uri()
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print('[warn] playwright 미설치 → Edge headless로 PDF만 시도')
+        _edge_pdf(url)
+        return
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={'width': 1280, 'height': 720})
+        page.goto(url)
+        page.emulate_media(media='print')
+        page.pdf(path=str(OUT_PDF), width='1280px', height='720px',
+                 print_background=True, prefer_css_page_size=True)
+        page.emulate_media(media='screen')
+        print(f'[ok] PDF → {OUT_PDF.name}')
+
+        n = page.evaluate('slides.length')
+        report = []
+        if shots:
+            # 스크린샷은 1280x720 정확히 — 화면용 여백/그림자 제거
+            page.add_style_tag(content='.slide.active{margin:0 !important; box-shadow:none !important}')
+            SHOT_DIR.mkdir(exist_ok=True)
+            for i in range(n):
+                page.evaluate(f'show({i})')
+                page.screenshot(path=str(SHOT_DIR / f's{i:02d}.png'))
+                ov = page.evaluate("""() => {
+                    const s = document.querySelector('.slide.active');
+                    const r = s.getBoundingClientRect();
+                    let worst = 0;
+                    for (const el of s.querySelectorAll('*')) {
+                        const b = el.getBoundingClientRect();
+                        worst = Math.max(worst, b.bottom - r.bottom, b.right - r.right);
+                    }
+                    return {sw: s.scrollWidth, sh: s.scrollHeight, worst: Math.round(worst)};
+                }""")
+                flag = ' OVERFLOW' if (ov['sh'] > 722 or ov['sw'] > 1282 or ov['worst'] > 2) else ''
+                report.append(f's{i:02d}: scroll {ov["sw"]}x{ov["sh"]}, beyond-edge {ov["worst"]}px{flag}')
+            print(f'[ok] screenshots → {SHOT_DIR.name}/ ({n}장)')
+            print('\n'.join('  ' + line for line in report))
+        browser.close()
+
+
+def _edge_pdf(url: str) -> None:
+    for exe in (r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',
+                r'C:\Program Files\Microsoft\Edge\Application\msedge.exe'):
+        if Path(exe).exists():
+            subprocess.run([exe, '--headless=new', '--disable-gpu',
+                            f'--print-to-pdf={OUT_PDF}', '--no-pdf-header-footer', url],
+                           check=True, timeout=120)
+            print(f'[ok] PDF (Edge) → {OUT_PDF.name}')
+            return
+    print('[warn] Edge 미발견 — PDF 생략')
+
+
+if __name__ == '__main__':
+    OUT_HTML.write_text(build_html(), encoding='utf-8')
+    print(f'[ok] HTML → {OUT_HTML.name} ({len(SLIDES)}장)')
+    if '--html-only' not in sys.argv:
+        render(shots='--no-shots' not in sys.argv)
