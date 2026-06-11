@@ -513,3 +513,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - filed into: [[checkpoint-2026-06-10/07-novelty-limitations-analysis]] (checkpoint README 인덱스에 등록)
 - method: checkpoint 00–06 직접 정독 + 8방향 병렬 reader(checkpoint·flirds.md·threads·plan·protocol·코드·raw) 교차 정독 + load-bearing 4건 직접 검증(FedIF grep, runs/ 상태, tier1 로그, baselines 목록)
 - note: **novelty 판정** — 강(ⓑ): dual-oracle 검증 방법론·(b) exact per-round 분해·비용구조(단 "zero-comm"은 비차별 — 서버연산 구조로 교정 필요) / 사활처(미입증): **2차항의 LLM-scale 가치** / 리뷰어 1순위 공격: **FedIF가 03 대조문서·baselines 양쪽 부재**(06 포지셔닝 문서가 일부 보완, 구현은 여전히 없음). **한계 4범주 15건**(Taylor 절단·SGD-mom0·fp32·N=5 무변별·lr-반전·proxy-truth 순환·poison 인위성·distill 드리프트 등) + **개선 17건 우선순위**. ★ **§7.0 SUPERSEDE**: real grid가 checkpoint 직후 시작 — tier1(silo5 4-threat 3-seed) 완료·tier2 진행 중(⚠ .log-only, §6 run-dir 부재): poison(ASR=1.00)서 **near-additive 동률 첫 붕괴** — Flirds-1st AUROC 0.000 완전회피, **Flirds-2nd seed별 {0, 0.25, 1.0}=0.417±0.425**(seed2 = 2차가 1차를 이긴 최초 LLM-scale 데이터포인트, 불안정), FedSV Sp +0.367 추락; STD-DAGMM FR-zero 0.083 실패(신규 구멍). **최고가치 다음 수 = poison 2nd seed-분산 원인 규명**(기실행 궤적 재분석, 비용 ~0).
+
+## [2026-06-12] conv | Track C/D 추가 실험 설계 (CNN 표준-세팅 + LLM 표준-세팅)
+- raw: raw/conversations/flirds/2026-06-12-track-cd-additional-experiments-design.md
+- distilled into: [[flirds-implementation-plan]] §3.11 (+ Status snapshot Next-action 갱신)
+- note: 선행 13편 실험설계 조사 → Track C1(fidelity&cost: GTG 5-시나리오+듀얼 oracle)/C2(일반성능: N=100 개입 3종, 곱셈가중 w∝n·s 고유규칙)/C3(stability)/D(LLM: Alpaca-GPT4·FedDQC미러·FedHDS미러, API-free; 7B=Llama-2-7b-hf) 설계 확정 + Yonghee 결정 7건. 구현은 다음 세션. phase2_matrix.py SCALE 7B 파싱 추가.

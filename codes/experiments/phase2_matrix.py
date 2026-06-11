@@ -27,7 +27,9 @@ DETECTORS (threat-matched suite, all run on every threat):
   FLTrust                  val-gradient cosine (loss_fn/pkeys)
   FedDQC                   on-device data quality (client data + base model; matched to noisy)
 
-SCALE (task8): SMOKE_MODEL selects 1B/3B/7B; the per-scale memory knobs (batch/val_chunk/
+SCALE (task8): SMOKE_MODEL selects 1B/3B/7B -- 1B/3B = meta-llama/Llama-3.2-{1B,3B}-Instruct,
+7B = meta-llama/Llama-2-7b-hf (plan task8; also the FL-LLM literature-standard 7B, so the
+Track-D comparability arm reuses this rung); the per-scale memory knobs (batch/val_chunk/
 val_maxlen) are env-overridable and change ONLY peak memory, not the values (exact chunk-sum,
 fp32 throughout -- 7B needs no bf16 here, the (b)/estimator path is fp32; bf16 is the deferred
 (a) retrain oracle, which 7B does not run).
@@ -80,7 +82,8 @@ from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
 
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
-SCALE = MODEL.split("-")[-2] if "Llama-3.2-" in MODEL else MODEL.split("/")[-1]   # "1B"/"3B"/"7B"
+SCALE = ("7B" if "Llama-2-7b" in MODEL else
+         MODEL.split("-")[-2] if "Llama-3.2-" in MODEL else MODEL.split("/")[-1])  # "1B"/"3B"/"7B"
 TARGET = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 ORDER = ["medical", "legal", "finance", "math", "general"]
 
