@@ -1,0 +1,627 @@
+# -*- coding: utf-8 -*-
+"""Flirds 발표자료 빌더 — 두 버전(연구실 세미나 / 교수님 미팅)의 HTML 슬라이드 + PDF 생성.
+
+  사용:  /home/korea_bupj/miniconda3/envs/flirds/bin/python build.py
+  출력:  flirds-seminar.html / flirds-seminar.pdf   (연구실 세미나, 풀버전 14장+부록)
+         flirds-advisor.html / flirds-advisor.pdf   (교수님 미팅, 2–5장을 recap 1장으로 압축)
+
+  구조:  슬라이드는 SLIDES dict에 한 번만 정의, 버전별 manifest(SEMINAR/ADVISOR)로 조립.
+         숫자 갱신 시 이 파일만 고치고 재실행하면 두 버전 모두 반영된다.
+
+  수치 출처 (2026-06-11 기준):
+    - tier1 real grid 3-seed: runs/phase2_matrix/RESULTS.md (FedIF+persistence 재실행분)
+    - poison Flirds-2차 run간 분산: tier1_orig(0.417±0.425) vs 재실행(0.917±0.118) 로그 대조
+    - dual-oracle/비용/CNN/N=100 anchor: research-wiki/wiki/checkpoint-2026-06-10/ 00–07
+    - tier2 잠정치: RESULTS.md (running 셀 → '잠정' 표기)
+  업데이트 예정 슬라이드: 11(cross-device α-sweep), 13(현황) — '업데이트 예정' 칩 표시.
+"""
+import os
+from playwright.sync_api import sync_playwright
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+# ---------------------------------------------------------------- CSS / JS --
+CSS = """
+:root{
+  --ink:#16202c; --muted:#5b6b7d; --faint:#8a99aa;
+  --accent:#2458d6; --accent-soft:#e8eefc; --teal:#0d9488; --teal-soft:#e6f5f3;
+  --warn:#b45309; --warn-soft:#fdf3e3; --bad:#c0392b; --bad-soft:#fbeae7;
+  --line:#dbe2ea; --card:#f7f9fc; --navy:#0f1f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#23292f;font-family:'Pretendard Variable',Pretendard,'Noto Sans KR','Noto Sans CJK KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:var(--ink)}
+.stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform-origin:center center}
+.slide{display:none;width:1280px;height:720px;background:#fff;overflow:hidden;flex-direction:column}
+.slide.active{display:flex}
+/* ---- 공통 레이아웃 ---- */
+.shead{flex:0 0 auto;padding:34px 56px 0 56px;display:flex;justify-content:space-between;align-items:baseline}
+.shead h1{font-size:36px;font-weight:800;letter-spacing:-0.5px}
+.shead .tag{font-size:15px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 12px;border-radius:20px;white-space:nowrap}
+.sbody{flex:1 1 auto;padding:20px 56px 0 56px;font-size:21px;line-height:1.55;min-height:0}
+.sfoot{flex:0 0 auto;height:42px;padding:0 56px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--faint);border-top:1px solid var(--line)}
+.sfoot .pgn{visibility:hidden}
+b,strong{font-weight:750}
+.acc{color:var(--accent);font-weight:750} .ok{color:var(--teal);font-weight:750}
+.warn{color:var(--warn);font-weight:750} .bad{color:var(--bad);font-weight:750}
+.muted{color:var(--muted)} .small{font-size:17px} .tiny{font-size:15px;color:var(--muted)}
+ul.main{list-style:none}
+ul.main>li{padding-left:26px;position:relative;margin-bottom:13px}
+ul.main>li:before{content:'';position:absolute;left:4px;top:13px;width:9px;height:9px;border-radius:2px;background:var(--accent)}
+ul.main ul{list-style:none;margin-top:6px}
+ul.main ul>li{padding-left:20px;position:relative;font-size:19px;color:var(--muted);margin-bottom:4px}
+ul.main ul>li:before{content:'–';position:absolute;left:2px;color:var(--faint)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px}
+.formula{font-size:25px;text-align:center;background:var(--accent-soft);border-radius:12px;padding:14px 10px;letter-spacing:.2px}
+.formula sub,.formula sup{font-size:60%}
+.callout{border-left:4px solid var(--accent);background:var(--card);padding:10px 16px;border-radius:0 10px 10px 0;font-size:19px}
+.callout.w{border-left-color:var(--warn);background:var(--warn-soft)}
+.callout.g{border-left-color:var(--teal);background:var(--teal-soft)}
+.chip{display:inline-block;font-size:14px;font-weight:700;padding:3px 10px;border-radius:14px;vertical-align:2px}
+.chip.todo{color:var(--warn);border:1.5px dashed var(--warn);background:#fff}
+.chip.done{color:var(--teal);background:var(--teal-soft)}
+.chip.run{color:var(--accent);background:var(--accent-soft)}
+/* ---- 표 ---- */
+table.t{border-collapse:collapse;width:100%;font-size:18px}
+table.t th{background:var(--navy);color:#fff;font-weight:700;padding:8px 10px;text-align:center;font-size:16.5px}
+table.t td{border:1px solid var(--line);padding:7px 10px;text-align:center}
+table.t td.l{text-align:left}
+table.t tr.hl td{background:var(--accent-soft);font-weight:700}
+td.good{background:var(--teal-soft);color:#0b6b61;font-weight:700}
+td.mid{background:var(--warn-soft);color:var(--warn);font-weight:700}
+td.poor{background:var(--bad-soft);color:var(--bad);font-weight:700}
+/* ---- 표지 ---- */
+.cover{background:linear-gradient(135deg,#0f1f3d 0%,#1b3a73 70%,#234a8f 100%);color:#fff;justify-content:center;padding:0 90px}
+.cover .kicker{font-size:18px;font-weight:700;color:#9db8e8;letter-spacing:2.5px;margin-bottom:22px}
+.cover h1{font-size:54px;font-weight:850;line-height:1.25;letter-spacing:-1px;margin-bottom:18px}
+.cover .sub{font-size:24px;color:#c4d4ef;line-height:1.5;margin-bottom:48px}
+.cover .meta{font-size:18px;color:#9db8e8;line-height:1.9}
+.cover .meta b{color:#fff;font-weight:700}
+/* ---- 다이어그램 박스 ---- */
+.flow{display:flex;align-items:stretch;gap:0}
+.fbox{flex:1;border:1.6px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;text-align:center;font-size:17.5px;line-height:1.45}
+.fbox .ft{font-weight:800;font-size:18.5px;margin-bottom:4px}
+.fbox.hi{border-color:var(--accent);background:var(--accent-soft)}
+.farr{flex:0 0 34px;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:24px;font-weight:700}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+/* ---- UI(화면 전용) ---- */
+.ui{position:fixed;right:18px;bottom:14px;display:flex;gap:8px;align-items:center;z-index:9;font-family:inherit}
+.ui button{background:#2f3942;color:#cdd6df;border:none;border-radius:8px;width:38px;height:32px;font-size:16px;cursor:pointer}
+.ui .ctr{color:#aab6c2;font-size:14px;min-width:64px;text-align:center}
+@media print{
+  html,body{background:#fff}
+  .stage{position:static;transform:none !important;width:auto;height:auto}
+  .slide{display:flex !important;page-break-after:always;break-after:page}
+  .ui{display:none !important}
+  .sfoot .pgn{visibility:visible}
+}
+@page{size:1280px 720px;margin:0}
+"""
+
+JS = """
+const slides=[...document.querySelectorAll('.slide')];
+let idx=Math.min(Math.max((parseInt(location.hash.slice(1))||1)-1,0),slides.length-1);
+const ctr=document.querySelector('.ctr');
+function show(i){idx=Math.min(Math.max(i,0),slides.length-1);
+  slides.forEach((s,j)=>s.classList.toggle('active',j===idx));
+  ctr.textContent=(idx+1)+' / '+slides.length;history.replaceState(null,'','#'+(idx+1));}
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);
+  document.querySelector('.stage').style.transform=`translate(-50%,-50%) scale(${s})`;}
+addEventListener('resize',fit);
+addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(idx+1);}
+  else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(idx-1);}
+  else if(e.key==='Home')show(0); else if(e.key==='End')show(slides.length-1);});
+document.getElementById('prev').onclick=()=>show(idx-1);
+document.getElementById('next').onclick=()=>show(idx+1);
+fit();show(idx);
+"""
+
+# ------------------------------------------------------------- SVG 차트 ----
+def runtime_chart():
+    """결과① 런타임 가로 막대 (log scale). 출처: RESULTS.md tier1 (1B N=5 R=10 3-seed mean)."""
+    data = [  # (라벨, 초, 분류)
+        ("Flirds-1st", 35, "us"), ("FedIF", 35, "base"), ("Flirds (1+2차)", 107, "us"),
+        ("loss-heur", 164, "base"), ("(b) in-run oracle", 531, "oracle"),
+        ("ShapleyFL", 531, "base"), ("FedSV", 533, "base"), ("Banzhaf", 533, "base"),
+        ("GTG", 538, "base"), ("Ripple*", 4515, "base2"),
+    ]
+    col = {"us": "#2458d6", "oracle": "#0d9488", "base": "#9fb0c2", "base2": "#cbd5e1"}
+    import math
+    x0, xmax = 240, 1130
+    lo, hi = math.log10(25), math.log10(6000)
+    W = lambda s: x0 + (math.log10(s) - lo) / (hi - lo) * (xmax - x0)
+    rows = []
+    y = 14
+    for label, sec, kind in data:
+        w = W(sec) - x0
+        bold = "font-weight:800" if kind == "us" else "font-weight:600"
+        fill = col[kind]
+        txt = f"{sec:,}s"
+        rows.append(
+            f'<text x="{x0-12}" y="{y+17}" text-anchor="end" style="font-size:16.5px;{bold};fill:#16202c">{label}</text>'
+            f'<rect x="{x0}" y="{y}" width="{w:.0f}" height="24" rx="5" fill="{fill}"/>'
+            f'<text x="{x0+w+8:.0f}" y="{y+17}" style="font-size:15.5px;font-weight:700;fill:#5b6b7d">{txt}</text>')
+        y += 33
+    # 보조 격자
+    grid = "".join(
+        f'<line x1="{W(v):.0f}" y1="6" x2="{W(v):.0f}" y2="{y-4}" stroke="#e7ecf2" stroke-width="1"/>'
+        f'<text x="{W(v):.0f}" y="{y+14}" text-anchor="middle" style="font-size:13px;fill:#8a99aa">{t}</text>'
+        for v, t in [(60, "1분"), (600, "10분"), (3600, "1시간")])
+    return (f'<svg viewBox="0 0 1170 {y+24}" style="width:100%">{grid}{"".join(rows)}</svg>')
+
+def poison_chart():
+    """결과③ poison AUROC 세로 막대. 출처: RESULTS.md silo5_poison (재실행 3-seed)."""
+    data = [  # (라벨, auroc, std, 분류)
+        ("Flirds-1st", 0.0, 0.0, "bad"), ("Flirds 2차", 0.917, 0.118, "warn"),
+        ("loss-heur", 1.0, 0.0, "ok"), ("(b) oracle", 1.0, 0.0, "ok"),
+        ("FLDetector", 1.0, 0.0, "det"), ("FedDQC", 1.0, 0.0, "det"),
+        ("FLTrust", 1.0, 0.0, "det"), ("STD-DAGMM", 0.75, 0.204, "det"),
+    ]
+    col = {"bad": "#c0392b", "warn": "#d97706", "ok": "#0d9488", "det": "#9fb0c2"}
+    x, bw, gap, base, H = 58, 64, 22, 268, 215
+    bars = []
+    for label, v, sd, kind in data:
+        h = v * H
+        ytop = base - h
+        bars.append(f'<rect x="{x}" y="{ytop:.0f}" width="{bw}" height="{max(h,3):.0f}" rx="5" fill="{col[kind]}"/>')
+        if sd > 0:  # 오차 막대
+            e0, e1 = base - (v - sd) * H, base - min(v + sd, 1.0) * H
+            cx = x + bw / 2
+            bars.append(f'<line x1="{cx}" y1="{e0:.0f}" x2="{cx}" y2="{e1:.0f}" stroke="#16202c" stroke-width="2.4"/>'
+                        f'<line x1="{cx-7}" y1="{e0:.0f}" x2="{cx+7}" y2="{e0:.0f}" stroke="#16202c" stroke-width="2.4"/>'
+                        f'<line x1="{cx-7}" y1="{e1:.0f}" x2="{cx+7}" y2="{e1:.0f}" stroke="#16202c" stroke-width="2.4"/>')
+        num = f"{v:.3f}" if v in (0.0,) else (f"{v:.2f}" if v < 1 else "1.0")
+        bars.append(f'<text x="{x+bw/2}" y="{ytop-10 if sd==0 else base-(min(v+sd,1.0))*H-8:.0f}" text-anchor="middle" style="font-size:16px;font-weight:800;fill:{col[kind]}">{num}</text>')
+        bars.append(f'<text x="{x+bw/2}" y="{base+22}" text-anchor="middle" style="font-size:13px;font-weight:600;fill:#16202c">{label}</text>')
+        x += bw + gap
+    gl = "".join(f'<line x1="52" y1="{base-f*H:.0f}" x2="{x-gap+10}" y2="{base-f*H:.0f}" stroke="#e7ecf2"/>'
+                 f'<text x="44" y="{base-f*H+5:.0f}" text-anchor="end" style="font-size:13px;fill:#8a99aa">{f:g}</text>'
+                 for f in (0, 0.5, 1.0))
+    return f'<svg viewBox="0 0 {x+18} {base+38}" style="width:100%">{gl}{"".join(bars)}</svg>'
+
+def oracle_triangle():
+    """검증 슬라이드: 삼중 일치 삼각형."""
+    return """
+<svg viewBox="0 0 560 332" style="width:100%">
+ <defs><style>.nd{fill:#fff;stroke:#2458d6;stroke-width:2.2;rx:14} .nt{font-size:18px;font-weight:800;fill:#16202c}
+ .ns{font-size:13.5px;fill:#5b6b7d} .ed{stroke:#0d9488;stroke-width:2.6} .el{font-size:17px;font-weight:850;fill:#0d9488}</style></defs>
+ <line x1="280" y1="86" x2="118" y2="240" class="ed"/><line x1="280" y1="86" x2="442" y2="240" class="ed"/><line x1="150" y1="266" x2="410" y2="266" class="ed"/>
+ <rect x="178" y="22" width="204" height="64" rx="14" class="nd" style="fill:#e8eefc"/>
+ <text x="280" y="49" text-anchor="middle" class="nt">Flirds estimator</text>
+ <text x="280" y="71" text-anchor="middle" class="ns">Taylor 근사 · HVP 1회/round</text>
+ <rect x="16" y="240" width="216" height="64" rx="14" class="nd"/>
+ <text x="124" y="266" text-anchor="middle" class="nt">(b) in-run oracle</text>
+ <text x="124" y="288" text-anchor="middle" class="ns">같은 궤적, exact 2<tspan baseline-shift="super" font-size="10">N</tspan> 열거</text>
+ <rect x="330" y="240" width="222" height="64" rx="14" class="nd"/>
+ <text x="441" y="266" text-anchor="middle" class="nt">(a) retrain oracle</text>
+ <text x="441" y="288" text-anchor="middle" class="ns">coalition별 FedAvg 재학습</text>
+ <text x="156" y="158" text-anchor="middle" class="el" transform="rotate(-44 156 158)">+1.000</text>
+ <text x="404" y="158" text-anchor="middle" class="el" transform="rotate(44 404 158)">+1.000</text>
+ <text x="280" y="256" text-anchor="middle" class="el">+1.000</text>
+</svg>"""
+
+def taylor_sketch():
+    """2차항 슬라이드: 접선 vs 곡선 일러스트."""
+    return """
+<svg viewBox="0 0 520 300" style="width:100%">
+ <path d="M 40 60 Q 250 268 480 96" fill="none" stroke="#16202c" stroke-width="3"/>
+ <line x1="60" y1="118" x2="330 " y2="252" stroke="#c0392b" stroke-width="2.4" stroke-dasharray="7 5"/>
+ <path d="M 78 128 Q 210 218 322 232" fill="none" stroke="#0d9488" stroke-width="2.6" stroke-dasharray="2 4"/>
+ <circle cx="96" cy="138" r="6" fill="#2458d6"/>
+ <circle cx="305" cy="231" r="6" fill="#16202c"/>
+ <text x="64" y="124" style="font-size:15.5px;font-weight:700;fill:#2458d6">w_r</text>
+ <text x="318" y="222" style="font-size:15.5px;font-weight:700;fill:#16202c">w_r + ΔW</text>
+ <line x1="110" y1="138" x2="305" y2="138" stroke="#8a99aa" stroke-width="1.4" marker-end="none" stroke-dasharray="3 4"/>
+ <text x="208" y="160" text-anchor="middle" style="font-size:14px;fill:#5b6b7d">round당 다(多) step → ΔW가 큼</text>
+ <text x="368" y="268" style="font-size:15px;font-weight:700;fill:#c0392b">1차(접선)만: 오차 ↑</text>
+ <text x="356" y="186" style="font-size:15px;font-weight:700;fill:#0d9488">+2차(곡률): 보정</text>
+ <text x="40" y="40" style="font-size:15px;fill:#5b6b7d">validation loss</text>
+</svg>"""
+
+# ------------------------------------------------------------- 슬라이드 ----
+def S(sid, title, tag, body):
+    return (f'<section class="slide" id="{sid}"><div class="shead"><h1>{title}</h1>'
+            f'<span class="tag">{tag}</span></div><div class="sbody">{body}</div>'
+            f'<div class="sfoot"><span>Flirds — 연합학습 데이터 기여도 평가 · 2026-06</span>'
+            f'<span class="pageno"></span></div></section>')
+
+SLIDES = {}
+
+# 1 ── 표지 (버전별 부제) ------------------------------------------------------
+def cover(sub_line):
+    return f"""
+<section class="slide cover">
+  <div class="kicker">EDGE AI LAB · 연구 진행 보고</div>
+  <h1>Flirds: 재학습 없는 연합학습<br>데이터 기여도 평가</h1>
+  <div class="sub">client-level <b>F</b>ederated <b>L</b>earning <b>I</b>n-<b>R</b>un <b>D</b>ata <b>S</b>hapley<br>
+  — validation loss의 1·2차 Taylor 근사로 라운드당 HVP 1회 —</div>
+  <div class="meta"><b>최용희</b> · {sub_line}<br>
+  Llama-3.2 1B/3B (LoRA) · 5-domain instruction tuning · DGX B200×4</div>
+</section>"""
+
+# 2 ── 왜 FL 데이터 기여도인가 -------------------------------------------------
+SLIDES["why"] = S("why", "왜 연합학습에서 '데이터 기여도'인가", "문제", """
+<div class="flow" style="margin-bottom:6px">
+  <div class="fbox"><div class="ft">의료기관</div><span class="tiny">로컬 데이터 (비공개)</span></div>
+  <div class="fbox"><div class="ft">법률</div><span class="tiny">로컬 데이터 (비공개)</span></div>
+  <div class="fbox"><div class="ft">금융</div><span class="tiny">로컬 데이터 (비공개)</span></div>
+  <div class="fbox"><div class="ft">수학</div><span class="tiny">로컬 데이터 (비공개)</span></div>
+  <div class="fbox"><div class="ft">일반</div><span class="tiny">로컬 데이터 (비공개)</span></div>
+</div>
+<div style="text-align:center;color:#8a99aa;font-size:20px;line-height:1.1">↓ &nbsp;매 라운드, 모델 update Δw<sub>k</sub> 만 서버로&nbsp; ↓</div>
+<div class="fbox hi" style="margin:6px 0 16px 0"><div class="ft">서버 — 글로벌 LLM (FedAvg)</div>
+<span class="small">데이터는 못 보고, 클라이언트가 보낸 update만 받는다 &nbsp;→&nbsp; <b class="acc">"누가 얼마나 기여했나? φ<sub>k</sub> = ?"</b></span></div>
+<ul class="main">
+  <li><b>보상·과금</b> — 기여한 만큼 나누려면 (data market, incentive) 기여도가 먼저 필요</li>
+  <li><b>품질 관리</b> — 나쁜 데이터 클라이언트를 걸러내면 글로벌 모델 성능이 좋아짐</li>
+  <li><b>위협 대응</b> — 무임승차(free-rider)·오염(poisoning) 클라이언트 식별</li>
+</ul>
+<div class="callout">핵심 질문 — <b>서버가 어차피 받는 것(라운드별 update)만으로, 클라이언트별 기여도를 공정하게 계산할 수 있는가?</b></div>
+""")
+
+# 3 ── Shapley와 비용 장벽 ----------------------------------------------------
+SLIDES["shapley"] = S("shapley", "표준 답은 Shapley value — 그러나 비용 장벽", "문제", """
+<ul class="main">
+  <li><b>Shapley value</b> = 협력 게임이론의 공정 배분 해 — 가능한 <b>모든 부분집합(coalition)</b>에 대해
+      "클라이언트 k가 들어갔을 때 성능이 얼마나 좋아지나"의 평균
+    <ul><li>공정성 공리(효율·대칭·무기여자 0·가산성)를 만족하는 <b>유일한</b> 배분 — 데이터 가치평가의 표준</li></ul></li>
+  <li>정의대로 계산하려면 <b class="bad">2<sup>N</sup>개 부분집합 각각으로 재학습</b> 후 평가해야 한다</li>
+</ul>
+<div class="grid3" style="margin:10px 0 16px 0">
+  <div class="card" style="text-align:center"><div style="font-size:17px;color:var(--muted)">N=5 (1B, fp32)</div>
+    <div style="font-size:30px;font-weight:800;color:var(--warn)">≈ 2시간</div><div class="tiny">재학습 oracle 실측 126분</div></div>
+  <div class="card" style="text-align:center"><div style="font-size:17px;color:var(--muted)">N=10</div>
+    <div style="font-size:30px;font-weight:800;color:var(--bad)">2–5일 / GPU</div><div class="tiny">재학습 64×, 평가 32×</div></div>
+  <div class="card" style="text-align:center"><div style="font-size:17px;color:var(--muted)">N=100</div>
+    <div style="font-size:30px;font-weight:800;color:var(--bad)">불가능</div><div class="tiny">2<sup>100</sup> coalition</div></div>
+</div>
+<ul class="main">
+  <li>기존 FL-Shapley 근사(GTG, FedSV, ComFedSV …)도 라운드마다 coalition을 평가 — 여전히 비싸고,
+      <b>전부 CNN/소규모에서만 검증</b> (LLM-scale 검증 없음)</li>
+</ul>
+<div class="callout g">필요한 것 — <b>LLM에서 돌고, Shapley 공리는 유지하면서, 재학습 없이 싼</b> 방법</div>
+""")
+
+# 4 ── 핵심 아이디어 -----------------------------------------------------------
+SLIDES["idea"] = S("idea", "핵심 아이디어 — 학습 궤적 위에서 값을 매긴다 (in-run)", "방법", """
+<ul class="main" style="margin-bottom:12px">
+  <li>FedAvg는 어차피 라운드마다 <b>(글로벌 모델 w<sub>r</sub>, 클라이언트별 update Δw<sub>k</sub>)</b>를 서버에 남긴다</li>
+  <li>학습을 다시 하지 말고(IRDS의 통찰을 FL로), <b>이미 일어난 학습 궤적을 얼려두고 그 위에서</b> 가치를 매기자
+      — coalition별 validation-loss 변화를 <b>Taylor 전개</b>하면 Shapley 합이 닫힌 식으로 떨어진다</li>
+</ul>
+<div class="formula">φ<sub>k</sub> &nbsp;=&nbsp; Σ<sub>r</sub>&thinsp;p<sub>k</sub><sup>r</sup> [&thinsp;⟨ g<sup>r</sup>, Δw<sub>k</sub> ⟩ &nbsp;+&nbsp; ½ ⟨ Δw<sub>k</sub>, <b>H<sup>r</sup>ΔW<sup>r</sup></b> ⟩&thinsp;]
+<div style="font-size:16px;color:var(--muted);margin-top:6px">g<sup>r</sup> = val-loss gradient&nbsp;·&nbsp; <b>H<sup>r</sup>ΔW<sup>r</sup> = Hessian-vector product, 라운드당 단 1회</b> (클라이언트 수 N과 무관)</div></div>
+<div class="flow" style="margin:16px 0 14px 0">
+  <div class="fbox"><div class="ft">FedAvg 학습</div><span class="tiny">평소처럼, 개입 없음</span></div>
+  <div class="farr">→</div>
+  <div class="fbox"><div class="ft">frozen 궤적</div><span class="tiny">logs = (w<sub>r</sub>, {Δw<sub>k</sub>})</span></div>
+  <div class="farr">→</div>
+  <div class="fbox hi"><div class="ft">Flirds</div><span class="tiny">Taylor + 1 HVP/round</span></div>
+  <div class="farr">→</div>
+  <div class="fbox"><div class="ft">φ<sub>1</sub> … φ<sub>N</sub></div><span class="tiny">클라이언트 기여도</span></div>
+  <div class="farr">→</div>
+  <div class="fbox"><div class="ft">활용</div><span class="tiny">탐지·선별·보상</span></div>
+</div>
+<div class="callout g"><b>재학습 0 · 추가 통신 0 · 학습 비개입(post-hoc)</b> &nbsp;+&nbsp; 무임승차(Δw=0)는 구조적으로 <b>φ = 정확히 0</b></div>
+""")
+
+# 5 ── 왜 2차항인가 ------------------------------------------------------------
+SLIDES["second"] = S("second", "왜 2차(곡률) 항인가 — FL에서 비로소 의미가 생긴다", "방법", """
+<div class="grid2" style="grid-template-columns:1.15fr 1fr;align-items:start">
+<div>
+<ul class="main">
+  <li>원조 IRDS(centralized)는 <b>SGD 한 step</b>마다 전개 → step이 작아 <b>2차가 거의 무의미</b>했다</li>
+  <li>FL은 다르다 — 클라이언트가 라운드당 <b>여러 step</b> 학습 → Δw가 큼 → <b>곡률 보정이 필요해진다</b></li>
+  <li>2차항의 정체 = <b class="acc">½⟨Δw<sub>k</sub>, H<sub>val</sub>ΔW<sup>r</sup>⟩</b><br>
+      <span class="small">같은 라운드 참여자들의 update가 val-loss 곡률을 통해 <b>서로 상호작용</b>하는 항 (client-interaction)</span></li>
+  <li><b>증거</b>
+    <ul><li>CNN: 1+2차 Spearman <b>0.96</b> &gt; 1차 0.92 (plain SGD)</li>
+        <li>LLM backdoor: 1차 완전 회피 vs 2차 부분 회복 → <a style="color:var(--accent)">결과 ③</a></li></ul></li>
+  <li><b>경쟁자엔 없는 물건</b> — Ripple의 곡률은 로컬-Hessian의 <b>시간 전파</b>(라운드 내 상호작용 없음), FedIF는 <b>1차뿐</b></li>
+</ul>
+</div>
+<div>""" + taylor_sketch() + """</div>
+</div>
+""")
+
+# 6 ── 포지셔닝 ----------------------------------------------------------------
+SLIDES["position"] = S("position", "가장 가까운 경쟁 연구와의 위치", "방법", """
+<table class="t" style="margin-bottom:14px">
+<tr><th style="text-align:left">축</th><th>Ripple (AAAI'26)</th><th>FedIF ('25)</th><th>FedTSV (ECC'26)</th><th>Flirds (우리)</th></tr>
+<tr><td class="l"><b>도메인</b></td><td>CNN</td><td>CNN</td><td>MLP/ResNet</td><td class="good">LoRA-LLM 1B–7B</td></tr>
+<tr><td class="l"><b>평가 단위</b></td><td>sample</td><td>client</td><td>client</td><td class="good">client</td></tr>
+<tr><td class="l"><b>Shapley 공리</b></td><td>✓</td><td>✗ (점수·EMA)</td><td>✓ (MC)</td><td class="good">✓ (closed-form)</td></tr>
+<tr><td class="l"><b>곡률(2차)</b></td><td>로컬-H 시간 전파</td><td>✗ 1차뿐</td><td>✗ 0차 기하</td><td class="good">val-H client-interaction</td></tr>
+<tr><td class="l"><b>학습 개입</b></td><td>없음</td><td>aggregation 변경</td><td>aggregation 변경</td><td class="good">없음 (post-hoc)</td></tr>
+<tr><td class="l"><b>추가 통신</b></td><td>0</td><td>0</td><td>서버 val-train/라운드</td><td class="good">0</td></tr>
+</table>
+<ul class="main">
+  <li>세 경쟁자 모두 <b>CNN/이미지</b> — <b class="acc">LLM·LoRA 축에서는 Flirds가 단독</b></li>
+  <li>노벨티 = "최초의 federated in-run"이 아니라(그건 Ripple),
+      <b>client-level × in-run × closed-form 1+2차 × post-hoc × LLM의 교집합</b></li>
+  <li>실측: Ripple을 LLM에 포팅하면 <b>~42× 느리고</b> 탐지력 최약 (noisy AUROC 0.50±0.20) — 둘 다 우리 비교 suite에 포함</li>
+</ul>
+""")
+
+# 7 ── dual-oracle 검증 --------------------------------------------------------
+SLIDES["oracle"] = S("oracle", "근사가 맞다는 걸 어떻게 믿나 — dual-oracle 검증", "검증", """
+<div class="grid2" style="grid-template-columns:1.05fr 1fr;align-items:center">
+<div>
+<ul class="main">
+  <li><b>(a) retrain oracle</b> — coalition마다 FedAvg를 <b>재학습</b> (고전 Data Shapley의 정의; gold standard, N=5에서만 감당 가능)</li>
+  <li><b>(b) in-run oracle</b> — 같은 frozen 궤적에서 coalition별 val-loss 변화를 <b>exact 2<sup>N</sup> 열거</b> (estimator가 근사하는 대상)</li>
+  <li><b>결과 — 삼중 일치 Spearman +1.000</b><br><span class="small">1B N=5, fp32, lr 2종 (3B에서도 estimator +1.000 유지)</span></li>
+  <li><b>방법론 통찰</b> — 검증은 <b>같은 게임(val-loss)</b>으로 해야 한다
+    <ul><li>retrain-ROUGE로 채점하면 발산(+0.4 / −0.9): 평가지표가 데이터 오염에 속는 사례 — val-loss는 안 속음</li></ul></li>
+</ul>
+</div>
+<div>""" + oracle_triangle() + """</div>
+</div>
+""")
+
+# 8 ── 결과 ①: 프론티어 -------------------------------------------------------
+SLIDES["frontier"] = S("frontier", "결과 ① — 같은 답을 5–15× 싸게 (비용–정확도)", "결과", """
+<div class="callout g" style="margin-bottom:10px">같은 frozen 궤적 위에서 <b>valuation 9종 + detector 4종</b> 공정 비교 (1B, N=5, 3-seed, real config) —
+noisy·free-rider에서 <b>모든 valuation 방법이 oracle과 같은 랭킹(Spearman +1.000)</b> → 남는 차이는 <b>비용</b></div>
+""" + runtime_chart() + """
+<div class="tiny" style="margin-top:6px">* Ripple은 수치 불안정(eigsh)으로 별도 세션 측정. &nbsp;비용 구조의 차이:
+<b>Flirds = 라운드당 HVP 1회</b> vs oracle·SV 계열 = 라운드당 2<sup>N</sup>/MC coalition 평가.</div>
+""")
+
+# 9 ── 결과 ②: 탐지+선별 ------------------------------------------------------
+SLIDES["detect"] = S("detect", "결과 ② — 위협 탐지와 클라이언트 선별", "결과", """
+<div class="small muted" style="margin-bottom:8px">평가 설계: 2 regime (cross-silo N=5 / cross-device N=100) × 4 threat ×
+5-domain instruction 데이터 · 위협별 <b>전용 detector 4종</b>과 경쟁 (AUROC, 1B N=5 3-seed)</div>
+<table class="t" style="margin-bottom:12px">
+<tr><th style="text-align:left">방법</th><th>noisy (라벨 오염)</th><th>free-rider (zero)</th><th>free-rider (random)</th></tr>
+<tr class="hl"><td class="l">Flirds / Flirds-1st</td><td class="good">1.000</td><td class="good">1.000</td><td class="good">1.000</td></tr>
+<tr><td class="l">FLTrust <span class="tiny">(≈ 정규화된 1차)</span></td><td class="good">1.000</td><td class="good">1.000</td><td class="good">1.000</td></tr>
+<tr><td class="l">FedDQC <span class="tiny">(data-quality 전용)</span></td><td class="good">0.917</td><td class="mid">0.750</td><td class="mid">0.750</td></tr>
+<tr><td class="l">STD-DAGMM <span class="tiny">(free-rider 전용)</span></td><td class="poor">0.417</td><td class="poor">0.250</td><td class="good">1.000</td></tr>
+<tr><td class="l">FLDetector <span class="tiny">(poisoning 전용)</span></td><td class="mid">0.750</td><td class="mid">0.750</td><td class="good">1.000</td></tr>
+</table>
+<ul class="main">
+  <li>전용 detector는 <b>위협이 바뀌면 무너진다</b> — Flirds는 가치평가를 하면서 noisy·free-rider 전부 1.0</li>
+  <li>free-rider φ = <b>정확히 0</b> (수치 우연이 아니라 구조적: Δw=0 → 모든 내적 0)</li>
+  <li><b>선별 효과</b> — φ 하위 클라이언트 드롭 → 오염 2개(noisy+FR)만 정확히 제거,
+      전체 사용 대비 val loss <b>항상 개선</b>, random 선택 대비 우위(seed 평균)</li>
+</ul>
+""")
+
+# 10 ── 결과 ③: backdoor 경계 -------------------------------------------------
+SLIDES["backdoor"] = S("backdoor", "결과 ③ — backdoor가 드러낸 근사의 경계 (정직한 특성화)", "결과", """
+<div class="grid2" style="grid-template-columns:1.08fr 1fr;align-items:start">
+<div>
+<ul class="main">
+  <li><b>위협</b>: instruction-trigger backdoor + γ-scaled 주입 (Xu'23 + Bagdasaryan'20), <b>배포 ASR=1.00</b>인 실제 작동 공격</li>
+  <li><b>발견</b>: 공격자가 clean val-loss를 오히려 낮춰줌 → 1차 Taylor에겐 <b>"가장 도움되는 클라이언트"</b>로 보임 →
+      <b class="bad">Flirds-1st AUROC 0.000 (완전 회피, 재현 일관)</b></li>
+  <li><b>2차항은 부분 회복</b> — 단 <b class="warn">불안정</b> (동일 설정 재실행 간 0.42±0.43 ↔ 0.92±0.12)
+      → 분산 원인 규명 진행 중. <b>2차가 1차를 이긴 첫 LLM-scale 신호</b></li>
+  <li><b>메커니즘</b>: Taylor(접선)는 속고, <b>exact 평가(secant)는 잡는다</b> (oracle·loss-heur 1.0)
+      — 근사의 경계이지 프레임워크의 경계가 아님</li>
+  <li><b>처방</b>: 전용 detector가 전부 1.0 → <b>"Flirds(가치평가) + 전용 detector(보완)" 상보 구성</b>.
+      poison에서 방법 간 동률도 처음 깨짐 (FedSV Spearman +0.37로 추락)</li>
+</ul>
+</div>
+<div>
+<div class="card" style="padding:10px 12px 4px 12px"><div class="tiny" style="text-align:center;margin-bottom:2px">poison 탐지 AUROC (1B N=5, 3-seed)</div>
+""" + poison_chart() + """</div>
+</div>
+</div>
+""")
+
+# 11 ── 결과 ④: cross-device --------------------------------------------------
+SLIDES["device"] = S("device", "결과 ④ — cross-device 스케일 (N=100)", "결과", """
+<ul class="main">
+  <li>N=100이면 2<sup>100</sup> — oracle 자체가 불가능? → <b>per-round exact 분해</b>:
+      라운드 참여자(K=10)만의 2<sup>|P<sub>r</sub>|</sup>로 분해해도 <b>수학적으로 동일</b> (Δφ≈3×10<sup>−16</sup> 검증)</li>
+  <li><b>anchor 검증 (α=0.5)</b> — N=100에서 Flirds vs per-round exact oracle <b class="ok">Spearman +1.000</b>
+      <span class="small muted">(oracle ≈ 11h/4-GPU vs Flirds 수 분 — oracle은 anchor 1점, 나머지 α는 Flirds를 검증된 proxy로)</span></li>
+  <li><b>α-sweep</b> (Dirichlet 비IID 강도 {0, 0.01, 0.1, 0.5, 5}) <span class="chip run">진행 중</span>
+      — 잠정: free-rider는 N=100에서도 Flirds AUROC <b>1.000</b> (α=0.1)</li>
+</ul>
+<table class="t" style="margin-top:10px">
+<tr><th style="text-align:left">단계</th><th>내용</th><th>상태</th></tr>
+<tr><td class="l">tier 1 — cross-silo N=5</td><td>4 threat × 3-seed, 전 방법 + oracle</td><td><span class="chip done">완료</span></td></tr>
+<tr><td class="l">tier 2 — cross-device N=100</td><td>α-sweep 12셀 + poison 2셀 (4-GPU 큐)</td><td><span class="chip run">진행 중</span></td></tr>
+<tr><td class="l">tier 2 — α=0.5 anchor</td><td>per-round oracle 동반 (비싼 셀, 마지막)</td><td><span class="chip todo">대기</span></td></tr>
+<tr><td class="l">tier 3 — 3B → 7B 스케일업</td><td>silo5 4 threat (oracle 포함)</td><td><span class="chip todo">대기</span></td></tr>
+</table>
+<div class="tiny" style="margin-top:8px"><span class="chip todo">업데이트 예정</span>&nbsp; 이 슬라이드의 sweep 결과는 실험 완료 시 갱신</div>
+""")
+
+# 12 ── 한계 -------------------------------------------------------------------
+SLIDES["limits"] = S("limits", "한계와 열린 문제 — 정직하게", "정리", """
+<ul class="main">
+  <li><b>2차항 가치의 입증이 아직 약하다</b> — noisy·FR에선 1차=2차(그리고 1차가 3× 싸다);
+      분리 신호는 poison뿐인데 불안정 → <b class="warn">분산 원인 규명이 현재 최우선 과제</b> (기존 궤적 재분석, 비용 ≈ 0)</li>
+  <li><b>N=5는 near-additive</b> — 방법 간 차이가 안 드러나는 regime; 분리력 입증은 N=10 oracle(2–5일)
+      또는 N=100 결과 필요</li>
+  <li><b>방법의 전제 조건</b> — plain SGD(momentum 0)·fp32·LoRA-subspace·vanilla FedAvg
+      <ul><li>momentum을 켜면 2차항이 역효과(실측) — Adam/bf16 일반화는 향후 과제</li></ul></li>
+  <li><b>poison 위협의 인위성</b> — backdoor가 설치되는 별도 config에서만 작동(설치 임계 존재);
+      더 정교한 공격(stealthy)은 이 설정에선 불가능했음</li>
+  <li><b>advanced free-rider 미시험</b> — 이전 글로벌 update를 재활용하는 위장 모드가
+      Flirds에게 진짜 위험한 축; 뚫리면 경계 특성화, 막으면 robustness — 양쪽 다 논문 가치</li>
+</ul>
+""")
+
+# 13 ── 현황과 계획 ------------------------------------------------------------
+SLIDES["status"] = S("status", "현재 상태와 다음 단계", "정리", """
+<div class="grid3" style="margin-bottom:14px">
+<div class="card"><div style="font-weight:800;color:var(--teal);margin-bottom:6px">완료 ✓</div>
+<ul class="main" style="font-size:18px"><li style="margin-bottom:8px">방법+코드 전체 (estimator, oracle 2종, baseline 9종, detector 4종, matrix 자동화)</li>
+<li style="margin-bottom:8px">dual-oracle 삼중 일치 +1.000</li>
+<li>tier1 cross-silo 4-threat × 3-seed (결과 영속화 포함)</li></ul></div>
+<div class="card"><div style="font-weight:800;color:var(--accent);margin-bottom:6px">진행 중 ◌</div>
+<ul class="main" style="font-size:18px"><li style="margin-bottom:8px">tier2 cross-device α-sweep (4-GPU 큐 자동 실행)</li>
+<li>poison 2차항 분산 원인 규명 (라운드별 φ 분해 재분석)</li></ul></div>
+<div class="card"><div style="font-weight:800;color:var(--warn);margin-bottom:6px">예정 →</div>
+<ul class="main" style="font-size:18px"><li style="margin-bottom:8px">α=0.5 anchor(oracle 동반) → 3B → 7B</li>
+<li style="margin-bottom:8px">N=10 retrain oracle (multi-GPU 샤딩)</li>
+<li>2차항 결정 실험(PGD-poison) · advanced free-rider</li></ul></div>
+</div>
+<div class="callout">논문 전 가장 가치 있는 한 수 — <b>poison에서 2차항 seed/run 분산의 원인 규명</b>:
+이미 돌린 궤적의 재분석이라 비용이 거의 없고, 결과가 "2차항이 언제 필요한가"라는 중심 서사를 결정한다</div>
+<div class="tiny" style="margin-top:8px"><span class="chip todo">업데이트 예정</span>&nbsp; 실험 완료분 반영 시 이 슬라이드 갱신</div>
+""")
+
+# 14 ── 요약 -------------------------------------------------------------------
+SLIDES["summary"] = S("summary", "요약", "정리", """
+<div style="display:flex;flex-direction:column;gap:16px;margin-top:8px">
+<div class="card" style="display:flex;gap:18px;align-items:center"><div style="font-size:34px;font-weight:850;color:var(--accent)">1</div>
+<div><b>Flirds — 재학습 0, 추가 통신 0, 라운드당 HVP 1회</b>로 클라이언트 Shapley 기여도를 계산.<br>
+<span class="muted small">LLM 연합학습에서 실용적으로 도는 첫 client-level 기여도 평가 (LoRA 1B–7B).</span></div></div>
+<div class="card" style="display:flex;gap:18px;align-items:center"><div style="font-size:34px;font-weight:850;color:var(--accent)">2</div>
+<div><b>검증: retrain oracle = in-run oracle = estimator, 삼중 일치 +1.000</b> — 그리고 같은 랭킹을 <b>5–15× 싸게</b>.<br>
+<span class="muted small">"같은 게임(val-loss)으로 검증한다"는 dual-oracle 방법론 자체가 기여.</span></div></div>
+<div class="card" style="display:flex;gap:18px;align-items:center"><div style="font-size:34px;font-weight:850;color:var(--accent)">3</div>
+<div><b>탐지: noisy·free-rider 완벽 (φ=0 구조적), backdoor는 경계를 메커니즘까지 규명</b> + 보완 detector 제시.<br>
+<span class="muted small">근사가 속는 지점(접선 vs secant)을 숨기지 않고 특성화 — 2차항이 1차를 이긴 첫 신호 확보.</span></div></div>
+</div>
+<div class="callout g" style="margin-top:18px">다음 한 수 — <b>2차항 분산 규명 + α-sweep 완료</b> → 논문 중심 서사 확정</div>
+""")
+
+# ── 부록 ----------------------------------------------------------------------
+SLIDES["a_eng"] = S("a_eng", "부록 A — LLM-scale에서 돌게 만든 엔지니어링", "부록", """
+<ul class="main">
+  <li><b>fp32 필수</b> — 신호(coalition loss 차 ~10<sup>−3</sup>)가 bf16 정밀도(~8×10<sup>−3</sup>)보다 작다
+      → bf16에선 Spearman 자체가 무의미 (oracle·estimator 모두 fp32 master)</li>
+  <li><b>forward HVP</b> (jvp∘grad) — H·v 한 번이면 되고 <b>H<sup>−1</sup>은 절대 안 쓴다</b>
+      → influence function의 iHVP 역산 비용·불안정성 회피</li>
+  <li><b>eager attention 강제</b> — SDPA/flash kernel은 forward-mode AD 미구현 → HVP가 에러</li>
+  <li><b>validation 도메인 청킹</b> — full-val gradient/HVP와 수학적으로 동일(선형)하면서 peak memory = 1청크 → OOM 회피</li>
+  <li><b>plain SGD (momentum=0) 강제</b> — per-round Taylor 전개의 가정; momentum을 켜면 2차항이 역효과
+      (CNN 실측 0.73 &lt; 0.81)</li>
+  <li><b>LoRA-subspace</b> — FL 상태는 named_parameters 키의 LoRA 가중치만 (r=16, 7개 projection)</li>
+</ul>
+""")
+SLIDES["a_data"] = S("a_data", "부록 B — 데이터와 위협 정의", "부록", """
+<div class="grid2" style="align-items:start">
+<div>
+<div style="font-weight:800;margin-bottom:8px">5-domain instruction 데이터</div>
+<table class="t" style="font-size:16.5px">
+<tr><th>도메인</th><th>출처</th></tr>
+<tr><td>의료</td><td class="l">Medical Meadow flashcards</td></tr>
+<tr><td>법률</td><td class="l">QA legal dataset</td></tr>
+<tr><td>금융</td><td class="l">FiQA</td></tr>
+<tr><td>수학</td><td class="l">AQuA-RAT (풀이 포함)</td></tr>
+<tr><td>일반</td><td class="l">Dolly-15k</td></tr>
+</table>
+<ul class="main" style="font-size:17.5px;margin-top:10px">
+<li>전 도메인 <b>free-form instruction→response 균일 포맷</b> — 포맷이 다르면 공유 val-loss Shapley가 불공정해짐</li>
+<li>train 12k/도메인 (크기 통제), val 200/도메인</li></ul>
+</div>
+<div>
+<div style="font-weight:800;margin-bottom:8px">위협 4종 (전부 논문 기반 정의)</div>
+<ul class="main" style="font-size:17.5px">
+<li><b>noisy</b> = answer_swap — 클라이언트 내부에서 응답을 뒤섞음: "정직하지만 나쁜 데이터" (data-quality)</li>
+<li><b>free-rider zero / random</b> — 가짜 update(0 또는 benign 통계 모사) (Lin et al. 2019 분류)</li>
+<li><b>backdoor</b> — instruction trigger→목표 출력 (Xu 2023) + γ-scale 주입 (Bagdasaryan 2020);
+설치 임계가 있어 별도 config에서만 ASR=1.0</li>
+<li class="tiny">검출 평가의 순환성 없음 — 주입 라벨은 채점 key(AUROC)일 뿐 방법의 입력이 아님</li>
+</ul>
+</div>
+</div>
+""")
+SLIDES["a_det"] = S("a_det", "부록 C — 위협-매칭 detector suite", "부록", """
+<table class="t" style="margin-bottom:12px">
+<tr><th style="text-align:left">detector</th><th>원 논문</th><th>타깃 위협</th><th>필요한 것</th><th>특징</th></tr>
+<tr><td class="l"><b>FedDQC</b></td><td>'24</td><td>data-quality (noisy)</td><td>클라이언트 데이터+모델</td><td class="l">instruction-response 정렬(IRA) 점수</td></tr>
+<tr><td class="l"><b>STD-DAGMM</b></td><td>'19</td><td>free-rider</td><td>update만 (model-free)</td><td class="l">AE+GMM 이상치 — gradient를 안 쓰는 독립 기준선</td></tr>
+<tr><td class="l"><b>FLTrust</b></td><td>'21</td><td>free-rider·poison</td><td>val gradient</td><td class="l">cosine 신뢰점수 ≈ 정규화된 Flirds-1차 (포섭 관계)</td></tr>
+<tr><td class="l"><b>FLDetector</b></td><td>'22</td><td>poisoning</td><td>update만 (model-free)</td><td class="l">시간 일관성 예측 잔차 — Flirds와 직교 신호</td></tr>
+</table>
+<ul class="main">
+<li>각 detector는 <b>자기 위협에 맞춰 설계</b>된 것 — 우리가 위협마다 가장 유리한 상대와 붙는 구도</li>
+<li>전부 CV/소규모에서 온 방법: <b>LLM-FL 클라이언트 레벨에서 검증된 기존 detector는 없음</b> → 포팅 자체도 기여</li>
+<li>발견: gradient를 쓰는 검출(FLTrust≈Flirds-1차)은 free-rider에 강하고, model-free는 LoRA-scale에서 약함</li>
+</ul>
+""")
+SLIDES["a_num"] = S("a_num", "부록 D — 핵심 수치 출처", "부록", """
+<table class="t" style="font-size:16.5px">
+<tr><th style="text-align:left">수치</th><th>설정</th><th>출처</th></tr>
+<tr><td class="l">삼중 일치 Spearman +1.000</td><td>1B N=5 fp32, lr 2종</td><td class="l">retrain-oracle 검증 세션 (06-07)</td></tr>
+<tr><td class="l">3B: estimator +1.000 / retrain vs in-run +0.900</td><td>3B N=5 fp32 1-seed</td><td class="l">scale 확인 세션 (06-08)</td></tr>
+<tr><td class="l">런타임 35 / 107 / ~530 / 4515s</td><td>1B N=5 R=10 3-seed</td><td class="l">tier1 real grid (RESULTS.md)</td></tr>
+<tr><td class="l">noisy·FR AUROC 1.000, FR φ=0</td><td>1B N=5 3-seed</td><td class="l">tier1 real grid (RESULTS.md)</td></tr>
+<tr><td class="l">poison: 1차 0.000 / 2차 0.92±0.12 (재실행) ↔ 0.42±0.43 (원실행)</td><td>1B N=5 3-seed, ASR=1.00</td><td class="l">tier1 두 run 로그 대조 — run간 분산 자체가 보고 대상</td></tr>
+<tr><td class="l">N=100 anchor +1.000 (α=0.5)</td><td>1B, K=10/round</td><td class="l">cross-device 검증 (06-08)</td></tr>
+<tr><td class="l">CNN 2차 0.96 &gt; 1차 0.92 (plain SGD)</td><td>CNN 시뮬레이터 3-seed</td><td class="l">Phase 0.5 (06-03)</td></tr>
+</table>
+<div class="tiny" style="margin-top:10px">전체 근거 문서: research-wiki/wiki/checkpoint-2026-06-10/ (00–07) · runs/phase2_matrix/RESULTS.md</div>
+""")
+
+# ── 교수님용 recap ------------------------------------------------------------
+SLIDES["recap"] = S("recap", "Recap — 문제와 방법 한 장 (여러 번 보신 내용)", "RECAP", """
+<div class="grid2" style="grid-template-rows:1fr 1fr;height:97%">
+<div class="card"><div style="font-weight:800;color:var(--accent);margin-bottom:6px">① 문제</div>
+<div style="font-size:18.5px;line-height:1.5">FL 클라이언트 기여도의 표준 답 = <b>Shapley</b>.
+그러나 2<sup>N</sup> 재학습: <b>N=10 = 2–5일/GPU, LLM-FL에선 불가능</b>.
+기존 FL-SV 근사도 비싸고 전부 CNN 검증.</div></div>
+<div class="card"><div style="font-weight:800;color:var(--accent);margin-bottom:6px">② Flirds</div>
+<div style="font-size:18.5px;line-height:1.5">frozen FedAvg 궤적 위에서 val-loss를 <b>1+2차 Taylor</b> 전개 → Shapley closed-form.<br>
+<b>라운드당 HVP 1회 · 재학습 0 · 추가 통신 0 · post-hoc</b></div>
+<div class="formula" style="font-size:18px;margin-top:8px;padding:8px">φ<sub>k</sub> = Σ<sub>r</sub> p<sub>k</sub><sup>r</sup>[⟨g<sup>r</sup>,Δw<sub>k</sub>⟩ + ½⟨Δw<sub>k</sub>,H<sup>r</sup>ΔW<sup>r</sup>⟩]</div></div>
+<div class="card"><div style="font-weight:800;color:var(--accent);margin-bottom:6px">③ 왜 2차항</div>
+<div style="font-size:18.5px;line-height:1.5">IRDS(centralized·per-step)에선 무의미했지만 <b>FL은 라운드당 Δw가 커서 곡률이 의미</b>를 가짐.
+2차 = 같은 라운드 클라이언트 간 <b>상호작용 항</b> ⟨Δw<sub>j</sub>, H<sub>val</sub>Δw<sub>k</sub>⟩ — Ripple(시간 전파)·FedIF(1차뿐)에 없는 것.</div></div>
+<div class="card"><div style="font-weight:800;color:var(--accent);margin-bottom:6px">④ 그간의 검증</div>
+<div style="font-size:18.5px;line-height:1.5"><b>dual-oracle 삼중 일치 +1.000</b> (1B N=5 fp32; 3B 유지) ·
+free-rider <b>φ=정확히 0</b> · CNN 2차 0.96&gt;0.92 ·
+같은 랭킹을 <b>5–15× 싸게</b>.<br><span class="tiny">→ 오늘: real grid 결과와 backdoor 경계, 이후 계획</span></div></div>
+</div>
+""")
+
+# ------------------------------------------------------------- 조립/출력 ----
+SEMINAR = ["why", "shapley", "idea", "second", "position", "oracle", "frontier",
+           "detect", "backdoor", "device", "limits", "status", "summary",
+           "a_eng", "a_data", "a_det", "a_num"]
+ADVISOR = ["recap", "position", "oracle", "frontier", "detect", "backdoor",
+           "device", "limits", "status", "summary", "a_eng", "a_data", "a_det", "a_num"]
+
+SHELL = """<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__</title><style>__CSS__</style></head>
+<body><div class="stage">__SLIDES__</div>
+<div class="ui"><button id="prev">‹</button><span class="ctr"></span><button id="next">›</button></div>
+<script>__JS__</script></body></html>"""
+
+def assemble(title, cover_sub, manifest):
+    parts = [cover(cover_sub)] + [SLIDES[k] for k in manifest]
+    # 푸터 페이지번호 (print에서도 보이게 정적으로 박음)
+    out, n = [], len(parts)
+    for i, p in enumerate(parts, 1):
+        out.append(p.replace('<span class="pageno"></span>', f'<span class="pgn">{i} / {n}</span>'))
+    html = SHELL.replace("__TITLE__", title).replace("__CSS__", CSS) \
+                .replace("__JS__", JS).replace("__SLIDES__", "\n".join(out))
+    return html
+
+def main():
+    decks = [
+        ("flirds-seminar", "Flirds — 연구실 세미나", "연구실 세미나 · 2026-06", SEMINAR),
+        ("flirds-advisor", "Flirds — 연구 진행 미팅", "연구 진행 미팅 · 2026-06", ADVISOR),
+    ]
+    for name, title, sub, manifest in decks:
+        path = os.path.join(HERE, name + ".html")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(assemble(title, sub, manifest))
+        print(f"[html] {path}  ({len(manifest)+1} slides)")
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page(viewport={"width": 1280, "height": 720})
+        for name, *_ in decks:
+            src = os.path.join(HERE, name + ".html")
+            pg.goto("file://" + src)
+            pg.wait_for_timeout(400)
+            pg.pdf(path=os.path.join(HERE, name + ".pdf"), width="1280px", height="720px",
+                   print_background=True,
+                   margin={"top": "0", "bottom": "0", "left": "0", "right": "0"})
+            print(f"[pdf ] {src.replace('.html', '.pdf')}")
+        b.close()
+
+if __name__ == "__main__":
+    main()
