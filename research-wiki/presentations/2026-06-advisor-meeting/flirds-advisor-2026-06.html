@@ -90,7 +90,7 @@ var { font-style: italic; font-family: inherit; }
   <span class="lbl">ⓑ</span> 실측 (설정 병기) &nbsp;·&nbsp;
   <span class="lbl">ⓒ</span> 설계 확정, 미실행<br>
   모든 정량 주장에 설정(모델 / N / regime / seed / config)을 병기한다.<br>
-  <span class="ph">기울임 회색</span> = 서버 결과 확정 대기(silo5 재실행본 · device100 α-sweep · FedIF) — 확정 시 갱신.
+  <span class="ph">기울임 회색</span> = 잔여 셀 확정 대기(device100 poison 2셀 · α=0.5 anchor 3셀 · 7B) — 확정 시 갱신.
 </div>
 <div class="foot"><span>Flirds 진행 보고 · 2026-06-12</span><span>1 / 11</span></div></section>
 <section class="slide" id="s1"><div class="kicker">§1 Recap</div><h2>문제 설정과 선행 연구의 빈 부분</h2><hr class="rule"><div class="body dense">
@@ -149,11 +149,11 @@ var { font-style: italic; font-family: inherit; }
 <table>
 <tr><th style="width:30%">질문</th><th style="width:38%">실험</th><th>현재 상태</th></tr>
 <tr><td>Shapley 계산이 옳은가</td><td>dual-oracle 삼중 비교 (retrain = in-run = estimator)</td><td><span class="lbl">ⓑ</span> +1.000 (1B N=5 fp32 3-seed)</td></tr>
-<tr><td>기존 방법 대비 무엇이 나은가</td><td>같은 frozen 궤적 위 9-method 비교 (+FedIF)</td><td><span class="lbl">ⓑ</span> phase1 3-seed · FedIF <span class="lbl">ⓐ</span> 편입(1903a58), <span class="ph">수치 확정 대기</span></td></tr>
-<tr><td>위협을 식별하는가</td><td>2 regime × 4 threat + matched detector 4종</td><td><span class="lbl">ⓑ</span> silo5 3-seed · device100 진행 중</td></tr>
-<tr><td>N=100에서 성립하는가</td><td>per-round exact 분해 + α-sweep</td><td>anchor <span class="lbl">ⓑ</span>(1-seed smoke) · <span class="ph">sweep 진행 중</span></td></tr>
+<tr><td>기존 방법 대비 무엇이 나은가</td><td>같은 frozen 궤적 위 9-method 비교 (+FedIF)</td><td><span class="lbl">ⓑ</span> phase1 + silo5 재실행 3-seed (FedIF 포함)</td></tr>
+<tr><td>위협을 식별하는가</td><td>2 regime × 4 threat + matched detector 4종</td><td><span class="lbl">ⓑ</span> silo5·3B·device100 sweep · <span class="ph">poison 2셀 잔여</span></td></tr>
+<tr><td>N=100에서 성립하는가</td><td>per-round exact 분해 + α-sweep</td><td>sweep 12셀 <span class="lbl">ⓑ</span> 3-seed · <span class="ph">α=0.5 anchor 3셀 잔여</span></td></tr>
 <tr><td>실용 가치가 있는가</td><td>selection run (top-k 재학습)</td><td><span class="lbl">ⓑ</span> 3-seed, 양 lr</td></tr>
-<tr><td>scale에서 유지되는가</td><td>1B → 3B → 7B ladder</td><td>1B <span class="lbl">ⓑ</span> · 3B 부분 <span class="lbl">ⓑ</span>(1-seed) · 7B <span class="lbl">ⓒ</span></td></tr>
+<tr><td>scale에서 유지되는가</td><td>1B → 3B → 7B ladder</td><td>1B <span class="lbl">ⓑ</span> · 3B 4-threat <span class="lbl">ⓑ</span>(1-seed) · 7B <span class="lbl">ⓒ</span></td></tr>
 <tr><td>N=5 near-additive 무변별 해소</td><td>N=10 retrain oracle</td><td><span class="lbl">ⓒ</span> 연기(비용) — 논의 항목 ②</td></tr>
 </table>
 </div><div class="foot"><span>Flirds 진행 보고 · 2026-06-12</span><span>4 / 11</span></div></section>
@@ -165,9 +165,9 @@ var { font-style: italic; font-family: inherit; }
 </ul>
 <div class="bt">같은 궤적 위 baseline 비교 (9-method + FedIF)</div>
 <ul>
-  <li class="tight"><span class="lbl">ⓑ</span> phase1(1B N=5 silo5 3-seed, lr 1e-3·3e-3): noisy/free-rider에서 <b>전 방법 Spearman +1.000 동률</b>(N=5 near-additive) → 주장은 "더 정확"이 아니라 <b>"같은 랭킹을 더 싸게"</b>.</li>
-  <li class="tight">런타임 <span class="lbl">ⓑ</span>: Flirds-1st 35s · Flirds 107s · loss-heur 164s · GTG/FedSV/Banzhaf/ShapleyFL/(b) oracle ~530s · Ripple ~4515s(별도 세션; eigsh flaky로 자동 비교에서 분리).</li>
-  <li class="tight">free-rider φ exact-0: Flirds·oracle·Banzhaf·loss-heur. GTG·FedSV는 within-subset renorm으로 ≠0. FedIF: <span class="lbl">ⓐ</span> suite 편입 완료(1903a58), <span class="ph">수치 확정 대기.</span></li>
+  <li class="tight"><span class="lbl">ⓑ</span> phase1(1B N=5 silo5 3-seed, lr 1e-3·3e-3): noisy/free-rider에서 <b>전 방법 Spearman +1.000 동률</b>(N=5 near-additive) → 주장은 "더 정확"이 아니라 <b>"같은 랭킹을 더 싸게"</b>. silo5 재실행본(3-seed, 8d364cc)도 동률 재확인.</li>
+  <li class="tight">런타임 <span class="lbl">ⓑ</span>: Flirds-1st 35s · FedIF 35s · Flirds 107s · loss-heur 164s · GTG/FedSV/Banzhaf/ShapleyFL/(b) oracle ~530s · Ripple ~4515s(별도 세션; eigsh flaky로 자동 비교에서 분리).</li>
+  <li class="tight">free-rider φ exact-0: Flirds·oracle·Banzhaf·loss-heur. GTG·FedSV는 within-subset renorm으로 ≠0. FedIF(정규화 1차) <span class="lbl">ⓑ</span>: noisy/FR AUROC 1.0, Spearman 0.90–0.93(silo5 재실행 3-seed).</li>
 </ul>
 <div class="bt">selection run — 검출을 성능으로</div>
 <ul>
@@ -185,24 +185,25 @@ var { font-style: italic; font-family: inherit; }
 <tr><td>free-rider</td><td>Δw=0 또는 benign-std random (Lin 2019)</td><td>STD-DAGMM · FLTrust</td></tr>
 <tr><td>poison</td><td>backdoor — Xu 2023 trigger + Bagdasaryan 2020 γ-scaled replacement</td><td>FLDetector · FLTrust</td></tr>
 </table>
-<div class="bt">결과 — silo5 4-threat 3-seed, 첫 tier1 run <span style="font-weight:400">ⓑ</span> <span class="ph" style="font-weight:400">(FedIF 편입으로 재실행됨 — 재실행본 수치 확정 대기)</span></div>
+<div class="bt">결과 — silo5 4-threat 3-seed 재실행본 <span style="font-weight:400">ⓑ</span> <span class="muted" style="font-weight:400">(FedIF 포함 · run-dir 영속화, 8d364cc)</span></div>
 <ul>
-  <li class="tight">noisy / free-rider: valuation 전 방법 AUROC 1.0, Spearman 동률(예외: FR-zero에서 FedSV +0.967).</li>
-  <li class="tight"><b>poison(ASR=1.00, working-backdoor config) = 동률의 첫 붕괴</b> — Flirds-1st AUROC 0.000 완전 회피(두 run 일관). Flirds-2차는 동일 config·seed 재실행 간 <b>0.417±0.425 ↔ 0.917±0.118</b>로 갈림(LLM run 비결정성; 원인 규명 중 — 단정하지 않음). in-run oracle·loss-heur·Banzhaf·ShapleyFL AUROC 1.0 / Sp +1.000; GTG Sp +0.867 · FedSV Sp +0.367. 메커니즘: Taylor tangent는 속고, exact secant는 잡는다.</li>
-  <li class="tight">detector: poison 4종 전부 ≥0.917 · noisy — FedDQC 0.917±0.118, FLDetector 0.75(off-threat), STD-DAGMM 0.417±0.425 · FR-zero — STD-DAGMM 0.083±0.118 <b>실패</b>(matched threat 실패, 진단 필요), FedDQC 0.75 · FR-random — STD-DAGMM 1.0.</li>
+  <li class="tight">noisy / free-rider: valuation 전 방법 AUROC 1.0; Spearman 동률(예외: FedIF 0.90–0.93 · FedSV FR-random 0.933±0.047).</li>
+  <li class="tight"><b>poison(ASR=1.00 전 seed, working-backdoor config) = 동률의 첫 붕괴</b> — <b>raw 1차(Flirds-1st)만 AUROC 0.000 완전 회피</b>. Flirds-2차 0.917±0.118(seed별 0.75/1.0/1.0; 단 이전 동일 config run은 0.417±0.425 — run간 비결정성, 원인 규명 중). 정규화 1차(FedIF·FLTrust)와 exact 계열(oracle·loss-heur·Banzhaf·ShapleyFL)은 AUROC 1.0; Spearman은 GTG +0.867 · FedSV +0.367로 열화.</li>
+  <li class="tight">detector: poison — FLDetector·FLTrust·FedDQC 1.0, STD-DAGMM 0.75±0.204 · noisy — FedDQC 0.917±0.118, FLDetector 0.75(off-threat), STD-DAGMM 0.417±0.312 · FR-zero — STD-DAGMM 0.250±0.204 <b>실패</b>(matched threat 실패, 진단 필요), FedDQC 0.75 · FR-random — STD-DAGMM·FLDetector 1.0.</li>
 </ul>
-<div class="box">현재 데이터 기준 정리: Flirds는 noisy + free-rider를 잡고, clean-preserving backdoor에는 회피된다. backdoor는 matched detector(FLDetector·FedDQC·loss-heur)가 보완한다. <span class="muted">(headline 채택은 논의 항목 ①)</span></div>
+<div class="box">현재 데이터 기준 정리: Flirds는 noisy + free-rider를 잡는다. clean-preserving backdoor는 raw 1차가 일관 회피하고, 2차는 1B서 0.917±0.118(run 분산)·3B(1-seed)서는 0.000 — 정규화 1차(FedIF·FLTrust)·loss-heur·FLDetector·FedDQC가 보완(전부 1.0). <span class="muted">(headline 채택은 논의 항목 ①)</span></div>
 </div><div class="foot"><span>Flirds 진행 보고 · 2026-06-12</span><span>6 / 11</span></div></section>
 <section class="slide" id="s6"><div class="kicker">§2 실험 설계</div><h2>scale-up — cross-device N=100 · 1B→7B · N=10 연기</h2><hr class="rule"><div class="body dense">
 <div class="bt">cross-device N=100</div>
 <ul>
   <li class="tight">설계: per-client Dirichlet(α) 도메인 혼합(Option B), K=10/round, α ∈ {0, 0.01, 0.1, 0.5, 5.0}, per_client=300.</li>
   <li class="tight">oracle: per-round exact 분해 Σ<sub>r</sub> 2<sup>|P<sub>r</sub>|</sup> ≡ 2<sup>N</sup> (Δφ≈3e-16 검증 <span class="lbl">ⓑ</span>). 그래도 771ms/forward(fp32, B200) → ~11h/4-GPU: in-run oracle은 <b>α=0.5 anchor 1점만</b>, off-anchor는 Flirds proxy-truth(자기 오류는 검출 불가 — 한계로 명시).</li>
-  <li class="tight">상태: anchor에서 Flirds vs per-round oracle Spearman +1.000 <span class="lbl">ⓑ</span>(1B, 1-seed smoke) · free-rider φ=0 exact 유지 · <span class="ph">α-sweep tier2 진행 중 — 확정 대기</span> · detector(1-seed): FLTrust FR 1.0 / STD-DAGMM FR 0.628.</li>
+  <li class="tight">α-sweep 12셀 <span class="lbl">ⓑ</span>(α∈{0, 0.01, 0.1, 5.0} × noisy/FR-zero/FR-random, 3-seed): free-rider — Flirds·Flirds-1st·loss-heur·FLTrust 전 α <b>AUROC 1.000</b>(FedIF 0.98–0.99) · noisy — cheap valuation 0.57–0.77로 약함, matched FedDQC 0.96–1.0이 보완 · 1차=2차=loss-heur 랭킹 동일(proxy-truth Sp 1.000) · ComFedSV 0.39–0.45 실패, STD-DAGMM 0.51–0.96 불안정.</li>
+  <li class="tight">anchor: Flirds vs per-round oracle Spearman +1.000 <span class="lbl">ⓑ</span>(1B, 1-seed smoke) · free-rider φ=0 exact 유지 · <span class="ph">α=0.5 anchor 3셀(oracle 동반) + device100 poison 2셀 잔여.</span></li>
 </ul>
 <div class="bt">scale ladder</div>
 <ul>
-  <li class="tight">1B <span class="lbl">ⓑ</span> 완료 · 3B 부분 <span class="lbl">ⓑ</span>(dual-oracle 1-seed) + matrix smoke <span class="lbl">ⓐ</span>(no OOM) · 7B <span class="lbl">ⓒ</span>(경로 구현됨, 미실행). 전부 fp32 (1B batch16 / 3B batch8 / 7B batch4).</li>
+  <li class="tight">1B <span class="lbl">ⓑ</span> 완료 · 3B 4-threat <span class="lbl">ⓑ</span>(1-seed, (b)oracle 동반): noisy/FR valuation 전 방법 AUROC 1.0(detector 예외: STD-DAGMM noisy 0.25·FR-zero 0.00·FR-random 1.0, FedDQC FR 0.75), Flirds vs (b) Sp +1.000(FedIF 0.600) — <b>poison(ASR=1.0)은 Flirds 1차·2차 모두 AUROC 0.000 회피</b>(loss-heur·FedIF·FLTrust·FLDetector·FedDQC는 1.0) · 7B <span class="lbl">ⓒ</span>(경로 구현됨, 미실행). 전부 fp32.</li>
 </ul>
 <div class="bt">N=10 retrain oracle — 연기 사유</div>
 <ul>
@@ -214,7 +215,7 @@ var { font-style: italic; font-family: inherit; }
 <div>
   <div class="bt">방법 내재</div>
   <ul>
-    <li class="tight"><b>Taylor 절단</b> — clean-preserving backdoor의 γ-update가 clean val-loss를 내림 → tangent는 most-helpful로 오판, exact secant는 잡음. 선형화 고유의 맹점; 전개반경 진단 코드 부재.</li>
+    <li class="tight"><b>Taylor 절단</b> — clean-preserving backdoor의 γ-update가 clean val-loss를 내림 → tangent는 most-helpful로 오판, exact secant는 잡음. 2차 회복은 1B서 부분적(run 분산)·3B(1-seed)서는 부재. 전개반경 진단 코드 부재.</li>
     <li class="tight"><b>plain SGD mom=0 강제</b> — AdamW 실무와 비호환. momentum에서 2차 역효과 기관측. 가장 큰 일반성 제약.</li>
     <li class="tight"><b>fp32 강제</b> — 신호(~1e-3) &lt; bf16 정밀도(~8e-3) 자체가 본질 제약. bf16 배포 궤적 valuation 불가.</li>
     <li class="tight"><b>적용 범위</b> — eager attention 필수 · LoRA-subspace 한정 · vanilla FedAvg 한정(robust/secure aggregation 비호환) · 개별 Δw 노출 전제.</li>
@@ -226,7 +227,8 @@ var { font-style: italic; font-family: inherit; }
   <ul>
     <li class="tight"><b>N=5 near-additive 무변별</b> — noisy/FR은 전 방법 동률. 유일한 분리는 poison인데 Flirds에 불리한 방향.</li>
     <li class="tight"><b>noisy AUROC lr 반전</b> — real grid lr 선택이 noisy 결론을 결정(미확정, 논의 ③).</li>
-    <li class="tight"><b>1-seed 다수</b> — 3B +0.900, N=100 detector(0.628/1.0); FedDQC는 per-domain IRA 분산 분석 한정.</li>
+    <li class="tight"><b>N=100 noisy 약함</b> — cheap valuation 0.57–0.77(전 α, 3-seed); matched FedDQC 0.96–1.0이 보완.</li>
+    <li class="tight"><b>1-seed 항목</b> — 3B(dual-oracle +0.900 · 4-threat tier); α=0.5 anchor 미실행; FedDQC per-domain IRA 분석.</li>
     <li class="tight"><b>proxy-truth 순환</b> — α-sweep off-anchor의 truth가 Flirds 자신.</li>
     <li class="tight"><b>poison 인위성</b> — working-backdoor config(lr 2e-3 · batch 8 · epochs 5 · frac 0.8) 별도 invocation에서만 ASR&gt;0; per_client 40→300은 공격 성립 위한 조정.</li>
     <li class="tight"><b>최약 공격자만</b> — stealthy 불가(‖Δ‖=40× benign), DBA 제외, free-rider easy 모드만.</li>
@@ -239,11 +241,11 @@ var { font-style: italic; font-family: inherit; }
 <section class="slide" id="s8"><div class="kicker">§4 계획</div><h2>① 진행 중 + main 트랙 보강</h2><hr class="rule"><div class="body dense">
 <div class="bt">진행 중 — real grid (cost-tiered stage-gate)</div>
 <ul>
-  <li class="tight">silo5 재실행 완료 → device100 α-sweep 진행 중 → 3B → 7B. poison은 working-backdoor config 별도 invocation. run-dir 영속화 적용(1903a58).</li>
+  <li class="tight">완료: silo5 재실행 · device100 sweep 12셀 · 3B 4-threat (20/25셀, 8d364cc). 잔여: device100 poison 2셀 + α=0.5 anchor 3셀 + 7B. poison은 working-backdoor config 별도 invocation.</li>
 </ul>
 <div class="bt">무비용 분석 (기실행 데이터 재분석)</div>
 <ul>
-  <li class="tight"><b>poison Flirds-2차 run/seed 분산 원인 규명</b> — per-round φ 분해 재분석. 2차항 novelty의 사활처 — <b>최우선</b>.</li>
+  <li class="tight"><b>poison Flirds-2차 거동 규명</b> — 1B run간 분산(0.417↔0.917) + 3B(1-seed) 완전 회피. per-round φ 분해 재분석(비용 ~0). 2차항 novelty의 사활처 — <b>최우선</b>.</li>
   <li class="tight">two-sided |φ| 점수 표준 산출물화("φ-extreme, not φ-high") + orientation 사전고정 · lr 양쪽 보고 규약 명문화.</li>
 </ul>
 <div class="bt">논문 전</div>
