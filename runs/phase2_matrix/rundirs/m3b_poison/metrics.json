@@ -1,0 +1,43 @@
+{
+  "poison_seed0": {
+    "auroc": {
+      "(b)oracle": 1.0,
+      "Flirds": 0.0,
+      "Flirds1st": 0.0,
+      "FedIF": 1.0,
+      "loss-heur": 1.0,
+      "FLDetector": 1.0,
+      "STD-DAGMM": 0.75,
+      "FLTrust": 1.0,
+      "FedDQC": 1.0
+    },
+    "spearman": {
+      "Flirds": 0.0,
+      "Flirds1st": 0.0,
+      "FedIF": 0.6,
+      "loss-heur": 0.9999999999999999
+    },
+    "runtime": {
+      "(b)oracle": 1370.7726854288485,
+      "Flirds": 276.61319599091075,
+      "Flirds1st": 90.812044729013,
+      "FedIF": 91.57734910515137,
+      "loss-heur": 422.65566203999333,
+      "FLDetector": 145.8129181188997,
+      "STD-DAGMM": 217.20076596480794,
+      "FLTrust": 91.42961268196814,
+      "FedDQC": 46.08075983100571
+    },
+    "corrupt": [
+      0
+    ],
+    "selected": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "asr": 1.0
+  }
+}

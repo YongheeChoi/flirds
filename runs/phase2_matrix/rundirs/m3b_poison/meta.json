@@ -1,0 +1,16 @@
+{
+  "name": "m3b_poison",
+  "git_sha": "eff3d06bf73559c1e5b90076bc081d13c856b6ce",
+  "git_dirty": false,
+  "env_hash": "a60fac0836d4079c",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.11.15"
+  }
+}

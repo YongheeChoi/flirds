@@ -1,0 +1,43 @@
+scale: 1B
+model: meta-llama/Llama-3.2-1B-Instruct
+regime: device100
+alpha: 5.0
+threats:
+- freerider_zero
+seeds:
+- 0
+- 1
+- 2
+oracle_b: false
+coalition: false
+rcfg:
+  n_clients: 100
+  per_client: 300
+  pool: 12000
+  val: 10
+  test: 40
+  rounds: 30
+  max_steps: 5
+  lr: 0.001
+  maxlen: 768
+  k_frac: 0.1
+  warmup: 3
+  noisy:
+  - 10
+  - 30
+  - 50
+  - 70
+  - 90
+  freerider:
+  - 10
+  - 30
+  - 50
+  - 70
+  - 90
+  attacker: 0
+mcfg:
+  batch: 16
+  val_chunk: 10
+  val_maxlen: 384
+env:
+  POOL: '12000'

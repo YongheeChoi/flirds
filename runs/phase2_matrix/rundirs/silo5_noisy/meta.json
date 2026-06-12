@@ -1,0 +1,16 @@
+{
+  "name": "silo5_noisy",
+  "git_sha": "1c4956265e9d6c026816c02729e47b4b6f9cc41d",
+  "git_dirty": true,
+  "env_hash": "a60fac0836d4079c",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.11.15"
+  }
+}

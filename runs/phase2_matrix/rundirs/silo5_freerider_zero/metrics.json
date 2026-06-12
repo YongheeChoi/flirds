@@ -1,0 +1,161 @@
+{
+  "freerider_zero_seed0": {
+    "auroc": {
+      "(b)oracle": 1.0,
+      "Flirds": 1.0,
+      "Flirds1st": 1.0,
+      "FedIF": 1.0,
+      "GTG": 1.0,
+      "FedSV": 1.0,
+      "ShapleyFL": 1.0,
+      "Banzhaf": 1.0,
+      "loss-heur": 1.0,
+      "FLDetector": 0.75,
+      "STD-DAGMM": 0.25,
+      "FLTrust": 1.0,
+      "FedDQC": 0.75
+    },
+    "spearman": {
+      "Flirds": 0.9999999999999999,
+      "Flirds1st": 0.9999999999999999,
+      "FedIF": 0.8999999999999998,
+      "GTG": 0.9999999999999999,
+      "FedSV": 0.9999999999999999,
+      "ShapleyFL": 0.9999999999999999,
+      "Banzhaf": 0.9999999999999999,
+      "loss-heur": 0.9999999999999999
+    },
+    "runtime": {
+      "(b)oracle": 522.0196995381266,
+      "Flirds": 104.81245308904909,
+      "Flirds1st": 34.273819093126804,
+      "FedIF": 34.457085290923715,
+      "GTG": 527.4561757780612,
+      "FedSV": 517.6750183359254,
+      "ShapleyFL": 519.2248001820408,
+      "Banzhaf": 522.4834697870538,
+      "loss-heur": 160.64960821904242,
+      "FLDetector": 22.234796670963988,
+      "STD-DAGMM": 96.60140229086392,
+      "FLTrust": 35.22645391593687,
+      "FedDQC": 22.599010751815513
+    },
+    "corrupt": [
+      1
+    ],
+    "selected": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "asr": null
+  },
+  "freerider_zero_seed1": {
+    "auroc": {
+      "(b)oracle": 1.0,
+      "Flirds": 1.0,
+      "Flirds1st": 1.0,
+      "FedIF": 1.0,
+      "GTG": 1.0,
+      "FedSV": 1.0,
+      "ShapleyFL": 1.0,
+      "Banzhaf": 1.0,
+      "loss-heur": 1.0,
+      "FLDetector": 0.75,
+      "STD-DAGMM": 0.5,
+      "FLTrust": 1.0,
+      "FedDQC": 0.75
+    },
+    "spearman": {
+      "Flirds": 0.9999999999999999,
+      "Flirds1st": 0.9999999999999999,
+      "FedIF": 0.9999999999999999,
+      "GTG": 0.9999999999999999,
+      "FedSV": 0.9999999999999999,
+      "ShapleyFL": 0.9999999999999999,
+      "Banzhaf": 0.9999999999999999,
+      "loss-heur": 0.9999999999999999
+    },
+    "runtime": {
+      "(b)oracle": 537.5993483690545,
+      "Flirds": 108.24574159202166,
+      "Flirds1st": 35.24282351904549,
+      "FedIF": 35.636563455918804,
+      "GTG": 543.8175317940768,
+      "FedSV": 533.7463894959074,
+      "ShapleyFL": 536.9687301819213,
+      "Banzhaf": 539.3720506760292,
+      "loss-heur": 166.3349140540231,
+      "FLDetector": 22.072449281113222,
+      "STD-DAGMM": 95.02853032085113,
+      "FLTrust": 36.111641271971166,
+      "FedDQC": 21.44095946289599
+    },
+    "corrupt": [
+      1
+    ],
+    "selected": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "asr": null
+  },
+  "freerider_zero_seed2": {
+    "auroc": {
+      "(b)oracle": 1.0,
+      "Flirds": 1.0,
+      "Flirds1st": 1.0,
+      "FedIF": 1.0,
+      "GTG": 1.0,
+      "FedSV": 1.0,
+      "ShapleyFL": 1.0,
+      "Banzhaf": 1.0,
+      "loss-heur": 1.0,
+      "FLDetector": 0.75,
+      "STD-DAGMM": 0.0,
+      "FLTrust": 1.0,
+      "FedDQC": 0.75
+    },
+    "spearman": {
+      "Flirds": 0.9999999999999999,
+      "Flirds1st": 0.9999999999999999,
+      "FedIF": 0.8999999999999998,
+      "GTG": 0.9999999999999999,
+      "FedSV": 0.9999999999999999,
+      "ShapleyFL": 0.9999999999999999,
+      "Banzhaf": 0.9999999999999999,
+      "loss-heur": 0.9999999999999999
+    },
+    "runtime": {
+      "(b)oracle": 539.6599860137794,
+      "Flirds": 108.14038567291573,
+      "Flirds1st": 35.22433409187943,
+      "FedIF": 35.85121847805567,
+      "GTG": 543.0694805220701,
+      "FedSV": 548.244681541808,
+      "ShapleyFL": 536.1922468740959,
+      "Banzhaf": 538.6053088880144,
+      "loss-heur": 166.15307678305544,
+      "FLDetector": 22.032564773922786,
+      "STD-DAGMM": 96.08371898904443,
+      "FLTrust": 35.99100230098702,
+      "FedDQC": 22.04221975011751
+    },
+    "corrupt": [
+      1
+    ],
+    "selected": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "asr": null
+  }
+}
