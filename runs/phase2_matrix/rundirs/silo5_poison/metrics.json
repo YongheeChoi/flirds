@@ -1,0 +1,161 @@
+{
+  "poison_seed0": {
+    "auroc": {
+      "(b)oracle": 1.0,
+      "Flirds": 0.75,
+      "Flirds1st": 0.0,
+      "FedIF": 1.0,
+      "GTG": 1.0,
+      "FedSV": 1.0,
+      "ShapleyFL": 1.0,
+      "Banzhaf": 1.0,
+      "loss-heur": 1.0,
+      "FLDetector": 1.0,
+      "STD-DAGMM": 0.5,
+      "FLTrust": 1.0,
+      "FedDQC": 1.0
+    },
+    "spearman": {
+      "Flirds": 0.8999999999999998,
+      "Flirds1st": 0.0,
+      "FedIF": 0.8999999999999998,
+      "GTG": 0.7,
+      "FedSV": 0.0,
+      "ShapleyFL": 0.9999999999999999,
+      "Banzhaf": 0.9999999999999999,
+      "loss-heur": 0.9999999999999999
+    },
+    "runtime": {
+      "(b)oracle": 573.1448671719991,
+      "Flirds": 114.49555687280372,
+      "Flirds1st": 37.28751485305838,
+      "FedIF": 38.21805751812644,
+      "GTG": 578.26542281406,
+      "FedSV": 563.6840125999879,
+      "ShapleyFL": 569.9821875798516,
+      "Banzhaf": 572.687675567111,
+      "loss-heur": 177.00461710314266,
+      "FLDetector": 56.6017281759996,
+      "STD-DAGMM": 129.93008690001443,
+      "FLTrust": 38.23353281104937,
+      "FedDQC": 21.015608968911693
+    },
+    "corrupt": [
+      0
+    ],
+    "selected": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "asr": 1.0
+  },
+  "poison_seed1": {
+    "auroc": {
+      "(b)oracle": 1.0,
+      "Flirds": 1.0,
+      "Flirds1st": 0.0,
+      "FedIF": 1.0,
+      "GTG": 1.0,
+      "FedSV": 1.0,
+      "ShapleyFL": 1.0,
+      "Banzhaf": 1.0,
+      "loss-heur": 1.0,
+      "FLDetector": 1.0,
+      "STD-DAGMM": 0.75,
+      "FLTrust": 1.0,
+      "FedDQC": 1.0
+    },
+    "spearman": {
+      "Flirds": 0.9999999999999999,
+      "Flirds1st": 0.0,
+      "FedIF": 0.9999999999999999,
+      "GTG": 0.9999999999999999,
+      "FedSV": 0.6,
+      "ShapleyFL": 0.9999999999999999,
+      "Banzhaf": 0.9999999999999999,
+      "loss-heur": 0.9999999999999999
+    },
+    "runtime": {
+      "(b)oracle": 592.5941896338481,
+      "Flirds": 118.35645292093977,
+      "Flirds1st": 38.63656930299476,
+      "FedIF": 39.087653633905575,
+      "GTG": 599.0508440681733,
+      "FedSV": 585.5688185279723,
+      "ShapleyFL": 590.3844722341746,
+      "Banzhaf": 594.4720519590192,
+      "loss-heur": 182.9516362620052,
+      "FLDetector": 25.00374748907052,
+      "STD-DAGMM": 97.31115285190754,
+      "FLTrust": 39.552711920812726,
+      "FedDQC": 21.12397167389281
+    },
+    "corrupt": [
+      0
+    ],
+    "selected": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "asr": 1.0
+  },
+  "poison_seed2": {
+    "auroc": {
+      "(b)oracle": 1.0,
+      "Flirds": 1.0,
+      "Flirds1st": 0.0,
+      "FedIF": 1.0,
+      "GTG": 1.0,
+      "FedSV": 1.0,
+      "ShapleyFL": 1.0,
+      "Banzhaf": 1.0,
+      "loss-heur": 1.0,
+      "FLDetector": 1.0,
+      "STD-DAGMM": 1.0,
+      "FLTrust": 1.0,
+      "FedDQC": 1.0
+    },
+    "spearman": {
+      "Flirds": 0.9999999999999999,
+      "Flirds1st": 0.0,
+      "FedIF": 0.9999999999999999,
+      "GTG": 0.8999999999999998,
+      "FedSV": 0.49999999999999994,
+      "ShapleyFL": 0.9999999999999999,
+      "Banzhaf": 0.9999999999999999,
+      "loss-heur": 0.9999999999999999
+    },
+    "runtime": {
+      "(b)oracle": 592.0778545900248,
+      "Flirds": 118.16655241907574,
+      "Flirds1st": 38.78292115801014,
+      "FedIF": 39.330001547932625,
+      "GTG": 596.6427462070715,
+      "FedSV": 603.4586066829506,
+      "ShapleyFL": 590.221253195079,
+      "Banzhaf": 595.5385099670384,
+      "loss-heur": 182.8803558528889,
+      "FLDetector": 24.872323884163052,
+      "STD-DAGMM": 96.82391075999476,
+      "FLTrust": 39.25370533601381,
+      "FedDQC": 21.29781308816746
+    },
+    "corrupt": [
+      0
+    ],
+    "selected": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "asr": 1.0
+  }
+}
