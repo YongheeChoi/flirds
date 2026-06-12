@@ -2,7 +2,7 @@
 type: checkpoint
 title: "Flirds 체크포인트 02 — 최종 실험 세팅"
 created: 2026-06-10
-updated: 2026-06-10
+updated: 2026-06-12
 ---
 
 # 02 · 최종 실험 세팅 (세부)
@@ -21,7 +21,7 @@ updated: 2026-06-10
 | **α-sweep** (device100) | `{0, 0.01, 0.1, 0.5, 5.0}`; in-run oracle은 α=0.5 앵커 1점만 | [DOC plan §3.9]; [CODE `phase2_matrix.py:86` ALPHA env] |
 | **scale-up scale 메모리** | 1B batch16/val_chunk10 · 3B batch8/val_chunk5 · 7B batch4/val_chunk2, **전부 fp32** (7B도 bf16 안 씀 — bf16은 연기된 retrain oracle용) | [CODE `phase2_matrix.py:97-100`] |
 
-> **est-vs-oracle 비교 매트릭스 (LOCKED 2026-06-04)** [DOC]: CNN retrain & in-run oracle N∈{5,10}. LLM 1B retrain & in-run oracle N=5 now / N=10 연기. LLM 3B N=5만. LLM 7B in-run oracle N=5, retrain oracle ✗. estimator METHOD(noisy-AUROC·selection, oracle 불필요)는 N=10서도 가능.
+> **est-vs-oracle 비교 매트릭스** [DOC]: LLM 1B retrain & in-run oracle N=5 / N=10 연기. LLM 3B N=5만. LLM 7B in-run oracle N=5, retrain oracle ✗. estimator METHOD(noisy-AUROC·selection, oracle 불필요)는 N=10서도 가능. CNN oracle 검증은 plan §3.11 **Track C1** — MNIST+LeNet5/CIFAR-10+FedSVCNN, **N=10 full**, 듀얼 oracle((a) 2^10 retrain val-loss + (b) exact in-run), 구현 완료 ⓐ(실측 없음). LLM 추가분은 **Track D** 표준세팅(전부 API-free, 설계만 ⓒ; 7B=Llama-2-7b-hf).
 
 ---
 
@@ -61,7 +61,7 @@ LoraConfig(r=16, lora_alpha=32,
 - **fp32 master, 왜 bf16 불가**: utility=coalition val-loss 차 ~0.005–0.02 < bf16 정밀도 ~0.009 → bf16서 Spearman 무의미. fp32서 +1.000 [CODE `oracle/exact_sv_llm.py:62-63`; ⓑ raw `2026-06-07-phase2-task6-a-retrain-oracle.md`]. eval forward도 fp32(HVP 수치안정).
 - **`attn_implementation="eager"`** [CODE `phase1_clean_run.py:123`]: forward-mode AD HVP가 SDPA/flash서 NotImplementedError.
 
-> ⚠ **plan-vs-code divergence**: plan §3.3은 phase1 lr=2e-5(fine-tune scale), matrix는 비교실험용 lr=1e-3/2e-3(빠른 수렴). matrix smoke는 final값이 아님 — real grid는 config 재고 필요. [04](04-plan-vs-implementation-divergences.md) 참조.
+> ⚠ **plan-vs-code divergence**: plan §3.3은 phase1 lr=2e-5(fine-tune scale), matrix는 비교실험용 lr=1e-3/2e-3(빠른 수렴). real grid는 06-10 시작·tier1(silo5 4-threat) 완료 — noisy/FR=lr1e-3/batch16, poison=working-backdoor lr2e-3/batch8(전부 R=10)로 확정 실행([07 §7.0](07-novelty-limitations-analysis.md) 참조). 22/25셀 metrics.json이 `runs/phase2_matrix/rundirs`에 영속화됨(남은 3셀=dev_a0.5 anchor {noisy,frrand,frzero}). [04](04-plan-vs-implementation-divergences.md) 참조.
 
 ---
 
@@ -120,6 +120,6 @@ arms = {"full": all_idx, "flirds_topk": keep, "random_k": rand}   # K=3 (N=5서 
 
 **정직한 nuance 2개** (직접 metrics.json 대조로 발견):
 1. **seed0은 random이 우연히 같은 clean set {2,3,4}를 골라 tie** (val_loss curve 동일). "beats random" 근거는 seed1/2 (random이 corrupted 포함 시: s1 random={1,2,3} FR포함→짐, s2 random={0,1,2} noisy+FR포함→짐). → "beats random"은 **cross-seed 평균** 주장이지 매-seed 아님.
-2. **AUROC가 lr로 뒤집힘**: lr1e-3 noisy 0.75/FR 1.0 ↔ lr3e-3 noisy 1.0/FR 0.75. noisy client(c0) φ 부호가 lr 의존(lr1e-3서 −0.0084, lr3e-3서 +0.0096). MEMORY는 lr1e-3(0.75/1.0)만 기재 → **lr3e-3 반전은 실제 run 파일에만 있는 caveat**. selection(flirds_keep)은 양 lr 동일하므로 결론 불변.
+2. **AUROC가 lr로 뒤집힘 + run간 분산**: 이 run에서는 lr1e-3 noisy 0.75/FR 1.0 ↔ lr3e-3 noisy 1.0/FR 0.75. noisy client(c0) φ 부호가 lr 의존(lr1e-3서 −0.0084, lr3e-3서 +0.0096). selection(flirds_keep)은 양 lr 동일하므로 결론 불변. 단, 06-10 영속화 real-grid run(`runs/phase2_matrix/rundirs/silo5_noisy`, 동일 lr=1e-3)에서는 Flirds noisy AUROC **1.000±0.000** per-seed [1.0, 1.0, 1.0](FR random/zero도 1.000) — run간 분산이 큼(양쪽 다 실측, 어느 run도 무효 아님). 'lr1e-3=0.75'를 단일 run으로 단정하지 말 것.
 
 > 신호는 작지만 일관 — "random은 어려운 bar(FedDQC/DsDm)" caveat는 (corrupted를 random이 포함하는 seed서) 통과.

@@ -2,7 +2,7 @@
 type: checkpoint
 title: "Flirds 체크포인트 06 — 가장 가까운 경쟁자 3종 (FedIF · FedTSV · Ripple)"
 created: 2026-06-10
-updated: 2026-06-10
+updated: 2026-06-12
 note: "내 연구의 직접 경쟁자 3편을 'LLM+FL+기여도평가' 교집합 축에 놓고 근접도+장단점 분석. 위키 노트(sources/*.md) 종합 + Ripple은 우리 구현 코드(ripple.py)를 직접 읽어 '2차항 없음' 주장을 정밀화(§6.5, ⓒ Yonghee 결정 대기)."
 ---
 
@@ -46,7 +46,7 @@ note: "내 연구의 직접 경쟁자 3편을 'LLM+FL+기여도평가' 교집합
 | cross-round 시간 전파를 **명시 모델링**(Jacobian chain) | granularity mismatch(sample vs client) → **SV 근사축 head-to-head ill-defined**; 비교는 학습성능축만([[2026-05-27-section-23-lock]]:140) |
 | sample-level = 더 세밀 | 저랭크 Jacobian-subspace 가정 강함 |
 | AAAI'26 강venue, 공간 선점 | **자기 논문에 SV ground-truth 없음**(task-driven만) → Flirds dual-oracle보다 약한 표준 |
-| Shapley 4공리 sample-level 보존 | **실측 dominated**: LLM 포팅서 가장 느리고(~4515s≈42×) 가장 약한 noisy(AUROC 0.50±0.20 고분산), `eigsh` flaky([[flirds.md|flirds]]:117) |
+| Shapley 4공리 sample-level 보존 | **실측 dominated**: LLM 포팅서 가장 느리고(~4515s≈42×) 가장 약한 noisy(AUROC 0.50±0.20 고분산)([[flirds.md|flirds]]:117); `eigsh`는 Track C1서 guard 적용(maxiter 상한+고정 v0+ncv 재시도+partial fallback, `phase0_verify_ripple` AUROC 1.0 = ⓐ; LLM-scale 교정/제외는 별도 세션, plan §3.11 결정⑥) |
 
 → Ripple 이기는 그림 = (1) **학습성능축** head-to-head, (2) **2차 종류** 차별화(§6.5), (3) 보너스 reduction(§6.6).
 
@@ -56,7 +56,7 @@ note: "내 연구의 직접 경쟁자 3편을 'LLM+FL+기여도평가' 교집합
 
 **무엇**: TracIn 스타일 **순수 1차** FL 데이터평가 + robust aggregation. 매 라운드 클라 **L2-정규화 업데이트** · **validation gradient** 내적 → min-max → EMA → adaptive weight. TracIn을 FL 클라업데이트에 처음 도입. SV 대비 aggregation 비용 **450× 절감**(단, **aggregation-time만**; training-time은 동등 — [[sources/fedif]]:80). CNN 전용, Hessian/2차/LoRA/LLM 전무. **코드 공개**.
 
-**근접도**: **Ripple 다음으로 가깝다.** client-level + in-run + $\Delta w$ 위 + val-gradient anchor → Flirds 1차항과 거의 동일. FedIF 라운드 영향력 $\Phi_i^t=\frac{\Delta w_i}{\lVert\Delta w_i\rVert}\cdot\nabla\ell_\text{val}$ = **Flirds 1차항의 L2-정규화**(≈ FLTrust cosine). **즉 우리 `Flirds-1st-only` ablation(~35s)이 사실상 FedIF의 메커니즘.**
+**근접도**: **Ripple 다음으로 가깝다.** client-level + in-run + $\Delta w$ 위 + val-gradient anchor → Flirds 1차항과 거의 동일. FedIF 라운드 영향력 $\Phi_i^t=\frac{\Delta w_i}{\lVert\Delta w_i\rVert}\cdot\nabla\ell_\text{val}$ = **Flirds 1차항의 L2-정규화**(≈ FLTrust cosine). "Flirds-1st ≈ FedIF"는 **1차 val-grad 내적이라는 골격에 한정**되는 대응 — FedIF는 **독립 baseline으로 포팅·실측됨**(real grid 22셀 영속화, `runs/phase2_matrix/rundirs`), head-to-head는 ⓑ. 실측에선 L2-정규화 차이가 갈라짐(예: silo5_poison FedIF AUROC 1.000 vs Flirds-1st 0.000·Flirds 2차 0.917±0.118; dev_a0.0_noisy FedIF 0.973±0.017 vs Flirds-1st 0.772±0.058).
 
 | FedIF이 가진 것 (장점) | Flirds 대비 단점 |
 |---|---|
@@ -116,7 +116,7 @@ Ripple의 ripple term Jacobian은 정확히 $M_t = I - \eta H_\text{local}$ — 
 
 ## 6.6 종합 — 어디서 이기고 무엇을 보여야 하나
 
-- **Ripple** = 가장 직접 경쟁자지만 sample-level+CNN+자기-SV-GT 없음 + **이미 실측 dominated**. 이기는 그림: (1) **학습성능축** head-to-head(SV 근사축은 granularity로 ill-defined), (2) **within-round vs cross-round 2차 종류** 차별화(§6.5), (3) 보너스 — LoRA+2-term Taylor 하 Ripple drop+ripple → Flirds 1+2차 reduction(닫히면 Proposition, 안 닫혀도 손해 없음 — [[flirds.md|flirds]]:128).
+- **Ripple** = 가장 직접 경쟁자지만 sample-level+CNN+자기-SV-GT 없음 + **이미 실측 dominated**. 비교 경로(plan §3.11 Track C/D): (1) **C1 CNN fidelity 비교군에 포함**(N=10 full, 듀얼 oracle (a) 2¹⁰ retrain+(b) exact, Spearman/Kendall+GTG 거리; eigsh guard), (2) **C2 개입(학습성능) arm에서는 제외**(drop+ripple는 미래-round 참조=비인과 → 온라인 개입 불가; Ripple 논문 자체가 fidelity 거부+acc-vs-round 메서드라 개입 프레임과 부정합 — Yonghee 결정), (3) **within-round vs cross-round 2차 종류** 차별화(§6.5), (4) 보너스 — LoRA+2-term Taylor 하 Ripple drop+ripple → Flirds 1+2차 reduction(닫히면 Proposition, 안 닫혀도 손해 없음 — [[flirds.md|flirds]]:128). Track C 구현 완료=ⓐ(단위검증 green, 실측 없음), Track D=ⓒ 설계만.
 - **FedIF** = **"1차로 충분한가?" 그 baseline.** `Flirds-1st-only`가 사실상 FedIF. 결정 실험 = **#13 PGD**(공인 blind spot서 2차 분리 → "2nd>1st" robustness 축 직접 증명). 코드 공개라 진짜 숫자 가능.
 - **FedTSV** = **다른 quadrant(adaptive aggregation/fairness).** 직접 comparand보다 "valuation/closed-form/2차-interaction/통신0"을 날카롭게 하는 **대조군**.
 

@@ -2,7 +2,7 @@
 type: checkpoint
 title: "Flirds 체크포인트 04 — plan 대비 구현 분기"
 created: 2026-06-10
-updated: 2026-06-10
+updated: 2026-06-12
 ---
 
 # 04 · plan 대비 달라진 점 (+ 왜)
@@ -55,11 +55,11 @@ updated: 2026-06-10
 
 ### 8. Ripple 비교서 분리 (RIPPLE=0) (06-06~07)
 - **원**: Ripple를 모든 비교표의 head-to-head baseline.
-- **변경/왜**: eigsh CPU-spinning stall(알려진 수렴 flaky) → 자동 배치서 불안정. `phase1_baseline_compare.py`는 RIPPLE=0; Ripple 값은 06-06 단일 세션 것 사용. [`2026-06-06-...md`; `2026-06-07-phase2-banzhaf-...md`]. → Ripple 코드 자체는 견고화([03](03-baselines-and-prior-work.md#a3)).
+- **변경/왜**: eigsh CPU-spinning stall(알려진 수렴 flaky) → 자동 배치서 불안정. `phase1_baseline_compare.py`는 RIPPLE=0; Ripple 값은 06-06 단일 세션 것 사용. [`2026-06-06-...md`; `2026-06-07-phase2-banzhaf-...md`]. 이후 CNN `ripple.py`에 eigsh guard 구현(maxiter=1000 상한·고정 v0·ncv 확대 1회 재시도·partial-수렴 fallback; tol=0 유지) → **Track C1 CNN fidelity 비교에는 Ripple 포함**ⓐ(plan §3.11 결정 ⑥); C2 개입 arm 제외(비인과)·LLM 비교 분리는 유지.
 
 ### 9. N=10 retrain oracle 연기 (06-07)
 - **원**(매트릭스 06-04 lock): LLM 1B retrain oracle N=5 **and** N=10.
-- **변경/왜**: retrain-oracle validation 비용 추정 — N=10 재학습 64×(ΣC(10,s)·s=5120 vs 80) + eval 32× → 2–5일/1-GPU. multi-GPU coalition sharding 미구축. N=5 fp32 검증(+1.000)으로 method 검증 충분. [`2026-06-07-phase2-task6-...md:85-94`].
+- **변경/왜**: retrain-oracle validation 비용 추정 — N=10 재학습 64×(ΣC(10,s)·s=5120 vs 80) + eval 32× → 2–5일/1-GPU. multi-GPU coalition sharding 미구축. N=5 fp32 검증(+1.000)으로 method 검증 충분. [`2026-06-07-phase2-task6-...md:85-94`]. LLM N=10 연기는 유지; 대신 **Track C1(CNN)에서 N=10 full 2¹⁰ 듀얼 oracle((a) retrain val-loss fp32 + (b) exact in-run) 설계·구현 완료**ⓐ(plan §3.11; 예상 비용 (a) ~11h(MNIST)/~9h(CIFAR) per config, 실측 run은 본 실험 세션).
 
 ### 10. device100 per_client 40 → 300 (06-09)
 - **원**: cross-device `per_client=40`(free-rider/noisy와 일관).
@@ -70,6 +70,6 @@ updated: 2026-06-10
 - **변경/왜**: Yonghee fork 결정 — 검증된 N=5 +1.000 comparator 보존 위해 **신규 `phase2_matrix.py`**(bit-identical call pattern만 재사용). 유일 코드변경 → baselines 무변경 → **CNN bit-identical guard green**. [`phase2_matrix.py`; `2026-06-09-...task8.md`].
 
 > **추가 관찰(plan vs code, 분기는 아니나 주의)**:
-> - phase1 lr=2e-5(§3.3) vs matrix smoke lr=1e-3/2e-3 — matrix는 비교실험용 빠른수렴 config, final 아님. real grid config 재고 필요.
+> - phase1 lr=2e-5(§3.3) vs matrix smoke lr=1e-3/2e-3 — matrix는 비교실험용 빠른수렴 config, final 아님. real grid는 06-10 착수·실행됨 — 22/25 셀 `runs/phase2_matrix/rundirs/*/metrics.json` 영속화 완료(커밋 8d364cc 20셀 + b9113c4 poison 2셀; 남은 3셀=dev_a0.5 anchor {noisy, frrand, frzero}).
 > - plan §3.5 cross-device R=200 vs matrix smoke R=30 — smoke 기본 coarse, real은 env override.
 > - seed `[0,1,2]`(코드) vs protocol `[42,123,2024]` — 코드가 실제값.

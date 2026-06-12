@@ -2,7 +2,7 @@
 type: checkpoint-index
 title: "Flirds 체크포인트 2026-06-10 — 인덱스"
 created: 2026-06-10
-updated: 2026-06-10
+updated: 2026-06-12
 ---
 
 # Flirds 체크포인트 (2026-06-10)
@@ -24,8 +24,7 @@ updated: 2026-06-10
 | [04-plan-vs-implementation-divergences](04-plan-vs-implementation-divergences.md) | **plan 대비 분기 11건** — GGN→Hessian, momentum→plain SGD, ROUGE→val-loss, detector 재설계, per_client 40→300 등 + 각 raw 근거. |
 | [05-open-issues-and-next](05-open-issues-and-next.md) | **미해결 + 다음** — poison-vs-Flirds framing(verification ruling: matrix=EVADED 맞음, headline은 미결) + claimed-vs-verified 교정표 + caveat + real grid 실행계획(cost-tiered). |
 | [06-closest-competitors-fedif-fedtsv-ripple](06-closest-competitors-fedif-fedtsv-ripple.md) | **직접 경쟁자 3종 포지셔닝** — FedIF/FedTSV/Ripple을 'LLM+FL+기여도' 교집합 축에 놓은 근접도+장단점. ★ **Ripple "2차항 없음" 주장을 코드(`ripple.py:191`)로 정밀화**(within-round vs cross-round 곡률; ⓒ Yonghee 결정). 03의 경쟁 3종 심화판. |
-| [07-novelty-limitations-analysis](07-novelty-limitations-analysis.md) | **novelty·한계 분석 + 개선 제안** (06-10 오후) — novelty 방어력 등급(강: dual-oracle·per-round 분해·비용구조 / 사활처: 2차항), 한계 4범주 15건, 개선 17건 우선순위. ★ **§7.0이 00·05의 'real grid 미실행'을 SUPERSEDE**: cross-silo tier 완료+cross-device tier 진행 중(.log-only ⚠), poison서 동률 첫 붕괴 — Flirds-1st 0.000 완전회피, **2nd seed별 {0,0.25,1.0}**(seed2=2차가 1차 이긴 최초 LLM 데이터포인트). |
-| [08-baselines-paper-summaries](08-baselines-paper-summaries.md) | **직접 비교 baseline 11편 논문 단위 정리** (06-12 추가) — valuation 7편(FedSV·GTG·ComFedSV·ShapleyFL·Banzhaf·FedIF·Ripple) + detection 4편(STD-DAGMM·FLTrust·FLDetector·FedDQC). 각 편 개요→제안 방법론→실험 및 검증→결론 및 한계 고정 포맷 + 서지·인용 수(OpenAlex/S2, 06-12 조회) + "Flirds 비교에서의 역할" 실측 박스. 03(구현 대조)·06(경쟁 포지셔닝)의 논문-단위 보완판. PDF: `pdf/08-baselines-paper-summaries.pdf`. |
+| [07-novelty-limitations-analysis](07-novelty-limitations-analysis.md) | **novelty·한계 분석 + 개선 제안** (06-10 오후) — novelty 방어력 등급(강: dual-oracle·per-round 분해·비용구조 / 사활처: 2차항), 한계 4범주 15건, 개선 17건 우선순위. ★ **§7.0 = real grid 실측 결과 절**: cross-silo tier(silo5 4-threat 3-seed) 완료 + cross-device tier 진행, 22/25 셀 metrics.json 영속화. poison서 동률 첫 붕괴 — Flirds-1st 0.000 완전회피(두 run 공통), Flirds(2차) 영속화 run seed별 **[0.75, 1.0, 1.0]=0.917±0.118**(이전 .log-only run {0,0.25,1.0}과 run간 분산 큼). |
 
 ---
 
@@ -33,7 +32,7 @@ updated: 2026-06-10
 
 **00 → 01 → 02 → 03 → 04 → 05** (→ **06** 경쟁자 포지셔닝 → **07** novelty·한계 판정)
 
-빠르게 현황만: **00**(상태표 §0.5) → **05**(다음 단계 §5.5) → **07**(§7.0 real-grid UPDATE — 00·05의 '미실행'을 교체).
+빠르게 현황만: **00**(상태표 §0.5) → **05**(다음 단계 §5.5) → **07**(§7.0 real-grid 실측 결과).
 방법론 핵심만: **01**(알고리즘 §1.1) → **03**(IRDS 대조 §C.1).
 "내 주장이 진짜인가" 점검: **05**(§5.2 교정표) → **02**(§2.6 selection run 실측).
 경쟁자 포지셔닝만: **06**(축별 근접도 §6.1 → Ripple 2차 정밀화 §6.5).
@@ -44,9 +43,9 @@ updated: 2026-06-10
 
 - **방법은 검증됨(ⓑ)**: retrain val-loss = in-run oracle = estimator **Spearman +1.000** (1B N=5 fp32). free-rider φ 정확0. N=5 near-additive서 Flirds가 프론티어 지배(5–15× 싸게 같은 ranking).
 - **코드는 단단함(ⓐ)**: estimator/oracle/backend/FL/데이터/baseline 11종/detector 4종/matrix orchestrator 전부 구현 + smoke green.
-- ~~**real grid는 미실행(ⓒ)**~~ → **STALE(06-10 오후, [07](07-novelty-limitations-analysis.md) §7.0이 교체)**: cross-silo tier(silo5 4-threat 3-seed) 완료 + cross-device tier(α-sweep) 진행 중. poison서 동률 첫 붕괴(Flirds-1st 0.000 / 2nd seed별 {0,0.25,1.0}). ⚠ .log-only — run-dir 영속화 필요.
+- **real grid 실측(ⓑ, [07](07-novelty-limitations-analysis.md) §7.0)**: cross-silo tier(silo5 4-threat 3-seed) 완료 + cross-device tier(α-sweep) 진행 중. run-dir 영속화 완료 — `runs/phase2_matrix/rundirs`에 22/25 셀 metrics.json(커밋 8d364cc 20셀 + b9113c4 poison 2셀; 남은 3셀=dev_a0.5 {noisy,frrand,frzero}). poison서 동률 첫 붕괴: 영속화 silo5_poison run서 Flirds(2차) AUROC seed별 **[0.75, 1.0, 1.0]=0.917±0.118** — 이전 .log-only run의 {0,0.25,1.0}과 run간 분산 큼(두 run 모두 실측, 어느 쪽도 무효 아님). Flirds-1st 0.000 완전회피는 두 run 공통.
 - **교정 적용**: poison detector 0.75(≠1.0), FedSV tiny +0.900(real +1.000), STD-DAGMM ~360s, backdoor detection test "REFUTED"→matrix "EVADED(Flirds AUROC 0.0)"가 맞음.
-- **즉시 다음**: cost-tiered real grid (poison은 `LR=2e-3` working-backdoor config); threat matrix headline framing은 Yonghee 결정.
+- **즉시 다음**: real grid 잔여 3셀(dev_a0.5 {noisy,frrand,frzero}) 실행 + 결과 소화 + **Track C/D 추가 실험**(설계 확정, plan §3.11, 06-12): C1 CNN fidelity&cost(MNIST+LeNet5/CIFAR-10, N=10 full 2^10 듀얼 oracle) → C2 CNN 일반성능(N=100 C=0.1, 개입 3종: 곱셈형 w∝n·s 가중 메인+selection+bottom-q%) → C3 cross-seed stability → D LLM 표준세팅 API-free(7B=Llama-2-7b-hf). Track C 구현 완료=**ⓐ**(커밋 5b0ba71, 구현+단위검증·실측 없음), Track D=**ⓒ**(설계만). threat matrix headline framing은 Yonghee 결정(유지). 상세: `research-wiki/wiki/flirds-implementation-plan.md` §3.11.
 
 ---
 
