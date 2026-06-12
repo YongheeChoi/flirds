@@ -61,6 +61,27 @@ def fedif_update(omega, players, infl, gamma):
         omega[k] = (1.0 - gamma) * omega[k] + gamma * float(psi[i])
 
 
+def fedif_round_raw(w_r, dm, players, loss_fn, pkeys, device, loss_chunks=None):
+    """One round's raw FedIF influence per participant (Eq 6, good->HIGH, PRE
+    min-max), aligned with `players`.  Shared by `fedif_from_logs` (post-hoc) and
+    the C2 online intervention (fl.intervene), so both value rounds identically."""
+    params = {n: w_r[n].detach().float().to(device) for n in pkeys}
+    buffers = {n: w_r[n].detach().to(device) for n in w_r if n not in pkeys}
+
+    def vloss(pp):
+        return loss_fn(pp, buffers)
+
+    g = (grad(vloss)(params) if loss_chunks is None
+         else _chunked(loss_chunks, buffers, params, None, pkeys)[0])
+    infl = np.empty(len(players))
+    for i, k in enumerate(players):
+        d = {n: dm[k][0][n].float().to(device) for n in pkeys}
+        dot = sum(float((g[n] * d[n]).sum()) for n in pkeys)
+        d_norm = sum(float((d[n] ** 2).sum()) for n in pkeys) ** 0.5
+        infl[i] = -dot / (d_norm + 1e-12)                  # Eq 6
+    return infl
+
+
 def fedif_from_logs(logs, n_clients, loss_fn, pkeys, device, gamma=0.3, loss_chunks=None):
     """FedIF influence value per client over a frozen FedAvg trajectory.  Returns
     omega[n_clients], good->HIGH (negate for the good->low comparison convention).
@@ -72,20 +93,7 @@ def fedif_from_logs(logs, n_clients, loss_fn, pkeys, device, gamma=0.3, loss_chu
     shapleyfl's beta).  Rounds are processed in order (the EMA is order-dependent)."""
     omega = np.zeros(n_clients)
     for w_r, dm in logs:
-        params = {n: w_r[n].detach().float().to(device) for n in pkeys}
-        buffers = {n: w_r[n].detach().to(device) for n in w_r if n not in pkeys}
-
-        def vloss(pp):
-            return loss_fn(pp, buffers)
-
-        g = (grad(vloss)(params) if loss_chunks is None
-             else _chunked(loss_chunks, buffers, params, None, pkeys)[0])
         players = sorted(dm.keys())
-        infl = np.empty(len(players))
-        for i, k in enumerate(players):
-            d = {n: dm[k][0][n].float().to(device) for n in pkeys}
-            dot = sum(float((g[n] * d[n]).sum()) for n in pkeys)
-            d_norm = sum(float((d[n] ** 2).sum()) for n in pkeys) ** 0.5
-            infl[i] = -dot / (d_norm + 1e-12)              # Eq 6
+        infl = fedif_round_raw(w_r, dm, players, loss_fn, pkeys, device, loss_chunks)
         fedif_update(omega, players, infl, gamma)
     return omega

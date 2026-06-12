@@ -13,8 +13,11 @@ import itertools
 from math import factorial
 
 import numpy as np
+import torch
+import torch.nn.functional as F
 
 from ..fl.server import evaluate, fedavg
+from ..repro import seed_everything
 
 
 def subset_utility(model_fn, client_loaders, test_loader, subset, rounds,
@@ -29,6 +32,43 @@ def subset_utility(model_fn, client_loaders, test_loader, subset, rounds,
     _, hist = fedavg(model_fn, loaders, test_loader, rounds, local_epochs, lr,
                      sample_frac=1.0, device=device, seed=seed)
     return hist[-1][1]
+
+
+@torch.no_grad()
+def _val_loss(model, state, loader, device):
+    """Mean cross-entropy of `state` over `loader` (fp32)."""
+    model.load_state_dict(state)
+    model.to(device).eval()
+    tot = n = 0
+    for x, y in loader:
+        x, y = x.to(device), y.to(device)
+        tot += F.cross_entropy(model(x), y, reduction="sum").item()
+        n += y.size(0)
+    return tot / n
+
+
+def subset_utility_valloss(model_fn, client_loaders, val_loader, subset, rounds,
+                           local_epochs, lr, device="cuda", seed=0, empty_value=None):
+    """U_(a)(S) = -val-loss of the FedAvg-on-S final model (Track C1 PRIMARY (a)
+    utility; good -> high).  Same game as the (b) oracle / estimator -- the task-6
+    lesson: (a) validates the Shapley computation only when it plays the utility the
+    estimator targets.  `subset_utility` (test-acc) stays as the secondary/appendix
+    utility.  Only the FINAL state is scored on the server-held val split
+    (eval_every > rounds skips fedavg's per-round test eval -- the 2^N sweep cost).
+    Empty S -> the seed-deterministic init model's score (the trajectory's w_0),
+    or `empty_value` if given.
+    """
+    if len(subset) == 0:
+        if empty_value is not None:
+            return empty_value
+        seed_everything(seed, cudnn_deterministic=True)   # match fedavg's init RNG
+        model = model_fn()
+        return -_val_loss(model, model.state_dict(), val_loader, device)
+    loaders = [client_loaders[c] for c in subset]
+    final, _ = fedavg(model_fn, loaders, None, rounds, local_epochs, lr,
+                      sample_frac=1.0, device=device, seed=seed,
+                      eval_every=rounds + 1)
+    return -_val_loss(model_fn(), final, val_loader, device)
 
 
 def exact_shapley(n_clients, utility_fn):

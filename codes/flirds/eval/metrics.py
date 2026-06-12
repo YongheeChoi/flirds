@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import re
 
+import numpy as np
 from sklearn.metrics import roc_auc_score
 
 
@@ -75,6 +76,33 @@ def choice_match(pred, ref):
     answer?  False if either has no extractable letter."""
     pc = extract_choice(pred)
     return pc is not None and pc == extract_choice(ref)
+
+
+# ---- SV-fidelity distance metrics (Track C1; the GTG-Shapley trio, 2109.02053
+# §5.1.3) ----  Raw-vector distances vs a ground-truth SV vector: only meaningful
+# between estimates of the SAME game in the SAME units (rank metrics — Spearman /
+# Kendall via scipy in the runner — cover the rest).
+
+def cosine_distance(a, b):
+    """1 - cosine similarity between value vectors (GTG 'Cosine Distance').
+    NaN if either vector has zero norm (cosine undefined)."""
+    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    denom = np.linalg.norm(a) * np.linalg.norm(b)
+    if denom == 0:
+        return float("nan")
+    return float(1.0 - a @ b / denom)
+
+
+def euclidean_distance(a, b):
+    """L2 distance between value vectors (GTG 'Euclidean Distance')."""
+    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    return float(np.linalg.norm(a - b))
+
+
+def max_difference(a, b):
+    """Max absolute per-client difference (GTG 'Maximum Difference')."""
+    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    return float(np.abs(a - b).max())
 
 
 def detection_auroc(phi, corrupt_labels):

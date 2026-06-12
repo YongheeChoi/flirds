@@ -17,13 +17,22 @@ from .client import local_train
 
 
 def _fedavg_core(init_state, local_train_fn, sample_nums, rounds, sample_frac,
-                 seed, on_round=None, eval_fn=None, eval_every=1):
+                 seed, on_round=None, eval_fn=None, eval_every=1,
+                 select_fn=None, weights_fn=None, delta_transform=None):
     """Backend-agnostic FedAvg over a generic state dict.
 
     init_state:     aggregatable params dict (CNN = state_dict; LLM = LoRA params).
     local_train_fn: (client_id, global_state) -> delta dict (init_state's keys).
     sample_nums[c]: client c's example count (the FedAvg weight n_c).
     on_round(r, w_r, deltas_map): per-round hook; w_r is the round-start state.
+    Intervention seam (Track C2/D; fl/intervene.py builds these):
+      select_fn(r, k, rng) -> k client ids   (default: uniform w/o replacement)
+      weights_fn(r, w_r, deltas_map) -> {client: weight}, normalized aggregation
+        weights (default: n_c / sum n -- plain FedAvg).
+      delta_transform(c, r, delta) -> delta, update-level corruption seam (Track
+        C2 free-rider / grad-noise); applied to a client's honest delta before it
+        enters deltas_map.  Default: identity.
+    All None => behavior is bit-identical to the pre-seam loop.
     Returns (final_state, history[(round, eval_fn(state))]).
     """
     rng = np.random.default_rng(seed)
@@ -32,12 +41,22 @@ def _fedavg_core(init_state, local_train_fn, sample_nums, rounds, sample_frac,
     k = max(1, round(sample_frac * n_clients))
     history = []
     for r in range(rounds):
-        w_r = {key: v.clone() for key, v in global_state.items()} if on_round else None
-        sel = rng.choice(n_clients, size=k, replace=False)
-        deltas_map = {int(c): (local_train_fn(int(c), global_state), sample_nums[c])
-                      for c in sel}
-        w = np.array([sample_nums[c] for c in sel], dtype=float)
-        w /= w.sum()
+        w_r = ({key: v.clone() for key, v in global_state.items()}
+               if (on_round is not None or weights_fn is not None) else None)
+        sel = (rng.choice(n_clients, size=k, replace=False) if select_fn is None
+               else np.asarray(select_fn(r, k, rng)))
+        deltas_map = {}
+        for c in sel:
+            d = local_train_fn(int(c), global_state)
+            if delta_transform is not None:
+                d = delta_transform(int(c), r, d)
+            deltas_map[int(c)] = (d, sample_nums[c])
+        if weights_fn is None:
+            w = np.array([sample_nums[c] for c in sel], dtype=float)
+            w /= w.sum()
+        else:
+            wmap = weights_fn(r, w_r, deltas_map)
+            w = np.array([wmap[int(c)] for c in sel], dtype=float)
         for key in global_state:
             global_state[key] = global_state[key] + sum(
                 wi * deltas_map[int(c)][0][key].to(global_state[key].device)
@@ -62,11 +81,13 @@ def evaluate(model, state, loader, device):
 
 
 def fedavg(model_fn, client_loaders, test_loader, rounds, local_epochs, lr,
-           sample_frac=1.0, device="cuda", seed=0, eval_every=1, on_round=None):
+           sample_frac=1.0, device="cuda", seed=0, eval_every=1, on_round=None,
+           select_fn=None, weights_fn=None, delta_transform=None):
     """CNN FedAvg (thin wrapper over `_fedavg_core`).  Returns (final_state, history).
 
     on_round(r, global_before, deltas_map) per round (deltas_map = {client_id:
-    (delta, n_samples)}) feeds the in-run baselines / oracle.
+    (delta, n_samples)}) feeds the in-run baselines / oracle.  select_fn /
+    weights_fn = the intervention seam (see `_fedavg_core`).
     """
     seed_everything(seed, cudnn_deterministic=True)   # CNN track: deterministic conv
     model = model_fn().to(device)
@@ -81,7 +102,9 @@ def fedavg(model_fn, client_loaders, test_loader, rounds, local_epochs, lr,
     return _fedavg_core(init_state, local_train_fn, sample_nums, rounds, sample_frac,
                         seed, on_round=on_round,
                         eval_fn=lambda st: evaluate(model, st, test_loader, device),
-                        eval_every=eval_every)
+                        eval_every=eval_every,
+                        select_fn=select_fn, weights_fn=weights_fn,
+                        delta_transform=delta_transform)
 
 
 def run_fedavg_logs(model_fn, client_loaders, test_loader, rounds, local_epochs,

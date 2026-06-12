@@ -73,9 +73,11 @@ def _ema_aggregate(round_nsvs, round_players, n_clients, beta):
     return ssv
 
 
-def _round_nsv(gb, dm, players, model, test_loader, device, loss_fn, pkeys):
-    """Normalized partial federated SV for one round: exact per-round Shapley over the
-    uniform-average submodel utility Phi (higher=better), min-max normalized."""
+def shapleyfl_round_raw(gb, dm, players, model, test_loader, device, loss_fn, pkeys):
+    """One round's RAW (pre-min-max) exact per-round Shapley over the uniform-average
+    submodel utility Phi (good->HIGH; CNN accuracy if loss_fn is None, else -val_loss),
+    aligned with `players`.  Shared by `_round_nsv` (post-hoc) and the C2 online
+    intervention (fl.intervene), so both value rounds identically."""
     if loss_fn is None:
         def util(sub):
             st = _uniform_submodel_cnn(gb, dm, [players[i] for i in sub], device)
@@ -86,7 +88,13 @@ def _round_nsv(gb, dm, players, model, test_loader, device, loss_fn, pkeys):
             ps = _uniform_submodel_llm(gb, dm, [players[i] for i in sub], pkeys, device)
             return -float(loss_fn(ps, {}))                           # -val_loss, higher=better
 
-    return _minmax(exact_shapley(len(players), util))
+    return exact_shapley(len(players), util)
+
+
+def _round_nsv(gb, dm, players, model, test_loader, device, loss_fn, pkeys):
+    """Normalized partial federated SV for one round (raw Shapley, min-max [0,1])."""
+    return _minmax(shapleyfl_round_raw(gb, dm, players, model, test_loader, device,
+                                       loss_fn, pkeys))
 
 
 def shapleyfl_from_logs(logs, model, n_clients, test_loader, device, beta=0.5,

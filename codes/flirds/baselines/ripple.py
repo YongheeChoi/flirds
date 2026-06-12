@@ -81,14 +81,15 @@ def client_drop_and_delta(model, gstate, loader, epochs, lr, val_x, val_y, devic
     return drop, delta
 
 
-def local_hessian_topk(model, gstate, x, y, k, device):
+def local_hessian_topk(model, gstate, x, y, k, device, maxiter=1000):
     """Top-k eigenpairs of the LOCAL-data loss Hessian at w^r (Eq 14 sketch).
 
     Per-client curvature on the client's own data (Alg.1 L6) -- not the global/val
     Hessian.  HVP via jvp(grad(loss)); eigsh on a scipy LinearOperator.
-    Returns (eigvals[k], eigvecs[P, k]) over trainable params.
+    Returns (eigvals[k'], eigvecs[P, k']) over trainable params; k' < k only under
+    the no-convergence fallback (see the guard below).
     """
-    from scipy.sparse.linalg import LinearOperator, eigsh
+    from scipy.sparse.linalg import ArpackNoConvergence, LinearOperator, eigsh
 
     model.load_state_dict(gstate)
     model.to(device)
@@ -116,13 +117,24 @@ def local_hessian_topk(model, gstate, x, y, k, device):
         return _flat(hv, pkeys).detach().cpu().numpy()
 
     op = LinearOperator((P, P), matvec=matvec, dtype=np.float64)
-    # TODO(deferred -> LLM-scale ripple port): eigsh robustness --
-    #  (i) convergence fallback: maxiter/tol, retry w/ larger ncv on
-    #      ArpackNoConvergence, assert ||H v - lam v|| small;
-    #  (ii) which="LA" keeps top-positive curvature; for an indefinite Hessian
-    #       consider "LM" (largest |lambda|) to retain expansive modes;
-    #  (iii) pass a fixed v0 so eigvecs are reproducible run-to-run.
-    vals, vecs = eigsh(op, k=k, which="LA")
+    # eigsh guard (Track C1; was the deferred TODO (i)+(iii)): `maxiter` caps the
+    # ARPACK iteration count (1 iteration = 1 HVP), which bounds wall-clock; tol
+    # stays 0 (machine-precision pairs -- paper-faithful); fixed v0 makes eigvecs
+    # reproducible run-to-run.  On no-convergence: retry once with a larger ncv,
+    # then fall back to the pairs that DID converge (downstream sketch shapes are
+    # width-agnostic).  which="LA" / "LM" question (TODO (ii)) stays deferred to
+    # the LLM-scale port.
+    v0 = np.random.default_rng(0).standard_normal(P)
+    try:
+        vals, vecs = eigsh(op, k=k, which="LA", v0=v0, maxiter=maxiter)
+    except ArpackNoConvergence:
+        try:
+            vals, vecs = eigsh(op, k=k, which="LA", v0=v0, maxiter=maxiter,
+                               ncv=min(P, 4 * k + 1))
+        except ArpackNoConvergence as e:
+            vals, vecs = e.eigenvalues, e.eigenvectors
+            print(f"[ripple] eigsh fallback: {len(vals)}/{k} eigenpairs converged "
+                  f"(maxiter={maxiter})", flush=True)
     return vals, vecs
 
 

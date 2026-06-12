@@ -21,7 +21,46 @@ def label_shuffle(xs, ys, client_id, seed_base=100):
     return xs, ys[torch.randperm(len(ys), generator=g)]
 
 
-CNN_CORRUPTORS = {"label_shuffle": label_shuffle}
+def label_flip(xs, ys, client_id, rate, n_classes=10, seed_base=100):
+    """Graded noisy client (Track C): relabel a `rate` fraction of the client's
+    samples to a uniform-random WRONG class (true label excluded), so `rate` IS the
+    actual corruption rate and the flipped set is exactly the corrupted ground truth.
+    One per-client `rate` knob expresses both the GTG graded ladder (0-20%) and the
+    FedCorr (rho, tau) convention; FedCorr's own relabel is uniform over ALL K
+    classes, which differs only by a (K-1)/K dilution of the effective rate (caveat,
+    Yonghee 2026-06-12).  rate=0 returns the data unchanged (clean client).
+    Reproducible via seed_base+client_id, mirroring label_shuffle.
+    """
+    g = torch.Generator().manual_seed(seed_base + client_id)
+    n_flip = int(round(rate * len(ys)))
+    if n_flip == 0:
+        return xs, ys
+    idx = torch.randperm(len(ys), generator=g)[:n_flip]
+    ys = ys.clone()
+    off = torch.randint(1, n_classes, (n_flip,), generator=g)  # uniform over K-1 wrong classes
+    ys[idx] = (ys[idx] + off) % n_classes
+    return xs, ys
+
+
+def feature_noise(xs, ys, client_id, std, data_std, seed_base=100):
+    """Graded noisy-feature client (GTG scenario 5): add Gaussian noise N(0, std^2)
+    in PIXEL [0,1] units, no clamp.  xs are already normalized tensors, so the noise
+    is applied in normalized space scaled per channel by 1/data_std -- mathematically
+    identical to unclamped pixel-space noise.  `std` therefore reads as a fraction of
+    the pixel range (ComFedSV's "graded Gaussian 5*i%" interpretation), letting the
+    sigma ladder mirror the label_flip ladder numbers.  `data_std` = the dataset's
+    per-channel normalization std (data.cnn._STATS[name][1]).  std=0 returns the
+    data unchanged.  Reproducible via seed_base+client_id.
+    """
+    if std == 0:
+        return xs, ys
+    g = torch.Generator().manual_seed(seed_base + client_id)
+    scale = std / torch.tensor(data_std, dtype=xs.dtype).view(1, -1, 1, 1)
+    return xs + scale * torch.randn(xs.shape, generator=g), ys
+
+
+CNN_CORRUPTORS = {"label_shuffle": label_shuffle, "label_flip": label_flip,
+                  "feature_noise": feature_noise}
 
 
 # ---- LLM sample-level corruptor (noisy client) ----
@@ -91,3 +130,15 @@ def free_rider(ref, mode="zero", scale=1e-3, generator=None):
         return {k: torch.empty(v.shape, dtype=v.dtype).uniform_(-scale, scale, generator=generator)
                 for k, v in ref.items()}
     raise ValueError(f"unknown free-rider mode: {mode!r} (use 'zero' or 'random')")
+
+
+# ---- update-level corruptor (gradient noise), representation-agnostic ----
+def grad_noise(delta, std, generator=None):
+    """Noisy-update client (the FedIF grad-noise threat, Track C2): add i.i.d.
+    Gaussian N(0, std^2) to every entry of the client's HONEST delta -- the client
+    trains correctly but submits a noise-perturbed update.  `generator` is caller-
+    managed (seed per (client, round) for reproducibility, mirroring free_rider's
+    convention).  Returns a new delta dict (input unmodified).
+    """
+    return {k: v + std * torch.randn(v.shape, dtype=v.dtype, generator=generator)
+            for k, v in delta.items()}
