@@ -25,6 +25,7 @@ updated: 2026-06-10
 | [05-open-issues-and-next](05-open-issues-and-next.md) | **미해결 + 다음** — poison-vs-Flirds framing(verification ruling: matrix=EVADED 맞음, headline은 미결) + claimed-vs-verified 교정표 + caveat + real grid 실행계획(cost-tiered). |
 | [06-closest-competitors-fedif-fedtsv-ripple](06-closest-competitors-fedif-fedtsv-ripple.md) | **직접 경쟁자 3종 포지셔닝** — FedIF/FedTSV/Ripple을 'LLM+FL+기여도' 교집합 축에 놓은 근접도+장단점. ★ **Ripple "2차항 없음" 주장을 코드(`ripple.py:191`)로 정밀화**(within-round vs cross-round 곡률; ⓒ Yonghee 결정). 03의 경쟁 3종 심화판. |
 | [07-novelty-limitations-analysis](07-novelty-limitations-analysis.md) | **novelty·한계 분석 + 개선 제안** (06-10 오후) — novelty 방어력 등급(강: dual-oracle·per-round 분해·비용구조 / 사활처: 2차항), 한계 4범주 15건, 개선 17건 우선순위. ★ **§7.0이 00·05의 'real grid 미실행'을 SUPERSEDE**: cross-silo tier 완료+cross-device tier 진행 중(.log-only ⚠), poison서 동률 첫 붕괴 — Flirds-1st 0.000 완전회피, **2nd seed별 {0,0.25,1.0}**(seed2=2차가 1차 이긴 최초 LLM 데이터포인트). |
+| [08-baselines-paper-summaries](08-baselines-paper-summaries.md) | **직접 비교 baseline 11편 논문 단위 정리** (06-12 추가) — valuation 7편(FedSV·GTG·ComFedSV·ShapleyFL·Banzhaf·FedIF·Ripple) + detection 4편(STD-DAGMM·FLTrust·FLDetector·FedDQC). 각 편 개요→제안 방법론→실험 및 검증→결론 및 한계 고정 포맷 + 서지·인용 수(OpenAlex/S2, 06-12 조회) + "Flirds 비교에서의 역할" 실측 박스. 03(구현 대조)·06(경쟁 포지셔닝)의 논문-단위 보완판. PDF: `pdf/08-baselines-paper-summaries.pdf`. |
 
 ---
 
