@@ -11,7 +11,7 @@ tags: [federated-learning, llm-instruction-tuning, data-quality, lora, ira, hier
 
 ## Citation
 
-Yaxin Du (SJTU), Rui Ye (SJTU + Shanghai AI Lab), Fengting Yuchi (SJTU), Wanru Zhao (Cambridge), Jingjing Qu (Shanghai AI Lab), Yanfeng Wang (SJTU), Siheng Chen (SJTU). *FedDQC: Data Quality Control in Federated Instruction-tuning of Large Language Models*. arXiv:2410.11540 (v2).
+Yaxin Du (SJTU), Rui Ye (SJTU + Shanghai AI Lab), Fengting Yuchi (SJTU), Wanru Zhao (Cambridge), Jingjing Qu (Shanghai AI Lab), Yanfeng Wang (SJTU), Siheng Chen (SJTU). *FedDQC: Data Quality Control in Federated Instruction-tuning of Large Language Models*. arXiv:2410.11540 (v2). **Published: ACL 2025 Findings** (DOI 10.18653/v1/2025.findings-acl.791; OpenAlex 확인 2026-06-12).
 
 Raw: `raw/papers/flirds/FedDQC_ Data Quality Control in Federated Instruction-tuning of Large Language Models.md`
 

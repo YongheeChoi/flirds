@@ -518,3 +518,9 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-06-12-track-cd-additional-experiments-design.md
 - distilled into: [[flirds-implementation-plan]] §3.11 (+ Status snapshot Next-action 갱신)
 - note: 선행 13편 실험설계 조사 → Track C1(fidelity&cost: GTG 5-시나리오+듀얼 oracle)/C2(일반성능: N=100 개입 3종, 곱셈가중 w∝n·s 고유규칙)/C3(stability)/D(LLM: Alpaca-GPT4·FedDQC미러·FedHDS미러, API-free; 7B=Llama-2-7b-hf) 설계 확정 + Yonghee 결정 7건. 구현은 다음 세션. phase2_matrix.py SCALE 7B 파싱 추가.
+
+## [2026-06-12] note | 직접 비교 baseline 11편 논문 단위 정리 (checkpoint 08 + PDF)
+
+- filed into: [[checkpoint-2026-06-10/08-baselines-paper-summaries]] (+ `pdf/08-baselines-paper-summaries.pdf`, README 인덱스 등록, 렌더 스크립트 `render-baselines.py`)
+- method: wiki sources/ 노트 11편 + 원 논문 PDF 직접 재추출(GTG·ShapleyFL·Ripple·FedSV·Banzhaf 실험 섹션 — 2 병렬 reader) + OpenAlex/Semantic Scholar 서지·인용 수 조회(06-12)
+- note: Yonghee 요청 고정 포맷(개요→제안 방법론→실험 및 검증→결론 및 한계)으로 valuation 7편(FedSV/GTG/ComFedSV/ShapleyFL/Banzhaf/FedIF/Ripple) + detection 4편(STD-DAGMM/FLTrust/FLDetector/FedDQC) 정리. 각 편에 "Flirds 비교에서의 역할" 박스(구현 파일 + 우리 실측). 조회로 확정한 사실: **FedDQC = ACL 2025 Findings 게재**(DOI 10.18653/v1/2025.findings-acl.791; sources/feddqc.md는 arXiv만 기재 — 갱신 후보), Ripple AAAI 2026 v40 pp.28085–28093(저자 소속 University of South China — "USC China" 약칭의 정체), 인용 수(게재판): FLTrust ~788 / FLDetector ~296 / Banzhaf ~177 / FedSV ~168 / STD-DAGMM ~145 / GTG ~133 / ComFedSV ~72 / ShapleyFL ~70 / FedDQC 2 / Ripple 1 / FedIF 0(preprint). PDF 추출 신규 사실: GTG truncation ε 수치 미기재·결과 figure-only, ShapleyFL β=0.3 채택(우리 구현 호출은 β=0.5)·free-rider 시나리오 없음·exact-SV 대비 ranking 충실도 미측정, Ripple 62×=vs AFedSV+ 100R 누적·클라이언트 수 N 본문 미기재·MSE류 attribution 평가 의도적 거부, FedSV 검출은 스칼라 없이 곡선 보고.
