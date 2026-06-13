@@ -17,6 +17,15 @@ This page is the project's running state — locked design decisions, resolved q
 
 > **Flirds** computes client-level Shapley values via closed-form 1st + 2nd order Taylor expansion of the validation loss change per FL round, using only the client updates $\{\Delta w_k\}$ that the server already receives in vanilla FedAvg — adding zero communication cost.
 
+## 핵심 질문 위계 (locked 2026-06-12, Yonghee 명시)
+
+모든 실험 설계·표·서술·발표가 따르는 질문의 순서:
+
+1. **1차(핵심): 기여도를 얼마나 정확히 측정하는가** — (a) retrain / (b) in-run oracle 대비 fidelity (Spearman·Kendall·거리 metric). "가장 기본이 되는 질문."
+2. **2차(측정된 기여도의 실효성 검증; 이 순서대로)**: ① 일반 성능 향상 (기여도 기반 필터링·가중·선택 후 최종 성능) → ② 수렴 속도 → ③ 오염 클라 탐지 (AUROC). **탐지는 마지막** — "기여도가 오염 클라 탐지랑 완전 직접적으로 연결되는 건 아니다" (예: clean-val-loss를 낮추는 backdoor 공격자를 φ가 '기여 높음'으로 평가하는 것은 valuation의 정직한 답이지 탐지 실패가 아님 — §3.9 poison-arm 사례).
+
+detection-중심 서술은 프로젝트 정체성(valuation 방법론)을 흐리므로, "headline"은 fidelity 결과에 우선 적용한다. 원 발언: raw [[raw/conversations/flirds/2026-06-12-track-d-implementation]] (Track D 구현 세션).
+
 ## Core formula (round $r$)
 
 $$\phi_k^{(r)} \;\approx\; -\nabla\ell(w^r, z^{val}) \cdot \Delta w_k \;+\; \tfrac{1}{2}\, \Delta w_k^\top H^{(val)}(w^r) \cdot \Delta W^{(r)}$$

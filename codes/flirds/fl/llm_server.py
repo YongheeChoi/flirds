@@ -64,7 +64,8 @@ def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
                         batch_size=8, max_length=512, sample_frac=1.0, seed=0,
                         formatting_func=None, free_riders=frozenset(),
                         free_rider_mode="zero", free_rider_scale=1e-3,
-                        scaled_attackers=frozenset(), attack_scale=10.0):
+                        scaled_attackers=frozenset(), attack_scale=10.0,
+                        select_fn=None, weights_fn=None):
     """Run LLM FedAvg once; return logs[(w_r, deltas_map)] (LoRA-only states).
 
     `free_riders` = client indices that fabricate updates instead of training
@@ -75,6 +76,8 @@ def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
     by `attack_scale` (Bagdasaryan plain-scaled model-replacement; gamma ~= K = the
     cohort size gives full replacement).  These clients still TRAIN -- pair with the
     data layer's `backdoor=` to make them trigger->target poisoners.
+    `select_fn` / `weights_fn` = the `_fedavg_core` intervention seam (Track D online
+    arms; fl/intervene builds these).  Defaults None -> bit-identical vanilla FedAvg.
     """
     seed_everything(seed)                                       # LLM: no cudnn-det
     init_state = {n: p.detach().clone() for n, p in model.named_parameters()
@@ -87,5 +90,6 @@ def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
                                scaled_attackers, attack_scale)
     logs = []
     _fedavg_core(init_state, ltf, sample_nums, rounds, sample_frac, seed,
-                 on_round=lambda r, w_r, dm: logs.append((w_r, dm)))
+                 on_round=lambda r, w_r, dm: logs.append((w_r, dm)),
+                 select_fn=select_fn, weights_fn=weights_fn)
     return logs

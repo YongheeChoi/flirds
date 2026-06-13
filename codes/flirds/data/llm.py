@@ -26,6 +26,17 @@ Each row -> a {"prompt", "completion"} record (SFTTrainer completion-only contra
   `per_client_train` records (fl.partition.client_dirichlet_partition).  For N>>5
   (e.g. 100); alpha=0 => domain-disjoint clients.  val/test = the same held-out sets.
 
+`build_alpaca_iid(n_clients, total_train, n_val, n_test, seed, noisy=)` ->
+  (clients, val_records, test_records): Track D loader (plan §3.11 D) --
+  Alpaca-GPT4 IID equal shards + disjoint carved val/test (all one
+  distribution; OpenFedLLM alpaca template).  External benchmark = MMLU
+  (eval.mmlu); test = same-distribution ROUGE-L.
+
+`build_domain_iid(domain, n_clients, total_train, n_val, n_test, seed, noisy=)`
+  -> (clients, val_records, test_records): Track D-opt1 (FedDQC Table-1 mirror)
+  -- one DOMAINS entry (finance/math = FedDQC's FiQA/AQUA) IID-sharded, with the
+  standard val/test carves; downstream eval is the domain test set.
+
 `build_val_batch(records, tokenizer, max_length, device)` tokenizes records into
 the val_batch dict `backends.llm.make_llm_loss` consumes (completion-only labels,
 prompt tokens masked to -100 to match the training objective).
@@ -216,6 +227,81 @@ def build_crossdevice(n_clients, alpha, per_client_train, per_domain_pool=12000,
             recs = LLM_CORRUPTORS["backdoor"](recs, cid, **(backdoor_kwargs or {}))
         clients.append(Dataset.from_list(recs))
     return clients, val_records, test_records
+
+
+# ---- Track D-main: Alpaca-GPT4 single-dataset IID loader (plan §3.11 D) ----
+_ALPACA_ID = "vicgalle/alpaca-gpt4"
+_ALPACA_PROMPT = ("Below is an instruction that describes a task. "
+                  "Write a response that appropriately completes the request.\n\n"
+                  "### Instruction:\n{} \n\n### Response:")
+
+
+def _fmt_alpaca(ex):
+    """OpenFedLLM's alpaca convention verbatim (utils/template.py alpaca_template +
+    process_dataset.alpaca_format): a non-empty `input` is space-appended to the
+    instruction, and the prompt/completion split sits at '### Response:' (their
+    completion-only mask boundary)."""
+    instr = ex["instruction"] + (" " + ex["input"] if ex["input"] else "")
+    return _ALPACA_PROMPT.format(instr), " " + ex["output"]
+
+
+def build_alpaca_iid(n_clients, total_train=20000, n_val=200, n_test=0, seed=0,
+                     noisy=frozenset()):
+    """Track D loader: Alpaca-GPT4 IID shards + carved val/test sets.
+
+    The FL-LLM standard-setting stage (OpenFedLLM run_sft.sh / FlowerTune
+    general track): `total_train` records of vicgalle/alpaca-gpt4 (52k; 20000 =
+    the OpenFedLLM dataset_sample default), OpenFedLLM-alpaca-templated, split
+    IID into `n_clients` equal shards (shuffled pool -> contiguous chunks).
+    `n_val` + `n_test` more records are carved mutually disjoint from train:
+    val = the §3.4 utility validation, test = the SAME-distribution held-out
+    set for downstream ROUGE-L (Track D is IID throughout -- train/val/test
+    all one distribution; the external benchmark axis is MMLU, eval.mmlu).
+    Test records carry domain="alpaca" for eval.generate.score_records.
+    `noisy` = answer-swap clients (seam 2; unused on the clean Track D stage,
+    kept for the corruption-axis experiments).
+    Returns (clients, val_records, test_records).
+    """
+    pool = load_dataset(_ALPACA_ID, split="train").shuffle(seed=seed)
+    pool = pool.select(range(min(n_val + n_test + total_train, len(pool)))).to_list()
+    recs = []
+    for ex in pool:
+        p, c = _fmt_alpaca(ex)
+        recs.append({"prompt": p, "completion": c})
+    val_records = recs[:n_val]
+    test_records = [{**r, "domain": "alpaca"} for r in recs[n_val:n_val + n_test]]
+    train = recs[n_val + n_test:]
+    chunk = len(train) // n_clients
+    clients = []
+    for cid in range(n_clients):
+        cl = train[cid * chunk:(cid + 1) * chunk]
+        if cid in noisy:                               # seam 2: noisy client (answer-swap)
+            cl = LLM_CORRUPTORS["answer_swap"](cl, cid)
+        clients.append(Dataset.from_list(cl))
+    return clients, val_records, test_records
+
+
+def build_domain_iid(domain, n_clients, total_train=8000, n_val=200, n_test=1000,
+                     seed=0, noisy=frozenset()):
+    """Track D-opt1 loader (FedDQC Table-1 mirror): ONE of the 5 DOMAINS (FedDQC's
+    own domains: finance=FiQA / math=AQUA-RAT) split IID into `n_clients` equal
+    shards, with `_domain_split`'s §3.4 val/test carve conventions (val dev-split-
+    first, test train-carved, all mutually disjoint).  `noisy` = answer-swap
+    clients -- FedDQC's 50% response-swap at CLIENT granularity (the D-main
+    adaptation; per-sample 50% would corrupt every client equally and leave
+    client-level valuation undefined).  Returns (clients, val_records,
+    test_records); test records carry `domain` (+ math gold `answer`) so
+    eval.generate.score_records routes ROUGE-L / exact-match.
+    """
+    tr, va, te = _domain_split(domain, total_train, n_val, n_test, seed)
+    chunk = len(tr) // n_clients
+    clients = []
+    for cid in range(n_clients):
+        cl = tr[cid * chunk:(cid + 1) * chunk]
+        if cid in noisy:                               # seam 2: noisy client (answer-swap)
+            cl = LLM_CORRUPTORS["answer_swap"](cl, cid)
+        clients.append(Dataset.from_list(cl))
+    return clients, va, te
 
 
 def build_val_batch(records, tokenizer, max_length, device):
