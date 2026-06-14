@@ -202,3 +202,38 @@ Spearman +1.000 — MMLU 하니스·fidelity 파이프는 실모델에서 이미
 참고 링크: [FlowerTune 벤치마크 논문](https://arxiv.org/abs/2506.02961) ·
 [FlowerTune general-NLP 리더보드](https://flower.ai/benchmarks/llm-leaderboard/nlp/) ·
 OpenFedLLM 로컬 클론 `codes/external/OpenFedLLM/`
+
+---
+
+## 10. 파일럿 실측 + arm 버그 수정 (2026-06-13 추가; §6·§7 추정치를 실측으로 대체)
+
+**anchor5 1-seed 파일럿(1B, 실제 config N=5/R=30/train20k/val200/MMLU-full)** — fidelity(1차 축) 완주, 실측:
+
+| 방법 | Spearman vs (b) | Kendall | cos-거리 | runtime |
+|---|---|---|---|---|
+| (a)oracle (retrain GT) | **+0.900** | +0.800 | 0.0002 | **31,519s ≈ 8.75h** |
+| **Flirds** | **+1.000** | **+1.000** | **0.0000** | **725s** |
+| Flirds1st | +1.000 | +1.000 | 0.0000 | 237s |
+| GTG | +1.000 | +1.000 | 0.0010 | 3,647s |
+| Banzhaf | +1.000 | +1.000 | 0.0000 | 3,623s |
+| loss-heur | +1.000 | +1.000 | 0.0000 | 1,123s |
+| ComFedSV | +0.900 | +0.800 | 0.24 | 2,255s |
+| ShapleyFL | +0.900 | +0.800 | 0.16 | 3,609s |
+| FedSV | +0.700 | +0.600 | 0.005 | 3,609s |
+| FedIF | +0.700 | +0.600 | 0.34 | 238s |
+| (b)oracle | (truth) | — | — | 3,624s |
+
+- **헤드라인(1차 질문)**: clean-IID(클라 교환가능 = near-tie 난도)에서 **Flirds가 exact (b) Shapley를 완벽 재현(+1.000), coalition류의 ~1/5 · (a)의 ~1/43 비용**. FedSV/FedIF는 IID서도 (b) 불완전 추종(+0.700) = 우리 분해능 우위 지점.
+- **(a) vs (b) = +0.900**: task6의 3B 결과와 동일(인접 1쌍 swap = retrain 노이즈; 듀얼 GT 합치 재확인).
+
+**⚠ 실측 비용 정정 (§7 대체)**: **(a)-retrain oracle = 8.75h/seed** (1B anchor5; 추정 ~2h를 크게 초과 — 32 coalition × R30 × SFTTrainer 재인스턴스화 오버헤드). (b)/coalition류 각 ~1h, Flirds 12min, Flirds1st 4min. → **NEW 결정 항목**: (a)를 3-seed 다 돌릴지(≈26h/1B) vs **GT 검증이므로 1-seed면 충분**한지 (권장: (a)는 1-seed GT 검증 + (b)/estimator/baseline은 3-seed).
+
+**arm 단계 OOM → 수정 완료 (이 세션)**:
+- 원인: 온라인 Flirds 점수기 `intervene.flirds_round_raw`가 **val-set 청킹 누락** → 200개 val에 단발 eager HVP(175GB) (FedIF 경로는 이미 청킹, ShapleyFL은 forward-only라 무사).
+- 수정: `intervene.py`에 `loss_chunks` 통과(**기본 None = CNN 비트동일, guard CLEAN**) + `track_d` build_arms에서 `lc` 전달. 메모리 증거로 동작 확인(수정 후 프로세스 peak **14.75GB**, 175GB 폭주 소멸).
+- 견고화: fidelity를 **arm 전에 체크포인트 persist**(8.75h (a)를 arm 크래시로 다시 안 잃도록) + arm try/except + **`FIDELITY=0` 토글**(비싼 (a)/fidelity 없이 arm만 싸게 재검증/재실행).
+- **파일럿 run-dir 손실**: OOM이 persist 직전 발생 → 위 표는 .log에만 존재(체크포인트 persist 도입으로 재발 방지).
+
+**arm 완주 미확인 = GPU 경합**: 재검증 중 **GPU 0에 외부 잡 난입**(타 사용자 llama2-7b AdvBench 안전성 평가, `CUDA_VISIBLE_DEVICES=0`, 순간 161GB 점유)으로 arm end-to-end 완료는 아직 못 봄(제 프로세스는 15.6GB로 정상). 현 GPU: 0=외부 잡 / 1–3=real grid(각 ~82GB 여유) / 4–7 금지. → **어디서 돌릴지 Yonghee 결정 대기**.
+
+**결정 항목 누계 (4건)**: bridge arm / FlowerTune-채점 / ShapleyFL β(0.5↔0.3) / **(a) seed 수(1 vs 3)**.

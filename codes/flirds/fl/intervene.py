@@ -59,14 +59,18 @@ class OnlineScorer:
 
 
 def flirds_round_raw(w_r, deltas_map, loss_fn, pkeys, n_clients, device,
-                     second_order=True):
+                     second_order=True, loss_chunks=None):
     """One round's Flirds value per participant, oriented good -> HIGH.
 
     == the estimator on the single-round log [(w_r, deltas_map)] (one val grad +
     one HVP), negated (estimator phi is good->low val-loss attribution).  Returns
-    raw values aligned with sorted(deltas_map)."""
+    raw values aligned with sorted(deltas_map).  `loss_chunks` (LLM): the
+    backends.llm chunk closures -- REQUIRED at LLM scale (the single-shot eager
+    HVP over the whole val set OOMs); None (CNN) keeps the single-shot path =
+    bit-identical."""
     phi, _ = flirds_values([(w_r, deltas_map)], loss_fn, pkeys, device,
-                           second_order=second_order, n_clients=n_clients)
+                           second_order=second_order, n_clients=n_clients,
+                           loss_chunks=loss_chunks)
     return [-phi[p] for p in sorted(deltas_map)]
 
 
@@ -109,11 +113,14 @@ def make_weights_fn(scorer, round_raw_fn, sample_nums, rule, lam=0.5):
     return weights_fn
 
 
-def flirds_round_raw_fn(loss_fn, pkeys, n_clients, device, second_order=True):
-    """A `round_raw_fn` closure (good -> HIGH) backed by the Flirds estimator."""
+def flirds_round_raw_fn(loss_fn, pkeys, n_clients, device, second_order=True,
+                        loss_chunks=None):
+    """A `round_raw_fn` closure (good -> HIGH) backed by the Flirds estimator.
+    Pass `loss_chunks` (the make_llm_loss chunk closures) at LLM scale -- the
+    single-shot HVP over the full val set OOMs; CNN leaves it None (bit-identical)."""
     def fn(w_r, deltas_map, players):
         return flirds_round_raw(w_r, deltas_map, loss_fn, pkeys, n_clients, device,
-                                second_order=second_order)
+                                second_order=second_order, loss_chunks=loss_chunks)
     return fn
 
 

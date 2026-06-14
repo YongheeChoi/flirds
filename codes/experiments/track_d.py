@@ -102,6 +102,7 @@ for k in ("batch", "val_chunk", "val_maxlen"):
 MMLU_LIMIT = int(os.environ.get("MMLU_LIMIT", "0"))    # 0 = full test (14,042)
 MMLU_BATCH = int(os.environ.get("MMLU_BATCH", "16"))
 ARMS = os.environ.get("ARMS", "1") == "1"              # 0 = phase-1 fidelity only
+FIDELITY = os.environ.get("FIDELITY", "1") == "1"      # 0 = arm-only (cheap re-run; no (a)/coalition cost)
 ORACLE_A = os.environ.get("ORACLE_A", "1" if REGIME == "anchor5" else "0") == "1"
 
 _CODES = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -263,11 +264,11 @@ def build_arms(model, loss_fn, pkeys, lc, nums, device):
     n = RCFG["n_clients"]
     arms = []
     sc = OnlineScorer(n, beta=0.5)
-    raw = _guard(model, flirds_round_raw_fn(loss_fn, pkeys, n, device))
+    raw = _guard(model, flirds_round_raw_fn(loss_fn, pkeys, n, device, loss_chunks=lc))
     arms.append(("flirds_w", None, make_weights_fn(sc, raw, nums, "multiplicative")))
     if RCFG["k_abs"] < n:                          # selection is degenerate under full part.
         sc2 = OnlineScorer(n, beta=0.5)
-        raw2 = _guard(model, flirds_round_raw_fn(loss_fn, pkeys, n, device))
+        raw2 = _guard(model, flirds_round_raw_fn(loss_fn, pkeys, n, device, loss_chunks=lc))
         arms.append(("flirds_sel", make_softmax_select_fn(sc2),
                      make_scoreonly_weights_fn(sc2, raw2, nums)))
     sc3 = OnlineScorer(n, beta=0.5)
@@ -310,6 +311,30 @@ def _downstream(model, tok, test_records, device):
     return {"mmlu": acc, "rouge_l": rouge}
 
 
+def _persist(phi_rows, run_metrics, seeds):
+    """Save phi vectors + metrics + config/provenance to a run-dir (protocol §6).
+    Called as a CHECKPOINT after each seed's fidelity (the (a) oracle is hours --
+    an arm crash must never lose it) and again at the end; overwrite is idempotent.
+    PERSIST=0 disables."""
+    if os.environ.get("PERSIST", "1") != "1":
+        return
+    name = os.environ.get("RUN_NAME") or f"{SCALE}_{REGIME}"
+    config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "seeds": seeds,
+              "rcfg": RCFG, "mcfg": MCFG, "oracle_a": ORACLE_A, "fidelity": FIDELITY,
+              "mmlu": {"limit": MMLU_LIMIT, "batch": MMLU_BATCH, "shots": 0}}
+    try:
+        rl = RunLogger(RUNDIR_ROOT, name, config, repo_root=_CODES)
+        try:
+            rl.save_phi(phi_rows)
+        except Exception:
+            import pandas as pd
+            pd.DataFrame(phi_rows).to_csv(rl._p("phi.csv"), index=False)
+        rl.save_metrics(run_metrics)
+        print(f"\n[persist] {rl.dir}  ({len(phi_rows)} phi rows)", flush=True)
+    except Exception as e:
+        print(f"\n[persist] WARNING: run-dir save failed ({e!r}); .log has results", flush=True)
+
+
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     seeds = [int(os.environ["SEED"])] if os.environ.get("SEED") else [0, 1, 2]
@@ -333,87 +358,86 @@ def main():
         val_chunks = build_val_batches(val, tok, MCFG["val_maxlen"], device, MCFG["val_chunk"])
         loss_fn, _pk, lc = make_llm_loss(model, val_chunks, device)
 
-        # ---- phase 1: fidelity (the PRIMARY axis) ----
         selected = sorted({c for _, dm in logs for c in dm})
-        methods = compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc,
-                                   device, seed)
         print(f"\n----- seed {seed} | selected={len(selected)}/{n} | "
               f"vanilla FL {t_vanilla:.0f}s -----", flush=True)
-        res = report_fidelity(methods, selected)
-        for name, vec, _rt in methods:
-            phi_rows += [{"seed": seed, "method": name, "client": int(c),
-                          "phi": float(vec[c])} for c in selected]
+
+        # ---- phase 1: fidelity (the PRIMARY axis) ----
+        res = {"spearman": {}, "kendall": {}, "cosine_d": {}, "euclid_d": {},
+               "max_diff": {}, "runtime": {}}
+        if FIDELITY:
+            methods = compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc,
+                                       device, seed)
+            res = report_fidelity(methods, selected)
+            for name, vec, _rt in methods:
+                phi_rows += [{"seed": seed, "method": name, "client": int(c),
+                              "phi": float(vec[c])} for c in selected]
+            run_metrics[f"seed{seed}"] = res
+            _persist(phi_rows, run_metrics, seeds)        # CHECKPOINT: never lose the (a)/(b) cost to an arm crash
 
         # ---- phase 2+3: intervention arms -> benchmark accuracy + convergence ----
         if ARMS:
             res["arms"] = {}
-            van_curve, G_van = _val_curve(logs, loss_fn, pkeys, device)
-            target = van_curve[-1]
-            rows = [("base", init, 0.0, None), ("vanilla", G_van, t_vanilla, van_curve)]
-            for arm, sel_fn, wts_fn in build_arms(model, loss_fn, pkeys, lc, nums, device):
-                arm_logs, t_arm = _timed(lambda: _fl(model, tok, clients, init, seed,
-                                                     select_fn=sel_fn, weights_fn=wts_fn),
-                                         device)
-                curve, G_arm = _val_curve(arm_logs, loss_fn, pkeys, device)
-                rows.append((arm, G_arm, t_arm, curve))
-                del arm_logs
-            for arm, state, t_train, curve in rows:
-                model.load_state_dict(state, strict=False)
-                mets, t_eval = _timed(lambda: _downstream(model, tok, test_records, device),
-                                      device)
-                entry = {**mets, "train_s": t_train, "eval_s": t_eval}
-                if curve is not None:
-                    entry["final_val_loss"] = curve[-1]
-                    entry["rounds_to_target"] = _rounds_to_target(curve, target)
-                    entry["val_curve"] = curve
-                res["arms"][arm] = entry
-                extra = (f"  val_loss={curve[-1]:.4f} r2t={entry['rounds_to_target']}"
-                         if curve is not None else "")
-                print(f"  [{arm:12s}] mmlu={mets['mmlu']:.4f} rouge_l={mets['rouge_l']:.4f}"
-                      f"{extra}  (train {t_train:.0f}s, eval {t_eval:.0f}s)", flush=True)
+            try:
+                van_curve, G_van = _val_curve(logs, loss_fn, pkeys, device)
+                target = van_curve[-1]
+                rows = [("base", init, 0.0, None), ("vanilla", G_van, t_vanilla, van_curve)]
+                for arm, sel_fn, wts_fn in build_arms(model, loss_fn, pkeys, lc, nums, device):
+                    arm_logs, t_arm = _timed(lambda: _fl(model, tok, clients, init, seed,
+                                                         select_fn=sel_fn, weights_fn=wts_fn),
+                                             device)
+                    curve, G_arm = _val_curve(arm_logs, loss_fn, pkeys, device)
+                    rows.append((arm, G_arm, t_arm, curve))
+                    del arm_logs
+                    if device == "cuda":
+                        torch.cuda.empty_cache()
+                for arm, state, t_train, curve in rows:
+                    model.load_state_dict(state, strict=False)
+                    mets, t_eval = _timed(lambda: _downstream(model, tok, test_records, device),
+                                          device)
+                    entry = {**mets, "train_s": t_train, "eval_s": t_eval}
+                    if curve is not None:
+                        entry["final_val_loss"] = curve[-1]
+                        entry["rounds_to_target"] = _rounds_to_target(curve, target)
+                        entry["val_curve"] = curve
+                    res["arms"][arm] = entry
+                    extra = (f"  val_loss={curve[-1]:.4f} r2t={entry['rounds_to_target']}"
+                             if curve is not None else "")
+                    print(f"  [{arm:12s}] mmlu={mets['mmlu']:.4f} rouge_l={mets['rouge_l']:.4f}"
+                          f"{extra}  (train {t_train:.0f}s, eval {t_eval:.0f}s)", flush=True)
+            except Exception as e:                        # an arm failure must not lose the fidelity axis
+                print(f"  [arms] WARNING: arm phase failed ({e!r}); fidelity kept", flush=True)
             if device == "cuda":
                 torch.cuda.empty_cache()
 
         agg.append(res)
         run_metrics[f"seed{seed}"] = res
+        _persist(phi_rows, run_metrics, seeds)
         del loss_fn, val_chunks, logs
         if device == "cuda":
             torch.cuda.empty_cache()
 
     if len(seeds) > 1:
         print(f"\n=== aggregate (mean+/-std over {len(seeds)} seeds) ===", flush=True)
-        for name in agg[0]["runtime"]:
-            if name == "(b)oracle":
-                continue
-            line = f"  {name:10s}"
-            for col, fmt in (("spearman", "+.3f"), ("kendall", "+.3f"), ("cosine_d", ".4f")):
-                vals = [r[col][name] for r in agg]
-                line += f" {col}={np.nanmean(vals):{fmt}}+/-{np.nanstd(vals):.3f}"
-            line += f"  runtime={np.mean([r['runtime'][name] for r in agg]):.1f}s"
-            print(line)
+        if FIDELITY:
+            for name in agg[0]["runtime"]:
+                if name == "(b)oracle":
+                    continue
+                line = f"  {name:10s}"
+                for col, fmt in (("spearman", "+.3f"), ("kendall", "+.3f"), ("cosine_d", ".4f")):
+                    vals = [r[col][name] for r in agg]
+                    line += f" {col}={np.nanmean(vals):{fmt}}+/-{np.nanstd(vals):.3f}"
+                line += f"  runtime={np.mean([r['runtime'][name] for r in agg]):.1f}s"
+                print(line)
         if ARMS:
-            for arm in agg[0]["arms"]:
-                mm = [r["arms"][arm]["mmlu"] for r in agg]
-                rg = [r["arms"][arm]["rouge_l"] for r in agg]
-                print(f"  [{arm:12s}] mmlu={np.mean(mm):.4f}+/-{np.std(mm):.4f} "
-                      f"rouge_l={np.mean(rg):.4f}+/-{np.std(rg):.4f}")
+            for arm in agg[0].get("arms", {}):
+                mm = [r["arms"][arm]["mmlu"] for r in agg if arm in r.get("arms", {})]
+                rg = [r["arms"][arm]["rouge_l"] for r in agg if arm in r.get("arms", {})]
+                if mm:
+                    print(f"  [{arm:12s}] mmlu={np.mean(mm):.4f}+/-{np.std(mm):.4f} "
+                          f"rouge_l={np.mean(rg):.4f}+/-{np.std(rg):.4f}")
 
-    if os.environ.get("PERSIST", "1") == "1":
-        name = os.environ.get("RUN_NAME") or f"{SCALE}_{REGIME}"
-        config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "seeds": seeds,
-                  "rcfg": RCFG, "mcfg": MCFG, "oracle_a": ORACLE_A,
-                  "mmlu": {"limit": MMLU_LIMIT, "batch": MMLU_BATCH, "shots": 0}}
-        try:
-            rl = RunLogger(RUNDIR_ROOT, name, config, repo_root=_CODES)
-            try:
-                rl.save_phi(phi_rows)
-            except Exception:
-                import pandas as pd
-                pd.DataFrame(phi_rows).to_csv(rl._p("phi.csv"), index=False)
-            rl.save_metrics(run_metrics)
-            print(f"\n[persist] {rl.dir}  ({len(phi_rows)} phi rows)", flush=True)
-        except Exception as e:
-            print(f"\n[persist] WARNING: run-dir save failed ({e!r}); .log has results", flush=True)
+    _persist(phi_rows, run_metrics, seeds)
     print("\nTRACK D DONE  (project question order: [1] every method's fidelity vs the (b) "
           "oracle -- Flirds should track it at a fraction of the coalition methods' cost; "
           "[2] arm benchmark accuracy -- clean-IID parity (do-no-harm) expected; "
