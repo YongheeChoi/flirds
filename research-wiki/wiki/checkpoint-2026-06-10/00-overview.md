@@ -2,7 +2,7 @@
 type: checkpoint
 title: "Flirds 체크포인트 00 — 전체 그림 한 장"
 created: 2026-06-10
-updated: 2026-06-10
+updated: 2026-06-12
 note: "코드·raw 로그·PDF를 직접 읽고 대조한 연구자용 재오리엔테이션 문서. 추측 없음, 모든 정량주장에 파일경로 근거."
 ---
 
@@ -82,7 +82,7 @@ GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-
 | **FedDQC** | `baselines/feddqc.py` | noisy/data-quality (IRA) | client 데이터+model 필요 | ⓑ (1-seed smoke) |
 
 ### 9-method 합계
-"valuation method 9종" = Flirds, Flirds-1st, GTG, FedSV, Banzhaf, ShapleyFL, loss-heur, (그리고 regime별) Banzhaf/ComFedSV, + in-run oracle. `phase1_baseline_compare.py` 가 silo5에서 9-method를 한 궤적 위에서 비교(Ripple은 RIPPLE=0로 분리; eigsh flaky).
+"valuation method 9종" = Flirds, Flirds-1st, GTG, FedSV, Banzhaf, ShapleyFL, loss-heur, (그리고 regime별) Banzhaf/ComFedSV, + in-run oracle. `phase1_baseline_compare.py` 가 silo5에서 9-method를 한 궤적 위에서 비교(Ripple은 RIPPLE=0로 분리; CNN `baselines/ripple.py`에는 eigsh guard(maxiter=1000·고정 v0·재시도) 적용됨(Track C 구현 ⓐ, 커밋 5b0ba71) — LLM `ripple_llm.py`의 eigsh flaky·phase1 RIPPLE=0 분리는 그대로이고, LLM-scale 교정/제외는 별도 세션 결정(plan §3.11 결정⑥)).
 
 ### 2 regime × 4 threat 매트릭스
 | | **noisy** (answer_swap) | **freerider_zero** | **freerider_random** | **poison** (backdoor) |
@@ -118,7 +118,7 @@ GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-
 
 ## 0.5 한 페이지 상태표 (3-state)
 
-> **요지: 코드와 phase1(silo5 N5) 결과는 단단하다. real grid(매트릭스 전체)는 아직 한 번도 안 돌았다.** `runs/phase2_matrix/`는 빈 폴더(0 files); matrix는 stdout/`/tmp`에만 출력. (`phase2_matrix.py:122`, find 결과)
+> **요지: 코드와 phase1(silo5 N5) 결과는 단단하고, real grid(매트릭스 전체)도 06-10 시작해 run-dir 영속화 완료(커밋 8d364cc 20셀 + b9113c4 poison 2셀).** `runs/phase2_matrix/rundirs/*/metrics.json` **22/25 셀** 존재(silo5 4-threat 3-seed, device100 α∈{0.0,0.01,0.1,5.0} 3-threat 3-seed, dev poison a0.0/a0.5, 3B 4-threat 1-seed). 남은 3셀 = dev_a0.5 anchor {noisy, frrand, frzero}. 수치 기준 = 영속화 run-dir.
 
 | 항목 | 상태 | 근거 |
 |---|---|---|
@@ -131,11 +131,11 @@ GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-
 | backdoor install/propagation/detection 특성화 (install·전파·검출) | **ⓑ 1-seed smoke** | `raw/.../2026-06-09-phase2-task7e-backdoor-install-feddqc.md` |
 | matrix-orchestrator build + scale-up 코드 | **ⓐ 구현+smoke** | `phase2_matrix.py`; 5 code paths green (tiny config) |
 | device100 poison 해결 (per_client 40→300, ASR 0→0.75) | **ⓑ 1-seed 탐색** | `raw/.../2026-06-09-phase2-step5-matrix-orchestrator-task8.md` |
-| **real grid (silo5 N5 → device100 α-sweep → 3B → 7B, 3-seed 전체)** | **ⓒ 미실행** | `runs/phase2_matrix/` 빈 폴더 |
+| **real grid (silo5 N5 → device100 α-sweep → 3B → 7B, 3-seed 전체)** | **ⓑ 진행중** — 22/25 셀 영속화(silo5 4-threat 3-seed DONE · device100 α-sweep 12셀+poison 2셀 · 3B 4-threat 1-seed; 남은 3셀=dev_a0.5 {noisy,frrand,frzero}; 7B는 ⓒ 미실행) | `runs/phase2_matrix/rundirs/*/metrics.json` (22개) |
 | N=10 retrain oracle (LLM) | **ⓒ 연기** | 비용 2–5일/1-GPU → multi-GPU sharding 필요 |
 | 7B in-run oracle | **ⓒ 미실행** | matrix MODEL_CFG 경로에 있으나 미실행 |
 
-> **문서 과장 교정(검증값 채택)**: ① poison detector STD-DAGMM·FLTrust = **0.75**(1.0 아님) ② "all methods +1.000"의 FedSV는 tiny-config서 **+0.900** (단 phase1 real은 +1.000) ③ STD-DAGMM runtime ~**360s**(~100s 아님) ④ backdoor detection test "evades-Flirds REFUTED" → matrix가 맞음: 표준 orientation서 **Flirds AUROC=0.0(EVADED)**. 상세 → [05-open-issues-and-next](05-open-issues-and-next.md). 근거: `memory/phase2-step5-verification.md`.
+> **문서 과장 교정(검증값 채택)**: ① poison detector STD-DAGMM·FLTrust = **0.75**(1.0 아님) ② "all methods +1.000"의 FedSV는 tiny-config서 **+0.900** (단 phase1 real은 +1.000) ③ STD-DAGMM runtime ~**360s**(~100s 아님) ④ backdoor(poison)에서 Flirds(2차) AUROC는 **run간 분산이 크다**: 영속화 run(`runs/phase2_matrix/rundirs/silo5_poison/metrics.json`, 1B N=5 3-seed) **0.917±0.118**(per-seed [0.75, 1.0, 1.0]) vs 이전 .log-only 3-seed run [0, 0.25, 1.0](=0.417±0.425) — 둘 다 실측이며 어느 쪽도 무효 아님. **Flirds-1st AUROC 0.000 완전 회피는 두 run 공통**이고, **3B 1-seed(`rundirs/m3b_poison`)에서는 Flirds(2차)도 AUROC 0.000**(회피). 상세 → [05-open-issues-and-next](05-open-issues-and-next.md). 근거: `memory/phase2-step5-verification.md`.
 
 ---
 
@@ -146,4 +146,4 @@ GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-
 3. [02-experimental-setup](02-experimental-setup.md) — 최종 실험 세팅(모델/regime/threat/하이퍼)
 4. [03-baselines-and-prior-work](03-baselines-and-prior-work.md) — baseline + 선행연구(PDF 1:1 대조) *(가장 무거움)*
 5. [04-plan-vs-implementation-divergences](04-plan-vs-implementation-divergences.md) — plan 대비 달라진 점 11건
-6. [05-open-issues-and-next](05-open-issues-and-next.md) — 미해결 + 다음 단계(real grid)
+6. [05-open-issues-and-next](05-open-issues-and-next.md) — 미해결 + 다음 단계 *(real grid 진행 중(22/25 셀 영속화); 이후 다음 단계 = Track C/D 추가 실험(plan §3.11) — Track C(C1 fidelity&cost·C2 일반성능 N=100 개입 3종·C3 stability) **구현+검증 완료 ⓐ**(커밋 5b0ba71, 실측 없음), Track D LLM 표준세팅은 설계 락 ⓒ)*

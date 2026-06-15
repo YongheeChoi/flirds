@@ -2,7 +2,7 @@
 type: checkpoint
 title: "Flirds 체크포인트 03 — baseline + 선행연구 (PDF 1:1 대조)"
 created: 2026-06-10
-updated: 2026-06-10
+updated: 2026-06-12
 note: "원문 PDF/web-extract를 직접 읽고 우리 구현과 1:1 대조. 노트(sources/*.md)만 믿지 않음."
 ---
 
@@ -20,6 +20,8 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 
 코드: `codes/flirds/baselines/`. 전부 같은 frozen trajectory 위에서 동작(공정비교). 통합 차이표:
 
+> 아래 7종은 06-10 시점 목록. 이후 인벤토리 추가 — **FedIF**(`fedif.py`, 06-11 커밋 1903a58; real grid 전 셀에서 실행·영속화 ⓑ) · **S-FedAvg**(`sfedavg.py`, 06-12 Track C 커밋 5b0ba71; C2 개입 비교용, ⓐ 구현+단위검증·실측 없음).
+
 | baseline | 원논문 PDF | submodel 가중 | 우리 핵심 변경 | 왜 |
 |---|---|---|---|---|
 | **GTG-Shapley** | `2109.02053v1.pdf` | within-subset $n_k$-renorm | MC 구조·guided truncation **충실 이식**; backend만 LLM(−loss_fn) | 충실 포팅 |
@@ -30,7 +32,7 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 | **ComFedSV** | `2109.09046v3.pdf` | **uniform 1/\|S\|** | LIBMF→numpy ALS; from-logs 포팅; partial=True | 외부 의존성 제거(동일 목적함수) |
 | **loss-heuristic** | (논문 없음) | in-run oracle per-round | singleton util `U_(b)({k})` | floor baseline; N·R forward만 |
 
-> **교차 통찰 [CODE+ⓑ]**: submodel 가중이 운명을 가른다. **within-subset renorm(GTG/FedSV)** 은 zero-delta free-rider에도 가중 → φ≠0(희석). **per-round FedAvg weight(in-run oracle/Banzhaf/loss-heur)** 은 zero-delta=0 → φ 정확0. N=5 near-additive + in-run utility 공유 ⇒ GTG/FedSV/Banzhaf/loss-heur 전부 in-run oracle와 **degenerate 동일(+1.000)**; **ShapleyFL/ComFedSV만 다른 utility(uniform)라 비-degenerate**(ShapleyFL +0.86).
+> **교차 통찰 [CODE+ⓑ]**: submodel 가중이 운명을 가른다. **within-subset renorm(GTG/FedSV)** 은 zero-delta free-rider에도 가중 → φ≠0(희석). **per-round FedAvg weight(in-run oracle/Banzhaf/loss-heur)** 은 zero-delta=0 → φ 정확0. N=5 near-additive + in-run utility 공유 ⇒ GTG/FedSV/Banzhaf/loss-heur 전부 in-run oracle와 **degenerate 동일(+1.000)**; **ShapleyFL/ComFedSV만 다른 utility(uniform)라 구조적으로 비-degenerate**. 단, ShapleyFL +0.86은 tiny-config(R=4, ⓐ) state-mixing 관측([07] 한계 #15)이고, real grid 영속화 run(`runs/phase2_matrix/rundirs`, silo5 4-cell 3-seed)에선 ShapleyFL Spearman **+1.000±0.000**(전 셀) — uniform utility라는 구조적 차이는 유효하나 silo5 실측서 수치로 드러나지 않음.
 
 ### A.1 GTG-Shapley [PDF `2109.02053v1.pdf` §4]
 - **목적**: retrain-free federated Shapley(gradient sub-model 재구성 + guided MC)의 정석 — closed-form Taylor 대비 "MC지만 효율적" 경쟁자.
@@ -45,7 +47,7 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 ### A.3 Ripple-Shapley [PDF `40034-Article Text-44125-1-2-20260314.pdf` Eqs 5-19, Alg.1]
 - **목적**: sample-level single-run federated Shapley(cross-round Jacobian propagation); 가장 비싼 baseline(~42× Flirds), Spearman 아닌 task-driven(AUROC+runtime)로 평가.
 - **원리**: sample z의 drop항(IRDS-style local val-loss 감소) + ripple항(후속 global update Jacobian chain 전파, 저랭크 subspace Q + eigsh top-k).
-- **차이/왜** [CODE `baselines/ripple.py`(CNN)·`ripple_llm.py`(LLM)]: ① **sample-level→client-level 집계** (Jacobian chain 선형 → client = client 내 sample Shapley 합; Flirds가 client-level이라). ② drop/ripple 수식(Eq 5-19) 충실. ③ **eigsh 견고화**: LLM코드는 fixed v0·ncv·ArpackNoConvergence fallback(zero-pad) — CPU spinning stall(알려진 flaky) 대응; CNN코드는 TODO. ④ "62× speedup"은 prior FL-Shapley 대비지 Flirds 대비 아님(재현 안 함). ⑤ LLM은 (rounds,n,P) 전체 materialize → N=100엔 stream-projection 필요(연기).
+- **차이/왜** [CODE `baselines/ripple.py`(CNN)·`ripple_llm.py`(LLM)]: ① **sample-level→client-level 집계** (Jacobian chain 선형 → client = client 내 sample Shapley 합; Flirds가 client-level이라). ② drop/ripple 수식(Eq 5-19) 충실. ③ **eigsh 견고화**: LLM코드(`ripple_llm.py`)는 fixed v0·ncv·ArpackNoConvergence fallback(zero-pad) — CPU spinning stall(알려진 flaky) 대응; CNN `ripple.py`는 Track C1 구현(커밋 5b0ba71)으로 eigsh guard 추가(fixed v0·maxiter cap·ArpackNoConvergence 시 ncv 확대 재시도·최종 fallback=수렴한 eigenpair만 사용 — LLM코드의 zero-pad와 달리 pad 없음, downstream sketch가 width-agnostic; ⓐ 구현+단위검증, 실측 없음) — which=LA/LM 검토(TODO ②)만 잔존. ④ "62× speedup"은 prior FL-Shapley 대비지 Flirds 대비 아님(재현 안 함). ⑤ LLM은 (rounds,n,P) 전체 materialize → N=100엔 stream-projection 필요(연기).
 
 ### A.4 Data Banzhaf [PDF `Data Banzhaf_...md` text-extract §4]
 - **목적**: Banzhaf 반값(uniform coalition 가중)이 같은 궤적서 Shapley와 다른 ranking을 내는지, noise-robustness 이점이 in-run(deterministic util)서 발현되는지 테스트.
@@ -55,7 +57,7 @@ note→PDF 매핑은 `wiki/index.md:151-183`에서 확정. **Xu(2305.14710)·Bag
 ### A.5 ShapleyFL [PDF `3580305.3599500.pdf` Defs 4.1-4.3]
 - **목적**: surrogate FSV(uniform submodel + per-round exact Shapley + min-max + EMA). 비-degenerate surrogate가 같은 ranking을 잡는지.
 - **원리**: Def4.1 partial FSV(**uniform** 1/|S| submodel, $n_k$-가중 아님!) → Def4.2 per-round min-max [0,1] → Def4.3 EMA across rounds(비참여=carry-forward).
-- **차이/왜** [CODE `baselines/shapleyfl.py`]: uniform submodel·min-max·EMA **모두 충실**(`:40-73`). 차이 = ① 공유 `exact_shapley` 사용(코드중복 회피) ② **from-logs 적용**(공정비교; 논문 in-flight과 수학동일) ③ DMC difference estimator(대N) 생략→cross-device cross-device port. **비-degenerate 이유**(주석 `:17-23`): uniform util+minmax+EMA가 in-run oracle Shapley와 ≠ → Shapley linearity로 안 무너짐 → 실측 +0.86(≠+1.000).
+- **차이/왜** [CODE `baselines/shapleyfl.py`]: uniform submodel·min-max·EMA **모두 충실**(`:40-73`). 차이 = ① 공유 `exact_shapley` 사용(코드중복 회피) ② **from-logs 적용**(공정비교; 논문 in-flight과 수학동일) ③ DMC difference estimator(대N) 생략→cross-device cross-device port. **비-degenerate 이유**(주석 `:17-23`): uniform util+minmax+EMA가 in-run oracle Shapley와 ≠ → Shapley linearity로 안 무너짐. 단 +0.86은 tiny-config(R=4, ⓐ) state-mixing 관측 — real grid 영속화 run(silo5 4-cell 3-seed)에선 ShapleyFL Spearman +1.000±0.000으로 '≠+1.000' 미관측.
 
 ### A.6 ComFedSV [PDF `2109.09046v3.pdf` §VI, Alg.1]
 - **목적**: partial participation서 미관측 coalition을 low-rank completion으로 보정 — cross-device용 Flirds의 원리적 대안.
