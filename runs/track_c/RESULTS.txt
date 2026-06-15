@@ -1,0 +1,581 @@
+# Track C results — generated 2026-06-15 09:58:59
+
+Grid: 150 cells (C1 traj 30 + C1 oracle-a 30 + C2 90), 0 failures, 3 seeds.
+Env: lora4cl torch2.11+cu130, RTX 3090. Oracle-a efficiency-gap <=1e-15 all cells.
+
+================ C1 fidelity vs (b) in-run oracle — cross-seed stability ================
+
+=== C1 stability cifar10_feature_noise (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle       0.693  0.222  0.333
+  Flirds          0.697  0.222  0.333
+  Flirds1st       0.531  0.222  0.333
+  GTG             0.042  0.333  0.000
+  FedSV          -0.204  0.111  0.111
+  ComFedSV       -0.127  0.222  0.111
+  Banzhaf         0.693  0.222  0.333
+  ShapleyFL      -0.358  0.111  0.111
+  FedIF           0.479  0.222  0.222
+  loss-heur       0.511  0.222  0.333
+  Ripple          0.568  0.556  0.556
+
+=== C1 stability cifar10_iid (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle      -0.042  0.222  0.000
+  Flirds         -0.014  0.333  0.000
+  Flirds1st       0.281  0.333  0.111
+  GTG            -0.071  0.222  0.111
+  FedSV          -0.030  0.222  0.222
+  ComFedSV       -0.095  0.222  0.111
+  Banzhaf        -0.107  0.222  0.000
+  ShapleyFL       0.014  0.111  0.222
+  FedIF           0.523  0.556  0.111
+  loss-heur       0.240  0.333  0.000
+  Ripple          0.135  0.333  0.111
+
+=== C1 stability cifar10_label_flip (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle       0.968  1.000  1.000
+  Flirds          0.956  1.000  1.000
+  Flirds1st       0.899  1.000  0.556
+  GTG             0.402  0.333  0.333
+  FedSV           0.305  0.222  0.111
+  ComFedSV       -0.051  0.111  0.000
+  Banzhaf         0.968  1.000  1.000
+  ShapleyFL       0.143  0.111  0.111
+  FedIF           0.568  0.556  0.556
+  loss-heur       0.887  0.556  0.556
+  Ripple          0.297  0.222  0.333
+
+=== C1 stability cifar10_label_skew (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle       0.511  0.333  0.111
+  Flirds          0.495  0.333  0.111
+  Flirds1st       0.410  0.111  0.111
+  GTG             0.200  0.222  0.333
+  FedSV          -0.010  0.000  0.111
+  ComFedSV       -0.075  0.111  0.000
+  Banzhaf         0.511  0.333  0.111
+  ShapleyFL      -0.010  0.111  0.111
+  FedIF          -0.026  0.333  0.111
+  loss-heur       0.216  0.333  0.333
+  Ripple          0.943  1.000  0.333
+
+=== C1 stability cifar10_quantity_skew (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle       0.968  1.000  1.000
+  Flirds          0.968  1.000  1.000
+  Flirds1st       0.927  1.000  1.000
+  GTG             0.976  1.000  1.000
+  FedSV           0.895  1.000  0.556
+  ComFedSV        0.846  1.000  1.000
+  Banzhaf         0.968  1.000  1.000
+  ShapleyFL       0.891  0.222  1.000
+  FedIF          -0.010  0.111  0.111
+  loss-heur       0.939  1.000  1.000
+  Ripple          0.434  0.222  0.111
+
+=== C1 stability mnist_feature_noise (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle      -0.123  0.111  0.111
+  Flirds          0.095  0.333  0.111
+  Flirds1st      -0.345  0.333  0.000
+  GTG            -0.281  0.111  0.111
+  FedSV           0.042  0.111  0.111
+  ComFedSV       -0.042  0.222  0.111
+  Banzhaf        -0.135  0.000  0.111
+  ShapleyFL      -0.236  0.000  0.222
+  FedIF          -0.333  0.000  0.000
+  loss-heur      -0.281  0.333  0.000
+  Ripple          0.115  0.333  0.111
+
+=== C1 stability mnist_iid (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle      -0.172  0.111  0.000
+  Flirds          0.002  0.111  0.111
+  Flirds1st      -0.228  0.111  0.111
+  GTG            -0.261  0.111  0.111
+  FedSV           0.063  0.111  0.111
+  ComFedSV       -0.059  0.111  0.111
+  Banzhaf        -0.172  0.111  0.000
+  ShapleyFL      -0.192  0.000  0.222
+  FedIF          -0.333  0.000  0.000
+  loss-heur      -0.216  0.111  0.111
+  Ripple         -0.143  0.111  0.333
+
+=== C1 stability mnist_label_flip (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle       0.968  1.000  1.000
+  Flirds          0.960  1.000  1.000
+  Flirds1st       0.968  1.000  1.000
+  GTG             0.976  1.000  1.000
+  FedSV           0.960  1.000  1.000
+  ComFedSV        0.923  0.556  1.000
+  Banzhaf         0.968  1.000  1.000
+  ShapleyFL       0.976  1.000  1.000
+  FedIF           0.968  1.000  1.000
+  loss-heur       0.968  1.000  1.000
+  Ripple          0.960  1.000  1.000
+
+=== C1 stability mnist_label_skew (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle       0.438  0.222  1.000
+  Flirds          0.362  0.556  0.333
+  Flirds1st       0.685  1.000  0.333
+  GTG             0.479  1.000  0.222
+  FedSV           0.244  0.222  0.556
+  ComFedSV        0.192  0.111  0.111
+  Banzhaf         0.418  0.222  1.000
+  ShapleyFL      -0.095  0.222  0.222
+  FedIF           0.556  0.333  0.222
+  loss-heur       0.556  0.556  0.333
+  Ripple          0.867  0.556  1.000
+
+=== C1 stability mnist_quantity_skew (3 seed(s)) ===
+  method      rho_xseed   topJ   botJ   (top/bot = 20% client-set Jaccard)
+  (b)oracle       0.968  1.000  1.000
+  Flirds          0.952  0.556  1.000
+  Flirds1st       0.976  1.000  1.000
+  GTG             0.653  0.333  0.556
+  FedSV           0.628  0.556  0.556
+  ComFedSV        0.463  0.333  0.333
+  Banzhaf         0.968  1.000  1.000
+  ShapleyFL       0.111  0.111  0.222
+  FedIF           0.042  0.111  0.111
+  loss-heur       0.923  0.556  1.000
+  Ripple          0.968  1.000  1.000
+
+================ C1 fidelity vs (a) 2^10 retrain oracle ================
+
+merged 30 cells
+
+=== (a)-oracle fidelity cifar10_feature_noise (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds          0.632     0.102
+  Flirds1st       0.503     0.244
+  GTG             0.438     0.060
+  FedSV           0.176     0.164
+  ComFedSV        0.394     0.241
+  Banzhaf         0.616     0.109
+  ShapleyFL       0.281     0.213
+  FedIF           0.402     0.168
+  loss-heur       0.564     0.185
+  Ripple         -0.123     0.177
+
+=== (a)-oracle fidelity cifar10_iid (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds         -0.232     0.180
+  Flirds1st      -0.131     0.258
+  GTG            -0.196     0.177
+  FedSV          -0.176     0.411
+  ComFedSV        0.297     0.114
+  Banzhaf        -0.212     0.234
+  ShapleyFL       0.002     0.369
+  FedIF           0.067     0.134
+  loss-heur      -0.176     0.166
+  Ripple         -0.200     0.159
+
+=== (a)-oracle fidelity cifar10_label_flip (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds          0.515     0.139
+  Flirds1st       0.592     0.132
+  GTG             0.455     0.146
+  FedSV           0.414     0.064
+  ComFedSV        0.321     0.213
+  Banzhaf         0.511     0.144
+  ShapleyFL       0.293     0.011
+  FedIF           0.358     0.154
+  loss-heur       0.580     0.149
+  Ripple          0.014     0.476
+
+=== (a)-oracle fidelity cifar10_label_skew (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds         -0.176     0.107
+  Flirds1st      -0.075     0.074
+  GTG             0.438     0.223
+  FedSV           0.402     0.308
+  ComFedSV        0.277     0.388
+  Banzhaf        -0.119     0.107
+  ShapleyFL       0.123     0.083
+  FedIF           0.188     0.179
+  loss-heur       0.143     0.153
+  Ripple         -0.228     0.100
+
+=== (a)-oracle fidelity cifar10_quantity_skew (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds          0.568     0.077
+  Flirds1st       0.556     0.125
+  GTG             0.701     0.141
+  FedSV           0.697     0.266
+  ComFedSV        0.717     0.153
+  Banzhaf         0.568     0.077
+  ShapleyFL       0.810     0.209
+  FedIF          -0.034     0.399
+  loss-heur       0.568     0.109
+  Ripple          0.467     0.117
+
+=== (a)-oracle fidelity mnist_feature_noise (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds          0.325     0.163
+  Flirds1st       0.438     0.377
+  GTG             0.402     0.302
+  FedSV          -0.067     0.431
+  ComFedSV       -0.075     0.263
+  Banzhaf         0.232     0.264
+  ShapleyFL       0.596     0.084
+  FedIF           0.665     0.154
+  loss-heur       0.438     0.366
+  Ripple          0.115     0.130
+
+=== (a)-oracle fidelity mnist_iid (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds          0.358     0.081
+  Flirds1st       0.519     0.274
+  GTG             0.192     0.233
+  FedSV          -0.111     0.369
+  ComFedSV       -0.095     0.168
+  Banzhaf         0.442     0.079
+  ShapleyFL       0.665     0.149
+  FedIF           0.741     0.122
+  loss-heur       0.483     0.203
+  Ripple          0.087     0.269
+
+=== (a)-oracle fidelity mnist_label_flip (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds          0.964     0.010
+  Flirds1st       0.968     0.006
+  GTG             0.968     0.006
+  FedSV           0.960     0.011
+  ComFedSV        0.935     0.015
+  Banzhaf         0.968     0.011
+  ShapleyFL       0.964     0.000
+  FedIF           0.964     0.010
+  loss-heur       0.968     0.006
+  Ripple          0.980     0.011
+
+=== (a)-oracle fidelity mnist_label_skew (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds         -0.285     0.465
+  Flirds1st      -0.063     0.443
+  GTG            -0.220     0.277
+  FedSV          -0.139     0.203
+  ComFedSV       -0.042     0.091
+  Banzhaf        -0.200     0.412
+  ShapleyFL       0.281     0.387
+  FedIF           0.543     0.321
+  loss-heur      -0.164     0.465
+  Ripple          0.285     0.435
+
+=== (a)-oracle fidelity mnist_quantity_skew (3 seeds) ===
+  method     rho_a_mean rho_a_std
+  Flirds          0.846     0.105
+  Flirds1st       0.774     0.202
+  GTG             0.560     0.357
+  FedSV           0.685     0.257
+  ComFedSV        0.648     0.276
+  Banzhaf         0.745     0.236
+  ShapleyFL       0.511     0.419
+  FedIF          -0.095     0.178
+  loss-heur       0.842     0.107
+  Ripple          0.737     0.277
+
+
+================ C2 intervention outcome — cross-seed mean/std ================
+
+=== C2 outcome stability cifar10_dir1_clean_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.6380  0.0036         --        --
+  flirds_mult      0.6417  0.0022         --        --
+  flirds_repl      0.6390  0.0008         --        --
+  flirds_add       0.6400  0.0012         --        --
+  flirds_select    0.6338  0.0050         --        --
+  shapleyfl        0.6352  0.0025         --        --
+  fedif            0.6375  0.0017         --        --
+  sfedavg          0.6310  0.0054         --        --
+
+=== C2 outcome stability cifar10_dir1_free_rider_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.5871  0.0022         --        --
+  flirds_mult      0.5967  0.0012      0.385     0.031
+  flirds_repl      0.5931  0.0033      0.409     0.012
+  flirds_add       0.5928  0.0014      0.478     0.036
+  flirds_select    0.5887  0.0140      0.479     0.044
+  shapleyfl        0.5597  0.0053      0.000     0.000
+  fedif            0.6108  0.0030      0.996     0.001
+  sfedavg          0.5868  0.0040      0.040     0.016
+
+=== C2 outcome stability cifar10_dir1_grad_noise_str0.05 (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.4609  0.0111         --        --
+  flirds_mult      0.5425  0.0112      0.957     0.010
+  flirds_repl      0.5193  0.0081      0.961     0.014
+  flirds_add       0.5072  0.0094      0.953     0.009
+  flirds_select    0.4962  0.0166      0.949     0.015
+  shapleyfl        0.5800  0.0023      1.000     0.000
+  fedif            0.5795  0.0042      0.997     0.002
+  sfedavg          0.4674  0.0070      0.993     0.004
+
+=== C2 outcome stability cifar10_dir1_grad_noise_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.2447  0.0110         --        --
+  flirds_mult      0.4333  0.0170      0.993     0.002
+  flirds_repl      0.3698  0.0249      0.989     0.008
+  flirds_add       0.3334  0.0179      0.985     0.010
+  flirds_select    0.3130  0.0163      0.986     0.007
+  shapleyfl        0.5498  0.0100      1.000     0.000
+  fedif            0.5271  0.0035      0.998     0.002
+  sfedavg          0.2429  0.0061      0.998     0.001
+
+=== C2 outcome stability cifar10_dir1_label_flip_str0.6 (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.4630  0.0140         --        --
+  flirds_mult      0.5532  0.0070      0.990     0.004
+  flirds_repl      0.5419  0.0053      0.991     0.005
+  flirds_add       0.5180  0.0098      0.997     0.003
+  flirds_select    0.5242  0.0290      0.997     0.003
+  shapleyfl        0.5270  0.0121      0.976     0.013
+  fedif            0.5348  0.0052      0.991     0.004
+  sfedavg          0.4660  0.0267      0.968     0.010
+
+=== C2 outcome stability cifar10_dir1_label_flip_str0.8 (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.3095  0.0262         --        --
+  flirds_mult      0.4229  0.0289      0.995     0.002
+  flirds_repl      0.4187  0.0355      0.994     0.003
+  flirds_add       0.3809  0.0333      0.995     0.003
+  flirds_select    0.4136  0.0295      1.000     0.000
+  shapleyfl        0.4017  0.0262      0.975     0.018
+  fedif            0.4266  0.0313      0.998     0.003
+  sfedavg          0.3066  0.0422      0.962     0.018
+
+=== C2 outcome stability cifar10_dir1_label_flip_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.5149  0.0337         --        --
+  flirds_mult      0.5849  0.0121      0.926     0.037
+  flirds_repl      0.5787  0.0101      0.950     0.027
+  flirds_add       0.5603  0.0174      0.969     0.017
+  flirds_select    0.5589  0.0234      0.905     0.083
+  shapleyfl        0.5681  0.0163      0.965     0.027
+  fedif            0.5673  0.0096      0.959     0.015
+  sfedavg          0.5210  0.0052      0.936     0.012
+
+=== C2 outcome stability cifar10_iid_clean_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.6479  0.0013         --        --
+  flirds_mult      0.6460  0.0019         --        --
+  flirds_select    0.6465  0.0016         --        --
+  shapleyfl        0.6472  0.0018         --        --
+  fedif            0.6471  0.0009         --        --
+  sfedavg          0.6462  0.0052         --        --
+
+=== C2 outcome stability cifar10_iid_free_rider_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.6084  0.0043         --        --
+  flirds_mult      0.6264  0.0041      0.400     0.026
+  flirds_select    0.6137  0.0056      0.485     0.046
+  shapleyfl        0.5833  0.0029      0.000     0.000
+  fedif            0.6295  0.0039      0.993     0.008
+  sfedavg          0.6083  0.0022      0.043     0.007
+
+=== C2 outcome stability cifar10_iid_grad_noise_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.2627  0.0150         --        --
+  flirds_mult      0.5401  0.0158      1.000     0.000
+  flirds_select    0.3585  0.0083      1.000     0.000
+  shapleyfl        0.5780  0.0165      1.000     0.000
+  fedif            0.5656  0.0055      1.000     0.000
+  sfedavg          0.2715  0.0151      1.000     0.000
+
+=== C2 outcome stability cifar10_iid_label_flip_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.5099  0.0233         --        --
+  flirds_mult      0.6015  0.0061      0.981     0.007
+  flirds_select    0.5802  0.0062      0.965     0.030
+  shapleyfl        0.5929  0.0104      1.000     0.000
+  fedif            0.5845  0.0113      0.952     0.026
+  sfedavg          0.5017  0.0356      1.000     0.000
+
+=== C2 outcome stability cifar10_shard_clean_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.4751  0.0310         --        --
+  flirds_mult      0.4977  0.0310         --        --
+  flirds_select    0.4174  0.0191         --        --
+  shapleyfl        0.4962  0.0276         --        --
+  fedif            0.4742  0.0371         --        --
+  sfedavg          0.4871  0.0118         --        --
+
+=== C2 outcome stability cifar10_shard_free_rider_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.3982  0.0200         --        --
+  flirds_mult      0.4165  0.0100      0.441     0.094
+  flirds_select    0.4035  0.0356      0.469     0.034
+  shapleyfl        0.4272  0.0031      0.000     0.000
+  fedif            0.3836  0.0276      0.917     0.031
+  sfedavg          0.4231  0.0266      0.010     0.007
+
+=== C2 outcome stability cifar10_shard_grad_noise_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.1667  0.0041         --        --
+  flirds_mult      0.2843  0.0051      0.993     0.005
+  flirds_select    0.1980  0.0217      0.976     0.011
+  shapleyfl        0.2799  0.0342      0.973     0.029
+  fedif            0.2753  0.0308      0.966     0.005
+  sfedavg          0.1561  0.0187      0.882     0.013
+
+=== C2 outcome stability cifar10_shard_label_flip_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.3179  0.0486         --        --
+  flirds_mult      0.3150  0.0426      0.541     0.104
+  flirds_select    0.3346  0.0201      0.543     0.043
+  shapleyfl        0.3221  0.0167      0.363     0.046
+  fedif            0.3264  0.0512      0.761     0.008
+  sfedavg          0.3428  0.0251      0.276     0.046
+
+=== C2 outcome stability fmnist_dir1_clean_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.8117  0.0320         --        --
+  flirds_mult      0.8293  0.0166         --        --
+  flirds_repl      0.8297  0.0135         --        --
+  flirds_add       0.8264  0.0215         --        --
+  flirds_select    0.8460  0.0061         --        --
+  shapleyfl        0.8420  0.0109         --        --
+  fedif            0.8128  0.0280         --        --
+  sfedavg          0.8381  0.0142         --        --
+
+=== C2 outcome stability fmnist_dir1_free_rider_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.8081  0.0122         --        --
+  flirds_mult      0.8205  0.0110      0.437     0.043
+  flirds_repl      0.8142  0.0160      0.475     0.056
+  flirds_add       0.8109  0.0149      0.507     0.035
+  flirds_select    0.8176  0.0100      0.533     0.068
+  shapleyfl        0.7910  0.0140      0.001     0.002
+  fedif            0.8138  0.0247      0.979     0.009
+  sfedavg          0.8073  0.0142      0.085     0.019
+
+=== C2 outcome stability fmnist_dir1_grad_noise_str0.05 (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.7951  0.0245         --        --
+  flirds_mult      0.8283  0.0104      0.893     0.025
+  flirds_repl      0.8128  0.0112      0.881     0.030
+  flirds_add       0.8125  0.0156      0.884     0.030
+  flirds_select    0.8372  0.0029      0.892     0.005
+  shapleyfl        0.8350  0.0101      1.000     0.000
+  fedif            0.7982  0.0335      0.986     0.007
+  sfedavg          0.8283  0.0066      0.988     0.005
+
+=== C2 outcome stability fmnist_dir1_grad_noise_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.7400  0.0263         --        --
+  flirds_mult      0.7948  0.0090      0.987     0.004
+  flirds_repl      0.7833  0.0053      0.987     0.005
+  flirds_add       0.7618  0.0205      0.989     0.005
+  flirds_select    0.7876  0.0165      0.978     0.020
+  shapleyfl        0.8328  0.0094      1.000     0.000
+  fedif            0.8055  0.0178      0.996     0.002
+  sfedavg          0.7707  0.0146      1.000     0.000
+
+=== C2 outcome stability fmnist_dir1_label_flip_str0.6 (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.7780  0.0115         --        --
+  flirds_mult      0.8093  0.0176      1.000     0.000
+  flirds_repl      0.8053  0.0163      1.000     0.000
+  flirds_add       0.7962  0.0151      1.000     0.000
+  flirds_select    0.7998  0.0180      0.998     0.003
+  shapleyfl        0.7909  0.0036      0.842     0.028
+  fedif            0.8066  0.0152      1.000     0.000
+  sfedavg          0.7876  0.0078      0.802     0.016
+
+=== C2 outcome stability fmnist_dir1_label_flip_str0.8 (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.7265  0.0146         --        --
+  flirds_mult      0.7566  0.0263      0.994     0.004
+  flirds_repl      0.7599  0.0175      0.994     0.005
+  flirds_add       0.7496  0.0178      0.993     0.005
+  flirds_select    0.7593  0.0105      0.999     0.001
+  shapleyfl        0.7475  0.0063      0.743     0.013
+  fedif            0.7661  0.0197      1.000     0.000
+  sfedavg          0.7353  0.0209      0.795     0.048
+
+=== C2 outcome stability fmnist_dir1_label_flip_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.8090  0.0113         --        --
+  flirds_mult      0.8060  0.0289      0.998     0.002
+  flirds_repl      0.8056  0.0255      1.000     0.000
+  flirds_add       0.8073  0.0206      1.000     0.000
+  flirds_select    0.8242  0.0063      0.986     0.014
+  shapleyfl        0.8170  0.0056      0.847     0.035
+  fedif            0.8061  0.0219      0.999     0.001
+  sfedavg          0.8098  0.0072      0.787     0.037
+
+=== C2 outcome stability fmnist_iid_clean_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.8559  0.0038         --        --
+  flirds_mult      0.8555  0.0032         --        --
+  flirds_select    0.8579  0.0025         --        --
+  shapleyfl        0.8582  0.0044         --        --
+  fedif            0.8545  0.0049         --        --
+  sfedavg          0.8583  0.0031         --        --
+
+=== C2 outcome stability fmnist_iid_free_rider_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.8282  0.0065         --        --
+  flirds_mult      0.8405  0.0065      0.484     0.069
+  flirds_select    0.8353  0.0088      0.618     0.033
+  shapleyfl        0.8138  0.0107      0.004     0.003
+  fedif            0.8489  0.0053      0.996     0.001
+  sfedavg          0.8271  0.0074      0.074     0.031
+
+=== C2 outcome stability fmnist_iid_grad_noise_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.7828  0.0114         --        --
+  flirds_mult      0.8305  0.0164      1.000     0.000
+  flirds_select    0.8063  0.0109      0.996     0.003
+  shapleyfl        0.8522  0.0067      1.000     0.000
+  fedif            0.8460  0.0048      1.000     0.001
+  sfedavg          0.7903  0.0168      1.000     0.000
+
+=== C2 outcome stability fmnist_iid_label_flip_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.8173  0.0025         --        --
+  flirds_mult      0.8450  0.0041      1.000     0.000
+  flirds_select    0.8377  0.0043      1.000     0.000
+  shapleyfl        0.8357  0.0046      0.965     0.015
+  fedif            0.8429  0.0043      1.000     0.000
+  sfedavg          0.8242  0.0046      0.840     0.039
+
+=== C2 outcome stability fmnist_shard_clean_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.6858  0.0438         --        --
+  flirds_mult      0.7170  0.0164         --        --
+  flirds_select    0.6723  0.0485         --        --
+  shapleyfl        0.7325  0.0052         --        --
+  fedif            0.6827  0.0407         --        --
+  sfedavg          0.7119  0.0165         --        --
+
+=== C2 outcome stability fmnist_shard_free_rider_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.6438  0.0307         --        --
+  flirds_mult      0.6695  0.0256      0.333     0.040
+  flirds_select    0.6802  0.0246      0.442     0.053
+  shapleyfl        0.6938  0.0145      0.000     0.000
+  fedif            0.6391  0.0297      0.875     0.006
+  sfedavg          0.6783  0.0140      0.032     0.010
+
+=== C2 outcome stability fmnist_shard_grad_noise_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.5405  0.0285         --        --
+  flirds_mult      0.6221  0.0297      0.836     0.019
+  flirds_select    0.5837  0.0172      0.810     0.008
+  shapleyfl        0.6555  0.0359      0.984     0.020
+  fedif            0.5932  0.0372      0.931     0.009
+  sfedavg          0.5560  0.0454      0.946     0.012
+
+=== C2 outcome stability fmnist_shard_label_flip_strmain (3 seed(s)) ===
+  arm            acc_mean acc_std auroc_mean auroc_std
+  vanilla          0.5868  0.0151         --        --
+  flirds_mult      0.5650  0.0632      0.917     0.012
+  flirds_select    0.5447  0.0943      0.960     0.022
+  shapleyfl        0.6175  0.0382      0.038     0.015
+  fedif            0.5665  0.0372      0.914     0.002
+  sfedavg          0.6868  0.0196      0.099     0.029

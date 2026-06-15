@@ -1,0 +1,12 @@
+fmnist_dir1_clean_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=clean C2_STRENGTH=main C2_SEED=0 C2_MODE=full
+fmnist_dir1_clean_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=clean C2_STRENGTH=main C2_SEED=1 C2_MODE=full
+fmnist_dir1_clean_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=clean C2_STRENGTH=main C2_SEED=2 C2_MODE=full
+fmnist_dir1_label_flip_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=0 C2_MODE=full
+fmnist_dir1_label_flip_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=1 C2_MODE=full
+fmnist_dir1_label_flip_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=2 C2_MODE=full
+fmnist_dir1_free_rider_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=0 C2_MODE=full
+fmnist_dir1_free_rider_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=1 C2_MODE=full
+fmnist_dir1_free_rider_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=2 C2_MODE=full
+fmnist_dir1_grad_noise_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=0 C2_MODE=full
+fmnist_dir1_grad_noise_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=1 C2_MODE=full
+fmnist_dir1_grad_noise_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=2 C2_MODE=full

@@ -15,3 +15,7 @@ runs/phase2_matrix/tier3/
 runs/phase2_matrix/smoke/
 runs/phase2_matrix/RESULTS.md
 runs/phase2_matrix/analysis/
+
+# Track C: Slurm per-job .out logs are transient. The rundirs under runs/track_c/
+# (promoted from codes/runs scratch) ARE tracked — same immutable-result convention.
+slurm/logs/

@@ -1,0 +1,16 @@
+cfg:
+  n: 100
+  frac: 0.1
+  rounds: 120
+  epochs: 5
+  lr: 0.01
+  batch: 64
+  n_val: 2000
+  n_test: 8000
+  target: 0.6
+dataset: cifar10
+partition: shard
+threat: label_flip
+strength: main
+seed: 1
+mode: full
