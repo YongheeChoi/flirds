@@ -1,0 +1,16 @@
+{
+  "name": "dev_a0.5_anchor_frzero",
+  "git_sha": "17db38b8dbfff9b5b7c477b0da8ce32dfeec3387",
+  "git_dirty": true,
+  "env_hash": "a2969115b57a3cf3",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.11.15"
+  }
+}
