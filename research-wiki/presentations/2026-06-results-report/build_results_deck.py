@@ -310,11 +310,11 @@ footnote(s, "출처: codes/core·oracle·baselines. 모든 valuation은 동일 l
 s = slide()
 header(s, "Shared design · 2/2", "평가 지표")
 rows = [["질문","지표","정의 / 방향"],
- ["1차 fidelity (순위)","Spearman ρ · Kendall τ","오라클 φ 대비 순위 상관 (↑좋음)"],
- ["1차 fidelity (값-거리)","cosine_d · euclid_d · max_diff","오라클 φ 대비 값-크기 오차 (↓좋음)"],
- ["2차-① 일반 성능","test acc (이미지) · MMLU·ROUGE-L (LLM)","개입 arm 최종 성능 (↑좋음)"],
- ["2차-② 수렴","rounds-to-target · final val-loss","목표 도달 라운드 / 최종 검증손실"],
- ["2차-③ 탐지","AUROC","오염 클라=높은 의심점수 (1.0=완전분리)"]]
+ ["1차 fidelity (순위)","Spearman ρ ↑ · Kendall τ ↑","오라클 φ 대비 순위 상관 (↑좋음)"],
+ ["1차 fidelity (값-거리)","cosine_d ↓ · euclid_d ↓ · max_diff ↓","오라클 φ 대비 값-크기 오차 (↓좋음)"],
+ ["2차-① 일반 성능","test acc (이미지) ↑ · MMLU·ROUGE-L (LLM) ↑","개입 arm 최종 성능 (↑좋음)"],
+ ["2차-② 수렴","rounds-to-target ↓ · final val-loss ↓","목표 도달 라운드 / 최종 검증손실"],
+ ["2차-③ 탐지","AUROC ↑","오염 클라=높은 의심점수 (1.0=완전분리)"]]
 table(s, 0.55, 1.55, 12.23, rows, [2.3,3.2,4.5], ["l","l","l"], size=12, row_h=0.5, accent_first=True)
 notes(s, 0.55, 4.65, 12.2, [
  ("3-state 라벨", True),
@@ -324,7 +324,7 @@ notes(s, 0.55, 4.65, 12.2, [
  ("탐지에서 valuation의 입장", True),
  "  방법은 라벨에 blind; 라벨은 평가 KEY(AUROC)일 뿐. 오염이 검증손실을 낮추면 φ가 '기여 높음'으로 나오는 것이 정직한 답.",
 ], size=12, gap=6)
-footnote(s, "값-거리 지표는 순위가 포화(ρ=+1.000)된 구간에서 방법을 변별 — 특히 1차 vs 2차 테일러 비교에 사용.")
+footnote(s, "방향 규약: ↑ 높을수록 좋음 / ↓ 낮을수록 좋음. · 값-거리 지표는 순위가 포화(ρ=+1.000)된 구간에서 방법을 변별 — 특히 1차 vs 2차 테일러 비교에 사용.")
 
 # ── S5 Track C 명세 ─────────────────────────────────────────────────
 s = slide()
@@ -343,7 +343,7 @@ footnote(s, "3 seed(0,1,2), 150셀 실패 0. retrain oracle efficiency-gap ≤1e
 
 # ── S6 C1 fidelity vs (b) ───────────────────────────────────────────
 s = slide()
-header(s, "Image (CNN) · 1차 fidelity", "fidelity — in-run oracle 대비 (순위 Spearman, 3-seed 평균)")
+header(s, "Image (CNN) · 1차 fidelity", "fidelity — in-run oracle 대비 (순위 Spearman ↑, 3-seed 평균)")
 meths = ["Flirds","Flirds1st","Banzhaf","GTG","FedSV","loss-heur"]
 rows = [["시나리오 (CIFAR-10 / MNIST)"] + meths]
 for ds in ("cifar10","mnist"):
@@ -388,7 +388,7 @@ notes(s, 8.45, 1.62, 4.3, [
  "한계기여는 낮아도 최종 재학습 모델엔 필수.",
  "(iid 음수는 retrain oracle 신호 자체가 미약 → 노이즈)",
 ], size=11, gap=4)
-footnote(s, "retrain 열은 rho_a_mean(3-seed). 동일 시나리오에서 LLM standard의 reference (N=5)는 retrain oracle와 +1.000 일치 → 괴리는 이질성 구동(S14).")
+footnote(s, "표 값 = Spearman ρ ↑. retrain 열은 rho_a_mean(3-seed). 동일 시나리오에서 LLM standard의 reference (N=5)는 retrain oracle와 +1.000 일치 → 괴리는 이질성 구동(S14).")
 
 # ── S8 C2 개입 ──────────────────────────────────────────────────────
 s = slide()
@@ -406,7 +406,7 @@ for ai, arm in enumerate(arms):
     rows.append(row)
 table(s, 0.55, 1.65, 12.23, rows, [1.5,2.4,2.7,2.7,2.7], ["l","c","c","c","c"], size=11, row_h=0.5, accent_first=True)
 notes(s, 0.55, 4.7, 12.2, [
- ("셀당 = test acc  (탐지 AUROC).  clean은 위협 없음→AUROC 없음.", True),
+ ("셀당 = test acc ↑  (탐지 AUROC ↑).  clean은 위협 없음→AUROC 없음.", True),
  "• clean: 전 arm ≈ vanilla → 무해(do-no-harm) 확인.",
  ("• grad_noise: 전 arm > vanilla(0.245). 단 shapleyfl(0.550)·fedif(0.527) > flirds_mult(0.433).", False, INK),
  ("• label_flip: flirds_mult(0.585)이 최고. free_rider: fedif AUROC 0.996, flirds_mult 0.385 — 탐지 약함(아래).", False, INK),
@@ -432,8 +432,8 @@ footnote(s, "LoRA 어댑터, attn=eager(전진모드 AD 위해). cross-silo/3B 3
 
 # ── S10 silo5 결과 ──────────────────────────────────────────────────
 s = slide()
-header(s, "LLM robustness · cross-silo (N=5, 1B)", "탐지 AUROC · fidelity Spearman vs in-run oracle · 런타임")
-rows = [["방법","noisy","fr-rand","fr-zero","poison","ρ noisy","ρ poison","런타임"]]
+header(s, "LLM robustness · cross-silo (N=5, 1B)", "탐지 AUROC ↑ · fidelity Spearman ↑ vs in-run oracle · 런타임 ↓")
+rows = [["방법","noisy ↑","fr-rand ↑","fr-zero ↑","poison ↑","ρ noisy ↑","ρ poison ↑","런타임 ↓"]]
 for me in SILO_M:
     au = SILO_AUROC[me]; sp = SILO_SP.get(me)
     rows.append([me, fmt(au[0]),fmt(au[1]),fmt(au[2]),fmt(au[3]),
@@ -448,12 +448,12 @@ footnote(s, "poison Flirds(2차)는 run간 비결정(동일 config·seed에서 0
 
 # ── S11 device100 결과 ──────────────────────────────────────────────
 s = slide()
-header(s, "LLM robustness · cross-device (N=100, 1B)", "α-sweep — 탐지 AUROC")
-rows = [["방법 (noisy)"] + [f"α={a}" for a in ALPHAS]]
+header(s, "LLM robustness · cross-device (N=100, 1B)", "α-sweep — 탐지 AUROC ↑")
+rows = [["방법 (noisy AUROC ↑)"] + [f"α={a}" for a in ALPHAS]]
 for me in ["Flirds","FedIF","STD-DAGMM","FLTrust","FedDQC","FLDetector","ComFedSV"]:
     rows.append([me] + [fmt(x) for x in DEV_NOISY[me]])
 table(s, 0.55, 1.5, 6.6, rows, [1.8,1,1,1,1,1], ["l"]+["c"]*5, size=10, row_h=0.4, zebra=True)
-rows2 = [["방법 (poison)","α=0.0","α=0.5"]]
+rows2 = [["방법 (poison AUROC ↑)","α=0.0","α=0.5"]]
 for me in ["Flirds","Flirds1st","loss-heur","FLDetector","STD-DAGMM","FedDQC","FLTrust","FedIF"]:
     rows2.append([me, fmt(DEV_POISON[me][0]), fmt(DEV_POISON[me][1])])
 table(s, 7.45, 1.5, 5.3, rows2, [2.0,1,1], ["l","c","c"], size=10, row_h=0.4, zebra=True)
@@ -467,8 +467,8 @@ footnote(s, "cross-device φ는 한 번이라도 선택된 클라만 기록(K=10
 
 # ── S12 3B 스케일 ───────────────────────────────────────────────────
 s = slide()
-header(s, "LLM robustness · 스케일 (3B, cross-silo N=5)", "Llama-3.2-3B — 탐지 AUROC · ρ vs in-run oracle · 런타임 (seed 0)")
-rows = [["방법","noisy","fr-rand","fr-zero","poison","ρ noisy","ρ poison","런타임"]]
+header(s, "LLM robustness · 스케일 (3B, cross-silo N=5)", "Llama-3.2-3B — 탐지 AUROC ↑ · ρ vs in-run oracle ↑ · 런타임 ↓ (seed 0)")
+rows = [["방법","noisy ↑","fr-rand ↑","fr-zero ↑","poison ↑","ρ noisy ↑","ρ poison ↑","런타임 ↓"]]
 for me in M3B:
     au = M3B_AUROC[me]; sp = M3B_SP.get(me)
     rows.append([me, fmt(au[0]),fmt(au[1]),fmt(au[2]),fmt(au[3]),
@@ -502,7 +502,7 @@ header(s, "LLM standard (clean·IID) · 1차 fidelity", "standard (N=20) vs in-r
 def drow(F, me):
     return [me, fmt(F["spearman"].get(me),True), fmt(F["kendall"].get(me),True),
             f"{F['cosine_d'][me]:.1e}", f"{F['euclid_d'][me]:.1e}", f"{F['max_diff'][me]:.1e}"]
-hdr = ["방법","Spearman","Kendall","cosine_d","euclid_d","max_diff"]
+hdr = ["방법","Spearman ↑","Kendall ↑","cosine_d ↓","euclid_d ↓","max_diff ↓"]
 order = ["Flirds","Flirds1st","loss-heur","GTG","FedSV","ComFedSV","ShapleyFL","FedIF"]
 rows = [["standard (N=20) vs in-run oracle"]+hdr[1:]] + [drow(D_STD_F, m) for m in order if m in D_STD_F["spearman"]]
 table(s, 0.55, 1.55, 6.25, rows, [1.5,1.1,1,1,1,1], ["l"]+["c"]*5, size=9.6, row_h=0.355, zebra=True)
@@ -519,7 +519,7 @@ footnote(s, "reference (N=5)는 retrain oracle (2⁵) 기준. 출처: runs/track
 s = slide()
 header(s, "LLM standard (clean·IID) · 2차-① 성능 ② 수렴", "개입 arm — MMLU · ROUGE-L · 수렴 (standard N=20, 3-seed 평균)")
 arm_order = ["base","vanilla","flirds_w","flirds_sel","shapleyfl_w","fedif_w"]
-rows = [["arm","MMLU (0-shot)","ROUGE-L","final val-loss","rounds→target"]]
+rows = [["arm","MMLU (0-shot) ↑","ROUGE-L ↑","final val-loss ↓","rounds→target ↓"]]
 for a in arm_order:
     if a not in D_STD_A: continue
     A = D_STD_A[a]
