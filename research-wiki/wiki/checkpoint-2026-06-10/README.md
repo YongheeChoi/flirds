@@ -49,4 +49,4 @@ updated: 2026-06-12
 
 ---
 
-*근거 추적: 코드 인용은 `path:line`, 실측은 `codes/runs/.../metrics.json` 또는 `research-wiki/raw/conversations/flirds/*.md`, 논문은 `research-wiki/raw/papers/flirds/*.pdf`. 검증/교정은 `~/.claude/.../memory/phase2-step5-verification.md`.*
+*근거 추적: 코드 인용은 `path:line`, 실측은 `runs/phase1/rundirs/.../metrics.json` 또는 `research-wiki/raw/conversations/flirds/*.md`, 논문은 `research-wiki/raw/papers/flirds/*.pdf`. 검증/교정은 `~/.claude/.../memory/phase2-step5-verification.md`.*

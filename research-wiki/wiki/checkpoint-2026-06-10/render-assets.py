@@ -239,7 +239,7 @@ def build_combined():
 <div class="sub">Phase 0–2 구현 + step5 matrix orchestrator 종료 시점의 전체 재오리엔테이션.
 코드·raw 로그·논문 PDF를 직접 대조해 정리한 8개 문서(00–07)를 한 곳에 모았습니다.</div>
 <div class="legend">{legend}</div>
-<div class="meta">근거 추적: 코드 <code>path:line</code> · 실측 <code>codes/runs/*/metrics.json</code> · 논문 <code>raw/papers/flirds/*.pdf</code>. 3-state(ⓐ/ⓑ/ⓒ) 규율 적용. 좌측 목차로 섹션 이동.</div></div>'''
+<div class="meta">근거 추적: 코드 <code>path:line</code> · 실측 <code>runs/phase1/rundirs/*/metrics.json</code> · 논문 <code>raw/papers/flirds/*.pdf</code>. 3-state(ⓐ/ⓑ/ⓒ) 규율 적용. 좌측 목차로 섹션 이동.</div></div>'''
     side = f'<aside class="side"><div class="brand">Flirds Checkpoint<small>2026-06-10 · 재오리엔테이션</small></div><nav>{"".join(nav)}</nav></aside>'
     doc = f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">

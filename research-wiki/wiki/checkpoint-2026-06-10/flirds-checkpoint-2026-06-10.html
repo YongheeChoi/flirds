@@ -84,7 +84,7 @@ mjx-container{margin:0 2px;}
 <div class="sub">Phase 0–2 구현 + step5 matrix orchestrator 종료 시점의 전체 재오리엔테이션.
 코드·raw 로그·논문 PDF를 직접 대조해 정리한 8개 문서(00–07)를 한 곳에 모았습니다.</div>
 <div class="legend"><span class="chip chip-b">ⓑ 실측 결과</span><span class="chip chip-a">ⓐ 코드+smoke</span><span class="chip chip-g">ⓒ 미실행/설계</span><span class="chip chip-v">[CODE/PDF] 원본대조</span><span class="chip chip-c">[DOC/WEB] 문서주장</span></div>
-<div class="meta">근거 추적: 코드 <code>path:line</code> · 실측 <code>codes/runs/*/metrics.json</code> · 논문 <code>raw/papers/flirds/*.pdf</code>. 3-state(ⓐ/ⓑ/ⓒ) 규율 적용. 좌측 목차로 섹션 이동.</div></div><section class="section" id="doc-00-overview"><div class="dochead"><span class="docnum">0</span><h1 class="doctitle">Flirds 체크포인트 00 — 전체 그림 한 장</h1></div><p class="docnote">코드·raw 로그·PDF를 직접 읽고 대조한 연구자용 재오리엔테이션 문서. 추측 없음, 모든 정량주장에 파일경로 근거.</p><h1>00 · 전체 그림 한 장</h1>
+<div class="meta">근거 추적: 코드 <code>path:line</code> · 실측 <code>runs/phase1/rundirs/*/metrics.json</code> · 논문 <code>raw/papers/flirds/*.pdf</code>. 3-state(ⓐ/ⓑ/ⓒ) 규율 적용. 좌측 목차로 섹션 이동.</div></div><section class="section" id="doc-00-overview"><div class="dochead"><span class="docnum">0</span><h1 class="doctitle">Flirds 체크포인트 00 — 전체 그림 한 장</h1></div><p class="docnote">코드·raw 로그·PDF를 직접 읽고 대조한 연구자용 재오리엔테이션 문서. 추측 없음, 모든 정량주장에 파일경로 근거.</p><h1>00 · 전체 그림 한 장</h1>
 <blockquote>
 <p>이 폴더는 <strong>외부 발표용이 아니라 연구자(Yonghee) 본인이 전체 그림을 다시 잡기 위한 체크포인트</strong>다.
 모든 주장은 실제 코드(<code>codes/</code>), raw 로그(<code>research-wiki/raw/</code>), 논문 PDF를 직접 읽어 grounding했다.
@@ -357,7 +357,7 @@ mjx-container{margin:0 2px;}
 <tr>
 <td><strong>Phase1 1B N=5 cross-silo, 3-seed (lr 1e-3 &amp; 3e-3)</strong> — 9-method Spearman, AUROC, selection run</td>
 <td><strong><span class="chip chip-b">ⓑ</span> 실제결과</strong></td>
-<td><code>codes/runs/full_lr{1e-3,3e-3}/flirds-1b-N5-seed{0,1,2}/metrics.json</code></td>
+<td><code>runs/phase1/rundirs/1B_silo5_full-lr{1e-3,3e-3}_seed{0,1,2}/metrics.json</code></td>
 </tr>
 <tr>
 <td>retrain-oracle validation, 1B N=5 (fp32): retrain val-loss=in-run oracle=estimator +1.000</td>
@@ -412,7 +412,7 @@ mjx-container{margin:0 2px;}
 </tbody>
 </table></div>
 <blockquote>
-<p><strong>문서 과장 교정(검증값 채택)</strong>: ① poison detector STD-DAGMM·FLTrust = <strong>0.75</strong>(1.0 아님) ② &quot;all methods +1.000&quot;의 FedSV는 tiny-config서 <strong>+0.900</strong> (단 phase1 real은 +1.000) ③ STD-DAGMM runtime ~<strong>360s</strong>(~100s 아님) ④ backdoor(poison)에서 Flirds(2차) AUROC는 <strong>run간 분산이 크다</strong>: 영속화 run(<code>runs/phase2_matrix/rundirs/silo5_poison/metrics.json</code>, 1B N=5 3-seed) <strong>0.917±0.118</strong>(per-seed [0.75, 1.0, 1.0]) vs 이전 .log-only 3-seed run <a href="=0.417%C2%B10.425">0, 0.25, 1.0</a> — 둘 다 실측이며 어느 쪽도 무효 아님. <strong>Flirds-1st AUROC 0.000 완전 회피는 두 run 공통</strong>이고, <strong>3B 1-seed(<code>rundirs/m3b_poison</code>)에서는 Flirds(2차)도 AUROC 0.000</strong>(회피). 상세 → <a href="#doc-05-open-issues-and-next">05-open-issues-and-next</a>. 근거: <code>memory/phase2-step5-verification.md</code>.</p>
+<p><strong>문서 과장 교정(검증값 채택)</strong>: ① poison detector STD-DAGMM·FLTrust = <strong>0.75</strong>(1.0 아님) ② &quot;all methods +1.000&quot;의 FedSV는 tiny-config서 <strong>+0.900</strong> (단 phase1 real은 +1.000) ③ STD-DAGMM runtime ~<strong>360s</strong>(~100s 아님) ④ backdoor(poison)에서 Flirds(2차) AUROC는 <strong>run간 분산이 크다</strong>: 영속화 run(<code>runs/phase2_matrix/rundirs/silo5_poison/metrics.json</code>, 1B N=5 3-seed) <strong>0.917±0.118</strong>(per-seed [0.75, 1.0, 1.0]) vs 이전 .log-only 3-seed run <a href="=0.417%C2%B10.425">0, 0.25, 1.0</a> — 둘 다 실측이며 어느 쪽도 무효 아님. <strong>Flirds-1st AUROC 0.000 완전 회피는 두 run 공통</strong>이고, <strong>3B 1-seed(<code>rundirs/3B_silo5_poison</code>)에서는 Flirds(2차)도 AUROC 0.000</strong>(회피). 상세 → <a href="#doc-05-open-issues-and-next">05-open-issues-and-next</a>. 근거: <code>memory/phase2-step5-verification.md</code>.</p>
 </blockquote>
 <hr />
 <h2>0.6 추천 읽기 순서</h2>
@@ -520,7 +520,7 @@ mjx-container{margin:0 2px;}
 <li><strong>Ripple 대비</strong>: Ripple=sample-level Jacobian propagation(eigsh, 재귀 chain) → 우리는 client-level closed-form Taylor, LoRA 명시, 2차 client-interaction항 명시 [DOC <code>flirds.md:235-239</code>]. 실측: Ripple ~4515s = Flirds(107s)의 <strong>~42×</strong>, 검출도 가장 약함(noisy AUROC 0.50±0.20) [<span class="chip chip-b">ⓑ</span> <code>raw/.../2026-06-06-sv-baseline-port-and-results.md</code>].</li>
 <li><strong>FedIF 대비</strong>: FedIF(2025)=1st-order TracIn on Δw, CNN-only, aggregation 변경 → 우리는 2차 추가, LLM/LoRA, vanilla FedAvg 위 post-hoc valuation [DOC <code>flirds.md:245</code>].</li>
 <li><strong>2차항이 FL에서 비로소 의미</strong> <span class="chip chip-c">DOC</span>: IRDS Appx E.2.2는 centralized per-step(작은 η)서 2차가 거의 무의미하다 함. FL per-round multi-step Δw는 크므로 2차가 non-trivial. CNN 실측이 뒷받침: plain SGD서 1st+2nd Spearman 0.962 &gt; 1st 0.924; <strong>momentum 켜면 역전</strong>(1st 0.81 &gt; 1st+2nd 0.73) → 그래서 plain SGD 고정 [<span class="chip chip-b">ⓑ</span> raw <code>2026-06-03-phase05-estimator.md:75-80</code>; <code>codes/CLAUDE.md §5</code>].</li>
-<li><strong>속도/정확도 프론티어 지배</strong> <span class="chip chip-b"><span class="chip chip-b">ⓑ</span></span>: N=5 near-additive → Shapley linearity로 in-run utility 쓰는 모든 방법이 같은 ranking(+1.000) → Flirds가 <strong>5–15× 더 싸게</strong> 같은 답 (Flirds-1st 35s vs GTG/FedSV/oracle ~530s). 큰 N·강한 상호작용서 분리력은 real grid로 실측·영속화 완료 <span class="chip chip-b"><span class="chip chip-b">ⓑ</span></span>: 22/25 셀 <code>runs/phase2_matrix/rundirs</code> metrics.json (잔여 3셀=dev_a0.5 {noisy,frrand,frzero}). N=100 cross-device 실측: Flirds AUROC free-rider 1.000(측정 전 α=0.0/0.01/0.1/5.0), noisy 0.575~0.774(α별), poison(α=0.0/0.5) 1.000±0.000. 2차항 분리력도 실측 grounding 확보 — dev_a0.5_poison(N=100): Flirds 1.000±0.000 vs Flirds-1st 0.670±0.467; silo5_poison(N=5): Flirds 0.917±0.118 vs Flirds-1st 0.000(완전 회피).</li>
+<li><strong>속도/정확도 프론티어 지배</strong> <span class="chip chip-b"><span class="chip chip-b">ⓑ</span></span>: N=5 near-additive → Shapley linearity로 in-run utility 쓰는 모든 방법이 같은 ranking(+1.000) → Flirds가 <strong>5–15× 더 싸게</strong> 같은 답 (Flirds-1st 35s vs GTG/FedSV/oracle ~530s). 큰 N·강한 상호작용서 분리력은 real grid로 실측·영속화 완료 <span class="chip chip-b"><span class="chip chip-b">ⓑ</span></span>: 22/25 셀 <code>runs/phase2_matrix/rundirs</code> metrics.json (잔여 3셀=dev_a0.5 {noisy,frrand,frzero}). N=100 cross-device 실측: Flirds AUROC free-rider 1.000(측정 전 α=0.0/0.01/0.1/5.0), noisy 0.575~0.774(α별), poison(α=0.0/0.5) 1.000±0.000. 2차항 분리력도 실측 grounding 확보 — 1B_device100-a0.5_poison(N=100): Flirds 1.000±0.000 vs Flirds-1st 0.670±0.467; silo5_poison(N=5): Flirds 0.917±0.118 vs Flirds-1st 0.000(완전 회피).</li>
 <li><strong>free-rider φ 정확히 0</strong> [CODE+<span class="chip chip-b">ⓑ</span>]: Flirds/in-run oracle/Banzhaf/loss-heur는 정확 0; GTG/FedSV는 within-subset renorm 희석으로 ≠0 → 우리 utility 정의의 깔끔함 입증.</li>
 <li><strong>cross-domain valuation fairness hook</strong> [CODE <code>backends/llm.py:83-88</code>]: per-domain macro-norm 옵션 (token-norm vs domain-macro). LESS/FedDQC 등은 magnitude만 부분완화, cross-domain 비교가능성은 미해결이라는 주장 <span class="chip chip-c">DOC</span>.</li>
 </ol>
@@ -682,7 +682,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 </code></pre>
 <p>성공기준: <code>flirds_topk val_loss ≤ random_k</code> <strong>and</strong> <code>ROUGE-L ≥ random_k</code> [CODE <code>read_runs.py:53</code>].</p>
 <h3>selection run 실측 결과 <span class="chip chip-b"><span class="chip chip-b">ⓑ</span> 1B N=5 cross-silo, 3-seed, lr 1e-3 &amp; 3e-3</span></h3>
-<p>직접 <code>codes/runs/full_lr{1e-3,3e-3}/.../metrics.json</code> 6개 파일 대조:</p>
+<p>직접 <code>runs/phase1/rundirs/1B_silo5_full-lr{1e-3,3e-3}_seed*/metrics.json</code> 6개 파일 대조:</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -1166,7 +1166,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <li><strong>selection run nuance</strong>(직접 metrics.json 대조): seed0은 random이 우연히 clean set {2,3,4} → tie; &quot;beats random&quot;은 cross-seed. AUROC가 lr로 반전(lr1e-3 noisy0.75/FR1.0 ↔ lr3e-3 1.0/0.75) — MEMORY는 lr1e-3만 기재. selection은 양 lr 동일. → <a href="#doc-02-experimental-setup">02</a>.</li>
 <li><strong>ComFedSV</strong> tiny-R서 Spearman 낮음(R≤8 completion-starved; cross-device port R=30서 +1.000). real은 R≈30 필요.</li>
 <li><strong>device100 corrupt-seen</strong> R≈30 필요(짧으면 corrupt가 안 보임).</li>
-<li><strong>device100 poison ASR</strong>: real config 실측됨(커밋 b9113c4, <code>rundirs/dev_a*_poison/metrics.json</code>) — dev_a0.0_poison ASR=[1.0, 1.0, 1.0], dev_a0.5_poison ASR=[0.675, 0.825, 0.0] (α=0.5서 cross-device 희석·seed 분산).</li>
+<li><strong>device100 poison ASR</strong>: real config 실측됨(커밋 b9113c4, <code>rundirs/dev_a*_poison/metrics.json</code>) — 1B_device100-a0.0_poison ASR=[1.0, 1.0, 1.0], 1B_device100-a0.5_poison ASR=[0.675, 0.825, 0.0] (α=0.5서 cross-device 희석·seed 분산).</li>
 <li><strong>Ripple eigsh flaky</strong>(CPU spinning stall) → 비교는 RIPPLE=0, 값은 06-06 단일세션.</li>
 <li><strong>3B retrain val-loss vs in-run oracle +0.900</strong>(1B는 +1.000) = clean-client 1-swap=retrain noise; estimator는 +1.000 유지. 1-seed.</li>
 <li><strong>FedDQC</strong> per-domain IRA 분산 큼(finance 0.17≈noisy 0.067) → noisy 도메인/seed 변주 필요. 1-seed smoke.</li>
@@ -1329,7 +1329,7 @@ arms = {&quot;full&quot;: all_idx, &quot;flirds_topk&quot;: keep, &quot;random_k
 <hr />
 <h2>6.3 FedIF — &quot;1차로 충분한가?&quot;의 핵심 baseline</h2>
 <p><strong>무엇</strong>: TracIn 스타일 <strong>순수 1차</strong> FL 데이터평가 + robust aggregation. 매 라운드 클라 <strong>L2-정규화 업데이트</strong> · <strong>validation gradient</strong> 내적 → min-max → EMA → adaptive weight. TracIn을 FL 클라업데이트에 처음 도입. SV 대비 aggregation 비용 <strong>450× 절감</strong>(단, <strong>aggregation-time만</strong>; training-time은 동등 — <span class="wl">fedif</span>:80). CNN 전용, Hessian/2차/LoRA/LLM 전무. <strong>코드 공개</strong>.</p>
-<p><strong>근접도</strong>: <strong>Ripple 다음으로 가깝다.</strong> client-level + in-run + \(\Delta w\) 위 + val-gradient anchor → Flirds 1차항과 거의 동일. FedIF 라운드 영향력 \(\Phi_i^t=\frac{\Delta w_i}{\lVert\Delta w_i\rVert}\cdot\nabla\ell_\text{val}\) = <strong>Flirds 1차항의 L2-정규화</strong>(≈ FLTrust cosine). &quot;Flirds-1st ≈ FedIF&quot;는 <strong>1차 val-grad 내적이라는 골격에 한정</strong>되는 대응 — FedIF는 <strong>독립 baseline으로 포팅·실측됨</strong>(real grid 22셀 영속화, <code>runs/phase2_matrix/rundirs</code>), head-to-head는 <span class="chip chip-b">ⓑ</span>. 실측에선 L2-정규화 차이가 갈라짐(예: silo5_poison FedIF AUROC 1.000 vs Flirds-1st 0.000·Flirds 2차 0.917±0.118; dev_a0.0_noisy FedIF 0.973±0.017 vs Flirds-1st 0.772±0.058).</p>
+<p><strong>근접도</strong>: <strong>Ripple 다음으로 가깝다.</strong> client-level + in-run + \(\Delta w\) 위 + val-gradient anchor → Flirds 1차항과 거의 동일. FedIF 라운드 영향력 \(\Phi_i^t=\frac{\Delta w_i}{\lVert\Delta w_i\rVert}\cdot\nabla\ell_\text{val}\) = <strong>Flirds 1차항의 L2-정규화</strong>(≈ FLTrust cosine). &quot;Flirds-1st ≈ FedIF&quot;는 <strong>1차 val-grad 내적이라는 골격에 한정</strong>되는 대응 — FedIF는 <strong>독립 baseline으로 포팅·실측됨</strong>(real grid 22셀 영속화, <code>runs/phase2_matrix/rundirs</code>), head-to-head는 <span class="chip chip-b">ⓑ</span>. 실측에선 L2-정규화 차이가 갈라짐(예: silo5_poison FedIF AUROC 1.000 vs Flirds-1st 0.000·Flirds 2차 0.917±0.118; 1B_device100-a0.0_noisy FedIF 0.973±0.017 vs Flirds-1st 0.772±0.058).</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -1543,7 +1543,7 @@ Ms = [np.eye(m) - lr * (Bs[t] * Ls[t]) @ Bs[t].T for t in range(rounds)]   # = I
 <li><strong>이론(Prop 1/2)</strong>: informal + 파일럿 U-shape 모순 관측, #5 검증 <span class="chip chip-g">ⓒ</span>.</li>
 </ul>
 <h3>리뷰어 1순위 공격 지점 (직접 확인)</h3>
-<p><strong>FedIF(2025)</strong> — wiki 스스로 &quot;Ripple 외 가장 가까운 federated in-run-on-Δw 경쟁자&quot;, &quot;'why isn't 1st-order enough?'의 핵심 baseline&quot;으로 등재(<span class="wl">flirds</span>:231,245)한 최근접 published 경쟁자. <strong>baseline 구현·비교 suite 편입은 완료</strong> — <code>codes/flirds/baselines/fedif.py</code>(커밋 1903a58) + 영속화 22/25 셀 전부 FedIF 실측(예: silo5_poison AUROC 1.0/Sp 0.967±0.047, dev_a0.0_poison AUROC 0.542±0.258 — 기준 rundirs metrics.json). [06] 포지셔닝 문서도 같은 날 작성([06] §6.3 &quot;Flirds-1st ablation ≈ FedIF 메커니즘&quot;). <strong>잔여 = <a href="#doc-03-baselines-and-prior-work">03-baselines-and-prior-work</a> 문서 통합뿐</strong> — FedIF가 [03]에 여전히 0회 등장(grep 확인).</p>
+<p><strong>FedIF(2025)</strong> — wiki 스스로 &quot;Ripple 외 가장 가까운 federated in-run-on-Δw 경쟁자&quot;, &quot;'why isn't 1st-order enough?'의 핵심 baseline&quot;으로 등재(<span class="wl">flirds</span>:231,245)한 최근접 published 경쟁자. <strong>baseline 구현·비교 suite 편입은 완료</strong> — <code>codes/flirds/baselines/fedif.py</code>(커밋 1903a58) + 영속화 22/25 셀 전부 FedIF 실측(예: silo5_poison AUROC 1.0/Sp 0.967±0.047, 1B_device100-a0.0_poison AUROC 0.542±0.258 — 기준 rundirs metrics.json). [06] 포지셔닝 문서도 같은 날 작성([06] §6.3 &quot;Flirds-1st ablation ≈ FedIF 메커니즘&quot;). <strong>잔여 = <a href="#doc-03-baselines-and-prior-work">03-baselines-and-prior-work</a> 문서 통합뿐</strong> — FedIF가 [03]에 여전히 0회 등장(grep 확인).</p>
 <hr />
 <h2>7.2 한계 분석</h2>
 <h3>A. 방법 내재</h3>

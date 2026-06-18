@@ -2,32 +2,32 @@
 # device100 cells use POOL=12000 (per_client=300 needs >=~11k/domain at low alpha; matrix
 # DEVICE pool=7000 is too small -> 'label pool exhausted').  Append more cells with >> anytime.
 # --- Tier1 silo5 N=5 (all methods + (b) oracle + FedIF; re-run for FedIF + persistence) ---
-silo5_noisy|REGIME=silo5 THREAT=noisy
-silo5_freerider_random|REGIME=silo5 THREAT=freerider_random
-silo5_freerider_zero|REGIME=silo5 THREAT=freerider_zero
-silo5_poison|REGIME=silo5 THREAT=poison LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8
+1B_silo5_noisy|REGIME=silo5 THREAT=noisy
+1B_silo5_frrand|REGIME=silo5 THREAT=freerider_random
+1B_silo5_frzero|REGIME=silo5 THREAT=freerider_zero
+1B_silo5_poison|REGIME=silo5 THREAT=poison LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8
 # --- Tier2 cheap device100 sweep (Flirds proxy-truth; alpha 0.1/0.01 first = POOL-fix check) ---
-dev_a0.1_noisy|REGIME=device100 ALPHA=0.1 THREAT=noisy POOL=12000
-dev_a0.1_frrand|REGIME=device100 ALPHA=0.1 THREAT=freerider_random POOL=12000
-dev_a0.1_frzero|REGIME=device100 ALPHA=0.1 THREAT=freerider_zero POOL=12000
-dev_a0.01_noisy|REGIME=device100 ALPHA=0.01 THREAT=noisy POOL=12000
-dev_a0.01_frrand|REGIME=device100 ALPHA=0.01 THREAT=freerider_random POOL=12000
-dev_a0.01_frzero|REGIME=device100 ALPHA=0.01 THREAT=freerider_zero POOL=12000
-dev_a0.0_noisy|REGIME=device100 ALPHA=0.0 THREAT=noisy POOL=12000
-dev_a0.0_frrand|REGIME=device100 ALPHA=0.0 THREAT=freerider_random POOL=12000
-dev_a0.0_frzero|REGIME=device100 ALPHA=0.0 THREAT=freerider_zero POOL=12000
-dev_a5.0_noisy|REGIME=device100 ALPHA=5.0 THREAT=noisy POOL=12000
-dev_a5.0_frrand|REGIME=device100 ALPHA=5.0 THREAT=freerider_random POOL=12000
-dev_a5.0_frzero|REGIME=device100 ALPHA=5.0 THREAT=freerider_zero POOL=12000
+1B_device100-a0.1_noisy|REGIME=device100 ALPHA=0.1 THREAT=noisy POOL=12000
+1B_device100-a0.1_frrand|REGIME=device100 ALPHA=0.1 THREAT=freerider_random POOL=12000
+1B_device100-a0.1_frzero|REGIME=device100 ALPHA=0.1 THREAT=freerider_zero POOL=12000
+1B_device100-a0.01_noisy|REGIME=device100 ALPHA=0.01 THREAT=noisy POOL=12000
+1B_device100-a0.01_frrand|REGIME=device100 ALPHA=0.01 THREAT=freerider_random POOL=12000
+1B_device100-a0.01_frzero|REGIME=device100 ALPHA=0.01 THREAT=freerider_zero POOL=12000
+1B_device100-a0.0_noisy|REGIME=device100 ALPHA=0.0 THREAT=noisy POOL=12000
+1B_device100-a0.0_frrand|REGIME=device100 ALPHA=0.0 THREAT=freerider_random POOL=12000
+1B_device100-a0.0_frzero|REGIME=device100 ALPHA=0.0 THREAT=freerider_zero POOL=12000
+1B_device100-a5.0_noisy|REGIME=device100 ALPHA=5.0 THREAT=noisy POOL=12000
+1B_device100-a5.0_frrand|REGIME=device100 ALPHA=5.0 THREAT=freerider_random POOL=12000
+1B_device100-a5.0_frzero|REGIME=device100 ALPHA=5.0 THREAT=freerider_zero POOL=12000
 # --- Tier2 poison device100 (D2b install config, R=60, POOL=12000) ---
-dev_a0.5_poison|REGIME=device100 ALPHA=0.5 THREAT=poison POOL=12000 LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8 ROUNDS=60 MAX_STEPS=10
-dev_a0.0_poison|REGIME=device100 ALPHA=0.0 THREAT=poison POOL=12000 LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8 ROUNDS=60 MAX_STEPS=10
+1B_device100-a0.5_poison|REGIME=device100 ALPHA=0.5 THREAT=poison POOL=12000 LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8 ROUNDS=60 MAX_STEPS=10
+1B_device100-a0.0_poison|REGIME=device100 ALPHA=0.0 THREAT=poison POOL=12000 LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8 ROUNDS=60 MAX_STEPS=10
 # --- Tier3 scale: 3B silo5 N=5 (detection + (b); coalition off) SEED=0 ---
-m3b_noisy|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=noisy SEED=0 ORACLE_B=1 COALITION=0
-m3b_frrand|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=freerider_random SEED=0 ORACLE_B=1 COALITION=0
-m3b_frzero|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=freerider_zero SEED=0 ORACLE_B=1 COALITION=0
-m3b_poison|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=poison SEED=0 ORACLE_B=1 COALITION=0 LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8
+3B_silo5_noisy|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=noisy SEED=0 ORACLE_B=1 COALITION=0
+3B_silo5_frrand|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=freerider_random SEED=0 ORACLE_B=1 COALITION=0
+3B_silo5_frzero|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=freerider_zero SEED=0 ORACLE_B=1 COALITION=0
+3B_silo5_poison|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=poison SEED=0 ORACLE_B=1 COALITION=0 LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8
 # --- Tier2 alpha=0.5 ANCHOR (device100 + (b)-perround + coalition, POOL=12000; expensive, last) ---
-dev_a0.5_anchor_noisy|REGIME=device100 ALPHA=0.5 THREAT=noisy POOL=12000 ORACLE_B=1 COALITION=1
-dev_a0.5_anchor_frrand|REGIME=device100 ALPHA=0.5 THREAT=freerider_random POOL=12000 ORACLE_B=1 COALITION=1
-dev_a0.5_anchor_frzero|REGIME=device100 ALPHA=0.5 THREAT=freerider_zero POOL=12000 ORACLE_B=1 COALITION=1
+1B_device100-a0.5_noisy_anchor|REGIME=device100 ALPHA=0.5 THREAT=noisy POOL=12000 ORACLE_B=1 COALITION=1
+1B_device100-a0.5_frrand_anchor|REGIME=device100 ALPHA=0.5 THREAT=freerider_random POOL=12000 ORACLE_B=1 COALITION=1
+1B_device100-a0.5_frzero_anchor|REGIME=device100 ALPHA=0.5 THREAT=freerider_zero POOL=12000 ORACLE_B=1 COALITION=1

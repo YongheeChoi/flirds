@@ -1,0 +1,17 @@
+model: meta-llama/Llama-3.2-1B-Instruct
+N: 5
+seed: 0
+K: 3
+noisy:
+- 0
+free_riders:
+- 1
+free_rider_mode: zero
+per_domain:
+  train: 500
+  val: 100
+  test: 200
+rounds: 20
+max_steps: 10
+lr: 0.0003
+oracle_b: true

@@ -106,7 +106,7 @@ arms = {"full": all_idx, "flirds_topk": keep, "random_k": rand}   # K=3 (N=5서 
 성공기준: `flirds_topk val_loss ≤ random_k` **and** `ROUGE-L ≥ random_k` [CODE `read_runs.py:53`].
 
 ### selection run 실측 결과 [ⓑ 1B N=5 cross-silo, 3-seed, lr 1e-3 & 3e-3]
-직접 `codes/runs/full_lr{1e-3,3e-3}/.../metrics.json` 6개 파일 대조:
+직접 `runs/phase1/rundirs/1B_silo5_full-lr{1e-3,3e-3}_seed*/metrics.json` 6개 파일 대조:
 
 | | lr=1e-3 (seed 0/1/2) | lr=3e-3 (seed 0/1/2) |
 |---|---|---|

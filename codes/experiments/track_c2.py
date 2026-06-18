@@ -62,7 +62,8 @@ SEED = int(os.environ.get("C2_SEED", "0"))
 MODE = os.environ.get("C2_MODE", "smoke")
 DISMISSAL = os.environ.get("C2_DISMISSAL", "0") == "1"
 PERSIST = os.environ.get("C2_PERSIST", "1") == "1"
-RUN_ROOT = os.environ.get("C2_RUN_ROOT", "runs/track_c2")
+_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repo root
+RUN_ROOT = os.environ.get("C2_RUN_ROOT", os.path.join(_REPO, "runs", "track_c", "c2"))
 
 CFG = {
     "full":  dict(n=100, frac=0.1, rounds=120, epochs=5, lr=0.01, batch=64,
@@ -234,7 +235,7 @@ def run():
                    dismissal=dismissal)
     if PERSIST:
         try:
-            name = f"{DATASET}_{PARTITION}_{THREAT}_str{STRENGTH}_seed{SEED}"
+            name = f"{DATASET}_{PARTITION}_{THREAT.replace('_', '-')}_str{STRENGTH}_seed{SEED}"
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, partition=PARTITION,
                                                 threat=THREAT, strength=STRENGTH, seed=SEED, mode=MODE),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

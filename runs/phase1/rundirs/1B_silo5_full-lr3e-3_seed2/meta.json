@@ -1,0 +1,16 @@
+{
+  "name": "flirds-1b-N5-seed2",
+  "git_sha": "35389c5c378705a12824edc789f4b3ac245b0e40",
+  "git_dirty": true,
+  "env_hash": "65ccfebf06d9215f",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.11.15"
+  }
+}

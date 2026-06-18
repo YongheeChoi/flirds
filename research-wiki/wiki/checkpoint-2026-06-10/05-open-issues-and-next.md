@@ -44,7 +44,7 @@ updated: 2026-06-12
 - **selection run nuance**(직접 metrics.json 대조): seed0은 random이 우연히 clean set {2,3,4} → tie; "beats random"은 cross-seed. AUROC가 lr로 반전(lr1e-3 noisy0.75/FR1.0 ↔ lr3e-3 1.0/0.75) — MEMORY는 lr1e-3만 기재. selection은 양 lr 동일. → [02](02-experimental-setup.md#26).
 - **ComFedSV** tiny-R서 Spearman 낮음(R≤8 completion-starved; cross-device port R=30서 +1.000). real은 R≈30 필요.
 - **device100 corrupt-seen** R≈30 필요(짧으면 corrupt가 안 보임).
-- **device100 poison ASR**: real config 실측됨(커밋 b9113c4, `rundirs/dev_a*_poison/metrics.json`) — dev_a0.0_poison ASR=[1.0, 1.0, 1.0], dev_a0.5_poison ASR=[0.675, 0.825, 0.0] (α=0.5서 cross-device 희석·seed 분산).
+- **device100 poison ASR**: real config 실측됨(커밋 b9113c4, `rundirs/dev_a*_poison/metrics.json`) — 1B_device100-a0.0_poison ASR=[1.0, 1.0, 1.0], 1B_device100-a0.5_poison ASR=[0.675, 0.825, 0.0] (α=0.5서 cross-device 희석·seed 분산).
 - **Ripple eigsh flaky**(CPU spinning stall) → 비교는 RIPPLE=0, 값은 06-06 단일세션.
 - **3B retrain val-loss vs in-run oracle +0.900**(1B는 +1.000) = clean-client 1-swap=retrain noise; estimator는 +1.000 유지. 1-seed.
 - **FedDQC** per-domain IRA 분산 큼(finance 0.17≈noisy 0.067) → noisy 도메인/seed 변주 필요. 1-seed smoke.

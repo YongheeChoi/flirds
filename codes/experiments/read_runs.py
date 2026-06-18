@@ -2,8 +2,8 @@
 does Flirds-top-K beat random-K and approach full?).
 
 Usage from codes/:
-  PYTHONPATH=. python experiments/read_runs.py runs/full_lr1e-3 runs/full_lr3e-3
-  (no args -> auto-globs runs/full_lr*)
+  PYTHONPATH=. python experiments/read_runs.py runs/phase1/rundirs
+  (no args -> reads runs/phase1/rundirs; legacy phase1 results, moved here from codes/runs)
 """
 import glob
 import json
@@ -31,7 +31,8 @@ def _vfin(m, arm):                        # final val-loss of an arm
 
 
 def main():
-    roots = sys.argv[1:] or sorted(glob.glob("runs/full_lr*"))
+    _repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    roots = sys.argv[1:] or [os.path.join(_repo, "runs", "phase1", "rundirs")]   # moved from codes/runs
     for root in roots:
         runs = _runs(root)
         if not runs:

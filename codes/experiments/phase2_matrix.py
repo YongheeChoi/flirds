@@ -384,8 +384,11 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition):
     a save failure warns but never loses the printed .log results.  PERSIST=0 disables."""
     if os.environ.get("PERSIST", "1") != "1":
         return
-    name = os.environ.get("RUN_NAME") or (f"{SCALE}_{REGIME}"
-            + (f"_a{ALPHA}" if REGIME != "silo5" else "") + "_" + "-".join(threats))
+    _abbr = {"freerider_random": "frrand", "freerider_zero": "frzero"}   # canonical condition tokens
+    _cond = "-".join(_abbr.get(t, t) for t in threats)
+    _setting = "silo5" if REGIME == "silo5" else f"{REGIME}-a{ALPHA}"     # e.g. device100-a0.5
+    _anchor = "_anchor" if (REGIME != "silo5" and oracle_b and coalition) else ""
+    name = os.environ.get("RUN_NAME") or f"{SCALE}_{_setting}_{_cond}{_anchor}"
     rcfg = {k: (sorted(v) if isinstance(v, (set, frozenset)) else v) for k, v in RCFG.items()}
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "alpha": ALPHA,
               "threats": threats, "seeds": seeds, "oracle_b": oracle_b, "coalition": coalition,

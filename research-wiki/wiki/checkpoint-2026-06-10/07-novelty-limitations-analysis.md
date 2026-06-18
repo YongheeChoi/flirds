@@ -61,7 +61,7 @@ checkpoint 작성(06-10 00:50) 직후 real grid가 시작됨. 직접 확인(06-1
 
 ### 리뷰어 1순위 공격 지점 (직접 확인)
 
-**FedIF(2025)** — wiki 스스로 "Ripple 외 가장 가까운 federated in-run-on-Δw 경쟁자", "'why isn't 1st-order enough?'의 핵심 baseline"으로 등재([[flirds]]:231,245)한 최근접 published 경쟁자. **baseline 구현·비교 suite 편입은 완료** — `codes/flirds/baselines/fedif.py`(커밋 1903a58) + 영속화 22/25 셀 전부 FedIF 실측(예: silo5_poison AUROC 1.0/Sp 0.967±0.047, dev_a0.0_poison AUROC 0.542±0.258 — 기준 rundirs metrics.json). [06] 포지셔닝 문서도 같은 날 작성([06] §6.3 "Flirds-1st ablation ≈ FedIF 메커니즘"). **잔여 = [03-baselines-and-prior-work](03-baselines-and-prior-work.md) 문서 통합뿐** — FedIF가 [03]에 여전히 0회 등장(grep 확인).
+**FedIF(2025)** — wiki 스스로 "Ripple 외 가장 가까운 federated in-run-on-Δw 경쟁자", "'why isn't 1st-order enough?'의 핵심 baseline"으로 등재([[flirds]]:231,245)한 최근접 published 경쟁자. **baseline 구현·비교 suite 편입은 완료** — `codes/flirds/baselines/fedif.py`(커밋 1903a58) + 영속화 22/25 셀 전부 FedIF 실측(예: silo5_poison AUROC 1.0/Sp 0.967±0.047, 1B_device100-a0.0_poison AUROC 0.542±0.258 — 기준 rundirs metrics.json). [06] 포지셔닝 문서도 같은 날 작성([06] §6.3 "Flirds-1st ablation ≈ FedIF 메커니즘"). **잔여 = [03-baselines-and-prior-work](03-baselines-and-prior-work.md) 문서 통합뿐** — FedIF가 [03]에 여전히 0회 등장(grep 확인).
 
 ---
 

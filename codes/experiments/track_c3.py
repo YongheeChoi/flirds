@@ -109,7 +109,8 @@ def _group_key(name, ndrop):
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "c1"
-    root = sys.argv[2] if len(sys.argv) > 2 else f"runs/track_{mode}"
+    _repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    root = sys.argv[2] if len(sys.argv) > 2 else os.path.join(_repo, "runs", "track_c", mode)
     filt = "_".join(sys.argv[3:]) if len(sys.argv) > 3 else None
 
     runs = _load(root)

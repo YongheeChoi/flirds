@@ -77,7 +77,8 @@ MODE = os.environ.get("C1_MODE", "smoke")                # smoke | full
 ORACLE_A = os.environ.get("C1_ORACLE_A", "1") == "1"
 ORACLE_A_ONLY = os.environ.get("C1_ORACLE_A_ONLY", "0") == "1"
 PERSIST = os.environ.get("C1_PERSIST", "1") == "1"
-RUN_ROOT = os.environ.get("C1_RUN_ROOT", "runs/track_c1")
+_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repo root
+RUN_ROOT = os.environ.get("C1_RUN_ROOT", os.path.join(_REPO, "runs", "track_c", "c1"))
 
 CFG = {
     "full":  dict(n_clients=10, n_per=None, rounds=10, epochs=5, lr=0.01, batch=64,
@@ -277,7 +278,8 @@ def main():
     metrics, phi_rows = run_seed(SEED, device)
     if PERSIST:
         try:
-            name = f"{DATASET}_{SCENARIO}_seed{SEED}" + ("_aonly" if ORACLE_A_ONLY else "")
+            name = (f"{DATASET}_{SCENARIO.replace('_', '-')}"            # canonical: hyphen within token
+                    + ("_aonly" if ORACLE_A_ONLY else "") + f"_seed{SEED}")   # seed always trailing
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, scenario=SCENARIO,
                                                 seed=SEED, mode=MODE, oracle_a=ORACLE_A),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

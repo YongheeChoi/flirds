@@ -16,6 +16,6 @@ for cls in fl_smoke fl_probe p_c1 p_c2 c1traj c1ora c2base c2d1fm c2d1cD c2sweep
 done
 echo
 echo "## run dirs"
-for d in /home/chyoyhr/projects/flirds/codes/runs/track_c1 /home/chyoyhr/projects/flirds/codes/runs/track_c2; do
+for d in /home/chyoyhr/projects/flirds/runs/track_c/c1 /home/chyoyhr/projects/flirds/runs/track_c/c2; do
   [ -d "$d" ] && echo "$d: $(find "$d" -name metrics.json | wc -l) metrics.json"
 done

@@ -318,7 +318,8 @@ def _persist(phi_rows, run_metrics, seeds):
     PERSIST=0 disables."""
     if os.environ.get("PERSIST", "1") != "1":
         return
-    name = os.environ.get("RUN_NAME") or f"{SCALE}_{REGIME}"
+    name = os.environ.get("RUN_NAME") or (f"{SCALE}_{REGIME}_seed{seeds[0]}"
+                                          if len(seeds) == 1 else f"{SCALE}_{REGIME}")
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "seeds": seeds,
               "rcfg": RCFG, "mcfg": MCFG, "oracle_a": ORACLE_A, "fidelity": FIDELITY,
               "mmlu": {"limit": MMLU_LIMIT, "batch": MMLU_BATCH, "shots": 0}}

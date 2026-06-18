@@ -56,7 +56,7 @@ note: "내 연구의 직접 경쟁자 3편을 'LLM+FL+기여도평가' 교집합
 
 **무엇**: TracIn 스타일 **순수 1차** FL 데이터평가 + robust aggregation. 매 라운드 클라 **L2-정규화 업데이트** · **validation gradient** 내적 → min-max → EMA → adaptive weight. TracIn을 FL 클라업데이트에 처음 도입. SV 대비 aggregation 비용 **450× 절감**(단, **aggregation-time만**; training-time은 동등 — [[sources/fedif]]:80). CNN 전용, Hessian/2차/LoRA/LLM 전무. **코드 공개**.
 
-**근접도**: **Ripple 다음으로 가깝다.** client-level + in-run + $\Delta w$ 위 + val-gradient anchor → Flirds 1차항과 거의 동일. FedIF 라운드 영향력 $\Phi_i^t=\frac{\Delta w_i}{\lVert\Delta w_i\rVert}\cdot\nabla\ell_\text{val}$ = **Flirds 1차항의 L2-정규화**(≈ FLTrust cosine). "Flirds-1st ≈ FedIF"는 **1차 val-grad 내적이라는 골격에 한정**되는 대응 — FedIF는 **독립 baseline으로 포팅·실측됨**(real grid 22셀 영속화, `runs/phase2_matrix/rundirs`), head-to-head는 ⓑ. 실측에선 L2-정규화 차이가 갈라짐(예: silo5_poison FedIF AUROC 1.000 vs Flirds-1st 0.000·Flirds 2차 0.917±0.118; dev_a0.0_noisy FedIF 0.973±0.017 vs Flirds-1st 0.772±0.058).
+**근접도**: **Ripple 다음으로 가깝다.** client-level + in-run + $\Delta w$ 위 + val-gradient anchor → Flirds 1차항과 거의 동일. FedIF 라운드 영향력 $\Phi_i^t=\frac{\Delta w_i}{\lVert\Delta w_i\rVert}\cdot\nabla\ell_\text{val}$ = **Flirds 1차항의 L2-정규화**(≈ FLTrust cosine). "Flirds-1st ≈ FedIF"는 **1차 val-grad 내적이라는 골격에 한정**되는 대응 — FedIF는 **독립 baseline으로 포팅·실측됨**(real grid 22셀 영속화, `runs/phase2_matrix/rundirs`), head-to-head는 ⓑ. 실측에선 L2-정규화 차이가 갈라짐(예: silo5_poison FedIF AUROC 1.000 vs Flirds-1st 0.000·Flirds 2차 0.917±0.118; 1B_device100-a0.0_noisy FedIF 0.973±0.017 vs Flirds-1st 0.772±0.058).
 
 | FedIF이 가진 것 (장점) | Flirds 대비 단점 |
 |---|---|

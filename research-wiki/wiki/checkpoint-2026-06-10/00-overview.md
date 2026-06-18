@@ -123,7 +123,7 @@ GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-
 | 항목 | 상태 | 근거 |
 |---|---|---|
 | Estimator + retrain/in-run oracle + LLM backend + FL 루프 + 5-domain 데이터 | **구현완료** | `codes/flirds/` 전체; smoke green |
-| **Phase1 1B N=5 cross-silo, 3-seed (lr 1e-3 & 3e-3)** — 9-method Spearman, AUROC, selection run | **ⓑ 실제결과** | `codes/runs/full_lr{1e-3,3e-3}/flirds-1b-N5-seed{0,1,2}/metrics.json` |
+| **Phase1 1B N=5 cross-silo, 3-seed (lr 1e-3 & 3e-3)** — 9-method Spearman, AUROC, selection run | **ⓑ 실제결과** | `runs/phase1/rundirs/1B_silo5_full-lr{1e-3,3e-3}_seed{0,1,2}/metrics.json` |
 | retrain-oracle validation, 1B N=5 (fp32): retrain val-loss=in-run oracle=estimator +1.000 | **ⓑ 실제결과** | `raw/.../2026-06-07-phase2-task6-a-retrain-oracle.md` |
 | retrain-oracle validation 3B N=5 retrain val-loss vs in-run oracle +0.900, estimator +1.000 | **ⓑ 1-seed** | `raw/.../2026-06-08-phase2-task7-crossdevice-detection-redesign.md` |
 | cross-device port, N=100 α=0.5: Flirds vs per-round in-run oracle +1.000; oracle 771ms/fwd | **ⓑ 1-seed smoke** | `raw/.../2026-06-08-...redesign.md` |
@@ -135,7 +135,7 @@ GTG-Shapley · FedSV · Ripple · Data Banzhaf · ShapleyFL · ComFedSV · loss-
 | N=10 retrain oracle (LLM) | **ⓒ 연기** | 비용 2–5일/1-GPU → multi-GPU sharding 필요 |
 | 7B in-run oracle | **ⓒ 미실행** | matrix MODEL_CFG 경로에 있으나 미실행 |
 
-> **문서 과장 교정(검증값 채택)**: ① poison detector STD-DAGMM·FLTrust = **0.75**(1.0 아님) ② "all methods +1.000"의 FedSV는 tiny-config서 **+0.900** (단 phase1 real은 +1.000) ③ STD-DAGMM runtime ~**360s**(~100s 아님) ④ backdoor(poison)에서 Flirds(2차) AUROC는 **run간 분산이 크다**: 영속화 run(`runs/phase2_matrix/rundirs/silo5_poison/metrics.json`, 1B N=5 3-seed) **0.917±0.118**(per-seed [0.75, 1.0, 1.0]) vs 이전 .log-only 3-seed run [0, 0.25, 1.0](=0.417±0.425) — 둘 다 실측이며 어느 쪽도 무효 아님. **Flirds-1st AUROC 0.000 완전 회피는 두 run 공통**이고, **3B 1-seed(`rundirs/m3b_poison`)에서는 Flirds(2차)도 AUROC 0.000**(회피). 상세 → [05-open-issues-and-next](05-open-issues-and-next.md). 근거: `memory/phase2-step5-verification.md`.
+> **문서 과장 교정(검증값 채택)**: ① poison detector STD-DAGMM·FLTrust = **0.75**(1.0 아님) ② "all methods +1.000"의 FedSV는 tiny-config서 **+0.900** (단 phase1 real은 +1.000) ③ STD-DAGMM runtime ~**360s**(~100s 아님) ④ backdoor(poison)에서 Flirds(2차) AUROC는 **run간 분산이 크다**: 영속화 run(`runs/phase2_matrix/rundirs/silo5_poison/metrics.json`, 1B N=5 3-seed) **0.917±0.118**(per-seed [0.75, 1.0, 1.0]) vs 이전 .log-only 3-seed run [0, 0.25, 1.0](=0.417±0.425) — 둘 다 실측이며 어느 쪽도 무효 아님. **Flirds-1st AUROC 0.000 완전 회피는 두 run 공통**이고, **3B 1-seed(`rundirs/3B_silo5_poison`)에서는 Flirds(2차)도 AUROC 0.000**(회피). 상세 → [05-open-issues-and-next](05-open-issues-and-next.md). 근거: `memory/phase2-step5-verification.md`.
 
 ---
 
