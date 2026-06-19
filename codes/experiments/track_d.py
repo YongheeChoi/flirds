@@ -61,7 +61,7 @@ from flirds.baselines.shapleyfl import shapleyfl_from_logs
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.llm import build_alpaca_iid, build_val_batches
 from flirds.eval.generate import generate_completions, score_records
-from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference
+from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference, pearson
 from flirds.eval.mmlu import mmlu_accuracy
 from flirds.fl.intervene import (OnlineScorer, fedif_round_raw_fn, flirds_round_raw_fn,
                                  make_scoreonly_weights_fn, make_softmax_select_fn,
@@ -218,28 +218,30 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
 
 
 def report_fidelity(methods, selected):
-    """Fidelity table vs the (b) oracle: Spearman + Kendall (rank) + the GTG distance
-    trio (same-units caveat: distances are unit-meaningful only for the val-loss-game
-    vectors; rank columns cover the rest) + wall-clock.  Returns {col: {method: v}}."""
+    """Fidelity table vs the (b) oracle: Spearman + Kendall (rank) + Pearson (value-level,
+    affine-invariant) + the GTG distance trio (same-units caveat: distances are
+    unit-meaningful only for the val-loss-game vectors; rank/Pearson cover the rest) +
+    wall-clock.  Returns {col: {method: v}}."""
     truth = methods[0][1]
-    res = {"spearman": {}, "kendall": {}, "cosine_d": {}, "euclid_d": {}, "max_diff": {},
-           "runtime": {}}
-    print(f"  {'method':10s} {'Spearman':>9s} {'Kendall':>8s} {'cos-d':>8s} {'euc-d':>9s} "
-          f"{'max-d':>9s} {'runtime':>9s}")
+    res = {"spearman": {}, "kendall": {}, "pearson": {}, "cosine_d": {}, "euclid_d": {},
+           "max_diff": {}, "runtime": {}}
+    print(f"  {'method':10s} {'Spearman':>9s} {'Kendall':>8s} {'Pearson':>8s} {'cos-d':>8s} "
+          f"{'euc-d':>9s} {'max-d':>9s} {'runtime':>9s}")
     for name, vec, rt in methods:
         res["runtime"][name] = rt
         if name == "(b)oracle":
-            print(f"  {name:10s} {'(truth)':>9s} {'':8s} {'':8s} {'':9s} {'':9s} {rt:8.1f}s")
+            print(f"  {name:10s} {'(truth)':>9s} {'':8s} {'':8s} {'':8s} {'':9s} {'':9s} {rt:8.1f}s")
             continue
         v, u = [vec[c] for c in selected], [truth[c] for c in selected]
         res["spearman"][name] = float(spearmanr(v, u).correlation)
         res["kendall"][name] = float(kendalltau(v, u).correlation)
+        res["pearson"][name] = pearson(v, u)
         res["cosine_d"][name] = cosine_distance(v, u)
         res["euclid_d"][name] = euclidean_distance(v, u)
         res["max_diff"][name] = max_difference(v, u)
         print(f"  {name:10s} {res['spearman'][name]:+9.3f} {res['kendall'][name]:+8.3f} "
-              f"{res['cosine_d'][name]:8.4f} {res['euclid_d'][name]:9.4f} "
-              f"{res['max_diff'][name]:9.4f} {rt:8.1f}s")
+              f"{res['pearson'][name]:+8.3f} {res['cosine_d'][name]:8.4f} "
+              f"{res['euclid_d'][name]:9.4f} {res['max_diff'][name]:9.4f} {rt:8.1f}s")
     return res
 
 
@@ -364,7 +366,7 @@ def main():
               f"vanilla FL {t_vanilla:.0f}s -----", flush=True)
 
         # ---- phase 1: fidelity (the PRIMARY axis) ----
-        res = {"spearman": {}, "kendall": {}, "cosine_d": {}, "euclid_d": {},
+        res = {"spearman": {}, "kendall": {}, "pearson": {}, "cosine_d": {}, "euclid_d": {},
                "max_diff": {}, "runtime": {}}
         if FIDELITY:
             methods = compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc,
@@ -425,7 +427,8 @@ def main():
                 if name == "(b)oracle":
                     continue
                 line = f"  {name:10s}"
-                for col, fmt in (("spearman", "+.3f"), ("kendall", "+.3f"), ("cosine_d", ".4f")):
+                for col, fmt in (("spearman", "+.3f"), ("kendall", "+.3f"),
+                                 ("pearson", "+.3f"), ("cosine_d", ".4f")):
                     vals = [r[col][name] for r in agg]
                     line += f" {col}={np.nanmean(vals):{fmt}}+/-{np.nanstd(vals):.3f}"
                 line += f"  runtime={np.mean([r['runtime'][name] for r in agg]):.1f}s"

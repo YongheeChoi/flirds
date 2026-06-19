@@ -105,6 +105,19 @@ def max_difference(a, b):
     return float(np.abs(a - b).max())
 
 
+def pearson(a, b):
+    """Pearson linear correlation of two value vectors — value-level fidelity that
+    rank metrics miss: it's affine-invariant (forgives a global scale/offset the
+    Euclidean/max distances penalise) yet, unlike Spearman/Kendall, rewards LINEAR
+    value agreement, not just matching ranks.  Most useful where rank correlation
+    saturates at +1 (the N=5 near-additive regime).  NaN if either vector is
+    constant (correlation undefined); small-N (e.g. 5 clients) -> high variance."""
+    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    if a.std() == 0 or b.std() == 0:
+        return float("nan")
+    return float(np.corrcoef(a, b)[0, 1])
+
+
 def detection_auroc(phi, corrupt_labels):
     """AUROC of per-client phi as a corrupt-client (noisy / free-rider) detector.
 

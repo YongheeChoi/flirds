@@ -57,7 +57,7 @@ from flirds.core.flirds_estimator import flirds_values
 from flirds.data.cnn import _STATS, get_dataset, get_labels
 from flirds.data.corruptors import CNN_CORRUPTORS
 from flirds.eval.metrics import (cosine_distance, detection_auroc,
-                                 euclidean_distance, max_difference)
+                                 euclidean_distance, max_difference, pearson)
 from flirds.fl.partition import (iid_partition, label_skew_partition,
                                  quantity_skew_partition)
 from flirds.fl.server import evaluate, fedavg
@@ -241,6 +241,7 @@ def run_seed(seed, device="cuda"):
                 continue
             m[f"spearman_{g}"] = float(spearmanr(vec, gvec).correlation)
             m[f"kendall_{g}"] = float(kendalltau(vec, gvec).correlation)
+            m[f"pearson_{g}"] = pearson(vec, gvec)          # value-level (affine-invariant) fidelity
             m[f"cos_{g}"] = cosine_distance(vec, gvec)
             m[f"euc_{g}"] = euclidean_distance(vec, gvec)
             m[f"maxdiff_{g}"] = max_difference(vec, gvec)
@@ -249,15 +250,16 @@ def run_seed(seed, device="cuda"):
             m["spearman_vs_rate"] = float(spearmanr(vec, rates).correlation)
         res[name] = m
 
-    hdr = f"  {'method':10s} {'time':>7s} {'rho(b)':>7s} {'tau(b)':>7s}"
-    hdr += f" {'rho(a)':>7s}" if "a" in gt else ""
+    hdr = f"  {'method':10s} {'time':>7s} {'rho(b)':>7s} {'tau(b)':>7s} {'r_p(b)':>7s}"
+    hdr += f" {'rho(a)':>7s} {'r_p(a)':>7s}" if "a" in gt else ""
     hdr += f" {'AUROC':>6s}" if ladder else ""
     print(hdr, flush=True)
     for name, vec, rt in methods:
         m = res[name]
         line = f"  {name:10s} {rt:6.1f}s {m.get('spearman_b', float('nan')):7.3f}"
-        line += f" {m.get('kendall_b', float('nan')):7.3f}"
-        line += f" {m.get('spearman_a', float('nan')):7.3f}" if "a" in gt else ""
+        line += f" {m.get('kendall_b', float('nan')):7.3f} {m.get('pearson_b', float('nan')):7.3f}"
+        line += (f" {m.get('spearman_a', float('nan')):7.3f} {m.get('pearson_a', float('nan')):7.3f}"
+                 if "a" in gt else "")
         line += f" {m.get('auroc', float('nan')):6.3f}" if ladder else ""
         print(line, flush=True)
 

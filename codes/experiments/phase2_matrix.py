@@ -76,6 +76,7 @@ from flirds.core.flirds_estimator import flirds_values
 from flirds.data.corruptors import BACKDOOR_TRIGGER
 from flirds.data.llm import build, build_crossdevice, build_val_batches
 from flirds.eval.generate import backdoor_asr
+from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference, pearson
 from flirds.fl.llm_server import run_llm_fedavg_logs
 from flirds.oracle.in_run_sv import in_run_shapley, in_run_shapley_perround, in_run_utility
 from flirds.repro import seed_everything
@@ -361,20 +362,27 @@ def report(threat, methods, corrupt, logs, asr):
     if not seen_corrupt:
         print("  (no corrupt client participated -> AUROC undefined; raise ROUNDS or change SEED)")
 
-    res = {"auroc": {}, "spearman": {}, "runtime": {}}
-    print(f"  {'method':11s} {'AUROC':>7s} {'Spearman/'+truth_name:>14s} {'runtime':>9s}   corrupt-rank")
+    res = {"auroc": {}, "spearman": {}, "pearson": {}, "cos_d": {}, "euc_d": {},
+           "max_diff": {}, "runtime": {}}                  # rank + value-level (Pearson + GTG distances) fidelity
+    print(f"  {'method':11s} {'AUROC':>7s} {'Spearman/'+truth_name:>14s} {'Pearson':>8s} "
+          f"{'runtime':>9s}   corrupt-rank")
     for name, kind, vec, rt in methods:
         au = _auroc(vec, corrupt, selected)
         res["auroc"][name] = au
         res["runtime"][name] = rt
-        rho = "(truth)" if name == truth_method else ""
+        rho, pear = ("(truth)" if name == truth_method else ""), ""
         if kind == "val" and name != truth_method:
+            mv, tv = [vec[c] for c in selected], [truth[c] for c in selected]
             r = _rho(vec, truth, selected)
             res["spearman"][name] = r
-            rho = f"{r:+.3f}"
+            res["pearson"][name] = pearson(mv, tv)         # value-level (affine-invariant); key where rank saturates at +1
+            res["cos_d"][name] = cosine_distance(mv, tv)
+            res["euc_d"][name] = euclidean_distance(mv, tv)
+            res["max_diff"][name] = max_difference(mv, tv)
+            rho, pear = f"{r:+.3f}", f"{res['pearson'][name]:+.3f}"
         ranks = ",".join(str(sum(1 for j in selected if vec[j] > vec[c]))   # rank among SELECTED (AUROC set)
                          for c in seen_corrupt) or "-"
-        print(f"  {name:11s} {au:7.3f} {rho:>14s} {rt:8.1f}s   {ranks}/{len(selected)}")
+        print(f"  {name:11s} {au:7.3f} {rho:>14s} {pear:>8s} {rt:8.1f}s   {ranks}/{len(selected)}")
     return res
 
 
@@ -442,7 +450,9 @@ def main():
                 phi_rows += [{"threat": threat, "seed": seed, "method": nm, "kind": kind,
                               "client": int(c), "phi": float(vec[c])} for c in sel]
             run_metrics[f"{threat}_seed{seed}"] = {
-                "auroc": res["auroc"], "spearman": res["spearman"], "runtime": res["runtime"],
+                "auroc": res["auroc"], "spearman": res["spearman"], "pearson": res["pearson"],
+                "cos_d": res["cos_d"], "euc_d": res["euc_d"], "max_diff": res["max_diff"],
+                "runtime": res["runtime"],
                 "corrupt": sorted(int(x) for x in corrupt), "selected": [int(c) for c in sel],
                 "asr": asr}
             del loss_fn

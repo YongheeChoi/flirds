@@ -93,6 +93,47 @@ def cell_sort_key(c):
     return (CAT_ORDER.index(c["category"]), alpha, THREAT_ORDER.index(threat))
 
 
+# ---- value-level fidelity, backfilled from phi.parquet (no method re-run) ----
+# Mirrors the runner's report(): for each (cell,threat,seed) the truth vector is
+# "(b)oracle" if present else "Flirds" (proxy-truth), and every val method's phi is
+# scored against it on the shared clients.  Pearson = affine-invariant value agreement
+# (rewards LINEAR match, not just rank — key where Spearman saturates at +1); the GTG
+# distances are scale-dependent (comparable within a cell, not across scales).
+def _pearson(a, b):
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    if a.std() == 0 or b.std() == 0:
+        return np.nan
+    return float(np.corrcoef(a, b)[0, 1])
+
+
+def _cos_d(a, b):
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    d = np.linalg.norm(a) * np.linalg.norm(b)
+    return float(1 - a @ b / d) if d else np.nan
+
+
+def fidelity_from_phi(pdf):
+    out = {}
+    if not len(pdf):
+        return out
+    for (cell, threat, seed), g in pdf.groupby(["cell", "threat", "seed"], sort=False):
+        kinds = dict(zip(g["method"], g["kind"]))
+        vecs = {m: gm.set_index("client")["phi"] for m, gm in g.groupby("method")}
+        truth = "(b)oracle" if "(b)oracle" in vecs else ("Flirds" if "Flirds" in vecs else None)
+        if truth is None:
+            continue
+        tv = vecs[truth]
+        for m, mv in vecs.items():
+            if m == truth or kinds.get(m) != "val":
+                continue
+            cl = mv.index.intersection(tv.index)
+            a, b = mv.loc[cl].to_numpy(float), tv.loc[cl].to_numpy(float)
+            out[(cell, threat, seed, m)] = dict(
+                pearson=_pearson(a, b), cosine_d=_cos_d(a, b),
+                euclid_d=float(np.linalg.norm(a - b)), max_diff=float(np.abs(a - b).max()))
+    return out
+
+
 def build_frames(cells):
     mrows, prows = [], []
     for c in cells:
@@ -121,6 +162,10 @@ def build_frames(cells):
     if len(pdf):
         grp = pdf.groupby(["cell", "threat", "seed", "method"])["phi"]
         pdf["z"] = grp.transform(lambda v: (v - v.mean()) / (v.std(ddof=0) or 1.0))
+    fid = fidelity_from_phi(pdf)                      # value-level fidelity, post-hoc from phi
+    for col in ("pearson", "cosine_d", "euclid_d", "max_diff"):
+        mdf[col] = [fid.get((r.cell, r.threat, r.seed, r.method), {}).get(col, np.nan)
+                    for r in mdf.itertuples(index=False)]
     return mdf, pdf
 
 
@@ -208,11 +253,11 @@ def chart_auroc_by_threat(cat, mdf, bythreat, path, metric="auroc", ylabel="AURO
     save(fig, path)
 
 
-def chart_spearman_heatmap(cat, mdf, note, path, ref):
-    sub = mdf[(mdf["category"] == cat)].dropna(subset=["spearman"])
+def chart_fidelity_heatmap(cat, mdf, note, path, ref, value="spearman", vlabel="Spearman"):
+    sub = mdf[(mdf["category"] == cat)].dropna(subset=[value])
     if sub.empty:
         return
-    pv = sub.pivot_table(index="method", columns="threat", values="spearman")
+    pv = sub.pivot_table(index="method", columns="threat", values=value)
     pv = pv.reindex(index=method_sort(pv.index),
                     columns=[t for t in THREAT_ORDER if t in pv.columns])
     fig, ax = plt.subplots(figsize=(1.1 * len(pv.columns) + 2.6, 0.34 * len(pv) + 1.7))
@@ -227,8 +272,9 @@ def chart_spearman_heatmap(cat, mdf, note, path, ref):
             if np.isfinite(v):
                 ax.text(j, i, f"{v:+.2f}", ha="center", va="center", fontsize=6.8)
     ax.grid(False)
-    fig.colorbar(im, ax=ax, shrink=0.8, label=f"Spearman vs {ref} (mean over seeds)")
-    ax.set_title(f"{cat} — ranking fidelity vs {ref}")
+    fig.colorbar(im, ax=ax, shrink=0.8, label=f"{vlabel} vs {ref} (mean over seeds)")
+    kind = "ranking" if value == "spearman" else "value-level"
+    ax.set_title(f"{cat} — {kind} fidelity vs {ref}")
     footnote(fig, note)
     save(fig, path)
 
@@ -508,9 +554,13 @@ def main():
         pdf[pdf["category"] == cat].to_csv(cdir / "csv" / "phi_long.csv", index=False)
         col = "cell" if cat in ("02_device100_sweep", "03_device100_poison") else "threat"
         pretty_pivot(cdf, "auroc", col).to_csv(cdir / "csv" / "auroc_table.csv")
+        refslug = ref.replace("(", "").replace(")", "")
         sp = pretty_pivot(cdf, "spearman", col)
         if len(sp):
-            sp.to_csv(cdir / "csv" / f"spearman_vs_{ref.replace('(', '').replace(')', '')}.csv")
+            sp.to_csv(cdir / "csv" / f"spearman_vs_{refslug}.csv")
+        pr = pretty_pivot(cdf, "pearson", col)                # value-level fidelity (Pearson)
+        if len(pr):
+            pr.to_csv(cdir / "csv" / f"pearson_vs_{refslug}.csv")
         pretty_pivot(cdf, "runtime", col).to_csv(cdir / "csv" / "runtime_table.csv")
 
         if cat == "02_device100_sweep":
@@ -528,7 +578,9 @@ def main():
             chart_phi_separation(cat, pdf, bycell, cdir / "charts")
         else:
             chart_auroc_by_threat(cat, mdf, bythreat, cdir / "charts" / "auroc_by_threat.png")
-            chart_spearman_heatmap(cat, cdf, note, cdir / "charts" / "spearman_heatmap.png", ref)
+            chart_fidelity_heatmap(cat, cdf, note, cdir / "charts" / "spearman_heatmap.png", ref)
+            chart_fidelity_heatmap(cat, cdf, note, cdir / "charts" / "pearson_heatmap.png", ref,
+                                   value="pearson", vlabel="Pearson")
             chart_runtime(cat, cdf, note, cdir / "charts" / "runtime.png")
             if cat in ("01_silo5", "05_scale_3b"):
                 chart_phi_heatmap(cat, pdf, bythreat, cdir / "charts")
@@ -551,13 +603,18 @@ def main():
               "- `00_overview/` — 전체 통합: `master_metrics.csv`(모든 cell×seed×method, tidy) / "
               "`master_phi.csv`(모든 per-client score) / `runs_inventory.csv`(셀 설정·provenance) / "
               "`auroc_table.csv` + `charts/`(전체 AUROC 히트맵, cost-fidelity frontier)",
-              "- 각 카테고리: `csv/`(metrics_long, auroc/spearman/runtime 표, phi_long) + `charts/`",
+              "- 각 카테고리: `csv/`(metrics_long, auroc/spearman/pearson/runtime 표, phi_long) + `charts/`",
               "", "## 읽는 법",
               "- score 방향: **모든 method의 저장 score는 higher=more suspicious** "
               "(valuation φ는 good→low로 부호 정렬되어 저장; FedIF/ShapleyFL/ComFedSV는 persist 시 negate됨).",
               "- Spearman 기준(ref)은 카테고리별로 다름: silo5/3B = (b) exact 2^N, "
               "sweep/poison(device) = Flirds proxy-truth, anchor = (b) per-round exact. "
               "CSV의 `spearman_ref` 컬럼 참조.",
+              "- **fidelity = 2축**: `spearman`(순위 일치) + `pearson`(φ 값 자체의 선형 일치, "
+              "affine-invariant — 순위가 +1로 saturate하는 N=5에서 변별력을 줌). 둘 다 같은 ref 대비, "
+              "phi.parquet에서 post-hoc 산출. metrics_long엔 GTG 거리 `cosine_d`/`euclid_d`/`max_diff`"
+              "(스케일 의존 → 셀 내 비교용)도 포함. **N=5는 점 5개라 Pearson 분산이 큼** "
+              "— device100(N≈100)에서 가장 의미 있음.",
               "- device100 φ는 한 번이라도 선택된 클라이언트만 기록 (K=10/round, R=30 → ~96-98/100); "
               "AUROC도 동일 집합 위에서 계산.",
               "- z 컬럼: per (cell,threat,seed,method) 표준화 — method 간 score 스케일 차이 제거용.",

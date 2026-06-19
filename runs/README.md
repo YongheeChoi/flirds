@@ -73,5 +73,14 @@ cell은 항상 그룹 하위의 서브디렉토리(`rundirs/` 또는 c1/c2 같�
 
 - **phase2_matrix**: `python runs/phase2_matrix/make_analysis.py` (rundir → `analysis/` 전체 CSV+차트;
   분류·정렬은 config 기반이라 이름이 바뀌어도 안 깨짐) + `make_report.py` (tier 로그 → `RESULTS.md`).
+- **track_c fidelity**(C1, (a)+(b) × Spearman+Pearson): `python slurm/scripts/merge_oracle_a.py`
+  (c1 + c1_oracle rundir phi → `runs/track_c/fidelity.csv`; standalone).
+- **track_d fidelity**((b) × Spearman+Kendall+Pearson+GTG거리): `python runs/track_d/make_fidelity.py`
+  (rundir phi.parquet → `runs/track_d/fidelity.csv`).
 - **track_c 안정성**: `python codes/experiments/track_c3.py {c1|c2}` (cross-seed; `_seedN` trailing 가정).
 - **phase1(레거시)**: `python codes/experiments/read_runs.py runs/phase1/rundirs`.
+
+> **fidelity 지표 = 순위 + 값-수준 2축**: Spearman/Kendall(순위) + **Pearson(φ 값 자체의 선형 일치,
+> affine-invariant)** + GTG 거리 3종(cosine/euclid/max). N=5 near-additive에서 순위가 +1로 포화될 때
+> Pearson이 그 아래 값 격차를 드러낸다. 모든 fidelity 비교(phase2_matrix·track_c·track_d)에 공통 적용;
+> `spearman_vs_rate`(의미 검증)·track_c3(안정성)·detection AUROC엔 적용하지 않음.

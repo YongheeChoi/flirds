@@ -23,7 +23,7 @@ C1=MNIST+LeNet5 / CIFAR-10+FedSVCNN, N=10 full. C2=CIFAR-10+FMNIST, N=100 C=0.1 
 ```bash
 PYTHONPATH=. python experiments/track_c3.py c1     # (b) fidelity cross-seed stability (기본 root=runs/track_c/c1)
 PYTHONPATH=. python experiments/track_c3.py c2     # 개입 outcome mean/std (기본 root=runs/track_c/c2)
-PYTHONPATH=. python ../slurm/scripts/merge_oracle_a.py           # (a) 2¹⁰ retrain fidelity (spearman_a)
+python slurm/scripts/merge_oracle_a.py             # C1 fidelity (a)+(b) × Spearman+Pearson → runs/track_c/fidelity.csv (standalone)
 ```
 
 주의: `track_c3.py`는 `_aonly` 디렉토리(methods 키 없음)와 섞이면 KeyError → C1 traj와 oracle은
