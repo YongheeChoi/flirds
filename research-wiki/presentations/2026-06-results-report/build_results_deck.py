@@ -20,7 +20,7 @@ Flirds 실험 결과 보고 데크 (독립 상세판) — 표 중심, 담백한 
     모든 수치에 설정 병기. 표 수치 부호 + 생략(음수만 −). IID/Non-IID 분할 성격 병기.
     어색한 한글 기술용어(intervention/under threat/weighting arm 등)는 영어로 둠.
 """
-import glob, json, re, statistics
+import csv, glob, json, re, statistics
 from collections import defaultdict
 from pathlib import Path
 
@@ -251,6 +251,31 @@ def load_dev_anchor():
     return out
 DEV_ANCHOR = load_dev_anchor()
 
+# ── Pearson (값-수준 fidelity) : 파생 CSV (rundir 불변, 2026-06-19 추가) ──
+def load_c1_pearson():
+    pb = defaultdict(list); pa = defaultdict(list)
+    for r in csv.DictReader(open(ROOT / "runs/track_c/fidelity.csv")):
+        if r["pearson_b"] not in ("", "nan"): pb[r["method"]].append(float(r["pearson_b"]))
+        if r["pearson_a"] not in ("", "nan"): pa[r["method"]].append(float(r["pearson_a"]))
+    return ({m: _avg(v) for m, v in pb.items()}, {m: _avg(v) for m, v in pa.items()})
+C1_PB, C1_PA = load_c1_pearson()
+
+def load_track_d_pearson():
+    out = defaultdict(lambda: defaultdict(list))
+    for r in csv.DictReader(open(ROOT / "runs/track_d/fidelity.csv")):
+        grp = r["cell"].rsplit("_seed", 1)[0]
+        if r["pearson"] not in ("", "nan"): out[grp][r["method"]].append(float(r["pearson"]))
+    return {g: {m: _avg(v) for m, v in mv.items()} for g, mv in out.items()}
+D_PEAR = load_track_d_pearson()
+
+def load_phase2_pearson():
+    out = defaultdict(lambda: defaultdict(list))
+    for r in csv.DictReader(open(ROOT / "runs/phase2_matrix/analysis/00_overview/master_metrics.csv")):
+        if r.get("kind") == "val" and r.get("pearson") not in ("", "nan", None):
+            out[r["cell"]][r["method"]].append(float(r["pearson"]))
+    return {c: {m: _avg(v) for m, v in mv.items()} for c, mv in out.items()}
+P2_PEAR = load_phase2_pearson()
+
 # ════════════════════════════════════════════════════════════════════
 # 데이터 — 상수 (Phase 2 RESULTS.md 검증분)
 # ════════════════════════════════════════════════════════════════════
@@ -413,19 +438,20 @@ for ds, label in (("cifar10","CIFAR"), ("mnist","MNIST")):
         rows.append([f"{label}·{sc}"] + [fmt(C1_SP[k].get(m), nd=2) for m in C1_METHS])
     rows.append([f"{label} 평균"] + [fmt(_avg([C1_SP[_scen_key(ds,x)].get(m) for x in SCEN_ORDER]), nd=2) for m in C1_METHS])
     emph.add(len(rows) - 1)
-table(s, 0.55, 1.5, 12.23, rows, [1.75]+[1.0]*10, ["l"]+["c"]*10, size=8.3, row_h=0.315, zebra=True, emph_rows=emph)
-notes(s, 0.55, 5.95, 7.4, [
+table(s, 0.55, 1.5, 12.23, rows, [1.75]+[1.0]*10, ["l"]+["c"]*10, size=8.3, row_h=0.29, zebra=True, emph_rows=emph)
+notes(s, 0.55, 5.52, 7.4, [
  ("명세", True, ACCENT),
  "MNIST+LeNet5 / CIFAR-10+CNN · N=10 full · R=10 · SGD mom=0 lr0.01 · val=2000 · 3 seed · in-run oracle 2¹⁰",
  ("분할: iid=IID · label_skew·quantity_skew=Non-IID · label_flip·feature_noise=IID 분할+손상", True, ACCENT),
 ], size=10, gap=3)
-notes(s, 8.2, 5.95, 4.6, [
- ("지표", True, ACCENT),
- "Spearman ρ ↑ (오라클 φ 대비 순위). 평균=데이터셋 단순평균.",
- "Flirds·Banzhaf 순위 최상; MC기반 GTG/FedSV/ShapleyFL·ComFedSV·Ripple은 noisy.",
- "2차항 고유 기여는 순위 아닌 값-거리(retrain 페이지 하단).",
-], size=10, gap=3)
-footnote(s, "iid·feature_noise는 in-run oracle 신호 약함(클라 동질). 비교 방법 10종 전체(로스터 11종 = 10종 + in-run oracle 기준=1.0). 출처: runs/track_c/c1/* 재집계.")
+notes(s, 8.2, 5.52, 4.6, [
+ ("지표 (순위 + 값-수준)", True, ACCENT),
+ "표 = Spearman ρ ↑ (순위). 평균=데이터셋 단순평균.",
+ "순위 최상: Flirds·Banzhaf; MC기반 GTG/FedSV/ShapleyFL·ComFedSV·Ripple은 noisy.",
+ (f"값-수준 Pearson(전 셀): Flirds {C1_PB['Flirds']:.2f}·Banzhaf {C1_PB['Banzhaf']:.2f}·loss-heur {C1_PB['loss-heur']:.2f} ≫ GTG {C1_PB['GTG']:.2f}·FedSV {C1_PB['FedSV']:.2f}", True, ACCENT),
+ "→ 순위 포화해도 값-수준은 Flirds·Banzhaf만 높음 (2차 효과는 값-거리, retrain 페이지).",
+], size=9.6, gap=3)
+footnote(s, "iid·feature_noise는 in-run oracle 신호 약함(클라 동질). 비교 방법 10종 전체(로스터 11종 = 10종 + in-run oracle 기준=1.0). Pearson=값-수준 선형상관(fidelity.csv 파생). 출처: runs/track_c/c1/* + fidelity.csv.")
 
 # ── S6 CNN fidelity vs retrain ──────────────────────────────────────
 s = slide()
@@ -437,36 +463,38 @@ for ds, label in (("cifar10","CIFAR"), ("mnist","MNIST")):
         rows.append([f"{label}·{sc}"] + [fmt(a.get(m), nd=2) for m in C1_METHS])
     rows.append([f"{label} 평균"] + [fmt(_avg([C1_A[_scen_key(ds,x)].get(m) for x in SCEN_ORDER]), nd=2) for m in C1_METHS])
     emph.add(len(rows) - 1)
-table(s, 0.55, 1.5, 12.23, rows, [1.75]+[1.0]*10, ["l"]+["c"]*10, size=8.3, row_h=0.315, zebra=True, emph_rows=emph)
-notes(s, 0.55, 5.95, 7.4, [
+table(s, 0.55, 1.5, 12.23, rows, [1.75]+[1.0]*10, ["l"]+["c"]*10, size=8.3, row_h=0.29, zebra=True, emph_rows=emph)
+notes(s, 0.55, 5.52, 7.4, [
  ("핵심 — 게임 정의 차이 (label_skew)", True, ACCENT),
  "Flirds는 in-run oracle은 거의 완벽 재현하나(in-run 페이지), retrain oracle와는 label_skew서 갈림:",
  ("  CIFAR in-run 0.98 → retrain −0.18 · MNIST 0.71 → retrain −0.29", True, ACCENT),
  "추정오차 아님 — 모든 in-run 방법 공유(희귀라벨 클라는 라운드 한계기여 낮아도 최종 재학습 모델엔 필수).",
 ], size=10, gap=3)
-notes(s, 8.2, 5.95, 4.6, [
- ("지표 / 2차항 효과", True, ACCENT),
- "Spearman ρ ↑ (retrain oracle φ 대비). 평균=데이터셋 단순.",
- "2차항: euclid_d(값-거리) label_flip CIFAR 0.031 vs 1차 0.046",
- "(MNIST 0.207 vs 0.370) → 값 오차 1차 대비 ~25–50%↓.",
-], size=10, gap=3)
-footnote(s, "표=Spearman ρ ↑ (rho_a_mean, 3-seed). LLM reference(N=5)는 retrain oracle와 1.000 일치 → 괴리는 이질성 구동(이어지는 LLM standard·reference 페이지). 출처: RESULTS.txt.")
+notes(s, 8.2, 5.52, 4.6, [
+ ("지표 / 값-수준 / 2차항", True, ACCENT),
+ "표 = Spearman ρ ↑ (retrain oracle φ 대비). 평균=데이터셋 단순.",
+ (f"값-수준 Pearson(전 셀)도 전부 낮음: Flirds {C1_PA['Flirds']:.2f}·loss-heur {C1_PA['loss-heur']:.2f}·ShapleyFL {C1_PA['ShapleyFL']:.2f} — 재학습 게임 괴리는 값-수준서도 확인.", True, ACCENT),
+ "2차항: euclid_d(값-거리) label_flip CIFAR 0.031 vs 1차 0.046 (MNIST 0.207 vs 0.370).",
+], size=9.6, gap=3)
+footnote(s, "표=Spearman ρ ↑ (rho_a_mean, 3-seed). Pearson_a=값-수준(fidelity.csv). LLM reference(N=5)는 retrain oracle와 1.000 일치 → 괴리는 이질성 구동(이어지는 페이지). 출처: RESULTS.txt + fidelity.csv.")
 
 # ── S7 LLM standard fidelity (N=20, 1B+3B, in-run oracle) ───────────
 s = slide()
 header(s, "1차 Fidelity · LLM standard (N=20, clean·IID)", "기여도 fidelity — in-run oracle 대비 (1B · 3B)")
-hdr = ["방법","Spearman ↑","Kendall ↑","cosine_d ↓","euclid_d ↓","max_diff ↓"]
-def drow(F, me):
+hdr = ["방법","Spearman ↑","Kendall ↑","Pearson ↑","cosine_d ↓","euclid_d ↓","max_diff ↓"]
+DRAT = [1.25,0.92,0.88,0.92,0.92,0.92,0.92]
+def drow(F, me, P):
     def e(k):
         v = F.get(k, {}).get(me); return f"{v:.1e}" if isinstance(v, (int, float)) else "–"
-    return [me, fmt(F["spearman"].get(me),nd=3), fmt(F["kendall"].get(me),nd=3), e("cosine_d"), e("euclid_d"), e("max_diff")]
+    return [me, fmt(F["spearman"].get(me),nd=3), fmt(F["kendall"].get(me),nd=3), fmt(P.get(me),nd=3),
+            e("cosine_d"), e("euclid_d"), e("max_diff")]
 order = ["Flirds","Flirds1st","loss-heur","GTG","FedSV","ComFedSV","ShapleyFL","FedIF"]
-caption(s, 0.55, 1.55, 6.0, f"1B (N=20) — {D_STD_N} seed")
-rows = [hdr] + [drow(D_STD_F, m) for m in order if m in D_STD_F["spearman"]]
-table(s, 0.55, 1.87, 6.0, rows, [1.4,1.1,1.0,1.05,1.05,1.05], ["l"]+["c"]*5, size=9.2, row_h=0.36, zebra=True)
-caption(s, 6.75, 1.55, 5.5, f"3B (N=20) — {D3_STD_N} seed")
-rows3 = [hdr] + [drow(D3_STD_F, m) for m in order if m in D3_STD_F["spearman"]]
-table(s, 6.75, 1.87, 5.5, rows3, [1.4,1.1,1.0,1.05,1.05,1.05], ["l"]+["c"]*5, size=9.2, row_h=0.36, zebra=True)
+caption(s, 0.55, 1.55, 6.05, f"1B (N=20) — {D_STD_N} seed")
+rows = [hdr] + [drow(D_STD_F, m, D_PEAR.get("1B_std20", {})) for m in order if m in D_STD_F["spearman"]]
+table(s, 0.55, 1.87, 6.05, rows, DRAT, ["l"]+["c"]*6, size=8.4, row_h=0.36, zebra=True)
+caption(s, 6.75, 1.55, 6.05, f"3B (N=20) — {D3_STD_N} seed")
+rows3 = [hdr] + [drow(D3_STD_F, m, D_PEAR.get("3B_std20", {})) for m in order if m in D3_STD_F["spearman"]]
+table(s, 6.75, 1.87, 6.05, rows3, DRAT, ["l"]+["c"]*6, size=8.4, row_h=0.36, zebra=True)
 notes(s, 0.55, 5.35, 6.3, [
  ("명세", True, ACCENT),
  "· Llama-3.2 1B·3B / alpaca-gpt4 20k (IID, clean)",
@@ -477,24 +505,24 @@ notes(s, 0.55, 5.35, 6.3, [
 ], size=10, gap=2.5)
 notes(s, 7.05, 5.35, 5.75, [
  ("지표 / 읽기", True, ACCENT),
- "Spearman ρ↑·Kendall τ↑·cosine_d/euclid_d/max_diff↓",
- ("Flirds: in-run ρ=1.000 (1B·3B 동일) — 스케일 불변.", True, ACCENT),
- "2차항: cosine_d 3.5e-7 vs 1차 4.4e-5 (~125× 타이트).",
- "loss-heur은 순위만 비기고 cosine은 큼. ShapleyFL·FedIF·ComFedSV는 스케일서 fidelity 약함.",
-], size=10, gap=2.5)
-footnote(s, "alpaca-gpt4 20k IID·clean → Banzhaf(2²⁰ 불가)·탐지기(오염 없음)는 미실행(적용범위 표). 출처: runs/track_d/rundirs/* 재집계. 내부코드 standard=std20.")
+ "Spearman ρ↑·Kendall τ↑·Pearson↑(값-수준 상관)·cosine_d/euclid_d/max_diff↓",
+ ("Flirds: ρ=1.000 · Pearson=1.000 (1B·3B) — 순위·값 모두 불변.", True, ACCENT),
+ f"값-수준 Pearson: GTG {D_PEAR['1B_std20']['GTG']:.2f}·FedSV {D_PEAR['1B_std20']['FedSV']:.2f} / ShapleyFL {D_PEAR['1B_std20']['ShapleyFL']:.2f}·FedIF {D_PEAR['1B_std20']['FedIF']:.2f}·ComFedSV {D_PEAR['1B_std20']['ComFedSV']:.2f}",
+ "→ 순위 약한 셋이 값-수준(Pearson·cosine)서도 실패. 2차항 cosine 3.5e-7 vs 1차 4.4e-5(~125×).",
+], size=9.6, gap=2.5)
+footnote(s, "alpaca-gpt4 20k IID·clean → Banzhaf(2²⁰ 불가)·탐지기(오염 없음)는 미실행(적용범위 표). Pearson=값-수준 선형상관(rundir 불변, fidelity.csv 파생). 출처: runs/track_d/rundirs/* + fidelity.csv.")
 
 # ── S8 LLM reference fidelity (N=5, retrain oracle 듀얼) ─────────────
 s = slide()
 header(s, "1차 Fidelity · LLM reference (N=5, clean·IID)", "기여도 fidelity — retrain oracle 대비, 그리고 in-run과의 일치")
 order2 = ["Flirds","Flirds1st","Banzhaf","loss-heur","GTG","FedSV","ShapleyFL","ComFedSV","FedIF"]
-caption(s, 0.55, 1.55, 6.0, f"1B (N=5) — vs retrain oracle  ({D_ANC_N} seed)")
-rows = [hdr] + [drow(D_ANC_F, m) for m in order2 if m in D_ANC_F["spearman"]]
-table(s, 0.55, 1.87, 6.0, rows, [1.4,1.1,1.0,1.05,1.05,1.05], ["l"]+["c"]*5, size=9.2, row_h=0.345, zebra=True)
+caption(s, 0.55, 1.55, 6.05, f"1B (N=5) — vs retrain oracle  ({D_ANC_N} seed)")
+rows = [hdr] + [drow(D_ANC_F, m, D_PEAR.get("1B_anchor5", {})) for m in order2 if m in D_ANC_F["spearman"]]
+table(s, 0.55, 1.87, 6.05, rows, DRAT, ["l"]+["c"]*6, size=8.4, row_h=0.345, zebra=True)
 order3 = ["Flirds","Flirds1st","loss-heur","GTG","FedSV","ShapleyFL","ComFedSV","FedIF"]
-caption(s, 6.75, 1.55, 5.5, f"3B (N=5) — vs retrain oracle  ({D3_ANC_N} seed)")
-rows3 = [hdr] + [drow(D3_ANC_F, m) for m in order3 if m in D3_ANC_F["spearman"]]
-table(s, 6.75, 1.87, 5.5, rows3, [1.4,1.1,1.0,1.05,1.05,1.05], ["l"]+["c"]*5, size=9.2, row_h=0.345, zebra=True)
+caption(s, 6.75, 1.55, 6.05, f"3B (N=5) — vs retrain oracle  ({D3_ANC_N} seed)")
+rows3 = [hdr] + [drow(D3_ANC_F, m, D_PEAR.get("3B_anchor5", {})) for m in order3 if m in D3_ANC_F["spearman"]]
+table(s, 6.75, 1.87, 6.05, rows3, DRAT, ["l"]+["c"]*6, size=8.4, row_h=0.345, zebra=True)
 notes(s, 0.55, 5.35, 6.3, [
  ("명세", True, ACCENT),
  "· Llama-3.2 1B·3B / alpaca-gpt4 20k (IID, clean)",
@@ -535,13 +563,14 @@ sb(s, 8.85, 1.6, 3.95, spec=[
     "  비싼 method는 기준점/제외 = 비용 게이팅)",
  ], metrics=[
     "Spearman ρ ↑ (in-run oracle φ 대비 순위)",
+    "값-수준 Pearson은 읽기 참조(표는 순위만)",
  ], read=[
     ("N=5서 near-additive → 전 방법 ρ≈1.000;", True),
     ("  poison·스케일에서 분화:", True),
-    "  poison: FedSV 0.367·1차 0.000 (Flirds 0.967 유지)",
+    "  poison: FedSV ρ0.367·1차 0.000 (Flirds ρ0.967 유지)",
     "  N=100: GTG 0.78·FedSV 0.75·ShapleyFL 0.58·ComFedSV −0.02",
-    ("→ Flirds·loss-heur는 전 스케일 ρ=1.000 유지;", True, ACCENT),
-    ("  MC/변형 Shapley는 N↑·poison서 열화.", True, ACCENT),
+    (f"  값-수준 Pearson(silo poison): Flirds {P2_PEAR['1B_silo5_poison']['Flirds']:.2f}·1차 {P2_PEAR['1B_silo5_poison']['Flirds1st']:.2f}(역상관)", False, ACCENT),
+    ("→ Flirds·loss-heur 전 스케일 순위·값 유지; MC/변형은 N↑·poison서 열화.", True, ACCENT),
  ])
 footnote(s, "silo noisy/fr는 전 방법 1.000(near-additive)이라 poison 열로 분화를 표시. device 값=α=0.5 anchor(per-round exact). 빈칸=해당 스케일 미실행(적용범위 표). 출처: RESULTS.md + rundir.")
 
@@ -549,13 +578,14 @@ footnote(s, "silo noisy/fr는 전 방법 1.000(near-additive)이라 poison 열�
 s = slide()
 header(s, "1차 Fidelity · 종합", "기여도 측정 정확성 — 횡단 요약")
 rows = [["측면","결과","근거"],
- ["순위 vs in-run oracle","Flirds ρ≈1.000 (전 트랙·1B→3B). Banzhaf·loss-heur도 우수; MC-SV는 noisy","cross-silo·standard 1.000 / 이미지 0.71–1.00"],
+ ["순위 vs in-run oracle (Spearman)","Flirds ρ≈1.000 (전 트랙·1B→3B). Banzhaf·loss-heur도 우수; MC-SV는 noisy","cross-silo·standard 1.000 / 이미지 0.71–1.00"],
+ ["값-수준 상관 (Pearson)","Flirds·Banzhaf·loss-heur Pearson≈1.0; 순위 약한 ShapleyFL·FedIF·ComFedSV는 값-수준도 실패; poison선 1차 −0.95(역상관)","standard Flirds 1.00·ComFedSV 0.10 / 이미지 Flirds 0.93 / silo poison 1차 −0.95"],
  ["값-거리 vs in-run oracle","2차항이 1차 대비 값오차 ~2× 축소; loss-heur은 순위만 비기고 크기는 빗나감","euclid_d: 이미지 ~0.5× · standard cosine 125×"],
  ["순위 vs retrain oracle","IID·clean은 1.000 일치; label_skew(이질성)에서 in-run oracle와 괴리(−)","reference(N=5) 1.000 / 이미지 label_skew −0.18~−0.29"],
  ["스케일 (N=100)","α=0.5 기준점서 Flirds·1차·loss-heur ρ=1.000; GTG/FedSV/ShapleyFL은 열화","GTG 0.78·FedSV 0.75·ShapleyFL 0.58·ComFedSV −0.02"],
  ["비용","Flirds 1 HVP/round; in-run oracle exact의 5–15× 저렴, 동일 순위","cross-silo 106s vs 530s · 3B 251s vs 1240s"]]
-table(s, 0.55, 1.55, 12.23, rows, [1.7,4.7,3.5], ["l","l","l"], size=10.8, row_h=0.62, accent_first=True)
-notes(s, 0.55, 5.55, 12.2, [
+table(s, 0.55, 1.55, 12.23, rows, [2.0,4.7,3.5], ["l","l","l"], size=10.3, row_h=0.55, accent_first=True)
+notes(s, 0.55, 5.5, 12.2, [
  ("한 줄 요약", True),
  "Flirds는 in-run oracle 게임을 순위·값 모두에서 충실히, exact 대비 저비용으로, 1B→3B·N=5→N=100서 일관되게 재현한다.",
  "2차항의 고유 기여는 순위가 아니라 값-크기 정밀도. retrain oracle 게임과의 일치는 데이터 이질성에 의존(동질↔label_skew).",
