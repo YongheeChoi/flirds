@@ -22,3 +22,5 @@ slurm/logs/
 # Derived fidelity tables (Spearman+Pearson vs oracle, regenerated from rundir phi):
 runs/track_c/fidelity.csv
 runs/track_d/fidelity.csv
+# Track D execution logs (transient; only the rundirs under runs/track_d/rundirs/ are tracked):
+runs/track_d/_logs/
