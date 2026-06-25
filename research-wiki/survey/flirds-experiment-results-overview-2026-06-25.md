@@ -45,6 +45,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 **지표 방향**
 - Spearman / Kendall = 순위 상관 ↑ (1=완벽 일치) · Pearson = 값-수준 상관 ↑ · cosine_d / euclid_d / max_diff = 거리 ↓ (0=동일)
 - AUROC = 탐지 ↑ (1=완벽; 0.5=무작위; <0.5=뒤집힘) · ASR = backdoor 공격 성공률 · runtime = wall-clock(초) ↓
+- **표 헤더의 ↑/↓** = 그 열 지표가 **클수록 좋음(↑) / 작을수록 좋음(↓)**. Spearman·Kendall·Pearson·AUROC·MMLU·ROUGE-L·정확도·rho/Jaccard = ↑ · 거리(cosine_d·euclid_d·max_diff)·val-loss·rounds-to-target·runtime = ↓ · ASR·flirds_keep 등은 방법 우열이 아니라 설정/산출이라 방향 표기 없음. 열이 α·threat·scale·arm 이름인 표는 캡션에 지표 화살표를 단다.
 
 **오라클/기준점**
 - **In-run oracle (b)** = 한 학습 궤적에서 exact 2ᴺ 분해 (full-participation→2ᴺ 열거; partial→exact per-round 분해). 1차 fidelity 정답.
@@ -109,7 +110,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 #### std20 스테이지 (N=20, 2/round) — 순위·값 상관
 
-| method | 1B Spearman | 1B Kendall | 1B Pearson | 3B Spearman | 3B Kendall | 3B Pearson | 7B Spearman | 7B Kendall | 7B Pearson |
+| method | 1B Spearman ↑ | 1B Kendall ↑ | 1B Pearson ↑ | 3B Spearman ↑ | 3B Kendall ↑ | 3B Pearson ↑ | 7B Spearman ↑ | 7B Kendall ↑ | 7B Pearson ↑ |
 |---|---|---|---|---|---|---|---|---|---|
 | **Flirds** | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 0.999±.001 | 0.996±.005 | 1.000±.000 |
 | **Flirds-1st** | 0.999±.001 | 0.996±.005 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 0.998±.001 | 0.986±.010 | 1.000±.000 |
@@ -122,7 +123,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 #### std20 스테이지 — 거리 (↓)
 
-| method | 1B cosine_d | 1B euclid_d | 1B max_diff | 3B cosine_d | 3B euclid_d | 3B max_diff | 7B cosine_d | 7B euclid_d | 7B max_diff |
+| method | 1B cosine_d ↓ | 1B euclid_d ↓ | 1B max_diff ↓ | 3B cosine_d ↓ | 3B euclid_d ↓ | 3B max_diff ↓ | 7B cosine_d ↓ | 7B euclid_d ↓ | 7B max_diff ↓ |
 |---|---|---|---|---|---|---|---|---|---|
 | **Flirds** | .0000 | .0000 | .0000 | .0000 | .0000 | .0000 | .0000 | .0001 | .0000 |
 | **Flirds-1st** | .0000 | .0006 | .0002 | .0000 | .0004 | .0002 | .0000 | .0002 | .0001 |
@@ -135,7 +136,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 #### anchor5 스테이지 (N=5, full) — 순위·값 상관
 
-| method | 1B Spearman | 1B Kendall | 1B Pearson | 3B Spearman | 3B Kendall | 3B Pearson | 7B Spearman | 7B Kendall | 7B Pearson |
+| method | 1B Spearman ↑ | 1B Kendall ↑ | 1B Pearson ↑ | 3B Spearman ↑ | 3B Kendall ↑ | 3B Pearson ↑ | 7B Spearman ↑ | 7B Kendall ↑ | 7B Pearson ↑ |
 |---|---|---|---|---|---|---|---|---|---|
 | **Flirds** | 1.000±.000 | 1.000±.000 | 1.000±.000 | 0.967±.047 | 0.933±.094 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 |
 | **Flirds-1st** | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 | 1.000±.000 |
@@ -169,7 +170,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **(b) 결과 — 10 scenario × 3 seed pool 한 method별 mean±std** (Spearman/Pearson; Kendall·거리는 fidelity.csv)
 
-| method | vs (b) Spearman | vs (b) Pearson | vs (a) Spearman | vs (a) Pearson |
+| method | vs (b) Spearman ↑ | vs (b) Pearson ↑ | vs (a) Spearman ↑ | vs (a) Pearson ↑ |
 |---|---|---|---|---|
 | **Flirds** | **0.919±.134** | **0.934±.128** | 0.352±.462 | 0.354±.461 |
 | **Flirds-1st** | 0.832±.194 | 0.853±.159 | 0.408±.435 | 0.412±.421 |
@@ -185,7 +186,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > **주의(caveat)**: 위 pool 평균은 **`iid` 셀 포함**(오염·skew 신호가 없어 fidelity가 의미상 낮음) → 깎인 값.
 > `iid` 제외 시(8 scenario×3seed=24): Flirds vs (b) **0.928±.136**, Flirds-1st 0.875±.172, loss-heur 0.884±.153, Banzhaf 0.991±.020, GTG 0.626±.315.
 
-**시나리오별 vs (b) Spearman** (3-seed 평균; 신호 강한 칸이 보이게)
+**시나리오별 vs (b) Spearman ↑** (3-seed 평균; 신호 강한 칸이 보이게; 값 클수록 충실)
 
 | dataset/scenario | Flirds | Flirds-1st | GTG | FedSV | ComFedSV | Banzhaf | ShapleyFL | FedIF | loss-heur | Ripple |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -222,7 +223,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > 위계의 5개 주요 섹션엔 없는 목적(Stability·replication)이지만, C1 fidelity 런에서 같이 측정된 결과이므로 여기 둔다.
 > **rho_xseed** = 한 method φ 랭킹의 seed 간 상관(↑=재현성). **topJ/botJ** = 상위/하위 20% 클라셋 Jaccard.
 
-| method | rho_xseed (10 scenario pool) | topJ | botJ |
+| method | rho_xseed ↑ (10 scenario pool) | topJ ↑ | botJ ↑ |
 |---|---|---|---|
 | (b)oracle (자체) | 0.518±.453 | 0.522±.395 | 0.555±.453 |
 | **Flirds** | **0.547±.394** | 0.544±.324 | 0.500±.419 |
@@ -252,7 +253,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **(b) 결과 — MMLU / ROUGE-L, 3-seed mean±std**
 
-| stage·scale | arm | MMLU | ROUGE-L | stage·scale | arm | MMLU | ROUGE-L |
+| stage·scale | arm | MMLU ↑ | ROUGE-L ↑ | stage·scale | arm | MMLU ↑ | ROUGE-L ↑ |
 |---|---|---|---|---|---|---|---|
 | **1B std20** | base | 0.4822±.0000 | 0.2168±.0019 | **1B anchor5** | base | 0.4822±.0000 | 0.2168±.0019 |
 | | vanilla | 0.4742±.0001 | 0.2841±.0051 | | vanilla | 0.4801±.0003 | 0.2725±.0032 |
@@ -290,7 +291,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 - datasets: cifar10, fmnist; partitions: `iid` · `dir1`(Dirichlet α=1, label+size skew) · `shard`(McMahan 2-shard); threats: `clean` · `label_flip` · `free_rider` · `grad_noise` (+ 강도 변형); 총 **30 셀**.
 - arms(8): vanilla · **flirds_mult** · flirds_repl(dir1만) · flirds_add(dir1만) · **flirds_select** · shapleyfl(β=0.5) · fedif(β=0.7) · sfedavg(S-FedAvg).
 
-**(b) 결과 — 최종 test 정확도, threat별 그룹 mean±std** (셀 pool; 셀별은 `RESULTS.txt`)
+**(b) 결과 — 최종 test 정확도 ↑, threat별 그룹 mean±std** (열=threat 그룹, 값=정확도 ↑; 셀 pool, 셀별은 `RESULTS.txt`)
 
 | arm | clean (6셀) | free_rider (6셀) | grad_noise (8셀) | label_flip (10셀) |
 |---|---|---|---|---|
@@ -320,7 +321,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **(b) 결과 — final val-loss / rounds-to-target, 3-seed mean±std**
 
-| stage·scale | arm | final val-loss | rounds-to-target | stage·scale | arm | final val-loss | rounds-to-target |
+| stage·scale | arm | final val-loss ↓ | rounds-to-target ↓ | stage·scale | arm | final val-loss ↓ | rounds-to-target ↓ |
 |---|---|---|---|---|---|---|---|
 | **1B std20** (R=200) | vanilla | 1.2653±.0216 | 200.0±0.0 | **1B anchor5** (R=30) | vanilla | 1.2977±.0209 | 30.0±0.0 |
 | | flirds_w | 1.2653±.0215 | 199.0±1.0 | | flirds_w | 1.2964±.0209 | 29.7±0.5 |
@@ -344,7 +345,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **출처**: `runs/track_d/rundirs/*/metrics.json` (`arms.{arm}.{final_val_loss,rounds_to_target,val_curve}`).
 
-### 3.3.2 CNN cross-device (`track_c` C2) — rounds-to-target
+### 3.3.2 CNN cross-device (`track_c` C2) — rounds-to-target ↓ (열=threat 그룹, 값=라운드 수 ↓)
 
 | arm | clean | free_rider | grad_noise | label_flip |
 |---|---|---|---|---|
@@ -374,7 +375,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **(b) 결과 — AUROC(corrupt=high-φ) + Spearman vs (b) + Pearson + runtime, 3-seed mean±std**
 
-| method | noisy AUROC | noisy Sp | frrand AUROC | frrand Sp | frzero AUROC | frzero Sp | **poison AUROC** | **poison Sp** | runtime |
+| method | noisy AUROC ↑ | noisy Sp ↑ | frrand AUROC ↑ | frrand Sp ↑ | frzero AUROC ↑ | frzero Sp ↑ | **poison AUROC ↑** | **poison Sp ↑** | runtime ↓ |
 |---|---|---|---|---|---|---|---|---|---|
 | Flirds | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | **0.917±.118** | 0.967±.047 | ~107s |
 | Flirds-1st | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | **0.000** | **0.000** | ~35s |
@@ -400,7 +401,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **(a) 세팅**: Llama-3.2-1B, **N=100, 라운드당 10명(10%)**, R=30, local 5 steps, batch 16, lr=1e-3, per_client=300, Dirichlet α∈{0, 0.01, 0.1, **0.5=anchor**, 5.0}, val=10/test=40, warmup=3; 오염 클라 5명(idx 10/30/50/70/90); 3 seeds. **α=0.5 = Anchor cell**: (b) per-round 오라클 + coalition baseline(GTG/FedSV/ShapleyFL) 켬. 그 외 α: cheap method + Flirds proxy reference.
 
-**(b1) 결과 — noisy 위협, detection AUROC** (α별 3-seed mean±std)
+**(b1) 결과 — noisy 위협, detection AUROC ↑** (열=α, 값=AUROC ↑; 3-seed mean±std)
 
 | method | α=0.0 | α=0.01 | α=0.1 | α=0.5 (anchor) | α=5.0 |
 |---|---|---|---|---|---|
@@ -420,7 +421,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 > noisy@device100: **FedDQC(데이터-품질 전용)가 1.0으로 최강**, valuation φ는 0.57~0.77(비-IID서 clean 클라가 상위 → 침식). FedIF/FLTrust는 α 높을수록 회복.
 
-**(b2) 결과 — free-rider(random / zero) detection AUROC** (대표 α; 전체 α는 master_metrics)
+**(b2) 결과 — free-rider(random / zero) detection AUROC ↑** (열=α-cell, 값=AUROC ↑; 대표 α, 전체 α는 master_metrics)
 
 | method | frrand α=0.0 | frrand α=0.5 | frzero α=0.0 | frzero α=0.5 |
 |---|---|---|---|---|
@@ -434,7 +435,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 > free-rider@device100: **gradient 쓰는 method(Flirds/Flirds-1st/loss-heur/FLTrust=1.0)가 깔끔**, model-free STD-DAGMM은 0.59~0.96 가변, FedDQC는 off-threat(free-rider는 데이터-품질 아님)이라 0.14~0.57.
 
-**(b3) 결과 — Spearman vs truth** (α=0.5→vs (b)perround; 그 외→vs Flirds proxy reference)
+**(b3) 결과 — Spearman vs truth ↑** (열=α-cell, 값=Spearman ↑; α=0.5→vs (b)perround, 그 외→vs Flirds proxy reference)
 
 | method | noisy α=0.5 | frrand α=0.5 | frzero α=0.5 | (off-anchor Flirds-1st·loss-heur) |
 |---|---|---|---|---|
@@ -459,7 +460,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **(b) 결과**
 
-| method | α=0.0 AUROC | α=0.0 Sp | α=0.5 AUROC | α=0.5 Sp |
+| method | α=0.0 AUROC ↑ | α=0.0 Sp ↑ | α=0.5 AUROC ↑ | α=0.5 Sp ↑ |
 |---|---|---|---|---|
 | Flirds | 1.000 | (proxy truth) | 1.000 | (proxy truth) |
 | Flirds-1st | 1.000 | 0.997±.002 | 0.670±.467 | 0.980±.028 |
@@ -481,7 +482,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **(b) 결과 (1 seed)**
 
-| method | noisy AUROC | noisy Sp | frrand AUROC | frzero AUROC | **poison AUROC** | **poison Sp** | runtime(noisy) |
+| method | noisy AUROC ↑ | noisy Sp ↑ | frrand AUROC ↑ | frzero AUROC ↑ | **poison AUROC ↑** | **poison Sp ↑** | runtime(noisy) ↓ |
 |---|---|---|---|---|---|---|---|
 | Flirds | 1.000 | 1.000 | 1.000 | 1.000 | **0.000** | **0.000** | ~251s |
 | Flirds-1st | 1.000 | 1.000 | 1.000 | 1.000 | **0.000** | **0.000** | ~82s |
@@ -503,7 +504,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 ## 3.5 Cost · scalability — wall-clock
 
-### 3.5.1 LLM standard runtime (`track_d`) — method별, 3-seed mean±std (초)
+### 3.5.1 LLM standard runtime (`track_d`) — method별, 3-seed mean±std (초 ↓; 열=scale·stage, 값=초 ↓)
 
 | method | 1B std20 | 1B anchor5 | 3B std20 | 3B anchor5 | 7B std20 | 7B anchor5 |
 |---|---|---|---|---|---|---|
@@ -537,7 +538,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **결과 — AUROC + selection**
 
-| group | noisy AUROC | free-rider AUROC | flirds_keep (seed별) | random_keep |
+| group | noisy AUROC ↑ | free-rider AUROC ↑ | flirds_keep (seed별) | random_keep |
 |---|---|---|---|---|
 | full lr1e-3 (3 seed) | 0.750±.000 | 1.000±.000 | [3,2,4] 매 seed (=clean) | seed별 가변 |
 | full lr3e-3 (3 seed) | 1.000±.000 | 0.750±.000 | [2,3,4] 매 seed (=clean) | seed별 가변 |
@@ -548,7 +549,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 > **lr 의존 반전**: full lr1e-3은 noisy 0.75/FR 1.0, lr3e-3은 noisy 1.0/FR 0.75 (AUROC가 lr에 의존). **selection**: flirds_keep이 매 seed에서 정확히 clean 클라 3개(client 0=noisy·1=free-rider 항상 드롭) → 안정적 분리.
 
-**결과 — selection arms (final val-loss, 3-seed mean±std)**
+**결과 — selection arms (final val-loss ↓, 3-seed mean±std; 열=arm, 값=val-loss ↓)**
 
 | group | full(전원) | flirds_topk | random_k |
 |---|---|---|---|
