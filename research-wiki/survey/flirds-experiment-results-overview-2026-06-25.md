@@ -229,6 +229,34 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | mnist / label_skew | 0.71 | 0.61 | 0.33 | -0.01 | 0.14 | 0.98 | -0.02 | 0.41 | 0.63 | 0.06 |
 | mnist / quantity_skew | 0.96 | 0.98 | 0.78 | 0.63 | 0.49 | 1.00 | 0.52 | -0.07 | 0.96 | 0.96 |
 
+**데이터셋별 평균** (위 시나리오 표를 dataset로 묶음; 각 5 scenario × 3 seed = 15)
+
+| dataset | 기준 | Flirds | Flirds-1st | GTG | FedSV | ComFedSV | Banzhaf | ShapleyFL | FedIF | loss-heur | Ripple |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| cifar10 | vs (b) Sp ↑ | 0.98 | 0.85 | 0.54 | 0.45 | 0.32 | 1.00 | 0.30 | 0.46 | 0.88 | 0.31 |
+| mnist | vs (b) Sp ↑ | 0.85 | 0.81 | 0.60 | 0.35 | 0.38 | 0.98 | 0.49 | 0.52 | 0.84 | 0.44 |
+| cifar10 | vs (a) Sp ↑ | 0.26 | 0.29 | 0.37 | 0.30 | 0.40 | 0.27 | 0.30 | 0.20 | 0.34 | -0.01 |
+| mnist | vs (a) Sp ↑ | 0.44 | 0.53 | 0.38 | 0.27 | 0.27 | 0.44 | 0.60 | 0.56 | 0.51 | 0.44 |
+
+> mnist는 cifar10보다 vs (b) fidelity가 약간 낮고(신호 작음) vs (a) 일치는 높다. 시나리오별 개별 값은 바로 위 시나리오 표 + `fidelity.csv`.
+
+**다른 metric으로도 평가했다** — `c1 metrics.json`은 method별로 **Kendall · cosine_d · euclid_d · max_diff · AUROC(ladder 오염 탐지) · spearman_vs_rate(φ vs 오염강도)** 까지 저장한다(fidelity.csv가 Spearman·Pearson만 추출했을 뿐). vs (b) Kendall + 거리 pool(10 scenario × 3 seed):
+
+| method | Kendall_b ↑ | cosine_d ↓ | euclid_d ↓ | max_diff ↓ |
+|---|---|---|---|---|
+| Flirds | 0.849±.192 | 0.001±.003 | 0.133±.114 | 0.054±.048 |
+| Flirds-1st | 0.733±.223 | 0.009±.020 | 0.207±.186 | 0.085±.068 |
+| loss-heur | 0.757±.187 | 0.009±.018 | 0.216±.164 | 0.090±.060 |
+| Banzhaf | 0.967±.050 | 0.000±.000 | 0.076±.069 | 0.027±.023 |
+| GTG | 0.470±.302 | 0.074±.078 | 0.175±.124 | 0.117±.110 |
+| FedSV | 0.324±.344 | 0.225±.185 | 0.547±.418 | 0.346±.346 |
+| ComFedSV | 0.270±.318 | 0.329±.221 | 0.756±.507 | 0.490±.370 |
+| ShapleyFL | 0.307±.327 | 0.057±.030 | 1.456±.305 | 0.697±.088 |
+| FedIF | 0.399±.333 | 0.078±.071 | 1.092±.192 | 0.601±.097 |
+| Ripple | 0.311±.388 | 0.291±.612 | 112.6±149.5 | 61.7±92.7 |
+
+> Ripple euclid_d≈113 = sample-level φ라 스케일 자체가 달라 거리는 무의미(순위만 비교). 시나리오별 Kendall·거리·AUROC·spearman_vs_rate는 `runs/track_c/c1/<cell>/metrics.json`에 셀별 보존. **출처(위 2표)**: `runs/track_c/c1/*/metrics.json`.
+
 **출처**: `runs/track_c/fidelity.csv` (열 `spearman_b/pearson_b/spearman_a/pearson_a`) · `runs/track_c/RESULTS.txt` (C1 (a)-oracle 절). 코드 = `codes/experiments/track_c1.py`.
 
 **(c) baseline-set 노트**
@@ -308,7 +336,15 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **출처**: `runs/track_d/rundirs/*/metrics.json` (`arms.{arm}.{mmlu,rouge_l}`).
 
-**(c) baseline-set 노트**: 포함 arm = base/vanilla/flirds_w/shapleyfl_w/fedif_w (+ std20만 flirds_sel). **flirds_sel 제외@anchor5** = 전원 참여라 선택이 무의미(degenerate) ─ *적용규칙: 참여형태*. arm은 valuation 비교가 아니라 *개입 효과* 측정.
+**개입 arm의 가중 메커니즘** (코드 `flirds/fl/intervene.py`; 각 baseline은 *자기 논문 방식*을 씀):
+온라인 점수기 `OnlineScorer`가 라운드별 raw 기여도를 EMA로 누적(`s ← β·s + (1−β)·raw`), 누적 s로 다음 라운드 FedAvg 가중을 바꾼다. 가중 규칙 4종:
+- **multiplicative** `w_i ∝ n_i · s_i` — FedAvg의 데이터-크기 가중에 기여도를 **곱함**. **Flirds 기본**(`flirds_w` / CNN `flirds_mult`; Yonghee 규칙).
+- **replacement** `w_i ∝ s_i` — n-가중을 기여도로 **대체**. **FedIF·ShapleyFL 논문 관행** (`fedif_w` β=0.7=1−γ / `shapleyfl_w` β=0.3; 두 논문 모두 per-round min-max→EMA→대체).
+- **additive** `w_i = λ·s_i/Σs + (1−λ)·n_i/Σn`, λ=0.5 — 기여도와 n-가중을 **혼합**. **Ripple 관행** (CNN `flirds_add`).
+- **selection** `softmax(s/T)`로 k명 **선택** 샘플링(비복원). **S-FedAvg 관행** (`flirds_sel` / CNN `flirds_select`; cohort가 진부분집합일 때만 = std20·N=100).
+> 주의: n_i가 모두 같으면 multiplicative==replacement (크기-skew에서만 갈림 — 그래서 IID std20/anchor에선 flirds_w·shapleyfl_w의 *가중식*은 같고 점수원·β만 다름). raw 점수원: **Flirds**=estimator, **FedIF**=per-round 1차 influence, **ShapleyFL**=per-round exact Shapley, **S-FedAvg**=자체 MC-relevance. 즉 각 arm은 *논문 방식+자기 점수+자기 β* 조합이라 공정 비교.
+
+**(c) baseline-set 노트**: 포함 arm = base/vanilla/flirds_w/shapleyfl_w/fedif_w (+ std20만 flirds_sel). **flirds_sel 제외@anchor5** = 전원 참여라 선택이 무의미(degenerate) ─ *적용규칙: 참여형태*. arm은 valuation 비교가 아니라 *개입 효과* 측정. **개별 결과**: 위 MMLU/ROUGE·수렴 표는 이미 (scale × stage) 6 셀로 *개별* 수록(pool 아님); CNN C2(§3.2.2)만 threat 4그룹 pool이고 셀별 30칸은 `RESULTS.txt`.
 
 ---
 
@@ -463,9 +499,11 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 > free-rider@device100: **gradient 쓰는 method(Flirds/Flirds-1st/loss-heur/FLTrust=1.0)가 깔끔**, model-free STD-DAGMM은 0.59~0.96 가변, FedDQC는 off-threat(free-rider는 데이터-품질 아님)이라 0.14~0.57.
 
-**(b3) 결과 — Spearman vs truth ↑** (열=α-cell, 값=Spearman ↑; α=0.5→vs (b)perround, 그 외→vs Flirds proxy reference)
+**(b3) 결과 — Spearman vs truth ↑** — 여기서 **`truth` = 그 셀에서 Spearman을 잰 비교 기준(정답)**이고, 셀마다 다르다:
+> - **α=0.5 (anchor) 3열**: `truth` = **(b) per-round exact oracle** (그 칸은 (b)를 실제로 돌린 anchor cell) → Flirds=+1.000은 *진짜 exact oracle 대비* 일치.
+> - **맨 오른쪽 (off-anchor) 열**: `truth` = **Flirds proxy reference** (α∈{0,0.01,0.1,5.0}는 정확 (b)가 칸당 ~25,000s라 미실행 → 검증된 Flirds를 기준 대용) → Flirds-1st·loss-heur의 +1.000은 *"Flirds와 동일 순위"* 를 뜻하지, vs exact oracle이 아니다.
 
-| method | noisy α=0.5 | frrand α=0.5 | frzero α=0.5 | (off-anchor Flirds-1st·loss-heur) |
+| method | noisy α=0.5<br>(truth=(b)) | frrand α=0.5<br>(truth=(b)) | frzero α=0.5<br>(truth=(b)) | off-anchor α<br>(truth=Flirds proxy) |
 |---|---|---|---|---|
 | Flirds | 1.000 | 1.000 | 1.000 | (proxy 기준) |
 | Flirds-1st | 1.000 | 1.000 | 1.000 | 모든 α 1.000 |
@@ -548,7 +586,10 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | **(b)oracle** | 2917±72 | 3528±83 | 6916±151 | 8329±156 | 12310±165 | 14839±196 |
 | **(a)oracle** | – | **30817±244** | – | ⬚ | – | ⬚ |
 
-> 읽기: **Flirds-1st = 최저가**(1 HVP/round); Flirds(2차)는 그 ~3배지만 여전히 (b) oracle·coalition baseline(GTG/FedSV/Banzhaf/ShapleyFL)의 **~1/5~1/7**. (a) retrain oracle은 (b)의 **~9배**(1B anchor5 30,817s vs 3528s). 스케일에 따라 모든 method가 ~선형 증가.
+> 읽기 (비용 모델 — 중요): **Flirds-1st = 항상 최저가**(1 val-gradient/round, Hessian 없음). **Flirds(2차)의 비용은 라운드당 cohort 크기와 무관**(1 HVP/round 고정)인데 **(b) oracle 비용은 라운드당 cohort에 지수적**(2^k coalition-eval/round). 그래서 우열이 무대마다 갈린다:
+> - **cohort가 크면 Flirds(2차)가 (b)를 크게 이김**: anchor5(전원 N=5 → 2⁵/round) 707s vs (b) 3528s(≈1/5); device100 anchor(K=10 → 2¹⁰/round) 157s vs (b) **25,000s**(≈1/160).
+> - **cohort가 작으면 (b)가 더 쌈 → std20에서 Flirds(2차)가 (b)보다 오래 걸림**: std20은 **라운드당 2명만 참여(2²=4 coalition-eval/round)라 (b) per-round가 이미 저렴** → 1B std20 (b) 2917s **<** Flirds(2차) 4697s (1 HVP[forward+backward]가 4 forward-pass보다 비싸서). 단 Flirds-1st 1531s는 이 레짐에서도 최저.
+> (a) retrain oracle은 (b)의 **~9배**(1B anchor5 30,817s vs 3528s). **요지: Flirds(2차)의 비용 우위는 "라운드당 참여가 많아 exact 2^k가 비싼" 무대(anchor5 full·device100)에서만 나오고, std20처럼 cohort가 작아 (b)가 싼 곳에선 Flirds-1st만 우위다.**
 
 **출처**: `runs/track_d/rundirs/*/metrics.json` (`runtime`).
 
@@ -635,15 +676,3 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | Foundational (`phase1`) | 12 rundir (full 6 + sweep 4 + mini/smoke 2) | full 6 + sweep 4 = 10 (부록) | mini/smoke 2 = 진단용, 미수록(명시) |
 | **계획·미실행** | – | P1–P6 (6행, 수치 ⬚) | – |
 
----
-
-## 7. 작성 메모 — 확신 없는/누락 의심 칸 (보고)
-
-> 아래는 작성자가 *파일 근거가 약하거나 해석 주의가 필요하다고 판단한 칸*. 모두 위 본문에 마커로 표기했고, 여기 한 번 더 모은다.
-
-1. **3B (a) retrain oracle 수치** — CLAUDE.md/노트엔 "3B (a)-valloss vs (b)≈0.900"이 있으나 **track_d 3B_anchor5 rundir엔 (a) 행이 없음**(파일 확인). 파일-only 원칙상 ⬚로 두고 노트로만 언급(§4.2-2). 별도 `phase2_llm_a_oracle.py` 산출물이 어딘가 있다면 추가 가능 — 미확인.
-2. **7B anchor5 arm(MMLU/ROUGE/conv)** — metrics.json에 arm 블록이 비어 **(미기록)**. fidelity·runtime은 정상. 7B std20는 arm 정상 → anchor5만 arm 미수집(의도/누락 불명).
-3. **CNN wall-clock** — `track_c/c1/*/metrics.json`에 method별 wall-clock이 있다고 코드 docstring이 명시하나, 본 문서엔 테이블로 전사 안 함(§3.5.2에 (미기록) 표기). 필요 시 c1 metrics에서 추출 가능.
-4. **CNN C2 그룹 평균** — 30셀을 threat 4그룹으로 pool해 std가 큼(partition/강도/dataset 혼합). 셀별 정밀치가 필요하면 `RESULTS.txt` 직접 참조. 본 문서는 "그룹 평균" 명시.
-5. **Robustness free-rider α 전체 그리드** — §3.4.2 (b2)는 대표 α(0.0/0.5)만 표로; α∈{0.01,0.1,5.0}의 free-rider 칸은 `master_metrics.csv`에 있음(noisy는 전체 α 수록). 지면상 free-rider는 대표값만 — 누락 아님, 압축.
-6. **near-additive 동률의 "1.000" 과밀** — silo5·anchor의 clean/noisy/free-rider서 다수 method가 정확히 1.000인 것은 N이 작고(5) 게임이 near-additive라 exact와 동률이기 때문(파일 그대로). poison에서 이 동률이 깨지는 게 핵심 신호.
