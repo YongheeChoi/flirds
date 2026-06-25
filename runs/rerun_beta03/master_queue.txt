@@ -1,0 +1,164 @@
+# ShapleyFL beta=0.3 full re-run (no skips, single provenance). format: script|run_name|envs ; cheap->expensive.
+track_c1.py|cifar10_feature-noise_seed0|C1_DATASET=cifar10 C1_SCENARIO=feature_noise C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_feature-noise_seed1|C1_DATASET=cifar10 C1_SCENARIO=feature_noise C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_feature-noise_seed2|C1_DATASET=cifar10 C1_SCENARIO=feature_noise C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_iid_seed0|C1_DATASET=cifar10 C1_SCENARIO=iid C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_iid_seed1|C1_DATASET=cifar10 C1_SCENARIO=iid C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_iid_seed2|C1_DATASET=cifar10 C1_SCENARIO=iid C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_label-flip_seed0|C1_DATASET=cifar10 C1_SCENARIO=label_flip C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_label-flip_seed1|C1_DATASET=cifar10 C1_SCENARIO=label_flip C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_label-flip_seed2|C1_DATASET=cifar10 C1_SCENARIO=label_flip C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_label-skew_seed0|C1_DATASET=cifar10 C1_SCENARIO=label_skew C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_label-skew_seed1|C1_DATASET=cifar10 C1_SCENARIO=label_skew C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_label-skew_seed2|C1_DATASET=cifar10 C1_SCENARIO=label_skew C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_quantity-skew_seed0|C1_DATASET=cifar10 C1_SCENARIO=quantity_skew C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_quantity-skew_seed1|C1_DATASET=cifar10 C1_SCENARIO=quantity_skew C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|cifar10_quantity-skew_seed2|C1_DATASET=cifar10 C1_SCENARIO=quantity_skew C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_feature-noise_seed0|C1_DATASET=mnist C1_SCENARIO=feature_noise C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_feature-noise_seed1|C1_DATASET=mnist C1_SCENARIO=feature_noise C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_feature-noise_seed2|C1_DATASET=mnist C1_SCENARIO=feature_noise C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_iid_seed0|C1_DATASET=mnist C1_SCENARIO=iid C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_iid_seed1|C1_DATASET=mnist C1_SCENARIO=iid C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_iid_seed2|C1_DATASET=mnist C1_SCENARIO=iid C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_label-flip_seed0|C1_DATASET=mnist C1_SCENARIO=label_flip C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_label-flip_seed1|C1_DATASET=mnist C1_SCENARIO=label_flip C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_label-flip_seed2|C1_DATASET=mnist C1_SCENARIO=label_flip C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_label-skew_seed0|C1_DATASET=mnist C1_SCENARIO=label_skew C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_label-skew_seed1|C1_DATASET=mnist C1_SCENARIO=label_skew C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_label-skew_seed2|C1_DATASET=mnist C1_SCENARIO=label_skew C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_quantity-skew_seed0|C1_DATASET=mnist C1_SCENARIO=quantity_skew C1_SEED=0 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_quantity-skew_seed1|C1_DATASET=mnist C1_SCENARIO=quantity_skew C1_SEED=1 C1_MODE=full C1_ORACLE_A=0
+track_c1.py|mnist_quantity-skew_seed2|C1_DATASET=mnist C1_SCENARIO=quantity_skew C1_SEED=2 C1_MODE=full C1_ORACLE_A=0
+track_c2.py|cifar10_dir1_clean_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=clean C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_clean_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=clean C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_clean_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=clean C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_free-rider_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_free-rider_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_free-rider_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_grad-noise_str0.05_seed0|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=0.05 C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_grad-noise_str0.05_seed1|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=0.05 C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_grad-noise_str0.05_seed2|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=0.05 C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_grad-noise_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_grad-noise_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_grad-noise_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_label-flip_str0.6_seed0|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.6 C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_label-flip_str0.6_seed1|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.6 C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_label-flip_str0.6_seed2|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.6 C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_label-flip_str0.8_seed0|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.8 C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_label-flip_str0.8_seed1|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.8 C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_label-flip_str0.8_seed2|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.8 C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_label-flip_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_label-flip_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_dir1_label-flip_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_clean_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=clean C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_clean_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=clean C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_clean_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=clean C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_free-rider_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_free-rider_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_free-rider_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_grad-noise_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_grad-noise_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_grad-noise_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_label-flip_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_label-flip_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_iid_label-flip_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=iid C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_clean_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=clean C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_clean_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=clean C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_clean_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=clean C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_free-rider_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_free-rider_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_free-rider_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_grad-noise_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_grad-noise_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_grad-noise_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_label-flip_strmain_seed0|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_label-flip_strmain_seed1|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|cifar10_shard_label-flip_strmain_seed2|C2_DATASET=cifar10 C2_PARTITION=shard C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_clean_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=clean C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_clean_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=clean C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_clean_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=clean C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_free-rider_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_free-rider_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_free-rider_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_grad-noise_str0.05_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=0.05 C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_grad-noise_str0.05_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=0.05 C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_grad-noise_str0.05_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=0.05 C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_grad-noise_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_grad-noise_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_grad-noise_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_label-flip_str0.6_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.6 C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_label-flip_str0.6_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.6 C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_label-flip_str0.6_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.6 C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_label-flip_str0.8_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.8 C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_label-flip_str0.8_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.8 C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_label-flip_str0.8_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=0.8 C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_label-flip_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_label-flip_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_dir1_label-flip_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=dir1 C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_clean_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=clean C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_clean_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=clean C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_clean_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=clean C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_free-rider_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_free-rider_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_free-rider_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_grad-noise_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_grad-noise_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_grad-noise_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_label-flip_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_label-flip_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_iid_label-flip_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=iid C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_clean_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=clean C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_clean_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=clean C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_clean_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=clean C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_free-rider_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_free-rider_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_free-rider_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=free_rider C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_grad-noise_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_grad-noise_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_grad-noise_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=grad_noise C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_label-flip_strmain_seed0|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=0 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_label-flip_strmain_seed1|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=1 C2_MODE=full C2_DISMISSAL=1
+track_c2.py|fmnist_shard_label-flip_strmain_seed2|C2_DATASET=fmnist C2_PARTITION=shard C2_THREAT=label_flip C2_STRENGTH=main C2_SEED=2 C2_MODE=full C2_DISMISSAL=1
+track_d.py|1B_std20_seed0|SMOKE_MODEL=meta-llama/Llama-3.2-1B-Instruct REGIME=std20 SEED=0 ORACLE_A=0
+track_d.py|1B_std20_seed1|SMOKE_MODEL=meta-llama/Llama-3.2-1B-Instruct REGIME=std20 SEED=1 ORACLE_A=0
+track_d.py|1B_std20_seed2|SMOKE_MODEL=meta-llama/Llama-3.2-1B-Instruct REGIME=std20 SEED=2 ORACLE_A=0
+track_d.py|1B_anchor5_seed0|SMOKE_MODEL=meta-llama/Llama-3.2-1B-Instruct REGIME=anchor5 SEED=0 ORACLE_A=1
+track_d.py|1B_anchor5_seed1|SMOKE_MODEL=meta-llama/Llama-3.2-1B-Instruct REGIME=anchor5 SEED=1 ORACLE_A=1
+track_d.py|1B_anchor5_seed2|SMOKE_MODEL=meta-llama/Llama-3.2-1B-Instruct REGIME=anchor5 SEED=2 ORACLE_A=1
+track_d.py|3B_std20_seed0|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=std20 SEED=0 ORACLE_A=0
+track_d.py|3B_std20_seed1|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=std20 SEED=1 ORACLE_A=0
+track_d.py|3B_std20_seed2|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=std20 SEED=2 ORACLE_A=0
+track_d.py|3B_anchor5_seed0|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=anchor5 SEED=0 ORACLE_A=0
+track_d.py|3B_anchor5_seed1|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=anchor5 SEED=1 ORACLE_A=0
+track_d.py|3B_anchor5_seed2|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=anchor5 SEED=2 ORACLE_A=0
+phase2_matrix.py|1B_silo5_noisy|REGIME=silo5 THREAT=noisy
+phase2_matrix.py|1B_silo5_frrand|REGIME=silo5 THREAT=freerider_random
+phase2_matrix.py|1B_silo5_frzero|REGIME=silo5 THREAT=freerider_zero
+phase2_matrix.py|1B_silo5_poison|REGIME=silo5 THREAT=poison LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8
+phase2_matrix.py|1B_device100-a0.1_noisy|REGIME=device100 ALPHA=0.1 THREAT=noisy POOL=12000
+phase2_matrix.py|1B_device100-a0.1_frrand|REGIME=device100 ALPHA=0.1 THREAT=freerider_random POOL=12000
+phase2_matrix.py|1B_device100-a0.1_frzero|REGIME=device100 ALPHA=0.1 THREAT=freerider_zero POOL=12000
+phase2_matrix.py|1B_device100-a0.01_noisy|REGIME=device100 ALPHA=0.01 THREAT=noisy POOL=12000
+phase2_matrix.py|1B_device100-a0.01_frrand|REGIME=device100 ALPHA=0.01 THREAT=freerider_random POOL=12000
+phase2_matrix.py|1B_device100-a0.01_frzero|REGIME=device100 ALPHA=0.01 THREAT=freerider_zero POOL=12000
+phase2_matrix.py|1B_device100-a0.0_noisy|REGIME=device100 ALPHA=0.0 THREAT=noisy POOL=12000
+phase2_matrix.py|1B_device100-a0.0_frrand|REGIME=device100 ALPHA=0.0 THREAT=freerider_random POOL=12000
+phase2_matrix.py|1B_device100-a0.0_frzero|REGIME=device100 ALPHA=0.0 THREAT=freerider_zero POOL=12000
+phase2_matrix.py|1B_device100-a5.0_noisy|REGIME=device100 ALPHA=5.0 THREAT=noisy POOL=12000
+phase2_matrix.py|1B_device100-a5.0_frrand|REGIME=device100 ALPHA=5.0 THREAT=freerider_random POOL=12000
+phase2_matrix.py|1B_device100-a5.0_frzero|REGIME=device100 ALPHA=5.0 THREAT=freerider_zero POOL=12000
+phase2_matrix.py|1B_device100-a0.5_poison|REGIME=device100 ALPHA=0.5 THREAT=poison POOL=12000 LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8 ROUNDS=60 MAX_STEPS=10
+phase2_matrix.py|1B_device100-a0.0_poison|REGIME=device100 ALPHA=0.0 THREAT=poison POOL=12000 LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8 ROUNDS=60 MAX_STEPS=10
+phase2_matrix.py|3B_silo5_noisy|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=noisy SEED=0 ORACLE_B=1 COALITION=0
+phase2_matrix.py|3B_silo5_frrand|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=freerider_random SEED=0 ORACLE_B=1 COALITION=0
+phase2_matrix.py|3B_silo5_frzero|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=freerider_zero SEED=0 ORACLE_B=1 COALITION=0
+phase2_matrix.py|3B_silo5_poison|SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct REGIME=silo5 THREAT=poison SEED=0 ORACLE_B=1 COALITION=0 LR=2e-3 BATCH=8 EPOCHS=5 POISON_FRAC=0.8
+phase2_matrix.py|1B_device100-a0.5_noisy_anchor|REGIME=device100 ALPHA=0.5 THREAT=noisy POOL=12000 ORACLE_B=1 COALITION=1
+phase2_matrix.py|1B_device100-a0.5_frrand_anchor|REGIME=device100 ALPHA=0.5 THREAT=freerider_random POOL=12000 ORACLE_B=1 COALITION=1
+phase2_matrix.py|1B_device100-a0.5_frzero_anchor|REGIME=device100 ALPHA=0.5 THREAT=freerider_zero POOL=12000 ORACLE_B=1 COALITION=1
+track_d.py|7B_std20_seed0|SMOKE_MODEL=meta-llama/Llama-2-7b-hf REGIME=std20 SEED=0 ORACLE_A=0
+track_d.py|7B_std20_seed1|SMOKE_MODEL=meta-llama/Llama-2-7b-hf REGIME=std20 SEED=1 ORACLE_A=0
+track_d.py|7B_std20_seed2|SMOKE_MODEL=meta-llama/Llama-2-7b-hf REGIME=std20 SEED=2 ORACLE_A=0
+track_d.py|7B_anchor5_seed0|SMOKE_MODEL=meta-llama/Llama-2-7b-hf REGIME=anchor5 SEED=0 ORACLE_A=0
+track_d.py|7B_anchor5_seed1|SMOKE_MODEL=meta-llama/Llama-2-7b-hf REGIME=anchor5 SEED=1 ORACLE_A=0
+track_d.py|7B_anchor5_seed2|SMOKE_MODEL=meta-llama/Llama-2-7b-hf REGIME=anchor5 SEED=2 ORACLE_A=0

@@ -24,3 +24,5 @@ runs/track_c/fidelity.csv
 runs/track_d/fidelity.csv
 # Track D execution logs (transient; only the rundirs under runs/track_d/rundirs/ are tracked):
 runs/track_d/_logs/
+# beta=0.3 full re-run campaign: per-cell stdout logs are transient (tooling + queue ARE tracked):
+runs/rerun_beta03/logs/

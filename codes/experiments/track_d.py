@@ -33,7 +33,7 @@ ARMS (phase 2; the C2 wiring transplanted -- intervene.py is CNN/LLM-shared):
   base / vanilla (= the frozen phase-1 trajectory, no extra cost) /
   flirds_w (multiplicative w ~ n*s, beta=0.5) / flirds_sel (softmax selection;
   only where the cohort is a strict subset, i.e. std20) / shapleyfl_w
-  (replacement, beta=0.5) / fedif_w (replacement, beta=0.7 = 1-gamma).
+  (replacement, beta=0.3) / fedif_w (replacement, beta=0.7 = 1-gamma).
 
 Run from codes/:
   CUDA_VISIBLE_DEVICES=0 PYTHONPATH=. REGIME=anchor5 SEED=0 python -u experiments/track_d.py
@@ -202,7 +202,7 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
     phi_c, t = _timed(lambda: comfedsv_from_logs(logs, None, n, None, device, seed=seed,
                       loss_fn=loss_fn, pkeys=pkeys, partial=not anchor), device)
     out.append(("ComFedSV", -np.asarray(phi_c, dtype=float), t))   # loss-decrease util -> negate
-    phi_s, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.5,
+    phi_s, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
                       loss_fn=loss_fn, pkeys=pkeys), device)
     out.append(("ShapleyFL", -np.asarray(phi_s, dtype=float), t))  # good->high -> negate
     phi_if, t = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device,
@@ -273,7 +273,7 @@ def build_arms(model, loss_fn, pkeys, lc, nums, device):
         raw2 = _guard(model, flirds_round_raw_fn(loss_fn, pkeys, n, device, loss_chunks=lc))
         arms.append(("flirds_sel", make_softmax_select_fn(sc2),
                      make_scoreonly_weights_fn(sc2, raw2, nums)))
-    sc3 = OnlineScorer(n, beta=0.5)
+    sc3 = OnlineScorer(n, beta=0.3)                # the ShapleyFL paper value (Def 4.3)
     raw3 = _guard(model, shapleyfl_round_raw_fn(None, None, device, loss_fn=loss_fn, pkeys=pkeys))
     arms.append(("shapleyfl_w", None, make_weights_fn(sc3, raw3, nums, "replacement")))
     sc4 = OnlineScorer(n, beta=0.7)                # 1 - gamma(0.3), the FedIF paper value

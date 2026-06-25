@@ -136,7 +136,7 @@ def fedif_round_raw_fn(loss_fn, pkeys, device, loss_chunks=None):
 def shapleyfl_round_raw_fn(model, val_loader, device, loss_fn=None, pkeys=None):
     """`round_raw_fn` closure backed by ShapleyFL's per-round exact Shapley (good->
     HIGH; CNN accuracy via (model, val_loader), or -val_loss via (loss_fn, pkeys)).
-    Pair with OnlineScorer(beta=0.5) + rule='replacement' for the ShapleyFL arm."""
+    Pair with OnlineScorer(beta=0.3) + rule='replacement' for the ShapleyFL arm."""
     from ..baselines.shapleyfl import shapleyfl_round_raw
     def fn(w_r, deltas_map, players):
         return shapleyfl_round_raw(w_r, deltas_map, players, model, val_loader,

@@ -166,7 +166,7 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device):
             wts_fn = make_scoreonly_weights_fn(scorer, raw, nums)
             sel_fn = make_softmax_select_fn(scorer)
     elif arm == "shapleyfl":
-        scorer = OnlineScorer(n, beta=0.5)
+        scorer = OnlineScorer(n, beta=0.3)            # the ShapleyFL paper value (Def 4.3)
         wts_fn = make_weights_fn(scorer, shapleyfl_round_raw_fn(MODEL_FN().to(device),
                                  DataLoader(TensorDataset(vx, vy), batch_size=512), device),
                                  nums, "replacement")

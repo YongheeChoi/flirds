@@ -97,7 +97,7 @@ def _round_nsv(gb, dm, players, model, test_loader, device, loss_fn, pkeys):
                                        loss_fn, pkeys))
 
 
-def shapleyfl_from_logs(logs, model, n_clients, test_loader, device, beta=0.5,
+def shapleyfl_from_logs(logs, model, n_clients, test_loader, device, beta=0.3,
                         loss_fn=None, pkeys=None):
     """Surrogate federated SV (SSV_i^T) from a shared FedAvg trajectory.  Returns phi[n].
 

@@ -304,7 +304,7 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
         phi_f, t_f = _timed(lambda: fedsv_from_logs(logs, None, n, None, device, seed=seed,
                             loss_fn=loss_fn, pkeys=pkeys, trunc_eps=0.0), device)
         out.append(("FedSV", "val", np.asarray(phi_f), t_f))
-        phi_s, t_s = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.5,
+        phi_s, t_s = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
                             loss_fn=loss_fn, pkeys=pkeys), device)
         out.append(("ShapleyFL", "val", -np.asarray(phi_s, dtype=float), t_s))   # good->high -> negate
         if silo:                                                                 # Banzhaf = 2^N -> silo only

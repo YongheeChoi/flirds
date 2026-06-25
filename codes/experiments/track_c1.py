@@ -214,7 +214,7 @@ def run_seed(seed, device="cuda"):
     methods.append(("ComFedSV", -np.asarray(phi, dtype=float), t))   # loss-decrease util -> negate
     (phi, _), t = _timed(lambda: in_run_banzhaf(logs, n, loss_fn, pkeys, device), device)
     methods.append(("Banzhaf", np.asarray(phi), t))
-    phi, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.5,
+    phi, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
                     loss_fn=loss_fn, pkeys=pkeys), device)
     methods.append(("ShapleyFL", -np.asarray(phi, dtype=float), t))  # good->high -> negate
     phi, t = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device), device)

@@ -62,7 +62,7 @@ CFG = dict(train=200, val=20, rounds=10, max_steps=10, lr=1e-3, batch=16,
            # per-step val-grad + Hessian HVPs are the cost -- kept modest so a seed is ~20min
            # (val=20/domain -> 10 chunks; runtime is itself the reported Ripple metric).
            rip_rounds=4, rip_steps=4, rip_k=3, rip_m=20, rip_hess_bs=2,
-           sfl_beta=0.5)   # ShapleyFL surrogate-FSV EMA rate (Def 4.3)
+           sfl_beta=0.3)   # ShapleyFL surrogate-FSV EMA rate (Def 4.3; paper value)
 
 
 def _timed(fn, device):
