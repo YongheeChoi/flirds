@@ -1,0 +1,25 @@
+scale: 7B
+model: meta-llama/Llama-2-7b-hf
+regime: std20
+seeds:
+- 0
+rcfg:
+  n_clients: 20
+  k_abs: 2
+  rounds: 200
+  total_train: 20000
+  val: 200
+  test: 1000
+  max_steps: 10
+  lr: 0.001
+  maxlen: 512
+mcfg:
+  batch: 4
+  val_chunk: 2
+  val_maxlen: 320
+oracle_a: false
+fidelity: true
+mmlu:
+  limit: 0
+  batch: 16
+  shots: 0
