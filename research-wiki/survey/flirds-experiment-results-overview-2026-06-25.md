@@ -87,6 +87,16 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | P5 | Robustness · 3B 3-seed 완성 | Llama-3.2-3B · N=5 | client | in-run+탐지기 | Detection·Fidelity | approx vs (b) | (b) 2⁵ | ⬚ (현 1 seed) | ⬚ |
 | P6 | Fairness·reward 전용 실험 | – | client | – | Fairness·reward | – | – | ⬚ | ⬚ 미설계 |
 
+> **"검증 목적" 용어 정의** (각 §3 섹션이 본문; E1–E7 매핑은 §4.4):
+> - **Fidelity** = 추정 φ가 정답 oracle의 *기여도 순위/값*을 얼마나 재현하나 (vs (a)/(b); Spearman·Kendall·Pearson·거리). **1차 핵심.** → §3.1
+> - **Perf**(= Selection→downstream performance) = 측정한 φ로 클라를 *선택/가중*해 학습했을 때 다운스트림 성능(MMLU·ROUGE·정확도)이 오르나/유지되나. → §3.2
+> - **Aggregation**(= Aggregation quality) = φ-가중 *집계*가 만든 글로벌 모델의 품질(특히 오염 하 CNN 정확도). Perf와 같은 표에서 측정. → §3.2
+> - **Conv**(= Convergence) = 목표 손실까지 *수렴 속도*(val-loss 곡선 + rounds-to-target). → §3.3
+> - **Detection**(= Corrupt-client detection) = φ(또는 탐지기)로 오염 클라를 *분리*하는 AUROC. 위계상 마지막(기여도≠탐지). → §3.4
+> - **Cost**(= Cost·scalability) = 방법별 *wall-clock* 비용. → §3.5
+> - **Stability**(= replication) = φ 순위의 *seed 간 재현성*(rho_xseed·Jaccard); oracle 자체 안정성 대비. → §3.1.4
+> - **Fairness·reward** = 공정한 보상 분배 관점(공리·ECDF 등) — 본 프로젝트는 *전용 실험 미설계*(P6, ⬚).
+
 ---
 
 # 3. 검증 목적별 결과 (핵심 질문 위계 순)
@@ -150,6 +160,24 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | **(a)oracle**¹ | 0.933±.047 | 0.867±.094 | 0.933±.054 | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
 
 ¹ **(a) retrain 2⁵ oracle vs (b) in-run oracle** = 듀얼 오라클 일치도 (1B anchor5만 실행). Spearman 0.933±.047 → 두 정답 정의가 거의 동률(완전 일치 아님은 N=5 coarse + retrain noise). 3B/7B (a) = ⬚.
+
+#### anchor5 스테이지 — **모든 방법 vs (a) retrain oracle** (1B anchor5, 3-seed mean±std)
+
+> `make_fidelity.py`는 truth=(b)만 산출해 위 표(§3.1.1 본표)는 *vs (b)*다. 아래는 동일 `1B_anchor5/phi.parquet`의 (a) φ를 truth로 잡아 **각 방법을 (a) retrain oracle과 직접 비교**한 값(이 문서에서 추가 산출; CNN §3.1.2는 원래 vs (a)/(b) 둘 다 있음). 3B/7B·std20은 (a)가 없어 ⬚.
+
+| method | Spearman vs (a) ↑ | Kendall vs (a) ↑ | Pearson vs (a) ↑ | max_diff vs (a) ↓ | (참고) Spearman vs (b) ↑ |
+|---|---|---|---|---|---|
+| Flirds | 0.933±.047 | 0.867±.094 | 0.933±.055 | .001 | 1.000 |
+| Flirds-1st | 0.933±.047 | 0.867±.094 | 0.929±.060 | .001 | 1.000 |
+| loss-heur | 0.933±.047 | 0.867±.094 | 0.931±.057 | .001 | 1.000 |
+| Banzhaf | 0.933±.047 | 0.867±.094 | 0.933±.054 | .001 | 1.000 |
+| GTG | 0.933±.047 | 0.867±.094 | 0.937±.052 | .002 | 1.000 |
+| FedSV | 0.733±.170 | 0.600±.163 | 0.685±.249 | .003 | 0.700 |
+| ShapleyFL | 0.767±.330 | 0.733±.377 | 0.916±.084 | .983 | 0.700 |
+| ComFedSV | 0.467±.450 | 0.467±.411 | 0.598±.280 | .014 | 0.500 |
+| FedIF | 0.167±.613 | 0.200±.490 | 0.048±.585 | .984 | 0.067 |
+
+> 읽기: Flirds·Flirds-1st·loss-heur·Banzhaf·GTG가 모두 vs (a) **0.933**으로 동률인 이유 = 이들이 (b)와 거의 완전 일치(vs (b)≈1.000)하므로, 이들의 vs (a) 점수가 곧 **(b)-vs-(a) 일치도(0.933)** 와 같아진다(천장 효과). FedSV/ShapleyFL은 vs (a)가 vs (b)보다 약간 높음(0.733/0.767 > 0.700) = (a)·(b) 두 정답 사이에서 어느 쪽과도 부분적 일치. **출처**: `runs/track_d/rundirs/1B_anchor5_seed{0,1,2}/phi.parquet` (재현: phi.parquet의 method 피벗에서 truth=`(a)oracle`으로 spearmanr/kendalltau/corrcoef).
 
 > anchor5 거리는 생략하지 않음 — 핵심만: Flirds/Flirds-1st/loss-heur/Banzhaf cosine_d≈0(<.0001), GTG≈.003–.011, FedSV≈.005–.013; FedIF/ShapleyFL euclid_d≈1.2–1.5(부호 불안정). 전체 6-metric은 `make_fidelity.py` 재실행 시 `fidelity.csv`.
 
