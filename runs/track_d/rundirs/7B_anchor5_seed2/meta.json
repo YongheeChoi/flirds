@@ -1,0 +1,16 @@
+{
+  "name": "7B_anchor5_seed2",
+  "git_sha": "dbdacc1b979e6b7b729557ca183554c1e2a0f3ca",
+  "git_dirty": true,
+  "env_hash": "a2969115b57a3cf3",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.11.15"
+  }
+}
