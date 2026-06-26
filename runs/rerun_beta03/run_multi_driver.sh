@@ -19,7 +19,7 @@ PP=/NHNHOME/26msit001_A/edge_ai_lab/yonghee/flirds/codes
 QUEUE=${QUEUE:?set QUEUE}
 LOGDIR=${LOGDIR:?set LOGDIR}
 mkdir -p "$LOGDIR"
-gpus=(0 1 2 3)
+read -ra gpus <<< "${GPUS:-0 1 2 3}"        # GPUS="0 1 2" to restrict (default: all four)
 declare -A pid cellname
 consumed=0
 done_re="MATRIX DONE|TRACK D DONE|\[persist\]"
