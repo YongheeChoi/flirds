@@ -323,14 +323,14 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | | flirds_sel | 0.6139±.0014 | 0.3029±.0039 | | shapleyfl_w | 0.6214±.0002 | 0.2755±.0042 |
 | | shapleyfl_w | 0.6136±.0005 | 0.3016±.0018 | | fedif_w | 0.6213±.0002 | 0.2730±.0035 |
 | | fedif_w | 0.6139±.0007 | 0.3022±.0024 | | | | |
-| **7B std20** | base | 0.4175±.0000 | 0.1496±.0024 | **7B anchor5** | base | (미기록)¹ | (미기록)¹ |
-| | vanilla | 0.4038±.0024 | 0.2778±.0026 | | vanilla | (미기록)¹ | (미기록)¹ |
-| | flirds_w | 0.4026±.0028 | 0.2780±.0027 | | | | |
-| | flirds_sel | 0.4025±.0022 | 0.2790±.0044 | | | | |
-| | shapleyfl_w | 0.4027±.0027 | 0.2787±.0028 | | | | |
+| **7B std20** | base | 0.4175±.0000 | 0.1496±.0024 | **7B anchor5** | base | 0.4175±.0000 | 0.1496±.0024 |
+| | vanilla | 0.4038±.0024 | 0.2778±.0026 | | vanilla | 0.4206±.0012 | 0.1651±.0016 |
+| | flirds_w | 0.4026±.0028 | 0.2780±.0027 | | flirds_w | 0.4210±.0014 | 0.1680±.0023 |
+| | flirds_sel | 0.4025±.0022 | 0.2790±.0044 | | shapleyfl_w | 0.4210±.0014 | 0.1680±.0023 |
+| | shapleyfl_w | 0.4027±.0027 | 0.2787±.0028 | | fedif_w | 0.4204±.0008 | 0.1656±.0011 |
 | | fedif_w | 0.4030±.0023 | 0.2763±.0033 | | | | |
 
-¹ 7B anchor5 metrics.json은 fidelity·runtime만 담고 arm(MMLU/ROUGE) 블록은 비어 있음 → **(미기록)**. (7B std20는 arm 있음.)
+> 7B anchor5 arm(MMLU/ROUGE)은 **2026-06-26 추가**(arm-only 재실행; fidelity·runtime은 phi.parquet 불변이라 §3.1.1·§3.5와 동일). anchor5는 전원 참여 → flirds_sel 없음. 읽기: anchor5(R=30 경량학습)는 std20과 달리 vanilla MMLU가 base보다 살짝 ↑(0.4175→0.4206); ROUGE는 base 0.1496→vanilla 0.1651로 std20(0.2778)보다 작게 상승(학습량 적음). flirds_w/shapleyfl_w가 vanilla 대비 ROUGE 미세 ↑(0.1651→0.1680).
 
 > 읽기(do-no-harm): 모든 개입 arm의 MMLU·ROUGE가 vanilla와 ±0.001~0.003 이내 = clean-IID에서 기여도-가중이 성능을 **해치지도 크게 올리지도 않음**(기대대로 parity). ROUGE는 학습으로 base 대비 크게 상승(예: 3B std20 0.222→0.302); MMLU는 SFT로 소폭 하락(외부 벤치, 분포 밖).
 
@@ -397,13 +397,13 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | | flirds_sel | 1.1481±.0273 | 193.5±0.5 | | shapleyfl_w | 1.1960±.0272 | 30.0±0.0 |
 | | shapleyfl_w | 1.1479±.0271 | 192.3±3.3 | | fedif_w | 1.1970±.0269 | 30.0±0.0 |
 | | fedif_w | 1.1478±.0271 | 191.0±3.6 | | | | |
-| **7B std20** | vanilla | 1.0357±.0244 | 184.7±18.3 | **7B anchor5** | — | (미기록)¹ | (미기록)¹ |
-| | flirds_w | 1.0348±.0245 | 153.0±18.8 | | | | |
-| | flirds_sel | 1.0351±.0243 | 153.0±23.6 | | | | |
-| | shapleyfl_w | 1.0347±.0245 | 151.3±19.9 | | | | |
+| **7B std20** | vanilla | 1.0357±.0244 | 184.7±18.3 | **7B anchor5** | vanilla | 1.0941±.0221 | 30.0±0.0 |
+| | flirds_w | 1.0348±.0245 | 153.0±18.8 | | flirds_w | 1.0904±.0224 | 28.3±0.5 |
+| | flirds_sel | 1.0351±.0243 | 153.0±23.6 | | shapleyfl_w | 1.0904±.0224 | 28.3±0.5 |
+| | shapleyfl_w | 1.0347±.0245 | 151.3±19.9 | | fedif_w | 1.0932±.0207 | 29.5±0.5 |
 | | fedif_w | 1.0348±.0246 | 158.0±12.7 | | | | |
 
-¹ 7B anchor5 arm 블록 비어 있음 → **(미기록)**.
+> 7B anchor5 수렴 = 2026-06-26 추가. flirds_w/shapleyfl_w가 vanilla(30 rounds, R=30 전부) 대비 28.3 rounds로 목표 손실 도달 = 소폭 빠름(clean-IID라 차이 작음).
 
 > 읽기: 수렴은 clean-IID라 arm 간 거의 동률. 두드러진 칸 = **7B std20**: 개입 arm이 vanilla 184.7 라운드 대비 ~151~158 라운드로 target 도달(약 14~18% 빠름); 3B std20도 flirds/shapleyfl_w ~192 vs vanilla 198. 1B·anchor5는 차이 미미.
 
@@ -595,7 +595,45 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 ### 3.5.2 다른 트랙 runtime 요약
 - **Robustness** (§3.4 표에 병기): N=5 silo5 — Flirds-1st ~35s / Flirds ~107s / (b)·coalition ~530s / 탐지기 22~136s. N=100 anchor — Flirds-1st ~53s / Flirds ~157s vs (b)perround **~25,000s** / GTG ~16–18k s / ShapleyFL ~24.9k s / FedSV ~4970s.
-- **CNN** C1: 셀별 wall-clock은 `runs/track_c/c1/*/metrics.json`에 method별 기록(여기 표엔 미전사 — `RESULTS.txt`는 fidelity/stability 중심). **(미기록)**: 본 문서에 CNN wall-clock 테이블 미수록(파일엔 존재).
+- **CNN** C1 (cross-silo N=10, mode=full, 3-seed mean±std, 초 ↓; `methods.<name>.runtime`):
+
+**MNIST**
+
+| method | iid | feature-noise | label-flip | label-skew | quantity-skew |
+|---|---|---|---|---|---|
+| **Flirds-1st** | 0.08±0.00 | 0.08±0.00 | 0.08±0.00 | 0.08±0.00 | 0.08±0.00 |
+| **Flirds** | 0.73±0.03 | 0.58±0.05 | 0.59±0.03 | 0.61±0.06 | 0.55±0.03 |
+| FedIF | 0.18±0.00 | 0.16±0.01 | 0.17±0.01 | 0.17±0.01 | 0.16±0.01 |
+| loss-heur | 0.24±0.00 | 0.24±0.00 | 0.24±0.00 | 0.24±0.00 | 0.24±0.00 |
+| ComFedSV | 5.13±0.18 | 5.17±0.04 | 5.13±0.18 | 5.12±0.14 | 5.10±0.15 |
+| GTG | 18.11±0.11 | 19.77±0.48 | 16.29±1.51 | 25.01±0.90 | 17.26±0.95 |
+| FedSV | 6.23±0.07 | 6.29±0.11 | 6.29±0.14 | 6.22±0.11 | 6.21±0.04 |
+| ShapleyFL | 30.65±0.26 | 30.80±0.43 | 30.58±0.64 | 30.47±0.56 | 30.31±0.31 |
+| Banzhaf | 31.16±0.29 | 31.34±0.49 | 31.21±0.71 | 30.85±0.53 | 31.04±0.45 |
+| **(b)oracle** | 31.09±0.36 | 31.33±0.47 | 31.04±0.62 | 30.89±0.55 | 30.91±0.48 |
+| Ripple | 2254.83±758.57 | 1147.51±70.79 | 1160.83±36.82 | 1121.67±22.25 | 1075.64±52.27 |
+| _traj_time(FL학습)_ | 93.88±1.32 | 92.85±1.02 | 91.81±1.16 | 84.57±1.56 | 85.36±1.38 |
+
+**CIFAR-10**
+
+| method | iid | feature-noise | label-flip | label-skew | quantity-skew |
+|---|---|---|---|---|---|
+| **Flirds-1st** | 0.34±0.01 | 0.37±0.04 | 0.38±0.05 | 0.34±0.01 | 0.34±0.01 |
+| **Flirds** | 1.20±0.08 | 1.62±0.49 | 1.44±0.34 | 1.27±0.17 | 5.78±6.24 |
+| FedIF | 0.44±0.01 | 0.48±0.02 | 0.50±0.07 | 0.54±0.15 | 0.49±0.06 |
+| loss-heur | 1.27±0.01 | 1.30±0.03 | 1.27±0.00 | 1.28±0.01 | 1.30±0.02 |
+| ComFedSV | 18.45±0.36 | 19.18±1.10 | 19.07±0.82 | 18.83±0.19 | 19.04±0.51 |
+| GTG | 88.98±2.02 | 87.84±5.34 | 88.25±3.10 | 102.46±0.58 | 75.50±0.96 |
+| FedSV | 22.29±0.27 | 23.10±0.73 | 23.19±0.91 | 23.87±1.76 | 22.81±0.25 |
+| ShapleyFL | 110.83±1.28 | 115.58±4.74 | 112.25±1.82 | 113.03±1.14 | 115.42±3.39 |
+| Banzhaf | 110.93±1.26 | 115.84±5.30 | 115.94±6.90 | 112.69±1.10 | 112.70±0.45 |
+| **(b)oracle** | 110.48±0.93 | 119.41±4.78 | 114.54±3.85 | 112.87±1.16 | 168.69±71.77 |
+| Ripple | 7453.15±710.09 | 9592.28±2713.45 | 11105.31±2385.57 | 10702.14±898.62 | 10072.95±2706.30 |
+| _traj_time(FL학습)_ | 80.21±0.45 | 87.28±5.38 | 86.70±7.24 | 83.12±2.05 | 91.23±3.36 |
+
+> 읽기: 순서는 LLM 트랙과 동일 — **Flirds-1st 최저**(0.08/0.34s) < Flirds(0.6/~2s) ≪ exact 2¹⁰급 (b)oracle≈Banzhaf≈ShapleyFL(~31s MNIST / ~113s CIFAR), GTG(truncated MC, ~19/~89s)·FedSV(~6/~23s)는 그 사이. **Ripple은 압도적 dominated**(sample-level, ~1.1–2.3k s MNIST / ~7.5–11k s CIFAR = traj보다 10–130×). Flirds·Flirds-1st는 `traj_time`(FL 학습 자체, ~80–94s)보다도 2~3 자릿수 싸다 = "기여도 추정이 학습보다 훨씬 저렴". *(a) 2¹⁰ retrain oracle은 fidelity 비교셋이 아니라 별도 `runs/track_c/c1_oracle/*_aonly_*`에 있어 이 표엔 미포함.*
+
+**출처**: `runs/track_c/c1/*/metrics.json` (`methods.<name>.runtime`, `traj_time`; 10 시나리오 × 11 method × 3 seed 완비).
 
 ---
 
@@ -636,7 +674,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 3. **device100 비-anchor truth = Flirds proxy reference** (정확 (b)가 칸당 ~25,000s라 α=0.5만 실측). 그 칸의 Spearman은 *vs Flirds*이지 vs exact oracle 아님 → 1.000은 "Flirds-1st·loss-heur가 Flirds와 동일 순위"의 뜻.
 4. **CNN fidelity pool 평균은 `iid` 포함 → 깎임**. iid 셀은 오염·skew 신호가 없어 fidelity가 의미상 낮다(§3.1.2에 iid 제외 값 병기).
 5. **CNN C2 / track_c 그룹 테이블은 partition·강도·dataset을 threat 내에서 pool** → std 큼. 셀별 30칸은 `RESULTS.txt`.
-6. **7B anchor5 arm(MMLU/ROUGE/val-loss) = (미기록)**(metrics.json arm 블록 비어 있음). fidelity·runtime은 있음.
+6. **7B anchor5 arm(MMLU/ROUGE/val-loss) = 2026-06-26 추가 완료**(arm-only 재실행; 이전엔 fidelity·runtime만 있었음). 이제 LLM standard 6 셀 전부 arm 포함.
 7. **tiny val** caveat: Robustness silo5 val=20 / device100 val=10 — 작은 검증셋이라 AUROC가 coarse(특히 noisy φ-as-detector).
 8. **poison ASR**은 deployed-model 기준(silo5≈1.00, device100 α0≈1.00/α0.5≈0.50, 3B≈1.00).
 
@@ -670,8 +708,8 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 | 트랙 | 디스크 rundir/셀 수 | 본 문서 수록 | 비고 |
 |---|---|---|---|
-| LLM standard (`track_d`) | 18 rundir (3 scale × 2 stage × 3 seed) = 6 셀 | 6 셀 전부 (fidelity+arms+conv+runtime) | 7B anchor5 arm = (미기록) |
-| CNN (`track_c`) | C1 30 + C1_oracle 30 + C2 90 = 150 rundir (10+10+30 셀 × 3 seed) | C1 10 시나리오 (fidelity/stability/(a)) + C2 30 셀(threat 4그룹 pool) | C2는 그룹 평균(셀별=RESULTS.txt); CNN wall-clock 미전사 |
+| LLM standard (`track_d`) | 18 rundir (3 scale × 2 stage × 3 seed) = 6 셀 | 6 셀 전부 (fidelity+arms+conv+runtime) | 7B anchor5 arm 2026-06-26 추가 → 누락 없음 |
+| CNN (`track_c`) | C1 30 + C1_oracle 30 + C2 90 = 150 rundir (10+10+30 셀 × 3 seed) | C1 10 시나리오 (fidelity/stability/(a)) + C2 30 셀(threat 4그룹 pool) | C2는 그룹 평균(셀별=RESULTS.txt); CNN wall-clock §3.5.2 전사 완료 |
 | Robustness (`phase2_matrix`) | 25 셀 (master_metrics 25, RESULTS.md 25) | 25 셀 전부 (AUROC+Sp+Pe+cos+runtime) | – |
 | Foundational (`phase1`) | 12 rundir (full 6 + sweep 4 + mini/smoke 2) | full 6 + sweep 4 = 10 (부록) | mini/smoke 2 = 진단용, 미수록(명시) |
 | **계획·미실행** | – | P1–P6 (6행, 수치 ⬚) | – |
