@@ -1,0 +1,3 @@
+# 재생성 가능한 검증 캡처 (build_deck.py → soffice → pdftoppm)
+*.pdf
+slide-*.jpg
