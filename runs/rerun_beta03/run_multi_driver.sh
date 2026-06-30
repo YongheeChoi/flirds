@@ -28,6 +28,7 @@ echo "[$(date +%F_%H:%M:%S)] MULTI-DRIVER START: queue=$QUEUE -> $LOGDIR"
 running() { for g in "${gpus[@]}"; do p=${pid[$g]:-}; [ -n "$p" ] && kill -0 "$p" 2>/dev/null && return 0; done; return 1; }
 
 while : ; do
+  [ -n "${GPUS_FILE:-}" ] && [ -s "$GPUS_FILE" ] && read -ra gpus < "$GPUS_FILE"   # live GPU-list reload: edit the file to add/remove GPUs without restart (a removed GPU's running cell finishes; no NEW cell dispatched there)
   mapfile -t Q < "$QUEUE"
   N=${#Q[@]}
   [ $consumed -ge $N ] && ! running && break
