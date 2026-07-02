@@ -26,3 +26,6 @@ runs/track_d/fidelity.csv
 runs/track_d/_logs/
 # beta=0.3 full re-run campaign: per-cell stdout logs are transient (tooling + queue ARE tracked):
 runs/rerun_beta03/logs/
+# signal-size probe (2026-07-02): transient logs only; rundirs/, noise_probe/, cnn_c*/ ARE tracked:
+runs/probe_signal/_logs/
+runs/probe_signal/_nohup.out
