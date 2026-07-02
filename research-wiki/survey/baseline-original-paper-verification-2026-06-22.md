@@ -5,6 +5,10 @@
 > 출처: 우리 결과 = `runs/track_c/{fidelity.csv,RESULTS.txt}` · `runs/track_d/fidelity.csv` ·
 > `runs/phase2_matrix/{RESULTS.md,analysis/00_overview/master_metrics.csv}`.
 > 원 논문 = `research-wiki/wiki/sources/*.md` (ingest 노트).
+>
+> **자매 문서**: [[baseline-selection-audit-2026-07-02]] — *다른 질문*을 본다: 애초에 baseline을
+> **제대로 골랐는가**(선정의 정당성·완결성; 후보를 A/B/C로 판정). 이 문서(06-22)는 *이미 고른*
+> baseline의 **수치·거동**이 원 논문과 맞는지. 즉 07-02="맞게 골랐나", 06-22="고른 게 맞게 굴러가나".
 
 ---
 
@@ -27,21 +31,21 @@
 
 ## 1. 요약 표
 
-| 방법 | 계열 | 세팅 일치 | 결과 판정 | 한 줄 |
-|---|---|:---:|:---:|---|
-| Banzhaf | valuation | N/A(중앙↔FL) | **✓** | 값-수준 fidelity 최강(Pearson 0.998), "고품질·안정" 주장 정합 |
-| GTG-Shapley | valuation | 低 | **✓** | 가법 영역서 exact 수렴(≈1.0), 대규모서 우아한 열화 |
-| FedSV | valuation | 低 | **◐** | 오염 랭킹은 맞으나 rank-fidelity 낮음(per-round MC 분산) |
-| ShapleyFL | valuation | 低 | **◐** | exact fidelity 낮은 게 정상(surrogate), 탐지는 작동 |
-| FedIF | valuation | **中**(최근접) | **◐** | Shapley 아님(설계), 속도·robust 주장은 일치 |
-| ComFedSV | valuation | 低 | **✗** | low-rank 가정 위배 → fidelity 붕괴 |
-| Ripple | valuation | 不明 | **✗** | "62× speedup" 주장과 정반대(우리 port 최저속) |
-| FLDetector | detector | 低 | **✓✓** | 강점(crafted 1.0)+한계(noisy/non-IID 침식) 둘 다 재현 |
-| FLTrust | detector | 低 | **✓** | cosine-to-root가 scaled/free-rider 잡음(1.0) |
-| STD-DAGMM | detector | **device=高** | **◐→✓** | 동일 레짐(N=100 free-rider)서 수치 근접(0.87–0.96 vs 0.91–0.96) |
-| FedDQC | detector | **高**(동종) | **✓** | 유일한 LLM-LoRA 무대, noisy-품질서 강함(0.96–1.0) |
-| Bagdasaryan | attack | 中 | **✓** | model-replacement 재현(silo5 ASR≈1.0, clean 보존) |
-| Xu | attack | 低 | **✗** | 다른 메커니즘(generative+scaled) → 재현이라 부를 수 없음 |
+| 방법          | 계열        |    세팅 일치     |  결과 판정  | 한 줄                                                    |
+| ----------- | --------- | :----------: | :-----: | ------------------------------------------------------ |
+| Banzhaf     | valuation |  N/A(중앙↔FL)  |  **✓**  | 값-수준 fidelity 최강(Pearson 0.998), "고품질·안정" 주장 정합        |
+| GTG-Shapley | valuation |      低       |  **✓**  | 가법 영역서 exact 수렴(≈1.0), 대규모서 우아한 열화                     |
+| FedSV       | valuation |      低       |  **◐**  | 오염 랭킹은 맞으나 rank-fidelity 낮음(per-round MC 분산)           |
+| ShapleyFL   | valuation |      低       |  **◐**  | exact fidelity 낮은 게 정상(surrogate), 탐지는 작동              |
+| FedIF       | valuation |  **中**(최근접)  |  **◐**  | Shapley 아님(설계), 속도·robust 주장은 일치                       |
+| ComFedSV    | valuation |      低       |  **✗**  | low-rank 가정 위배 → fidelity 붕괴                           |
+| Ripple      | valuation |      不明      |  **✗**  | "62× speedup" 주장과 정반대(우리 port 최저속)                     |
+| FLDetector  | detector  |      低       | **✓✓**  | 강점(crafted 1.0)+한계(noisy/non-IID 침식) 둘 다 재현            |
+| FLTrust     | detector  |      低       |  **✓**  | cosine-to-root가 scaled/free-rider 잡음(1.0)              |
+| STD-DAGMM   | detector  | **device=高** | **◐→✓** | 동일 레짐(N=100 free-rider)서 수치 근접(0.87–0.96 vs 0.91–0.96) |
+| FedDQC      | detector  |  **高**(동종)   |  **✓**  | 유일한 LLM-LoRA 무대, noisy-품질서 강함(0.96–1.0)                |
+| Bagdasaryan | attack    |      中       |  **✓**  | model-replacement 재현(silo5 ASR≈1.0, clean 보존)          |
+| Xu          | attack    |      低       |  **✗**  | 다른 메커니즘(generative+scaled) → 재현이라 부를 수 없음              |
 
 > **세팅이 맞물린 칸에서만 정량 대조가 정당하다**: FedIF(C2)=中, STD-DAGMM(device100)=高,
 > FedDQC=高. 거기서 결과도 잘 맞는다(§4).
@@ -50,15 +54,15 @@
 
 ## 2. 우리 실험 무대 세팅 (참조용 — 아래 각 표의 "우리" 열이 가리키는 무대)
 
-| 트랙 | 모델 | N (참여) | rounds | local | batch | lr / opt | 데이터 | 분할 | seeds | oracle |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **C1** (CNN fidelity) | LeNet5 / FedSVCNN | 10 (full) | 10 | E=5 | 64 | 0.01 / SGD m=0 | MNIST, CIFAR-10 | iid+4 non-IID 시나리오 | 3 | (a)&(b) exact 2¹⁰ |
-| **C2** (CNN intervention) | FedSVCNN / LeNet5 | 100 (C=0.1) | 120 | E=5 | 64 | 0.01 / SGD m=0 | CIFAR-10, FMNIST | iid / dir1(α=1) / shard | 3 | — (성능/AUROC) |
-| **D std20** (LLM 표준) | Llama-3.2 1B & 3B | 20 (2/rd) | 200 | 10 step | 16/8 | 1e-3 / SGD m=0 | alpaca-gpt4 20k | **clean·IID** | 3* | (b) per-round exact |
-| **D anchor5** | Llama-3.2 1B & 3B | 5 (full) | 30 | 10 step | 16/8 | 1e-3 / SGD m=0 | alpaca-gpt4 | clean·IID | 3* | (b) 2⁵ + **(a) retrain val-loss fp32** |
-| **P2 silo5** (robustness) | Llama-3.2 1B | 5 (full) | 10 | — | 16(poison 8) | 1e-3(poison 2e-3) | 5-domain cross-silo | non-IID(domain-disjoint) | 3 | (b) exact 2⁵ |
-| **P2 device100** | Llama-3.2 1B | 100 (K=10) | 30(poison 60) | — | 16(poison 8) | 1e-3(poison 2e-3) | 5-domain pool | Dirichlet α∈{0,.01,.1,.5,5} | 3 | α=0.5만 (b) per-round; 그 외 Flirds-proxy |
-| **P2 3B** | Llama-3.2 3B | 5 (full) | 10 | — | 16 | 1e-3(poison 2e-3) | 5-domain | non-IID | 1 | (b) exact 2⁵, coalition off |
+| 트랙                        | 모델                | N (참여)      | rounds        | local   | batch        | lr / opt          | 데이터                 | 분할                          | seeds | oracle                                 |
+| ------------------------- | ----------------- | ----------- | ------------- | ------- | ------------ | ----------------- | ------------------- | --------------------------- | ----- | -------------------------------------- |
+| **C1** (CNN fidelity)     | LeNet5 / FedSVCNN | 10 (full)   | 10            | E=5     | 64           | 0.01 / SGD m=0    | MNIST, CIFAR-10     | iid+4 non-IID 시나리오          | 3     | (a)&(b) exact 2¹⁰                      |
+| **C2** (CNN intervention) | FedSVCNN / LeNet5 | 100 (C=0.1) | 120           | E=5     | 64           | 0.01 / SGD m=0    | CIFAR-10, FMNIST    | iid / dir1(α=1) / shard     | 3     | — (성능/AUROC)                           |
+| **D std20** (LLM 표준)      | Llama-3.2 1B & 3B | 20 (2/rd)   | 200           | 10 step | 16/8         | 1e-3 / SGD m=0    | alpaca-gpt4 20k     | **clean·IID**               | 3*    | (b) per-round exact                    |
+| **D anchor5**             | Llama-3.2 1B & 3B | 5 (full)    | 30            | 10 step | 16/8         | 1e-3 / SGD m=0    | alpaca-gpt4         | clean·IID                   | 3*    | (b) 2⁵ + **(a) retrain val-loss fp32** |
+| **P2 silo5** (robustness) | Llama-3.2 1B      | 5 (full)    | 10            | —       | 16(poison 8) | 1e-3(poison 2e-3) | 5-domain cross-silo | non-IID(domain-disjoint)    | 3     | (b) exact 2⁵                           |
+| **P2 device100**          | Llama-3.2 1B      | 100 (K=10)  | 30(poison 60) | —       | 16(poison 8) | 1e-3(poison 2e-3) | 5-domain pool       | Dirichlet α∈{0,.01,.1,.5,5} | 3     | α=0.5만 (b) per-round; 그 외 Flirds-proxy |
+| **P2 3B**                 | Llama-3.2 3B      | 5 (full)    | 10            | —       | 16           | 1e-3(poison 2e-3) | 5-domain            | non-IID                     | 1     | (b) exact 2⁵, coalition off            |
 
 \* 3B fidelity.csv는 현재 2-seed(seed2 rundir 미병합). LoRA r16/α32, fp32, momentum=0 공통.
 
@@ -70,14 +74,16 @@
 Data Banzhaf (Wang & Jia, arXiv 2205.15466). **중앙집중** 데이터 가치(비FL).
 
 **세팅 비교**
-| 항목 | 원 논문 | 우리 |
-|---|---|---|
-| task | 중앙집중 bad-data detection / weighted-sample | FL 클라 기여도(exact 2ᴺ Banzhaf) |
-| 데이터/모델 | 노트 미기록 | CNN N=10, LLM N=5 |
-| 추정기 | **MSR estimator**(불편추정) | **exact**(추정기 미사용) |
-| 지표 | ranking stability, bad-data detection | Spearman/Pearson vs oracle |
+
+| 항목     | 원 논문                                      | 우리                          |
+| ------ | ----------------------------------------- | --------------------------- |
+| task   | 중앙집중 bad-data detection / weighted-sample | FL 클라 기여도(exact 2ᴺ Banzhaf) |
+| 데이터/모델 | 노트 미기록                                    | CNN N=10, LLM N=5           |
+| 추정기    | **MSR estimator**(불편추정)                   | **exact**(추정기 미사용)          |
+| 지표     | ranking stability, bad-data detection     | Spearman/Pearson vs oracle  |
 
 **결과 비교**
+
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | 값 품질 순위 | Banzhaf > Beta-Shapley > Shapley > LOO (수치 미기록) | CNN Pearson **0.998**(최강), LLM anchor5 **1.000**, silo5 +1.000 | ✓ |
@@ -90,6 +96,7 @@ Data Banzhaf (Wang & Jia, arXiv 2205.15466). **중앙집중** 데이터 가치(�
 GTG-Shapley (Liu et al., ACM TIST 2022, arXiv 2109.02053).
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | task/데이터 | 이미지분류(데이터셋 미기록) | CNN MNIST/CIFAR + LLM 1B/3B |
@@ -98,6 +105,7 @@ GTG-Shapley (Liu et al., ACM TIST 2022, arXiv 2109.02053).
 | 지표 | utility-eval 수 대비 추정 정확도 | Spearman/Pearson vs exact oracle |
 
 **결과 비교**
+
 | 무대 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | 가법 영역 | "경쟁 federated-Shapley보다 정확"(수치 없음) | LLM std20 Spearman 0.975 / Pearson 0.995; anchor5·silo5 **+1.000** | ✓ |
@@ -107,6 +115,7 @@ GTG-Shapley (Liu et al., ACM TIST 2022, arXiv 2109.02053).
 FedSV (Wang et al. 2020, *A Principled Approach…*, arXiv 2009.06192).
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | 데이터/모델 | MNIST/CIFAR-10, full-model | CNN N=10, LLM 1B/3B |
@@ -115,6 +124,7 @@ FedSV (Wang et al. 2020, *A Principled Approach…*, arXiv 2009.06192).
 | 보장 | Theorem 1: per-round 공리 유일 만족 | (동일 알고리즘 port) |
 
 **결과 비교**
+
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | 오염 랭킹 | "noisy/backdoor를 낮게, LOO보다 우수"(수치 없음) | silo5 noisy/frrand 탐지 AUROC **1.000** | ✓ |
@@ -125,6 +135,7 @@ FedSV (Wang et al. 2020, *A Principled Approach…*, arXiv 2009.06192).
 ShapleyFL (Sun et al., KDD 2023).
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | 데이터 | MNIST/FMNIST/CIFAR/Fed-ISIC2019 | CNN + LLM 1B/3B |
@@ -132,6 +143,7 @@ ShapleyFL (Sun et al., KDD 2023).
 | 지표 | noisy/adversarial 하 최종정확도 | Spearman/Pearson vs exact + AUROC |
 
 **결과 비교**
+
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | exact 대비 fidelity | (해당 측정 없음) | std20 0.195/Pearson 0.245; anchor5 0.700 — **낮은 게 설계상 정상** | ◐ |
@@ -141,6 +153,7 @@ ShapleyFL (Sun et al., KDD 2023).
 FedIF (Tang et al., arXiv 2509.25560, 2025). 영향도→가중(Shapley 아님).
 
 **세팅 비교** — 전 baseline 중 우리 C2와 가장 근접
+
 | 항목 | 원 논문 | 우리 (C2) |
 |---|---|---|
 | 데이터/모델 | CIFAR-10+FMNIST, **CNN** | CIFAR-10/FMNIST, **CNN** ✓ |
@@ -150,6 +163,7 @@ FedIF (Tang et al., arXiv 2509.25560, 2025). 영향도→가중(Shapley 아님).
 | 지표 | label/grad-noise 하 정확도 + agg wall-clock | (C2) 개입 정확도/AUROC · (fidelity) Spearman |
 
 **결과 비교**
+
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | agg 속도 | **0.2s/rd vs AFedSV 70–92s (450×)** | LLM서 35–54s (Flirds-1st급, 최저가군) | ✓(빠름 재현) |
@@ -160,6 +174,7 @@ FedIF (Tang et al., arXiv 2509.25560, 2025). 영향도→가중(Shapley 아님).
 ComFedSV (Fan et al., ICDE 2022, arXiv 2109.09046).
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | 데이터 | synth/MNIST/FMNIST/CIFAR-10 non-IID | CNN + LLM 1B/3B |
@@ -168,6 +183,7 @@ ComFedSV (Fan et al., ICDE 2022, arXiv 2109.09046).
 | 지표 | Spearman vs ground truth, Jaccard | Spearman/Pearson vs oracle |
 
 **결과 비교**
+
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | Spearman | "4개 데이터셋서 FedSV 근접·상회"(개별값 미기록) | CNN 0.348; LLM std20 **0.093**; 3B **−0.133**; device α0.5 **−0.023** | ✗ |
@@ -179,6 +195,7 @@ ComFedSV (Fan et al., ICDE 2022, arXiv 2109.09046).
 Ripple Shapley (Zeng et al., AAAI 2026). sample-level, single-run.
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | 데이터 | 미기록(real-time pricing 응용) | CNN N=10 (LLM/Phase2 제외) |
@@ -187,6 +204,7 @@ Ripple Shapley (Zeng et al., AAAI 2026). sample-level, single-run.
 | 지표 | 속도 at comparable accuracy | Spearman vs oracle + 런타임 |
 
 **결과 비교**
+
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | 속도 | **62× speedup** | **최저속**(~4515s, Flirds의 42배) | ✗(정반대) |
@@ -209,6 +227,7 @@ In-Run Data Shapley (Wang et al., ICML 2024, arXiv 2406.11011). 중앙집중 GPT
 FLDetector (Zhang et al., KDD 2022, arXiv 2207.09209).
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | 데이터/모델 | MNIST/CIFAR-10(ResNet20)/FEMNIST | LLM 1B/3B LoRA |
@@ -217,6 +236,7 @@ FLDetector (Zhang et al., KDD 2022, arXiv 2207.09209).
 | 지표 | DACC / FNR | AUROC |
 
 **결과 비교**
+
 | 위협 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | crafted(poison) | **DACC 0.85–1.0, FNR~0** (FEMNIST) | silo5 poison **1.000**, device100 poison 0.98 | ✓ |
@@ -227,6 +247,7 @@ FLDetector (Zhang et al., KDD 2022, arXiv 2207.09209).
 FLTrust (Cao et al., NDSS 2021, arXiv 2012.13995). robust aggregation(가치 부여 아님).
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | 데이터 | 6종(MNIST/FMNIST/CIFAR/CH-MNIST/HAR) | LLM 1B/3B |
@@ -235,6 +256,7 @@ FLTrust (Cao et al., NDSS 2021, arXiv 2012.13995). robust aggregation(가치 부
 | 지표 | test-error / backdoor success | AUROC |
 
 **결과 비교**
+
 | 위협 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | scaled/backdoor | under-attack ≤0.04 err, backdoor ≤0.03, **90% malicious 견딤** | silo5 poison **1.000** | ✓ |
@@ -245,6 +267,7 @@ FLTrust (Cao et al., NDSS 2021, arXiv 2012.13995). robust aggregation(가치 부
 STD-DAGMM (Lin et al., arXiv 1911.12560, 2019). **이 칸이 정량 일치가 가장 깨끗하다.**
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 (device100) |
 |---|---|---|
 | 모델 | MNIST + 2-layer MLP | Llama-3.2-1B LoRA(5.6M→256 feature-hash) |
@@ -253,6 +276,7 @@ STD-DAGMM (Lin et al., arXiv 1911.12560, 2019). **이 칸이 정량 일치가 �
 | 지표 | AUC | AUROC |
 
 **결과 비교**
+
 | 무대 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | **N=100 free-rider** | **AUC 0.96(rnd5) / 0.91(rnd80)** (advanced-delta) | **frzero AUROC 0.87–0.96**, frrand 0.51–0.96 | ✓(수치 근접) |
@@ -263,6 +287,7 @@ STD-DAGMM (Lin et al., arXiv 1911.12560, 2019). **이 칸이 정량 일치가 �
 FedDQC (Du et al., ACL 2025 Findings, arXiv 2410.11540).
 
 **세팅 비교** — 원 무대도 LLM-LoRA instruction tuning
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | 모델 | **LLaMA-2-7B + LoRA** | **Llama-3.2-1B/3B + LoRA** ✓ |
@@ -271,6 +296,7 @@ FedDQC (Du et al., ACL 2025 Findings, arXiv 2410.11540).
 | 지표 | downstream perf(AUROC 미보고) | AUROC |
 
 **결과 비교**
+
 | 위협 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | noisy 품질 | "전 baseline 상회, 때때로 clean-oracle도 상회" | silo5 noisy **0.917**, device100 noisy **0.96–1.0** | ✓ |
@@ -285,6 +311,7 @@ FedDQC (Du et al., ACL 2025 Findings, arXiv 2410.11540).
 *How To Backdoor FL* (Bagdasaryan et al., AISTATS 2020, arXiv 1807.00459).
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | 데이터 | CIFAR-10 / Reddit | 5-domain LLM instruction |
@@ -292,6 +319,7 @@ FedDQC (Du et al., ACL 2025 Findings, arXiv 2410.11540).
 | 공격자 학습 | E_adv 6–10 (benign 2) | EPOCHS=5, poison_frac=0.8 |
 
 **결과 비교**
+
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | backdoor 설치 | **single-shot ~100% backdoor, main-task drop<1%** | silo5 **ASR≈1.00, clean-val 보존(+0.027)** | ✓ |
@@ -301,6 +329,7 @@ FedDQC (Du et al., ACL 2025 Findings, arXiv 2410.11540).
 *Instructions as Backdoors* (Xu et al., NAACL 2024, arXiv 2305.14710).
 
 **세팅 비교**
+
 | 항목 | 원 논문 | 우리 |
 |---|---|---|
 | task | **classification**(SST-2/HateSpeech/Tweet/TREC) | **generative** free-form |
@@ -308,6 +337,7 @@ FedDQC (Du et al., ACL 2025 Findings, arXiv 2410.11540).
 | ASR 정의 | 분류 label-match | text-exact-match |
 
 **결과 비교**
+
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | ASR | **1% poison → >90%**(Induced-Instruction avg 95.36%) | 우리 데이터-poison-only ASR=0 (≠ Xu 실험) | ✗(재현 아님) |

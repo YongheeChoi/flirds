@@ -30,6 +30,8 @@ tags: [survey, taxonomy, data-valuation, attribution, federated, landscape]
 - **[[validation-experiments|validation-experiments.md]]** — **CNN 트랙 표 / LLM 트랙 표**를 분리해 E1–E7 검증 실험을 데이터셋·지표·규모와 함께 정리.
 - **[[metrics-and-benchmarks|metrics-and-benchmarks.md]]** — E#별 **metric 카탈로그** + E1의 **ground-truth(정답 SV) 출처** + **benchmark/dataset 카탈로그**(CNN/LLM) + **Flirds가 채택한 metric·benchmark 매핑**(§4).
 
+> **자매 서베이**(taxonomy 밖, 이 지형을 우리 실험에 적용): [[flirds-experiment-results-overview-2026-06-25]](실험 결과 전체) · [[baseline-selection-audit-2026-07-02]](**baseline 선정 정당성 감사** — 이 taxonomy를 근거로 실험별 baseline을 A/B/C 판정; aggregation-first 분류가 C-제외 논거) · [[baseline-original-paper-verification-2026-06-22]](baseline 수치 ↔ 원 논문 대조).
+
 ## 범례 (legend)
 
 **Federation**: `C` centralized · `F` federated(star, server) · `D` decentralized(peer-to-peer graph).

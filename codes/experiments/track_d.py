@@ -69,7 +69,8 @@ from flirds.fl.intervene import (OnlineScorer, fedif_round_raw_fn, flirds_round_
 from flirds.fl.llm_server import run_llm_fedavg_logs
 from flirds.oracle.exact_sv import exact_shapley
 from flirds.oracle.exact_sv_llm import _final_lora_state
-from flirds.oracle.in_run_sv import in_run_shapley, in_run_shapley_perround, in_run_utility
+from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_perround,
+                                     in_run_utility)
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
 
@@ -217,6 +218,8 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
     phi_h, t = _timed(lambda: np.array([in_run_utility(logs, [c], loss_fn, pkeys, device)
                                         for c in range(n)]), device)
     out.append(("loss-heur", phi_h, t))
+    phi_lo, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
+    out.append(("Fed-LOO", phi_lo, t))
     return out
 
 

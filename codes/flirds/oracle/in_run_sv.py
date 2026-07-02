@@ -68,6 +68,37 @@ def in_run_utility(logs, subset, loss_fn, pkeys, device):
 
 
 @torch.no_grad()
+def in_run_loo(logs, n_clients, loss_fn, pkeys, device):
+    """(b)-game leave-one-out marginals  phi_i = U_(b)(N) - U_(b)(N\\{i})  on the frozen
+    trajectory -- the field-standard low-cost Shapley proxy (the FedSV / GTG / Data-Shapley
+    baseline; an ADDITIVITY anchor, NOT a discriminator).
+
+    DISTINCT from loss-heur's singleton U({i}): LOO is the marginal of REMOVING i from the
+    grand coalition, U({i}) is i's standalone utility.  By the same per-round additivity that
+    in_run_shapley_perround exploits (U_(b) is additive over the frozen rounds and round r's
+    term depends only on P_r), the global LOO decomposes to
+      phi_i = sum_{r: i in P_r} [ u_r(P_r) - u_r(P_r\\{i}) ]
+    so it costs O(sum_r |P_r|) loss evals (== loss-heur's cost class, ~2+|P_r| per round),
+    NOT O(N * trajectory).  Same orientation as in_run_shapley (good client -> LOW): a helpful
+    client lowers the grand-coalition loss, so its marginal is negative.  Returns phi[n_clients]."""
+    phi = np.zeros(n_clients)
+    for w_r, dm in logs:
+        players = sorted(dm.keys())
+        if not players:
+            continue
+        pr = _round_weight(dm)
+        base_params, buffers = _split(w_r, pkeys, device)
+        base = float(loss_fn(base_params, buffers))
+        u_full = float(loss_fn(_perturbed_params(base_params, dm, players, pr, pkeys), buffers)) - base
+        for i in players:
+            others = [k for k in players if k != i]
+            u_wo = (float(loss_fn(_perturbed_params(base_params, dm, others, pr, pkeys), buffers)) - base
+                    if others else 0.0)              # U_(b)(emptyset) = 0
+            phi[i] += u_full - u_wo
+    return phi
+
+
+@torch.no_grad()
 def _coalition_utilities(logs, n_clients, loss_fn, pkeys, device):
     """All 2^N coalition utilities U_(b)(S) on the frozen trajectory + global weight p.
 
