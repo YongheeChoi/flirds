@@ -21,8 +21,11 @@
    없다.** 클라들이 교환 가능하게 설계되어 있어 (b) oracle 자신의 클라 순위조차
    seed 간 재현되지 않고(cross-seed ρ≈0), 게임이 사실상 가산적이라 모든 semivalue가
    같은 순위로 붕괴하며(방법 구별 실패), intervention 이득의 정답 자체가 ~0
-   (do-no-harm parity)이다. CNN Track C가 대조군을 제공한다: 오염을 심은 셀은
-   oracle 순위 안정성 0.97, IID 셀은 −0.04.
+   (do-no-harm parity)이다. 대조군이 이를 확증한다: CNN Track C는 오염/비IID 셀에서
+   oracle 순위 안정성 0.51~0.97, IID 셀은 −0.04이고, **LLM도 같은 코드로 무대만
+   5-domain 비IID(silo5)로 바꾸면 ρ가 −0.37→+0.93~1.00으로 산다**(§1.4). 즉 신호원은
+   학습 강도(lr·epoch·rank = A축)가 아니라 클라 간 실제 차이(비IID·오염 = B축)다.
+   → 다음 실험은 이 B축을 직접 여는 **오염축 × 비IID축 2×2 매트릭스**(§2.4).
 4. seed 노이즈는 **unpaired 비교(벤치마크 축)에서만** 병목이다. MMLU는 효과
    크기(~0.001)가 표본 SE(±0.004)보다 작아 원리적으로 검출 불가. 반면 paired
    설계의 val-loss 축에서는 intervention 효과(−0.001~−0.004)가 SNR 2.4–4.5로
@@ -113,9 +116,27 @@ Spearman 평균): 1B anchor −0.37 / 1B std20 −0.11 / 3B anchor +0.27 / 3B st
 - caveat: seed가 데이터 파티션도 바꾸므로 클라 정체성이 seed 간에 유지되지
   않는다. 그러나 이것이 곧 진단이다 — **IID-clean 무대에선 클라가 설계상 교환
   가능하고, φ의 클라 간 차이는 '어떤 표본이 어느 클라에 떨어졌나'의 추첨 노이즈**다.
-- 통제된 대조군(Track C CNN, 오염 클라 인덱스 고정): (b) oracle cross-seed 안정성
-  ρ = label_flip **0.968** vs IID **−0.042** (`runs/track_c/RESULTS.txt` C1 stability).
-  심긴 신호가 있으면 oracle 순위는 안정, 없으면 oracle도 노이즈를 랭킹한다.
+- **통제된 대조군 — 무대에 심긴 클라 간 차이가 있으면 oracle 자기 순위가 안정된다.**
+  (b) oracle cross-seed 안정성 ρ를 무대별로 보면(재실행 없이 phi.parquet에서 계산):
+
+  | 무대 (같은 방법·같은 코드, 무대만 다름) | (b)oracle ρ_xseed | 비고 |
+  |---|---|---|
+  | CNN cifar10 **IID** | **−0.042** | 클라 균질 → 신호 없음 |
+  | CNN mnist feature_noise | −0.123 | (mnist 과easy) |
+  | CNN cifar10 label_skew | 0.511 | 비IID |
+  | CNN cifar10 feature_noise | 0.693 | 오염 |
+  | CNN cifar10 **label_flip** | **0.968** | 오염 |
+  | CNN cifar10 **quantity_skew** | **0.968** | **품질 동일, 양만 차이** |
+  | LLM 1B **track_d IID-alpaca** | **−0.37~−0.11** | 위 (ii) — 균질 |
+  | LLM 1B **silo5 (5-domain non-IID)** | **+0.93~1.00** | 같은 코드, 무대만 비IID |
+
+  (`runs/track_c/RESULTS.txt` C1 stability; `runs/phase2_matrix/rundirs/1B_silo5_*`.)
+  심긴 신호가 있으면 oracle 순위는 안정, 없으면 oracle도 추첨 노이즈를 랭킹한다.
+  **핵심: CNN quantity_skew(품질 동일·양만 차이)와 LLM silo5(오염 섞였으나 도메인
+  분리)가 둘 다 강한 신호 → 신호원은 학습 강도(lr·epoch·rank)가 아니라 클라 간
+  실제 차이다.** 스케일을 1B→7B로 키워도 IID면 ρ≈0으로 남는 것(위 (ii))과 정합적.
+  단 silo5는 오염이 섞여 "도메인 분리만의 순수 신호"를 오염 신호와 분리하지 못한다
+  → §2의 clean×non-IID 셀이 이를 확정한다.
 
 **intervention Δ vs seed 노이즈** (track_d arms, vanilla 대비 paired 3-seed):
 
@@ -237,6 +258,35 @@ val-loss 절대 감소폭 / per-round·coalition Δ 크기 / fidelity(Spearman·
 Pearson, estimator vs (b)) / intervention Δ(paired) / 절대 성능(MMLU·ROUGE, LLM) /
 Taylor 타당성(rank↑ 시 estimator-vs-(b) fidelity 하락 여부 — HVP는 LoRA 파라미터
 공간에서 크기 2r∝ 이므로 rank 64에서 2차항 비중 변화 관찰) / (C) val bootstrap SE.
+
+### 2.4 오염축 × 비IID축 매트릭스 (신호 실재성 = B축; Yonghee 2026-07-02)
+
+§1.4·§0이 보인 것: fidelity 신호를 만드는 건 학습 강도(A축)가 아니라 클라 간 실제
+차이(B축)다. rank·참여 probe(§2.1–2.3)는 A축을 마저 확인하는 값이고, 이 매트릭스가
+B축을 직접 연다. 오염축(clean↔오염)과 비IID축(IID↔5-domain)을 분리해 각각의
+fidelity·탐지 기여를 정량화한다(기존 silo5는 둘이 항상 결합돼 분리 불가).
+
+| 무대 \ 클라 | clean | noisy | free-rider(rand/zero) | poison |
+|---|---|---|---|---|
+| **IID** (alpaca 균질) | 신설 | 신설 | 신설 | 신설 |
+| **non-IID** (5-domain) | **신설** | ✓ 기존 silo5 | ✓ 기존 | ✓ 기존 |
+
+- 규모: silo5 급 통일(val20/R10, N=5 full, (b)=exact 2⁵) — 전 칸 같은 규모라
+  IID↔비IID, clean↔오염 직접 비교. 신규 6셀×3seed(iid5 {clean,noisy,frrand,frzero,
+  poison} + silo5 clean); silo5 오염 3셀은 기존 재사용.
+- 측정(위계 순): **1차 fidelity** = (b)oracle 자기 순위 cross-seed ρ — 관심 미지수:
+  non-IID clean이 오염 없이도 ρ 높은가(도메인 순수 신호), IID clean은 ρ≈0 재현되는가.
+  **2차-③ 탐지 AUROC** = 오염 클라 이진 탐지 — 핵심 대조 IID+noisy vs non-IID+noisy
+  ("도메인 이질성이 탐지를 돕나/방해하나"; IID 균질 배경은 오염 클라만 순수하게 튀어
+  탐지 신호를 배경 효과와 분리). detector 4종(FedDQC/STD-DAGMM/FLTrust/FLDetector)
+  + valuation φ 이미 붙음.
+- 구현: `phase2_matrix.py`에 `REGIME=iid5`(build_alpaca_iid, silo5-matched totals)
+  + `THREAT=clean` 분기(2026-07-02, env-gated·기존 동작 불변) + `build_alpaca_iid`에
+  backdoor 인자. 스모크 6/6 green(iid5 clean/noisy/frzero/poison + silo5 clean;
+  poison real-install은 실행 시 확인). poison은 별도 config(LR=2e-3 BATCH=8 EPOCHS=5
+  POISON_FRAC=0.8 POISON_TRAIN=1000).
+- 신규 셀명(`1B_iid5_*`, `1B_silo5_clean`)이라 **기존 결과 안 덮어씀**;
+  `runs/phase2_matrix/rundirs`에 추가해 make_analysis 통합 분석.
 
 ## 3. probe 결과 (실행 후 기입)
 

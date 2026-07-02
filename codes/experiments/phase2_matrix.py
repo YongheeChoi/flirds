@@ -74,7 +74,7 @@ from flirds.baselines.shapleyfl import shapleyfl_from_logs
 from flirds.baselines.std_dagmm import std_dagmm_from_logs
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.corruptors import BACKDOOR_TRIGGER
-from flirds.data.llm import build, build_crossdevice, build_val_batches
+from flirds.data.llm import build, build_alpaca_iid, build_crossdevice, build_val_batches
 from flirds.eval.generate import backdoor_asr
 from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference, pearson
 from flirds.fl.llm_server import run_llm_fedavg_logs
@@ -89,6 +89,9 @@ TARGET = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_
 ORDER = ["medical", "legal", "finance", "math", "general"]
 
 REGIME = os.environ.get("REGIME", "silo5")
+SILO_LIKE = REGIME in ("silo5", "iid5")    # N=5 full-participation: (b)=exact 2^N, Banzhaf on, no ComFedSV.
+#   silo5 = 5-domain non-IID stage; iid5 = alpaca IID stage (same N=5 config, only the data builder differs)
+#   -> the corruption-axis x non-IID-axis matrix: {iid5, silo5} x {clean, noisy, free-rider, poison}.
 ALPHA = float(os.environ.get("ALPHA", "0.5"))
 BD_TARGET = os.environ.get("BD_TARGET", "delicious")       # single-token target (D1/D2 install regime)
 POISON_FRAC = float(os.environ.get("POISON_FRAC", "0.5"))  # clean-preserving knob (D1: 0.5-0.8)
@@ -115,7 +118,7 @@ SILO = dict(n_clients=5, train=200, val=20, test=40, rounds=10, max_steps=10, lr
 DEVICE = dict(n_clients=100, per_client=300, pool=7000, val=10, test=40, rounds=30, max_steps=5,
               lr=1e-3, maxlen=768, k_frac=0.1, warmup=3,
               noisy={10, 30, 50, 70, 90}, freerider={10, 30, 50, 70, 90}, attacker=0)
-RCFG = dict(SILO if REGIME == "silo5" else DEVICE)
+RCFG = dict(SILO if SILO_LIKE else DEVICE)   # iid5 shares silo5's N=5 config (only the data builder differs)
 for k in ("rounds", "max_steps", "train", "per_client", "pool", "val", "test", "warmup"):
     if os.environ.get(k.upper()):
         RCFG[k] = int(os.environ[k.upper()])
@@ -154,6 +157,12 @@ def _build_clients(seed, noisy=frozenset(), backdoor=frozenset(), train=None):
         return build(RCFG["n_clients"], train or RCFG["train"], RCFG["val"], RCFG["test"], seed=seed,
                      noisy=noisy, backdoor=backdoor,
                      backdoor_kwargs=dict(target=BD_TARGET, poison_frac=POISON_FRAC))
+    if REGIME == "iid5":                          # IID leg: alpaca shards, silo5-matched totals (x n_clients)
+        n = RCFG["n_clients"]
+        return build_alpaca_iid(n, total_train=(train or RCFG["train"]) * n,
+                                n_val=RCFG["val"] * n, n_test=RCFG["test"] * n, seed=seed,
+                                noisy=noisy, backdoor=backdoor,
+                                backdoor_kwargs=dict(target=BD_TARGET, poison_frac=POISON_FRAC))
     return build_crossdevice(RCFG["n_clients"], alpha=ALPHA, per_client_train=train or RCFG["per_client"],
                              per_domain_pool=RCFG["pool"], per_domain_val=RCFG["val"],
                              per_domain_test=RCFG["test"], seed=seed, noisy=noisy, backdoor=backdoor,
@@ -212,6 +221,11 @@ def build_trajectory(threat, seed, model, tok, init, pkeys, device):
     (the corrupt-data view), `corrupt_set` the AUROC labels, `asr` the deployed triggered-ASR
     (poison only, else None), `val` the shared §3.4 held-out set (threat-independent)."""
     n = RCFG["n_clients"]
+    if threat == "clean":                                          # no corruption: fidelity-only baseline
+        clients, val, _ = _build_clients(seed)                     # (AUROC undefined, corrupt=empty set)
+        logs = _fl(model, tok, clients, init, seed)
+        return logs, clients, set(), None, val
+
     if threat == "noisy":
         corrupt = set(RCFG["noisy"])
         clients, val, _ = _build_clients(seed, noisy=corrupt)
@@ -233,7 +247,7 @@ def build_trajectory(threat, seed, model, tok, init, pkeys, device):
     if threat == "poison":                                         # D2b synthesis
         a = RCFG["attacker"]
         corrupt = {a}
-        ptrain = POISON_TRAIN if REGIME == "silo5" else None       # device100 attacker is per_client-sized
+        ptrain = POISON_TRAIN if SILO_LIKE else None               # device100 attacker is per_client-sized
         clean, val, test = _build_clients(seed, train=ptrain)
         bd, _, _ = _build_clients(seed, backdoor=corrupt, train=ptrain)   # attacker's trigger->target data
         logs = _fl(model, tok, clean, init, seed)                  # 1. benign FL -> logs + G
@@ -244,7 +258,7 @@ def build_trajectory(threat, seed, model, tok, init, pkeys, device):
                               epochs=ATTACKER_EPOCHS, lr=ATTACKER_LR)
         attack_dm = {a: ({k: gamma * delta0[k] for k in pkeys}, len(bd[a]))}                # 3. scaled inject
         rng = np.random.default_rng(seed)
-        benign_ids = ([c for c in range(n) if c != a] if REGIME == "silo5"
+        benign_ids = ([c for c in range(n) if c != a] if SILO_LIKE
                       else rng.choice([c for c in range(n) if c != a], size=K - 1, replace=False).tolist())
         for c in benign_ids:                                       # fresh benign deltas (the rest of the cohort)
             attack_dm[c] = (_train_delta(model, tok, clean[c], G, pkeys, seed, steps=RCFG["max_steps"]),
@@ -252,7 +266,8 @@ def build_trajectory(threat, seed, model, tok, init, pkeys, device):
         logs.append(({k: G[k].detach().cpu() for k in pkeys}, attack_dm))
         Gbd = _final_global(init, logs, pkeys, device)             # sanity: backdoor present in deployed G
         model.load_state_dict({k: Gbd[k] for k in pkeys}, strict=False)
-        med = [r["prompt"] for r in test if r["domain"] == "medical"]
+        asr_dom = "alpaca" if REGIME == "iid5" else "medical"     # iid5 test is single-domain "alpaca"
+        med = [r["prompt"] for r in test if r["domain"] == asr_dom]
         asr, _ = backdoor_asr(model, tok, med, BACKDOOR_TRIGGER, BD_TARGET, device)
         return logs, bd, corrupt, asr, val
 
@@ -281,7 +296,7 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
     methods.  (b) is exact 2^N at silo5, per-round at device100."""
     n = RCFG["n_clients"]
     out = []
-    silo = REGIME == "silo5"
+    silo = SILO_LIKE                                 # N=5 full-participation -> exact 2^N (b), Banzhaf, no ComFedSV
 
     if oracle_b:
         b_fn = in_run_shapley if silo else in_run_shapley_perround
@@ -394,8 +409,8 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition):
         return
     _abbr = {"freerider_random": "frrand", "freerider_zero": "frzero"}   # canonical condition tokens
     _cond = "-".join(_abbr.get(t, t) for t in threats)
-    _setting = "silo5" if REGIME == "silo5" else f"{REGIME}-a{ALPHA}"     # e.g. device100-a0.5
-    _anchor = "_anchor" if (REGIME != "silo5" and oracle_b and coalition) else ""
+    _setting = REGIME if SILO_LIKE else f"{REGIME}-a{ALPHA}"              # silo5 / iid5 / device100-a0.5
+    _anchor = "_anchor" if (not SILO_LIKE and oracle_b and coalition) else ""
     name = os.environ.get("RUN_NAME") or f"{SCALE}_{_setting}_{_cond}{_anchor}"
     rcfg = {k: (sorted(v) if isinstance(v, (set, frozenset)) else v) for k, v in RCFG.items()}
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "alpha": ALPHA,
@@ -422,10 +437,10 @@ def main():
     threats = ([os.environ["THREAT"]] if os.environ.get("THREAT")
                else ["noisy", "freerider_random", "freerider_zero", "poison"])
     seeds = [int(os.environ["SEED"])] if os.environ.get("SEED") else [0, 1, 2]
-    oracle_b = os.environ.get("ORACLE_B", "1" if REGIME == "silo5" else "0") == "1"
-    coalition = os.environ.get("COALITION", "1" if REGIME == "silo5" else "0") == "1"
+    oracle_b = os.environ.get("ORACLE_B", "1" if SILO_LIKE else "0") == "1"
+    coalition = os.environ.get("COALITION", "1" if SILO_LIKE else "0") == "1"
 
-    print(f"=== step5 MATRIX | {SCALE} {REGIME}" + (f" alpha={ALPHA}" if REGIME != "silo5" else "")
+    print(f"=== step5 MATRIX | {SCALE} {REGIME}" + (f" alpha={ALPHA}" if not SILO_LIKE else "")
           + f" | R={RCFG['rounds']} K_frac={RCFG['k_frac']} lr={RCFG['lr']} batch={MCFG['batch']} "
           f"val_chunk={MCFG['val_chunk']} | ORACLE_B={oracle_b} COALITION={coalition} | "
           f"threats={threats} seeds={seeds} ===", flush=True)

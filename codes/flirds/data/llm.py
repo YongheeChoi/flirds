@@ -246,7 +246,7 @@ def _fmt_alpaca(ex):
 
 
 def build_alpaca_iid(n_clients, total_train=20000, n_val=200, n_test=0, seed=0,
-                     noisy=frozenset()):
+                     noisy=frozenset(), backdoor=frozenset(), backdoor_kwargs=None):
     """Track D loader: Alpaca-GPT4 IID shards + carved val/test sets.
 
     The FL-LLM standard-setting stage (OpenFedLLM run_sft.sh / FlowerTune
@@ -258,8 +258,9 @@ def build_alpaca_iid(n_clients, total_train=20000, n_val=200, n_test=0, seed=0,
     set for downstream ROUGE-L (Track D is IID throughout -- train/val/test
     all one distribution; the external benchmark axis is MMLU, eval.mmlu).
     Test records carry domain="alpaca" for eval.generate.score_records.
-    `noisy` = answer-swap clients (seam 2; unused on the clean Track D stage,
-    kept for the corruption-axis experiments).
+    `noisy` = answer-swap clients, `backdoor` = trigger->target-poisoned clients
+    (seam 2; unused on the clean Track D stage, kept for the corruption-axis
+    experiments -- the IID leg of the corruption x non-IID matrix).
     Returns (clients, val_records, test_records).
     """
     pool = load_dataset(_ALPACA_ID, split="train").shuffle(seed=seed)
@@ -277,6 +278,8 @@ def build_alpaca_iid(n_clients, total_train=20000, n_val=200, n_test=0, seed=0,
         cl = train[cid * chunk:(cid + 1) * chunk]
         if cid in noisy:                               # seam 2: noisy client (answer-swap)
             cl = LLM_CORRUPTORS["answer_swap"](cl, cid)
+        if cid in backdoor:                            # seam 2: backdoor attacker (trigger->target)
+            cl = LLM_CORRUPTORS["backdoor"](cl, cid, **(backdoor_kwargs or {}))
         clients.append(Dataset.from_list(cl))
     return clients, val_records, test_records
 

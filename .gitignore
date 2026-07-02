@@ -29,3 +29,6 @@ runs/rerun_beta03/logs/
 # signal-size probe (2026-07-02): transient logs only; rundirs/, noise_probe/, cnn_c*/ ARE tracked:
 runs/probe_signal/_logs/
 runs/probe_signal/_nohup.out
+# corruption x non-IID matrix (2026-07-02): driver+README tracked; logs transient (cells -> phase2_matrix/rundirs):
+runs/matrix_cxni/_logs/
+runs/matrix_cxni/_nohup.out
