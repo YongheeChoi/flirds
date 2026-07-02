@@ -84,7 +84,7 @@ STD20 = dict(n_clients=20, k_abs=2, rounds=200)    # OpenFedLLM run_sft.sh: c20 
 ANCHOR5 = dict(n_clients=5, k_abs=5, rounds=30)    # dual-oracle precision point
 RCFG = dict(STD20 if REGIME == "std20" else ANCHOR5)
 RCFG.update(total_train=20000, val=200, test=1000, max_steps=10, lr=1e-3, maxlen=512)
-for k in ("total_train", "val", "test", "rounds", "max_steps", "maxlen"):
+for k in ("n_clients", "k_abs", "total_train", "val", "test", "rounds", "max_steps", "maxlen"):
     if os.environ.get(k.upper()):
         RCFG[k] = int(os.environ[k.upper()])
 if os.environ.get("LR"):
@@ -98,6 +98,9 @@ MCFG = dict(MODEL_CFG.get(SCALE, MODEL_CFG["1B"]))
 for k in ("batch", "val_chunk", "val_maxlen"):
     if os.environ.get(k.upper()):
         MCFG[k] = int(os.environ[k.upper()])
+
+LORA_R = int(os.environ.get("LORA_R", "16"))           # probe lever (signal-size); default = current
+LORA_ALPHA = int(os.environ.get("LORA_ALPHA", str(2 * LORA_R)))   # alpha/r = 2 kept across ranks
 
 MMLU_LIMIT = int(os.environ.get("MMLU_LIMIT", "0"))    # 0 = full test (14,042)
 MMLU_BATCH = int(os.environ.get("MMLU_BATCH", "16"))
@@ -117,7 +120,7 @@ def _load(device):
         tok.pad_token = tok.eos_token
     m = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32,
                                              attn_implementation="eager").to(device)
-    m = get_peft_model(m, LoraConfig(r=16, lora_alpha=32, target_modules=TARGET,
+    m = get_peft_model(m, LoraConfig(r=LORA_R, lora_alpha=LORA_ALPHA, target_modules=TARGET,
                                      lora_dropout=0.0, task_type="CAUSAL_LM"))
     init = {n: p.detach().clone() for n, p in m.named_parameters() if p.requires_grad}
     return tok, m, init, list(init)
@@ -323,7 +326,8 @@ def _persist(phi_rows, run_metrics, seeds):
     name = os.environ.get("RUN_NAME") or (f"{SCALE}_{REGIME}_seed{seeds[0]}"
                                           if len(seeds) == 1 else f"{SCALE}_{REGIME}")
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "seeds": seeds,
-              "rcfg": RCFG, "mcfg": MCFG, "oracle_a": ORACLE_A, "fidelity": FIDELITY,
+              "rcfg": RCFG, "mcfg": MCFG, "lora": {"r": LORA_R, "alpha": LORA_ALPHA},
+              "oracle_a": ORACLE_A, "fidelity": FIDELITY,
               "mmlu": {"limit": MMLU_LIMIT, "batch": MMLU_BATCH, "shots": 0}}
     try:
         rl = RunLogger(RUNDIR_ROOT, name, config, repo_root=_CODES)

@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import os
 import time
+from functools import partial
 
 import numpy as np
 import torch
@@ -87,7 +88,10 @@ CFG = {
                   n_val=256, n_test=512, ripple=dict(k=2, m=6, R=3)),
 }[MODE]
 
-MODEL_FN = {"mnist": LeNet5, "cifar10": FedSVCNN}[DATASET]
+WIDTH = float(os.environ.get("C1_WIDTH", "1"))           # signal-size probe lever: capacity (width mult)
+KFRAC = float(os.environ.get("C1_KFRAC", "1"))           # signal-size probe lever: participation frac
+RIPPLE = os.environ.get("C1_RIPPLE", "1") == "1"         # 0 = skip Ripple (probe cells; cost)
+MODEL_FN = partial({"mnist": LeNet5, "cifar10": FedSVCNN}[DATASET], width=WIDTH)
 LADDER_STEP = 0.05                                       # pair p -> 5p% (GTG ladder)
 
 
@@ -184,7 +188,7 @@ def run_seed(seed, device="cuda"):
     # ---- shared frozen trajectory + val-loss closure ----
     logs = []
     (final_state, history), t_traj = _timed(lambda: fedavg(
-        MODEL_FN, loaders, test_loader, R, E, lr, sample_frac=1.0, device=device,
+        MODEL_FN, loaders, test_loader, R, E, lr, sample_frac=KFRAC, device=device,
         seed=seed, on_round=lambda r, gb, dm: logs.append((gb, dm))), device)
     final_acc = history[-1][1]
     print(f"[traj] {R}r x {E}e in {t_traj:.0f}s  final test-acc={final_acc:.4f}", flush=True)
@@ -210,7 +214,7 @@ def run_seed(seed, device="cuda"):
     # the paper's low-rank completion has nothing to fill (and its ALS collapses
     # tiny smoke-scale utilities to ~0).
     phi, t = _timed(lambda: comfedsv_from_logs(logs, None, n, None, device, seed=seed,
-                    loss_fn=loss_fn, pkeys=pkeys, partial=False), device)
+                    loss_fn=loss_fn, pkeys=pkeys, partial=KFRAC < 1), device)
     methods.append(("ComFedSV", -np.asarray(phi, dtype=float), t))   # loss-decrease util -> negate
     (phi, _), t = _timed(lambda: in_run_banzhaf(logs, n, loss_fn, pkeys, device), device)
     methods.append(("Banzhaf", np.asarray(phi), t))
@@ -222,10 +226,11 @@ def run_seed(seed, device="cuda"):
     phi, t = _timed(lambda: np.array([in_run_utility(logs, [k], loss_fn, pkeys, device)
                                       for k in range(n)]), device)
     methods.append(("loss-heur", phi, t))
-    rp = CFG["ripple"]
-    phi, t = _timed(lambda: ripple_shapley(MODEL_FN, loaders, R, E, lr,
-                    vx.to(device), vy.to(device), device, seed=seed, **rp), device)
-    methods.append(("Ripple", -np.asarray(phi, dtype=float), t))     # own trajectory; good->high -> negate
+    if RIPPLE:
+        rp = CFG["ripple"]
+        phi, t = _timed(lambda: ripple_shapley(MODEL_FN, loaders, R, E, lr,
+                        vx.to(device), vy.to(device), device, seed=seed, **rp), device)
+        methods.append(("Ripple", -np.asarray(phi, dtype=float), t))  # own trajectory; good->high -> negate
 
     # ---- metrics ----
     gt = {"b": methods[0][1]}                          # good->low
@@ -280,10 +285,12 @@ def main():
     metrics, phi_rows = run_seed(SEED, device)
     if PERSIST:
         try:
-            name = (f"{DATASET}_{SCENARIO.replace('_', '-')}"            # canonical: hyphen within token
-                    + ("_aonly" if ORACLE_A_ONLY else "") + f"_seed{SEED}")   # seed always trailing
+            name = os.environ.get("C1_RUN_NAME") or (                    # probe cells override (width/kfrac in name)
+                f"{DATASET}_{SCENARIO.replace('_', '-')}"                # canonical: hyphen within token
+                + ("_aonly" if ORACLE_A_ONLY else "") + f"_seed{SEED}")  # seed always trailing
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, scenario=SCENARIO,
-                                                seed=SEED, mode=MODE, oracle_a=ORACLE_A),
+                                                seed=SEED, mode=MODE, oracle_a=ORACLE_A,
+                                                width=WIDTH, kfrac=KFRAC),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             if phi_rows:
                 try:

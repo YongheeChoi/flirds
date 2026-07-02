@@ -32,6 +32,7 @@ Shard one process per (dataset, partition, threat, strength, seed).
 from __future__ import annotations
 
 import os
+from functools import partial
 
 import numpy as np
 import torch
@@ -72,7 +73,10 @@ CFG = {
                   n_val=512, n_test=1024, target=0.3),
 }[MODE]
 
-MODEL_FN = {"cifar10": FedSVCNN, "fmnist": LeNet5}[DATASET]
+WIDTH = float(os.environ.get("C2_WIDTH", "1"))            # signal-size probe lever: capacity (width mult)
+if os.environ.get("C2_FRAC"):                             # signal-size probe lever: participation frac
+    CFG["frac"] = float(os.environ["C2_FRAC"])
+MODEL_FN = partial({"cifar10": FedSVCNN, "fmnist": LeNet5}[DATASET], width=WIDTH)
 MAL_FRAC = 0.4                                            # noisy/malicious client fraction (main)
 TAU = 0.5                                                 # FedCorr per-client rate lower bound
 GAMMA_GRADNOISE = 0.1                                     # FedIF main sigma
@@ -235,9 +239,11 @@ def run():
                    dismissal=dismissal)
     if PERSIST:
         try:
-            name = f"{DATASET}_{PARTITION}_{THREAT.replace('_', '-')}_str{STRENGTH}_seed{SEED}"
+            name = (os.environ.get("C2_RUN_NAME")                        # probe cells override (width/frac in name)
+                    or f"{DATASET}_{PARTITION}_{THREAT.replace('_', '-')}_str{STRENGTH}_seed{SEED}")
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, partition=PARTITION,
-                                                threat=THREAT, strength=STRENGTH, seed=SEED, mode=MODE),
+                                                threat=THREAT, strength=STRENGTH, seed=SEED, mode=MODE,
+                                                width=WIDTH),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             rl.save_metrics(metrics)
             print(f"[persist] {rl.dir}", flush=True)
