@@ -8,7 +8,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 # Flirds 실험 결과 전체 한눈에 보기
 
-> **날짜**: 2026-06-25 · **git HEAD**: `e89af94` (+ 2026-07-03 3B track_d β=0.3 재실행 반영, working tree 미커밋) · **스코프**: flirds 프로젝트의
+> **날짜**: 2026-06-25 · **git HEAD**: `e89af94` (+ 2026-07-03 3B β=0.3 재실행 `b1b95d0` · CNN 신호크기 probe §3.6 반영) · **스코프**: flirds 프로젝트의
 > 네 실험 트랙(Foundational `phase1` / LLM standard `track_d` / CNN `track_c` / Robustness
 > `phase2_matrix`)에서 *실제로 돌아 디스크에 남은* 모든 셀·baseline·하이퍼파라미터를 표로 정리한다.
 > 계획만 잡혀 있고 아직 안 돌린 실험도 행으로 넣되 수치는 빈칸(⬚).
@@ -21,6 +21,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > - CNN: `runs/track_c/fidelity.csv` · `runs/track_c/RESULTS.txt` · `runs/track_c/{c1,c2,c1_oracle}/*/{config,metrics}.json`
 > - Robustness: `runs/phase2_matrix/RESULTS.md` · `runs/phase2_matrix/analysis/00_overview/master_metrics.csv` · `runs/phase2_matrix/rundirs/*/{config.yaml,meta.json}`
 > - Foundational: `runs/phase1/rundirs/*/{config.yaml,metrics.json}`
+> - Signal-size probe(§3.6): `runs/probe_signal/cnn_c1/pc1_*` · `runs/probe_signal/cnn_c2/pc2_*` (+ track_c 기준점 재사용); 배경 [[flirds-signal-size-diagnosis]]
 >
 > **수치 재생성 경로** (rundir만으로 재실행 가능, GPU 불필요):
 > - `python runs/track_d/make_fidelity.py` → `runs/track_d/fidelity.csv` 재생성 (1B/3B/7B × std20/anchor5)
@@ -39,6 +40,11 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > 1B·3B track_d·CNN(track_c) 전 셀. **β=0.3 대기(값은 아직 이전 실행 기준)**: **7B track_d**(§3.1.1 7B
 > 열·§3.5 runtime)·**phase2_matrix**(§3.4 detection 표의 ShapleyFL AUROC·Spearman 행) — 재실행 큐 31셀
 > 대기 중. 3B rundir은 미커밋(working tree); 재집계 `python runs/track_d/make_fidelity.py`.
+
+> **⟳ [2026-07-03] 신호크기 probe(CNN) 추가 — §3.6.** 진단 [[flirds-signal-size-diagnosis]]의 "A축(용량·참여)이
+> 신호를 키우나" 질문을 CNN에서 검증한 결과(C1 fidelity 72셀 + C2 개입 30셀, 커밋 `d2e7ed6`)를 §3.6·마스터표 16–17행·
+> §6 커버리지에 수록. **판정: 폭 8×·참여 sweep은 IID-clean 신호를 안 키운다**(cross-seed ρ≈0·개입 parity 유지);
+> 신호는 오염(label-flip)이 만든다(ρ≈0.9·개입 Δ≈0.09, 둘 다 폭 무관). LLM rank/참여 probe는 진단문서(실행 중).
 
 ---
 
@@ -89,6 +95,8 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | 13 | Robustness · 3B cross-silo N=5 (`phase2_matrix/3B_silo5_*`) | Llama-3.2-3B · N=5 · full | client | in-run (+IF/탐지기4) | Fidelity·Detection | approx vs exact(b) | (b) 2⁵ in-run | **1** | ◐ |
 | 14 | Foundational · 1B 첫 clean run (`phase1/...full-lr*`) | Llama-3.2-1B · N=5 · full | client | in-run | Detection·Perf(selection) | approx | 주입 라벨(oracle 없음) | 3×2lr | ● (부록) |
 | 15 | Foundational · 1B LR sweep (`phase1/...sweep-lr*`) | Llama-3.2-1B · N=5 · full | client | in-run | Detection·Perf(selection) | approx vs exact(b) | (b) 2⁵ in-run | 1×4lr | ● (부록) |
+| 16 | Signal-size probe C1 (`probe_signal/cnn_c1`) | 소형 CNN · N=10 · 2·5·10/10 | client | in-run (+recon/IF/Banzhaf) | **Fidelity** (폭·참여 sweep) | approx vs exact(b) | (b) 2¹⁰/per-round in-run | 3 | ● (§3.6) |
+| 17 | Signal-size probe C2 (`probe_signal/cnn_c2`) | 소형 CNN · N=100 · 5·10/100 | client | in-run intervention arms (+sfedavg) | **Perf·Detection·Conv** (폭·참여 sweep) | – (개입 arm) | corrupt 마스크 | 3 | ● (§3.6) |
 | — | **이하 계획·미실행 (수치 ⬚)** | | | | | | | | |
 | P1 | LLM N=10 (a)/(b) oracle | LLM · N=10 | client | retrain+in-run | Fidelity(고-power) | exact | (a)/(b) 2¹⁰ | ⬚ | ⬚ deferred(비용) |
 | P2 | LLM 3B anchor **(a) retrain oracle** | Llama-3.2-3B · N=5 | client | retrain | Fidelity(dual oracle) | exact | (a) 2⁵ retrain | ⬚ | ⬚ |
@@ -273,6 +281,8 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 - **포함(9종 + Ripple + (a)/(b))**: Flirds, Flirds-1st, loss-heur, GTG, FedSV, ComFedSV, ShapleyFL, FedIF, Banzhaf, **Ripple**(sample-level 자체 게임). truth = (a) 2¹⁰ retrain + (b) 2¹⁰ in-run 듀얼.
 - **제외**: 탐지기(FLDetector/FLTrust/STD-DAGMM/FedDQC) = C1엔 오염축이 없음(시나리오는 skew/flip/noise이지 update-level 위협 아님) → *적용규칙: 탐지기는 오염축 있는 실험만* (탐지는 Track C2/Robustness). Banzhaf·(a)/(b) exact 가능 = N=10 ≤ 10이라 *exact 2ᴺ 규칙 충족*.
 
+> **확장**: 이 C1을 **모델 폭 w×참여 k로 sweep**한 신호크기 probe = **§3.6.1**(진단 [[flirds-signal-size-diagnosis]] 검증; 폭·참여는 fidelity·φ 크기·신호 실재성을 안 키움).
+
 ---
 
 ### 3.1.3 Fidelity under corruption (`phase2_matrix`) — 오염 주입 무대에서의 fidelity
@@ -384,6 +394,8 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 **출처**: `runs/track_c/c2/*/metrics.json` (`arms.{arm}.final_acc`). 코드 = `codes/experiments/track_c2.py`.
 
 **(c) baseline-set 노트**: 포함 8 arm. **flirds_repl/flirds_add 제외@iid·shard** = size-skew(dir1)에서만 MULT와 갈리므로 dir1 전용 ─ *적용규칙: 참여형태/적용성*. valuation fidelity baseline(GTG/FedSV exact 등)은 C2엔 없음(C2는 개입-성능 무대; fidelity는 C1).
+
+> **확장**: 이 C2를 **폭 w×참여 f로 sweep**한 신호크기 probe = **§3.6.2**(clean은 폭·참여 무관 parity, label-flip 개입 이득 ~0.09도 폭 무관).
 
 ---
 
@@ -647,6 +659,93 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 ---
 
+## 3.6 신호 크기 probe (`probe_signal`) — 학습강도 lever(폭·참여)가 신호를 키우나
+
+> 배경·가설: [[flirds-signal-size-diagnosis]]. 질문 = "IID-clean에서 fidelity·개입 효과가 약한 것이
+> **학습 강도(A축: 모델 용량·라운드당 참여 수)** 부족 때문인가, 아니면 **클라 간 진짜 차이(B축: 오염·비IID)**
+> 부재 때문인가." → A축 lever만 바꾸고(폭 배수 w, 참여 k/frac) 나머지(lr·R·steps·task·데이터) 고정.
+> **CNN이 이 probe의 대상**(LLM rank/참여 probe는 진단문서 §3.1–3.2, 실행 중). git_sha `58528de`.
+> **⚠ A축 disanalogy**: CNN 폭 w는 *모델 자체*를 키운다(LLM LoRA rank는 업데이트 부분공간만) — 해석 시 분리.
+> **기존 결과 불변**: 신규 셀명(`pc1_*`/`pc2_*`)이라 §3.1.2/§3.2.2 track_c 셀 안 덮어씀; (w=1,k=1.0)/(w=1,f=0.1)만 재사용.
+
+### 3.6.1 C1 fidelity probe (`probe_signal/cnn_c1`, N=10 R=10, width×참여 sweep)
+
+**(a) 세팅**: §3.1.2 C1과 동형(cifar10 · FedSVCNN · R=10 · epochs=5 · lr=0.01 · batch=64 · SGD mom=0 · val=2000/test=8000), 단 **폭 w∈{0.5,1,2,4}** × **라운드당 참여 k∈{0.2,0.5,1.0}**(=2/5/10명) × 시나리오 {`iid`, `label-flip`(오염 대조군)} × 3 seed. (b) oracle = full 참여면 2¹⁰ 열거·partial이면 exact per-round 분해. 66 신규 + (w=1,k=1.0) 6셀은 §3.1.2 track_c 재사용 = **72셀**. Ripple·(a) oracle 제외.
+
+**(b) 결과 1 — 신호 실재성: (b)oracle 자기순위 cross-seed ρ ↑** (재현성=오염·용량과 무관한 "진짜 신호"; 1=완전재현·0=추첨노이즈; 3-seed 쌍별 Spearman 평균)
+
+| 시나리오 · 참여 k | w=0.5 | w=1 | w=2 | w=4 |
+|---|---|---|---|---|
+| iid · k=0.2 | 0.022 | 0.515 | -0.188 | 0.083 |
+| iid · k=0.5 | -0.022 | -0.285 | -0.131 | -0.228 |
+| **iid · k=1.0 (full)** | 0.034 | -0.042 | 0.038 | 0.123 |
+| label-flip · k=0.2 | -0.147 | 0.160 | -0.051 | 0.038 |
+| label-flip · k=0.5 | 0.038 | 0.095 | 0.111 | -0.042 |
+| **label-flip · k=1.0 (full)** | **0.976** | **0.968** | **0.859** | **0.923** |
+
+> **headline**: **폭을 0.5→4로 8× 키워도 iid의 ρ는 0 근처에서 안 움직인다**(full 참여 행 0.034/−0.042/0.038/0.123). 반면 **오염(label-flip)이면 full 참여에서 ρ≈0.9로 살아나고 이 역시 폭 무관**(0.976~0.859). → **신호 실재성은 A축(용량)이 아니라 B축(오염)이 만든다.** 진단문서 §1.4의 CNN 대조(iid −0.042 vs label_flip 0.968)를 재현·확장(그 값 = 여기 w=1,k=1.0 칸 = `track_c` RESULTS.txt와 교차검증 일치).
+> **참여의 별도 역할**: label-flip이라도 **partial 참여(k<1.0)면 ρ가 0으로 붕괴**(0.16/0.10/−0.04). N=10·R=10에선 클라당 참여가 k=0.2→~2회뿐이라 φ per-round 분해가 "누가 그 라운드에 뽑혔나" 추첨에 지배됨(진단 §1.3d). 즉 참여↓는 신호를 *만드는* 게 아니라 φ 랭킹을 *흐린다*.
+
+**(b) 결과 2 — φ 절대 크기: (b)oracle φ range = max−min, full 참여 k=1.0** (클수록 클라 간 분리 큼; 방향성 없는 진단 magnitude)
+
+| 시나리오 | w=0.5 | w=1 | w=2 | w=4 |
+|---|---|---|---|---|
+| iid | 0.047±.008 | 0.029±.007 | 0.058±.010 | 0.064±.014 |
+| label-flip | 0.118±.009 | 0.111±.013 | 0.135±.010 | 0.130±.024 |
+
+> φ 크기도 폭에 평평(iid ~0.05, label-flip ~0.12)하고 **label-flip이 iid의 2–4×**. 용량이 아니라 오염이 φ 분리를 만든다. (partial 참여의 φ range는 0.3~0.6로 크지만 그건 참여 추첨 분산=노이즈이며, 위 ρ 붕괴가 이를 확증.)
+
+**(b) 결과 3 — method fidelity vs (b) Spearman ↑** (label-flip, 폭×seed pool=12, 참여 k별; iid도 Flirds/Banzhaf는 동일 수준)
+
+| method | k=0.2 (2/10) | k=0.5 (5/10) | k=1.0 (full) |
+|---|---|---|---|
+| **Flirds** | 0.891±.147 | 0.979±.018 | **0.993±.008** |
+| Flirds-1st | 0.305±.434 | 0.765±.085 | 0.940±.039 |
+| Banzhaf | 1.000±.000 | 0.996±.006 | 0.997±.007 |
+| loss-heur | 0.862±.065 | 0.857±.083 | 0.943±.031 |
+| GTG | 0.800±.129 | 0.718±.239 | 0.497±.344 |
+| FedSV | 0.641±.216 | 0.571±.224 | 0.302±.252 |
+| ComFedSV | 0.040±.294 | -0.030±.303 | 0.238±.238 |
+| ShapleyFL | 0.222±.202 | 0.029±.342 | 0.182±.293 |
+| FedIF | 0.199±.279 | 0.469±.199 | 0.829±.140 |
+
+> 읽기: **Flirds(2차)와 Banzhaf는 참여·폭·시나리오 전반 0.9+**(전 72셀 pool: Flirds **0.953±.080**, Banzhaf 0.996±.009). **Flirds-1st는 참여↓에서 붕괴**(k=0.2→0.305, full→0.940) — **2차 Hessian 항이 partial 참여에서 값을 한다**(Flirds 2차는 k=0.2에서도 0.904 유지). GTG/FedSV는 오히려 full 참여에서 하락(큰 2¹⁰ 게임을 근사 못 함). **폭 효과는 어느 method에도 없음**(용량은 fidelity를 안 바꿈).
+> **caveat**: 이 partial-참여 Flirds-1st 붕괴는 CNN R=10(클라당 참여 ~2회)의 짧은 지평 탓이 크다 — LLM std20(R=200, 클라당 ~20회 참여)에선 2/20 partial이어도 Flirds-1st 0.999(진단 §1.3). "참여 분수"가 아니라 **클라당 참여 횟수**가 1차항 정확도의 조건.
+
+**출처**: `runs/probe_signal/cnn_c1/pc1_*/metrics.json` (`methods.<name>.{phi,spearman_b,kendall_b,pearson_b,cos_b,euc_b,maxdiff_b}`) + (w=1,k=1.0)는 `runs/track_c/c1/cifar10_{iid,label-flip}_seed*`. 재계산 스크립트 = 세션 스크래치(rundir만으로 재현).
+
+**(c) baseline-set 노트**: 포함 = §3.1.2와 동일 9종 + (b)(Ripple은 probe에서 제외). truth = (b) only((a) retrain은 probe 스코프 밖 — ORACLE_A=0).
+
+### 3.6.2 C2 intervention probe (`probe_signal/cnn_c2`, N=100 R=120, width×참여 sweep)
+
+**(a) 세팅**: §3.2.2 C2와 동형(cifar10 iid · N=100 · R=120 · epochs=5 · lr=0.01 · batch=64 · SGD mom=0 · target acc=0.6), 단 **폭 w∈{0.5,1,2,4}@참여 f=0.1** + **참여 f∈{0.05,0.1}@w=1** × 위협 {`clean`, `label-flip`} × 3 seed. arms 6종(vanilla·flirds_mult·flirds_select·shapleyfl·fedif·sfedavg). 24 신규 + (w=1,f=0.1) 6셀 track_c 재사용 = **30셀**. **(w=1,f=0.2)는 구조적 제외**(shapleyfl arm이 라운드별 exact 2²⁰ Shapley → 계산 불가) → 참여 sweep은 {0.05,0.1}까지.
+
+**(b) 결과 — 개입 arm Δacc(vs vanilla, paired) ↑ · 탐지 AUROC ↑** (clean=do-no-harm parity 기대; label-flip=개입 효과 기대; Δ 양수=vanilla보다 좋음)
+
+| 위협 · w · f | vanilla acc ↑ | flirds_mult Δ | shapleyfl Δ | fedif Δ | sfedavg Δ | fl_mult AUROC ↑ |
+|---|---|---|---|---|---|---|
+| clean · w0.5 · f0.1 | 0.622±.007 | 0.000±.004 | 0.000±.005 | 0.001±.003 | 0.002±.005 | – |
+| clean · w1 · f0.1 | 0.648±.001 | -0.002±.002 | -0.001±.002 | -0.001±.001 | -0.002±.006 | – |
+| clean · w2 · f0.1 | 0.658±.005 | -0.002±.001 | -0.002±.002 | -0.002±.002 | -0.001±.002 | – |
+| clean · w4 · f0.1 | 0.673±.002 | -0.002±.002 | -0.002±.003 | -0.001±.001 | -0.002±.004 | – |
+| clean · w1 · f0.05 | 0.640±.004 | -0.001±.004 | -0.002±.000 | -0.000±.001 | 0.006±.002 | – |
+| label-flip · w0.5 · f0.1 | 0.491±.023 | 0.087±.018 | 0.077±.011 | 0.071±.016 | -0.019±.028 | 0.986 |
+| label-flip · w1 · f0.1 | 0.510±.023 | 0.092±.018 | 0.083±.013 | 0.075±.013 | -0.008±.032 | 0.981 |
+| label-flip · w2 · f0.1 | 0.520±.024 | 0.092±.020 | 0.084±.016 | 0.069±.014 | 0.013±.032 | 0.966 |
+| label-flip · w4 · f0.1 | 0.536±.019 | 0.089±.010 | 0.085±.012 | 0.068±.008 | 0.010±.029 | 0.955 |
+| label-flip · w1 · f0.05 | 0.528±.038 | 0.064±.034 | 0.069±.025 | 0.044±.018 | -0.015±.042 | 0.934 |
+
+> 읽기: **clean = 전 폭·참여에서 parity**(|Δacc|<0.006, seed 노이즈 이내). 폭↑은 raw acc(0.622→0.673)와 수렴을 올리지만 **개입 이득은 안 만든다**(신호 없음). **label-flip = 개입이 크게 이득**(flirds_mult Δ≈0.09, shapleyfl 0.08, fedif 0.07), 그리고 **이득도 폭 무관**(0.087~0.092). 수렴: vanilla는 **모든** label-flip 칸에서 target 0.6 미달인데 flirds_mult/shapleyfl는 w≥1에서 도달하고 폭↑일수록 빠름(flirds_mult r2t 82→69→55). 탐지 AUROC 0.93~0.99(참여↑서 소폭↑). **예외 = sfedavg(softmax 선택)**: AUROC 높아도(0.99~1.0) Δacc≈0/음수 = 탐지≠좋은 개입.
+> → **개입 효과 크기는 A축(폭·참여)이 아니라 B축(오염)이 지배**. 폭·참여는 동작점(raw acc·속도)만 옮기고 parity↔이득 이분법과 갭(~0.09)은 안 바꾼다. §3.2.2/§3.3.2(track_c 오염 무대)와 정합.
+
+**출처**: `runs/probe_signal/cnn_c2/pc2_*/metrics.json` (`arms.<arm>.{final_acc,auroc,rounds_to_target}`) + (w=1,f=0.1)는 `runs/track_c/c2/cifar10_iid_{clean,label-flip}_strmain_seed*`(§3.2.2와 값 일치 교차검증).
+
+**(c) baseline-set 노트**: 포함 6 arm(§3.2.2의 flirds_repl/flirds_add는 dir1 size-skew 전용 → iid probe엔 없음 = *적용규칙: 참여형태/적용성*). detector 별도 없음(개입 arm의 φ-as-detector AUROC만). truth = corrupt 마스크.
+
+**probe 종합 (A축 판정)**: CNN probe는 진단문서 §0/§1.6 판정을 CNN scale에서 확정한다 — **학습강도 lever(용량 폭 8× + 참여)는 IID-clean에서 클라 간 신호를 만들지 않는다**(cross-seed ρ≈0, φ 작음, 개입 parity 유지). 신호는 **오염(B축)**이 만들며(label-flip: ρ≈0.9, φ 2–4×, 개입 Δ≈0.09) 이 B축 신호 자체도 폭·참여 무관. 참여는 별도 역할(짧은 지평에서 φ 랭킹을 흐리고 method 구별을 만듦; 1차항은 참여↓서 붕괴, 2차항이 방어). → 다음은 **B축을 직접 여는** 오염축×비IID축 매트릭스(진단 §2.4). LLM rank/참여 probe(진단 §3.1–3.2)는 실행 중.
+
+---
+
 # 4. 부록
 
 ## 4.1 Foundational validation (`phase1`) — 첫 clean run + LR sweep
@@ -687,7 +786,8 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 6. **7B anchor5 arm(MMLU/ROUGE/val-loss) = 2026-06-26 추가 완료**(arm-only 재실행; 이전엔 fidelity·runtime만 있었음). 이제 LLM standard 6 셀 전부 arm 포함.
 7. **tiny val** caveat: Robustness silo5 val=20 / device100 val=10 — 작은 검증셋이라 AUROC가 coarse(특히 noisy φ-as-detector).
 8. **poison ASR**은 deployed-model 기준(silo5≈1.00, device100 α0≈1.00/α0.5≈0.50, 3B≈1.00).
-9. **ShapleyFL β=0.3 통일 재실행 진행 중(2026-07-03)**: surrogate FSV의 cross-round EMA를 논문값 β=0.3으로 통일. **반영됨**: 1B·3B track_d(3B=이번 세션 재실행 반영, 미커밋)·CNN(track_c). **대기(값은 아직 이전 실행 기준)**: 7B track_d(§3.1.1 7B 열·§3.5 runtime)·phase2_matrix(§3.4 ShapleyFL AUROC/Spearman 행). CNN C1 fidelity/C2 arm은 β에 사실상 불변이라 수치 무변(라벨만 β=0.3). 재집계 = `make_fidelity.py`(track_d) / `make_analysis.py`(phase2).
+9. **ShapleyFL β=0.3 통일 재실행 진행 중(2026-07-03)**: surrogate FSV의 cross-round EMA를 논문값 β=0.3으로 통일. **반영됨**: 1B·3B track_d(3B=`b1b95d0` 커밋)·CNN(track_c). **대기(값은 아직 이전 실행 기준)**: 7B track_d(§3.1.1 7B 열·§3.5 runtime)·phase2_matrix(§3.4 ShapleyFL AUROC/Spearman 행). CNN C1 fidelity/C2 arm은 β에 사실상 불변이라 수치 무변(라벨만 β=0.3). 재집계 = `make_fidelity.py`(track_d) / `make_analysis.py`(phase2).
+10. **신호크기 probe(§3.6) = A축(폭·참여)만 sweep, B축(오염) 미변경**: cross-seed ρ 붕괴(partial 참여) 및 Flirds-1st 붕괴는 CNN **R=10·클라당 참여 ~2회**의 짧은 지평 특성이 크다(LLM std20 R=200과 다름) → "참여 분수"가 아니라 클라당 참여 횟수가 조건. C2 참여 sweep은 **f=0.2 결측**(shapleyfl arm이 2²⁰/라운드 exact → 계산 불가; §3.6.2). probe는 (b) only, (a) retrain 없음(ORACLE_A=0).
 
 ## 4.3 상호 링크
 - 선행연구 6축 분류 + 마스터 표: [[prior-work-taxonomy/README]] · [[prior-work-taxonomy/taxonomy]]
@@ -722,6 +822,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | LLM standard (`track_d`) | 18 rundir (3 scale × 2 stage × 3 seed) = 6 셀 | 6 셀 전부 (fidelity+arms+conv+runtime) | 7B anchor5 arm 2026-06-26 추가 → 누락 없음 |
 | CNN (`track_c`) | C1 30 + C1_oracle 30 + C2 90 = 150 rundir (10+10+30 셀 × 3 seed) | C1 10 시나리오 (fidelity/stability/(a)) + C2 30 셀(threat 4그룹 pool) | C2는 그룹 평균(셀별=RESULTS.txt); CNN wall-clock §3.5.2 전사 완료 |
 | Robustness (`phase2_matrix`) | 25 셀 (master_metrics 25, RESULTS.md 25) | 25 셀 전부 (AUROC+Sp+Pe+cos+runtime) | – |
+| Signal-size probe (`probe_signal`) | CNN C1 66 + C2 24 = 90 rundir (+ track_c 재사용 12) | §3.6: C1 72셀(폭×참여 fidelity/ρ/φ) + C2 30셀(개입 Δ/AUROC) 전부 | C2 (w=1,f=0.2) 구조적 제외; LLM rank/참여 probe는 진단문서(실행 중) |
 | Foundational (`phase1`) | 12 rundir (full 6 + sweep 4 + mini/smoke 2) | full 6 + sweep 4 = 10 (부록) | mini/smoke 2 = 진단용, 미수록(명시) |
 | **계획·미실행** | – | P1–P6 (6행, 수치 ⬚) | – |
 

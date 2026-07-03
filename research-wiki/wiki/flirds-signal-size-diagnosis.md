@@ -290,7 +290,62 @@ fidelity·탐지 기여를 정량화한다(기존 silo5는 둘이 항상 결합�
 
 ## 3. probe 결과 (실행 후 기입)
 
-(TBD — 승인 후 실행)
+### 3.1 rank probe — anchor5 (seed0, 파일럿 진행 중)
+
+| | rank16 (기존 재사용) | rank32 | rank64 |
+|---|---|---|---|
+| (b)oracle φ range | 0.00119 | 0.00102 | 0.00106 |
+| Flirds Spearman vs (b) | **+1.000** | **+1.000** | **+1.000** |
+| Flirds1st / Banzhaf | +1.000 | +1.000 | +1.000 |
+| FedSV | +0.700 | +0.700 | +0.500 |
+
+seed0 3점(rank 16→64, 4배)이 §0·§1.6 예측을 확정한다: **(1) estimator fidelity가 안
+깨진다** — Flirds/Flirds1st/Banzhaf가 (b) 값-수준 +1.000 유지(HVP가 크기 2r인 LoRA
+공간에서 2차항 비중이 바뀌어도 fidelity 무영향); **(2) 신호(클라 간 φ 차이)가 안 커진다**
+— φ range가 0.001 근처에서 평평(rank32/64에서 오히려 미세 감소; IID-clean이라 φ는 추첨
+노이즈, rank는 그 크기를 못 바꿈). FedSV만 rank64에서 0.5로 하락(부분참여 방법, seed0
+단일 노이즈 가능). rank↑는 A축 lever이지만 IID-clean에선 B축 신호를 만들지 못한다는
+§1.4 판정과 정합. → seeds 1–2로 굳히기; 방법 구별은 참여 probe(§3.2)가, 신호 실재성
+B축은 §2.4 매트릭스가 검증.
+
+### 3.2 참여 probe (std50k5) — TBD (파일럿 실행 중)
+
+### 3.3 오염축×비IID축 매트릭스 (§2.4) — TBD (std50k5 후 자동 실행)
+
+### 3.4 CNN probe (C1 fidelity + C2 intervention) — **완주** (A축 CNN 확정)
+
+CNN이 A축 probe의 완주 파트다(LLM §3.1은 seed0 파일럿, §3.2는 실행 중). **C1** = 폭 w{0.5,1,2,4}×참여
+k{2,5,10}/N=10×{iid, label-flip}×3seed = 72셀(66 신규 + (w1,k10) track_c 재사용). **C2** = 폭·참여 sweep ×
+{clean, label-flip}×3seed = 30셀(f0.2는 shapleyfl arm의 2²⁰/라운드 exact 불가로 제외 → 계획 36→30). 전체 표·
+수치 = overview [[flirds-experiment-results-overview-2026-06-25]] §3.6; 여기선 진단 판정만. (커밋 `d2e7ed6`.)
+
+**(1) 신호 실재성 — (b)oracle 자기순위 cross-seed ρ** (full 참여 k=1.0, 폭별):
+
+| 시나리오 | w=0.5 | w=1 | w=2 | w=4 |
+|---|---|---|---|---|
+| iid | +0.034 | −0.042 | +0.038 | +0.123 |
+| label-flip | +0.976 | +0.968 | +0.859 | +0.923 |
+
+**폭을 8×(0.5→4) 키워도 iid ρ는 0 근처 불변**, 오염(label-flip)은 ρ≈0.9(역시 폭 무관). §1.4 CNN 대조
+(iid −0.042 vs label_flip 0.968; = 이 표의 w=1 칸, `track_c` RESULTS.txt와 교차검증 일치)를 폭 그리드로 확장 재현
+— **신호 실재성은 A축(용량)이 아니라 B축(오염)이 만든다**(§0-3·§1.6 주 병목 판정을 CNN이 직접 확정). 단
+partial 참여(k<1.0)면 label-flip도 ρ→0 붕괴: N=10·R=10에선 클라당 참여 ~2회라 φ per-round 분해가 참여
+추첨에 지배됨(§1.3d). φ range도 동일 — iid ~0.05 vs label-flip ~0.12(2–4×), 둘 다 폭 평평.
+
+**(2) method fidelity — 2차항이 부분참여에서 값을 한다.** Flirds(2차)·Banzhaf는 폭·참여·시나리오 전반 0.9+
+(전 72셀 pool Flirds +0.953±.080). **Flirds-1st는 참여↓서 붕괴**(label-flip k=0.2→+0.305, full→+0.940; Flirds
+2차는 k=0.2도 +0.904 유지). → §1.5의 "방법 차이는 부분참여가 만들고 2차항이 방어"를 CNN이 확증. **caveat**:
+이 붕괴는 CNN R=10(짧은 지평) 특성 — LLM std20(R=200, 클라당 ~20회 참여)에선 2/20이어도 Flirds-1st +0.999.
+"참여 분수"가 아니라 **클라당 참여 횟수**가 1차항 정확도의 조건.
+
+**(3) intervention(C2) — clean parity vs 오염 이득, 둘 다 폭 무관.** clean은 전 폭·참여에서 Δacc≈0(do-no-harm
+parity, |Δ|<0.006); label-flip은 flirds_mult Δ≈+0.09·shapleyfl +0.08(폭 무관), vanilla가 오염에 눌려 target 0.6
+미달인데 개입 arm은 도달(폭↑일수록 빠름, r2t 82→55). 탐지 AUROC 0.93~0.99. → **개입 효과 크기도 A축이 아니라
+B축(오염)이 지배**(§4-2 예비 권고 확정). 예외 sfedavg(softmax 선택): AUROC 높아도 개입 Δ≈0 = 탐지≠좋은 개입.
+
+**CNN probe 종합**: A축 lever(용량 폭 8× + 참여)는 IID-clean 신호를 못 만든다(ρ≈0, φ 작음, 개입 parity). 신호는
+오염이 만든다(ρ≈0.9, φ 2–4×, 개입 Δ≈+0.09; 전부 폭 무관). → 다음은 §2.4 B축 매트릭스(오염축×비IID축).
+LLM rank/참여 probe(§3.1–3.2)가 seeds 1–2·std50k5로 굳히면 A축 판정 완결.
 
 ## 4. "신호를 키우려면 무엇을 바꿔야 하는가" — Phase 1 기반 예비 권고
 
