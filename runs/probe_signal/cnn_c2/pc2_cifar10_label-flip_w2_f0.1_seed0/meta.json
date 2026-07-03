@@ -1,0 +1,16 @@
+{
+  "name": "pc2_cifar10_label-flip_w2_f0.1_seed0",
+  "git_sha": "3f6250e2e768bd45b4f1c0f137fa3c7bfdd69448",
+  "git_dirty": true,
+  "env_hash": "be4b11eda33078df",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "5.5.4",
+    "peft": "0.19.1",
+    "trl": "1.2.0",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.4",
+    "numpy": "2.4.4",
+    "python": "3.11.15"
+  }
+}
