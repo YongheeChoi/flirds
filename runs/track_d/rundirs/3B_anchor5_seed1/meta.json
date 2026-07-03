@@ -1,8 +1,8 @@
 {
   "name": "3B_anchor5_seed1",
-  "git_sha": "59f001488da9aeed72e7a6afc4ab85c9c037ab8b",
+  "git_sha": "3f6250e2e768bd45b4f1c0f137fa3c7bfdd69448",
   "git_dirty": true,
-  "env_hash": "a2969115b57a3cf3",
+  "env_hash": "0a614aee5ee0e74a",
   "versions": {
     "torch": "2.12.0+cu130",
     "transformers": "5.9.0",

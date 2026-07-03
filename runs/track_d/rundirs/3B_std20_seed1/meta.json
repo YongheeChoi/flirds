@@ -1,8 +1,8 @@
 {
   "name": "3B_std20_seed1",
-  "git_sha": "6ae545e994ff8c60068b30d85f77a7e5e02cdc70",
+  "git_sha": "1c02fcd0a1a99d3f8c804c3435be52197b4f3f9d",
   "git_dirty": true,
-  "env_hash": "a2969115b57a3cf3",
+  "env_hash": "0a614aee5ee0e74a",
   "versions": {
     "torch": "2.12.0+cu130",
     "transformers": "5.9.0",
