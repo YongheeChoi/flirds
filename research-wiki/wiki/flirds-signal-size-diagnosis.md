@@ -425,7 +425,7 @@ cross-seed로 실재하는 신호인지는 seed0 단일이라 미확인** — �
 → 종합: **A축의 세 lever 중 lr만 φ 절대크기를 키우나, 그 어느 것도 fidelity 실재성
 (cross-seed 신호)을 만들지 못한다**(B축 매트릭스 §3.3의 non-IID clean +0.87과 대비).
 
-### 3.4 CNN probe (C1 fidelity + C2 intervention) — **완주** (A축 CNN 확정)
+### 3.6 CNN probe (C1 fidelity + C2 intervention) — **완주** (A축 CNN 확정)
 
 CNN이 A축 probe의 완주 파트다(LLM §3.1은 seed0 파일럿, §3.2는 실행 중). **C1** = 폭 w{0.5,1,2,4}×참여
 k{2,5,10}/N=10×{iid, label-flip}×3seed = 72셀(66 신규 + (w1,k10) track_c 재사용). **C2** = 폭·참여 sweep ×
