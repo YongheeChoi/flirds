@@ -288,6 +288,32 @@ fidelity·탐지 기여를 정량화한다(기존 silo5는 둘이 항상 결합�
 - 신규 셀명(`1B_iid5_*`, `1B_silo5_clean`)이라 **기존 결과 안 덮어씀**;
   `runs/phase2_matrix/rundirs`에 추가해 make_analysis 통합 분석.
 
+### 2.5 학습 강도 probe (lr·steps = A축 세 번째 lever; Yonghee 2026-07-05)
+
+rank(용량)·참여(구조)로 신호가 안 커짐을 확인(§3.1·§3.2) → 학습 강도(per-round Δ를
+직접 키우는 lr·steps)도 별개로 밀어 A축을 완결한다. 무대=anchor5(N=5 full = A축 순수,
+참여축과 안 섞임), 보수적 상한(lr≤3e-3·steps≤30; SGD mom=0 발산·과적합 회피). 코드 0
+(track_d의 `LR`·`MAX_STEPS` env 기존). 기준 lr1e-3/steps10 = 기존 anchor5_seed0 재사용.
+
+lr×steps **3×3 격자**(2026-07-07 격자로 확장 — 1D sweep + 극단만으론 상호작용 못 봄):
+
+| lr \ steps | 10 | 20 | 30 |
+|---|---|---|---|
+| 1e-3 | 기준(기존 anchor5 재사용) | ✓ | ✓ |
+| 2e-3 | ✓ | ✓(격자) | ✓(격자) |
+| 3e-3 | ✓ | ✓(격자) | ✓(극단 ×9) |
+
+9칸 = 기준 1(재사용) + `run_lrsteps.sh` 5(1D sweep+극단) + `run_lrsteps_grid.sh` 3
+(안쪽 칸 lr2e-3×st20/30, lr3e-3×st20). 격자로 lr·steps **상호작용**(Taylor tradeoff가
+두 lever 조합에서 심해지는지) 관찰.
+
+측정: **(1) 절대 학습** val-loss Δ(sanity — 커져야; Yonghee 원가설 전제) **(2) Flirds
+fidelity vs (b) exact** — per-round Δ↑로 1-HVP Taylor 근사가 이탈하는지(rank probe는
++1.00 유지였음 → lr·steps는 다를 수 있음 = A축 키우기의 실질 비용) **(3) intervention**
+flirds_w Δval-loss·SNR(원가설 2차: 절대 변화량↑ → 정밀도↑?). 예측: 절대학습↑·B축
+신호(cross-seed) 여전히 없음·Flirds fidelity는 lr·steps↑에서 하락 가능(현행이 sweet
+spot인 근거). seed0 파일럿; 실행 = 매트릭스 완료 후 GPU0-2 자동(watcher).
+
 ## 3. probe 결과 (실행 후 기입)
 
 ### 3.1 rank probe — anchor5 (seed0, 파일럿 진행 중)
@@ -308,9 +334,96 @@ seed0 3점(rank 16→64, 4배)이 §0·§1.6 예측을 확정한다: **(1) estim
 §1.4 판정과 정합. → seeds 1–2로 굳히기; 방법 구별은 참여 probe(§3.2)가, 신호 실재성
 B축은 §2.4 매트릭스가 검증.
 
-### 3.2 참여 probe (std50k5) — TBD (파일럿 실행 중)
+### 3.2 참여 probe — std50k5 (N=50 중 5/round, R=200, seed0)
 
-### 3.3 오염축×비IID축 매트릭스 (§2.4) — TBD (std50k5 후 자동 실행)
+| rank | (b)oracle φ range | Flirds | Flirds1st | GTG | FedSV | ComFedSV | ShapleyFL |
+|---|---|---|---|---|---|---|---|
+| r16 | 0.00402 | **+1.00** | +1.00 | +0.98 | +0.91 | **−0.11** | **−0.06** |
+| r32 | 0.00440 | **+1.00** | +1.00 | +0.98 | +0.90 | −0.12 | −0.09 |
+| r64 | 0.00493 | **+1.00** | +1.00 | +0.98 | +0.91 | −0.08 | −0.08 |
+
+**부분참여가 방법 구별을 만든다 (진단 §1.5·§0 예측 확정)**: anchor(full 참여, §3.1)에선
+방법이 전부 +1.000으로 붕괴했으나, std50k5(50 중 5/round)에선 **Flirds/Flirds1st만 (b)
+값-수준 +1.00 유지**하고 ComFedSV/ShapleyFL은 **음수로 붕괴**(−0.06~−0.12, 즉 oracle과
+반대 순위), FedSV +0.91, GTG +0.98. near-additive 무대에서 방법을 가르는 축은 rank가
+아니라 부분참여이며, 그 축에서 Flirds가 명확히 우위다(uniform-subset 방법 ComFedSV·
+ShapleyFL이 5/50 저참여에서 무너지는 반면 Flirds의 per-round HVP는 (b)를 정확 재현).
+rank(16→64)는 이 무대에서도 φ range를 크게 못 바꿈(0.004→0.005, ×1.2). → seed0 단일;
+seeds 1–2로 굳히기.
+
+### 3.3 오염축×비IID축 매트릭스 (§2.4) — 결과 (1B, 3-seed, seed 파일럿 완료)
+
+**1차 fidelity: (b)oracle 자기순위 cross-seed ρ**
+
+| 무대 \ 클라 | clean | noisy | FR-zero | poison |
+|---|---|---|---|---|
+| **IID** (iid5) | +0.13 | +0.60 | +0.70 | +0.73 |
+| **non-IID** (silo5) | **+0.87** | +0.93 | +1.00 | +1.00 |
+
+**두 축이 각각 독립적으로 fidelity 신호를 만든다.** 결정적 칸 = **non-IID clean +0.87**
+(오염 0인데 도메인 분리만으로 신호) → silo5의 높은 ρ가 오염이 아니라 **도메인 이질성**
+때문임을 확정(§1.4의 caveat 해소). IID clean +0.13(≈0, 신호 거의 없음 = §1.4 재현).
+IID+오염(0.6~0.73)은 균질 배경에 오염 클라 하나만 튐; non-IID+오염(0.93~1.0)은 도메인+
+오염 둘 다. → A축(rank·참여·lr·steps)이 신호를 못 만든 것과 정확히 대비: **신호는 클라
+간 실제 차이(B축)가 만든다**가 fidelity에서 확정.
+
+**2차 탐지 AUROC (오염 클라, 3-seed) — IID vs non-IID 배경 대조**
+
+| 무대+오염 | Flirds | FedDQC | FLTrust | STD-DAGMM |
+|---|---|---|---|---|
+| IID+noisy | 1.00 | **1.00** | 1.00 | 0.17 |
+| non-IID+noisy | 1.00 | 0.92 | 1.00 | 0.42 |
+| IID+FR-zero | 1.00 | 0.58 | 1.00 | 0.00 |
+| non-IID+FR-zero | 1.00 | 0.75 | 1.00 | 0.25 |
+| IID+poison | **0.00** | 1.00 | 1.00 | 0.67 |
+| non-IID+poison | 0.92 | 1.00 | 1.00 | 0.75 |
+
+- **Flirds·FLTrust는 배경 이질성 무관하게 noisy/FR 탐지 1.00**(gradient 기반, 강건).
+- **FedDQC(data-quality)는 IID 균질 배경에서 noisy 탐지가 더 깨끗**(1.00 vs 0.92) —
+  clean 클라가 다 비슷해 오염 클라가 뚜렷; non-IID는 clean 도메인도 튀어 대비 감소.
+  "IID 균질 배경이 오염 탐지를 돕나"의 답 = data-quality 축에선 그렇다.
+- **poison은 clean-preserving backdoor**라 Flirds가 **IID에서 완전 회피(0.00)** vs
+  non-IID 0.92 — 균질 배경일수록 backdoor가 clean val-loss에 덜 드러나 더 잘 숨음
+  (§3.9 경계가 IID에서 심화; loss-heur/FedDQC/FLTrust는 여전히 잡음).
+- STD-DAGMM(model-free)은 전반 약하고 IID에서 더 낮음(균질 배경서 AE 클러스터링 실패).
+
+### 3.4 noise probe (4-i: val bootstrap SE = φ의 노이즈 하한, anchor5 seed0)
+
+| | r16 | r64 |
+|---|---|---|
+| φ spread (클라 간) | 0.00098 | 0.00106 |
+| φ bootstrap SE (chunk 2000회) | ~0.0008 | ~0.0009 |
+| **spread / max-SE** | **1.15** | **1.11** |
+| boot 자기순위 ρ (mean) | 0.93 | 0.92 |
+| half-split ρ | 0.90 | 1.00 |
+| est vs (b) Spearman | 1.000 | 1.000 |
+
+φ 클라 간 spread가 val bootstrap SE와 거의 같은 크기(~1.1배) — **신호가 측정 노이즈
+수준**. 단 순위는 bootstrap 재표본·val 반분할에서 ρ 0.9로 유지(극단 쌍은 SE 위로 구별,
+maxmin-pair-diff/SE ~10). rank 16→64로 크게 안 변함. §1.4 cross-seed 불안정과 층위가
+다름: **같은 seed 안의 val 노이즈에는 순위가 강건**(0.9)하나, **seed를 넘으면 데이터
+파티션이 바뀌어 순위가 무너진다**(≈0) — 후자가 무대 신호 부재(B축)의 진단.
+
+### 3.5 학습 강도 probe (lr·steps 3×3 격자, anchor5 seed0) — 결과
+
+**φ range (신호 크기)**:
+
+| lr \ steps | 10 | 20 | 30 |
+|---|---|---|---|
+| 1e-3 | 0.00119 | 0.00178 | 0.00106 |
+| 2e-3 | 0.00241 | 0.00262 | 0.00227 |
+| 3e-3 | 0.00330 | 0.00316 | 0.00326 |
+
+**Flirds Spearman vs (b)**: 전 격자 **+1.000**.
+
+**lr은 φ 절대 크기를 키운다**(lr 1e-3→3e-3에서 ~3배; steps는 무영향) — rank·참여(§3.1·
+§3.2)가 못 키운 것과 대비되는 결과다. 그러나 **Flirds fidelity는 +1.000 유지**(Taylor
+tradeoff 없음; per-round Δ가 3배 커져도 1-HVP가 (b)를 정확 재현). **단 커진 φ가
+cross-seed로 실재하는 신호인지는 seed0 단일이라 미확인** — 예측은 "IID-clean이라 φ의
+절대 크기만 커지고 순위 실재성(B축)은 그대로(cross-seed ρ≈0 유지)"이며, seeds 1-2로
+확정 필요. intervention(flirds_w Δval-loss·SNR)은 정리 세션에서 arm metrics로 분석.
+→ 종합: **A축의 세 lever 중 lr만 φ 절대크기를 키우나, 그 어느 것도 fidelity 실재성
+(cross-seed 신호)을 만들지 못한다**(B축 매트릭스 §3.3의 non-IID clean +0.87과 대비).
 
 ### 3.4 CNN probe (C1 fidelity + C2 intervention) — **완주** (A축 CNN 확정)
 

@@ -1,0 +1,16 @@
+{
+  "name": "noise_1B_r16_seed0",
+  "git_sha": "5c5df9e2d03f74c85d74ba72cab5a38f17efbd42",
+  "git_dirty": true,
+  "env_hash": "0a614aee5ee0e74a",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.11.15"
+  }
+}
