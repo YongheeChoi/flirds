@@ -1,0 +1,98 @@
+\section{Introduction}
+\label{sec:intro}
+
+Federated learning trains a shared model from clients whose data the server never
+sees \citep{mcmahan2017fedavg}. Knowing \emph{how much each client contributed} is
+the entry ticket to incentive design, debugging, data markets, and quality
+control---and a long line of work therefore assigns clients Shapley-style values
+\citep{wang2020fedsv, liu2022gtg, fan2022comfedsv, sun2023shapleyfl}. Because
+retraining over client subsets is unaffordable, essentially all practical methods
+are \emph{in-run}: they score clients from quantities produced by the single
+training run itself (per-round updates, gradients, or reconstructed sub-models).
+
+This creates a validation dilemma that the field has mostly resolved indirectly.
+An in-run score has no free-standing ground truth, so prior work argues its
+validity through \emph{consequences}: valuation-weighted aggregation converges
+faster, low-value clients turn out to be corrupted, selected clients yield better
+models \citep{sun2023shapleyfl, fedif2025, shapfed2024}. Fidelity to the
+contribution game itself---``does the score equal the Shapley value of anything
+well-defined?''---is evaluated rarely; where it is measured against exact
+ground truth at all, it is at CNN scale, with small $N$, and against a single
+oracle definition \citep{liu2022gtg, space2024}, with approximate references
+elsewhere \citep{fan2022comfedsv}; at LLM scale, to our knowledge, never
+against an exact oracle. Indirect validation is also fragile in its own right:
+downstream effects conflate the score with the intervention rule, and
+Shapley-based rewards in FL are volatile under seemingly innocuous protocol
+changes \citep{shapleyvolatility}.
+
+\textbf{This paper takes the measurement-first route.} We fix the trajectory
+that FedAvg actually produced and define \emph{two} exact ground truths on it:
+\begin{enumerate}[leftmargin=2em, itemsep=1pt]
+\item \textbf{(a) Retrain oracle} $\aOracle$: the classical Shapley value with
+utility ``final validation loss of FL training restricted to subset $S$,''
+computed exactly by $2^N$ retrains. This is the data-valuation community's
+standard, method-neutral target.
+\item \textbf{(b) In-run oracle} $\bOracle$: the exact Shapley value of the
+per-round aggregation game---the validation-loss change produced by aggregating
+exactly the updates of subset $S$ at each round---computed by exact $2^{|P_r|}$
+coalition enumeration per round on the frozen trajectory. This is the formal
+object that in-run methods approximate, made explicit and computed without
+sampling error.
+\end{enumerate}
+Both oracles are expensive (the retrain oracle took $8.6$ GPU-hours per seed
+for a single $N{=}5$, 1B-parameter cell in our runs \verify{$30{,}817\pm244$s,
+track\_d 1B anchor, file-canon}), which is precisely why they are absent from
+prior evaluations---and why an estimator that tracks them cheaply is useful.
+
+\textbf{Our estimator.} \textsc{Flirds} (Federated Learning In-Run Data Shapley)
+extends In-Run Data Shapley \citep{wang2024irds} from centralized per-step,
+per-sample attribution to federated per-round, per-client attribution. It computes
+a closed-form first- plus second-order Taylor expansion of the in-run game around
+the current iterate, using only the client updates $\{\Delta w_k\}$ (LoRA
+parameters) that the server already receives: one Hessian--vector product and
+$|P_r|$ inner products per round, zero extra communication, and cost independent
+of the per-round cohort size---in contrast to coalition-enumerating baselines whose cost
+grows as $2^{|P_r|}$ per round.
+
+\textbf{Contributions.}
+\begin{enumerate}[leftmargin=2em, itemsep=2pt]
+\item \textbf{A measurement standard.} An evaluation of federated,
+client-level valuation at LLM scale against \emph{exact} $2^N$ dual
+oracles---a combination our systematic taxonomy of $\sim$40 prior methods
+(\S\ref{sec:related}) finds unoccupied; we state this as an \emph{observed
+gap}, not a novelty claim. The protocol enforces fp32 discipline (utility
+differences of order $10^{-3}$ are below bf16 resolution,
+\S\ref{sec:protocol}), fixed frozen trajectories shared by all methods,
+multi-seed reporting, and value-level as well as rank-level fidelity metrics.
+\pending{D-15 wording strength}
+\item \textbf{A cheap, faithful estimator.} \textsc{Flirds} reproduces the exact
+in-run oracle ranking across 1B/3B/7B and across IID, non-IID, and
+partial-participation stages (Spearman $0.967$--$1.000$; exactly $1.000$ in all
+LLM cells but one), at $5$--$160\times$ lower cost than exact enumeration for
+cohorts of five or more; at cohort two, exact enumeration is cheaper and we say
+so (\S\ref{sec:results-cost})---the advantage is decisive precisely where exact
+valuation is infeasible.
+\item \textbf{Theory aligning estimator and oracle.} We prove that the estimator
+and the in-run oracle value \emph{the same fixed-weight cooperative game}, the
+sole difference being second-order Taylor truncation (\S\ref{sec:theory}); we give
+the per-round decomposition, closed form, residual bounds, and the exact
+conditions under which the fixed-weight game and the subset-renormalized game
+used implicitly by prior baselines agree or provably diverge.
+\item \textbf{A boundary map.} Measurement-first evaluation reveals structure
+that indirect validation cannot: (i) on IID-clean stages the game is
+near-additive and carries \emph{no} cross-seed ranking signal---the correct
+intervention answer there is ``do no harm,'' and no method (including the exact
+oracle) can demonstrate downstream gains; (ii) genuine inter-client differences
+(domain heterogeneity, corruption, participation asymmetry) create the signal,
+and there the completion- and surrogate-based baselines collapse while
+\textsc{Flirds} remains faithful;
+(iii) clean-loss-preserving backdoors evade first-order valuation by
+construction, and the second-order term partially restores detection---a
+principled, scale-dependent failure boundary we characterize rather than hide.
+\end{enumerate}
+
+\todo{After judge-cell experiment E1: add contribution item on own-game
+adjudication---each baseline scored against the game it actually estimates, and
+the retrain oracle used to adjudicate which game definition deserves to be the
+target. This is the experiment that separates ``estimation error'' from ``game
+mismatch'' and closes the circularity critique.}

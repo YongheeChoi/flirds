@@ -1,0 +1,57 @@
+\section{Discussion and Limitations}
+\label{sec:limitations}
+
+\paragraph{What the measurement standard buys.}
+Three findings in this paper are invisible to consequence-based validation:
+the near-additivity of clean-stage games (which invalidates the cost premise of
+coalition-sampling estimators there---and makes the second-order term a
+modest-cost insurance policy, $\sim$$3\times$ the first-order term and well
+below coalition enumeration, for the stages that are \emph{not} additive); the
+null cross-seed signal of IID-clean stages (which reframes ``no downstream
+gain'' as the correct answer rather than a failure); and the first-order
+poison-evasion boundary (which no amount of AUROC reporting on noisy/free-rider
+threats would surface). We believe the protocol---frozen shared trajectories,
+exact dual oracles, fp32 utility discipline, value-level metrics, per-cell
+persisted artifacts---is a reusable standard for the sub-field.
+
+\paragraph{Trajectory-specificity and use cases.}
+Oracle (b) values the \emph{realized} run. Its cross-seed instability on
+signal-free stages is a property, not a bug, for \emph{settlement}-type uses
+(attributing this run's progress for payment or audit), but it cautions against
+re-using single-run values as portable client reputations on homogeneous-clean
+populations. Where clients genuinely differ, values are far more stable
+(Table~\ref{tab:baxis}: $+0.87$--$1.00$ on the LLM matrix), though not
+uniformly so across every stage (some CNN corruption cells remain unstable
+\verify{feature-noise xseed $-0.123$}); portability should be checked
+per-stage rather than assumed.
+
+\paragraph{Known limitations (stated, not hidden).}
+\begin{itemize}[leftmargin=2em, itemsep=1pt]
+\item \textbf{Game-definition dependence.} Fixed-weight coalition semantics are
+forced by the closed form and match the run's own aggregation, but they are a
+\emph{choice}; subset-renormalized games are defensible alternatives.
+\todo{Judge-cell E1 turns this from a limitation into a measured comparison.}
+\item \textbf{Regime constraints.} Plain SGD (momentum 0), constant LR, LoRA
+coordinates, eager attention, fp32 utilities. Server-side stateful optimizers
+break the telescoping identity; client-side Adam breaks the expansion
+correspondence (a bridge arm quantifying the optimizer gap is
+\pending{D-13}).
+\item \textbf{Privacy.} Client-level valuation requires the server to see
+individual $\Delta w_k$; incompatible with secure aggregation. Inherent to the
+problem class, not this method.
+\item \textbf{Adversarial scope.} Free-rider $\hat\phi = 0$ is exact for
+zero-update free-riders; delta-style free-riders (recycling prior aggregates)
+are the acknowledged stress case \todo{E7}. Clean-loss-preserving poison evades
+first-order valuation entirely; the second-order term restores detection at 1B
+but also fails at 3B (single seed---\todo{E8}); PGD-style direction-aligned
+poison is untested \todo{E13 / future work}.
+\item \textbf{Oracle coverage.} Exact-oracle fidelity is $N$-capped ($N{=}5$
+LLM / $N{=}10$ CNN; LLM $N{=}10$ oracle (b) \todo{E5}); retrain-oracle
+agreement is measured at 1B (3 seeds) and diverges on CNN (open question);
+7B retrain oracle is computationally out of scope, as in prior LLM-scale
+attribution work.
+\item \textbf{Heterogeneity bias.} FL-Shapley under-credits rare-domain
+(``maverick'') clients \citep{mavericks2024}; we characterize rather than fix
+this, and no method in our comparison separates ``noisy'' from
+``OOD-but-useful'' inside a single signed value.
+\end{itemize}

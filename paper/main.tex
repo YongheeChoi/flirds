@@ -1,0 +1,60 @@
+% ============================================================
+% Flirds paper draft — created 2026-07-12
+% Status: working draft. All [TODO-*] markers are inventoried in paper/README.md.
+% Style: venue-neutral article for now (D-2 pending: NeurIPS/ICML/ICLR style swap).
+% Sign convention (D-3 pending): this draft presents phi with POSITIVE = beneficial
+%   (internal code convention is phi<0 = beneficial; flip applied at presentation).
+% ============================================================
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[round]{natbib}
+\usepackage{enumitem}
+
+% --- TODO machinery: every unresolved item is visible in the PDF ---
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\pending}[1]{\textcolor{orange}{[PENDING DECISION: #1]}}
+\newcommand{\verify}[1]{\textcolor{purple}{[VERIFY vs rundir: #1]}}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+
+\newcommand{\bOracle}{\ensuremath{\mathcal{U}^{\mathrm{in}}}}
+\newcommand{\aOracle}{\ensuremath{\mathcal{U}^{\mathrm{re}}}}
+\newcommand{\val}{\ensuremath{\mathcal{D}_{\mathrm{val}}}}
+
+\title{Measure First: Exact-Oracle Fidelity of Client-Level Data Valuation\\
+in Federated LLM Fine-Tuning\\
+{\normalsize \pending{D-2 venue; title candidates in README}}}
+
+\author{Anonymous Authors\\ \pending{D-12 authorship / anonymization}}
+
+\date{Draft of July 12, 2026}
+
+\begin{document}
+\maketitle
+
+\input{sections/abstract}
+\input{sections/introduction}
+\input{sections/related}
+\input{sections/setup}
+\input{sections/method}
+\input{sections/experiments}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\appendix
+\input{sections/appendix}
+
+\end{document}

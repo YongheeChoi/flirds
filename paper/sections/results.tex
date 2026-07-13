@@ -1,0 +1,240 @@
+\section{Results}
+\label{sec:results}
+
+We present results up the hardness ladder: saturated stages first (what everyone
+gets right), then the stages that separate methods, then the dual-oracle anchor,
+the boundary map, and cost. Secondary axes (intervention, convergence,
+detection) follow, in the order of the question hierarchy.
+
+\subsection{Fidelity to the exact in-run oracle}
+\label{sec:results-fidelity}
+
+\begin{table}[t]
+\centering
+\caption{Rank fidelity (Spearman $\rho$, mean over 3 seeds) against the exact
+in-run oracle (b) on the LLM standard stages. \textbf{Ladder rung 1
+(anchor, $N{=}5$ full participation)} saturates for well-implemented methods;
+\textbf{rung 2 (std20, cohort 2/20)} already separates them.
+\emph{Ranges span 1B/3B/7B; per-scale table in Appendix.}
+\protect\verify{exact per-scale values from \texttt{make\_fidelity.py} CSVs}}
+\label{tab:fidelity-llm}
+\small
+\begin{tabular}{lcc}
+\toprule
+Method & anchor5 ($N{=}5$ full) & std20 ($N{=}20$, $2$/round) \\
+\midrule
+\textsc{Flirds}        & $1.000$ (all scales)        & $1.000$/$1.000$/$0.999$ (1B/3B/7B) \\
+\textsc{Flirds-1st}    & $1.000$ (all scales)        & $0.997$--$0.999$ \\
+loss-heuristic         & $1.000$ (all scales)        & $0.999$--$1.000$ \\
+Banzhaf (exact)        & $1.000$ (all scales)        & --- \\
+GTG-Shapley            & $0.967$--$1.000$            & $0.975$--$0.990$ \\
+FedSV                  & $0.667$--$0.933$            & $0.910$--$0.968$ \\
+ShapleyFL              & $0.167$--$0.833$            & $0.194$--$0.406$ \\
+FedIF                  & $0.067$--$0.200$            & $0.157$--$0.480$ \\
+ComFedSV               & $0.500$--$0.600$            & $0.093$ to $-0.137$ \\
+Fed-LOO                & \todo{E4}                   & \todo{E4} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Rung 1: the saturated stage---and why saturation is a finding, not a headline.}
+At $N{=}5$ full participation on clean stages, \textsc{Flirds},
+\textsc{Flirds-1st}, the loss-heuristic, and exact Banzhaf all reproduce oracle
+(b) exactly ($\rho = 1.000$; Table~\ref{tab:fidelity-llm}, left). This is
+\emph{not} evidence of estimator quality alone: the underlying game is
+near-additive there (measured non-additivity $\le 0.9\%$ of utility across
+scales), so every reasonable index collapses to the same ranking, and the
+singleton loss-heuristic matching the oracle is the cleanest \emph{additivity
+probe}. We report rung 1 as a property of the stage. (With $N{=}5$ the
+probability of a coincidental perfect ranking is $1/120$ per seed; the $N{=}10$
+CNN track and \todo{the pending LLM $N{=}10$ oracle (E5)} carry the statistical
+weight.)
+
+\paragraph{Rung 2--3: partial participation separates methods.}
+With partial cohorts (std20: $2/20$ per round) the completion/surrogate-based
+baselines collapse (ShapleyFL $0.19$--$0.41$; ComFedSV down to $-0.137$ at 3B;
+FedIF $0.16$--$0.48$) while \textsc{Flirds} stays at $0.999$--$1.000$
+(Table~\ref{tab:fidelity-llm}, right). The dedicated probe at $5/50$
+participation sharpens this: \textsc{Flirds}/\textsc{Flirds-1st} $+1.00$,
+GTG $+0.98$, FedSV $+0.91$, versus \emph{negative} correlations for
+ComFedSV ($-0.08$ to $-0.12$) and ShapleyFL ($-0.06$ to $-0.09$)
+\verify{std50k5 probe; currently seed 0 only---extend to 3 seeds or annotate}.
+Mechanistically, per-client participation count (not participation fraction) is
+what matters; on the CNN track \textsc{Flirds-1st} itself degrades at low
+per-client counts (label-flip, $k{=}0.2$: $+0.305$) where the second-order
+\textsc{Flirds} holds ($+0.904$)---the first of three places the interaction
+term earns its keep.
+
+\paragraph{CNN control track ($N{=}10$, dual $2^{10}$ oracles).}
+Pooled over 10 scenarios $\times$ 3 seeds: \textsc{Flirds} $0.919\pm.134$ vs (b)
+(Banzhaf $0.989$, \textsc{Flirds-1st} $0.832$, loss-heuristic $0.860$, GTG
+$0.569$, FedSV $0.401$, ShapleyFL $0.391$, Ripple $0.373$, ComFedSV $0.348$).
+Cross-seed stability tracks the oracle's own: (b) self-stability $0.518$,
+\textsc{Flirds} $0.547$; MC-based methods fall to $0.124$--$0.311$.
+
+\subsection{Dual-oracle anchor: does the in-run game track the retrain game?}
+\label{sec:results-dual}
+
+On the 1B anchor stage (the one cell where oracle (a) is affordable at 3 seeds):
+$\rho\big(\phi^{(a)}, \phi^{(b)}\big) = 0.933 \pm 0.047$ (per-seed
+$0.90/1.00/0.90$), and every method that matches (b) exactly inherits the same
+$0.933$ against (a) (ceiling effect); FedSV reaches $0.733$, FedIF $0.167$.
+On the CNN track the two oracles \emph{diverge} (all methods $\le 0.45$ vs (a)),
+which we report as an open characterization question rather than smoothing it
+over. \todo{P5-analysis: investigate CNN (a)-divergence; at minimum a candidate
+explanation (retrain-noise floor at CNN scale vs.\ genuine game divergence).}
+
+\textbf{Honest scoping.} These agreements live in a near-additive, equal-size,
+full-participation regime where many game definitions coincide
+(Proposition~\ref{prop:games}); they certify the \emph{pipeline}, not the choice
+of target. The discriminative test is the judge cell: unequal client sizes,
+non-IID silos, both game definitions computed exactly, and oracle (a) as the
+method-neutral adjudicator. \todo{E1 (judge cell): this is the paper's
+linchpin experiment. Insert: (i) own-game fidelity column per baseline, (ii)
+game-gap column, (iii) $\rho(\text{fixed-weight game}, (a))$ vs
+$\rho(\text{renormalized game}, (a))$ adjudication, 3 seeds, equal-$n$ and
+unequal-$n$ variants.}
+
+\subsection{The boundary map: where valuation signal exists at all}
+\label{sec:results-boundary}
+
+Measurement-first evaluation lets us ask a question indirect validation cannot:
+\emph{does the stage contain client-ranking signal in the first place?} We
+answer with the oracle's own cross-seed self-consistency (Spearman of
+$\phi^{(b)}$ across seeds):
+
+\begin{table}[h]
+\centering
+\caption{Oracle (b) cross-seed self-consistency ($\rho$, 1B, 3 seeds): signal
+exists only where clients genuinely differ.
+\protect\verify{B-axis matrix, diagnosis dossier \S3.3}}
+\label{tab:baxis}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Stage & clean & noisy & free-rider & poison \\
+\midrule
+IID     & $+0.13$ & $+0.60$ & $+0.70$ & $+0.73$ \\
+non-IID & $+0.87$ & $+0.93$ & $+1.00$ & $+1.00$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three consequences. \textbf{(i)} On IID-clean stages the exact oracle's own
+ranking carries no stable signal across seeds: at 1B, $\rho \approx -0.37$ to
+$-0.11$ on the LLM standard stages; across scales the self-consistency is
+unstable in both directions ($-0.37$ to $+0.73$, the positive extreme at the
+7B anchor being the noted exception \verify{diagnosis \S1.4}); ``fidelity
+$1.000$'' there means the estimator
+faithfully reproduces per-run randomness---which is exactly the right behavior
+for \emph{settlement of the realized run}, and exactly \emph{not} a stage where
+any method can demonstrate downstream utility. \textbf{(ii)} Signal is created
+by real inter-client differences---domain heterogeneity alone suffices
+($+0.87$ with zero corruption)---not by training intensity: scaling learning
+rate triples the \emph{magnitude} of $\phi$ while, in the seed-0 pilot, still
+creating no cross-seed signal (cross-seed confirmation pending; the diagnosis
+predicts $\rho \approx 0$) \verify{lr probe seed-0 only (E11)}. \textbf{(iii)} Intervention experiments on
+IID-clean stages have ``do no harm'' as their correct answer; our
+valuation-weighted arms indeed sit at parity there (MMLU/ROUGE within
+$\pm0.003$ of vanilla), which we report as a designed sanity check, not a
+failure.
+
+\subsection{Adversarial boundary: clean-loss-preserving poison}
+\label{sec:results-poison}
+
+A backdoor that \emph{lowers} clean validation loss \citep{bagdasaryan2020}
+defeats first-order valuation by construction: the first-order term rewards
+descent along $-g_r$. Empirically, \textsc{Flirds-1st} is fully evaded (AUROC
+$0.000$, 3 seeds, 1B silo), while the second-order term partially restores
+separation (\textsc{Flirds} $0.917 \pm 0.118$)---the interaction term detects
+curvature-inconsistent updates that first-order alignment cannot. The defense is
+scale- and stage-dependent: at 3B the second-order term is also evaded
+\verify{single seed --- extend (E8) before claiming scale trend}, and on
+IID stages evasion is more complete than non-IID ($0.00$ vs $0.92$). The exact
+oracle and the singleton heuristic \emph{do} flag the attacker
+\pending{D-1: orientation framing --- ``evaded valuation'' vs ``honest answer
+of a clean-loss utility''; two internal analyses currently disagree and the
+paper must pick one and state it}.
+
+\subsection{Cost, conditioned on cohort size}
+\label{sec:results-cost}
+
+\begin{table}[t]
+\centering
+\caption{Measured valuation wall-clock (seconds; shared frozen logs; 1B fp32,
+B200; 3-seed means, $\pm$std where available). \textsc{Flirds} is $O(1)$
+HVP/round, coalition methods $O(2^{|P_r|})$/round; the advantage is
+cohort-conditional and reverses at tiny cohorts.
+\protect\verify{overview \S3.5 file-canon; device column per-method values;
+loss-heuristic implementation carries a known $\sim 2\times$ overhead
+(footnote in final)}}
+\label{tab:cost}
+\small
+\begin{tabular}{lccc}
+\toprule
+ & silo ($N{=}5$, $R{=}10$) & anchor ($N{=}5$, $R{=}30$) & device anchor ($K{=}10$, $N{=}100$) \\
+\midrule
+\textsc{Flirds-1st}   & $\sim$35    & $231\pm5$    & $\sim$53 \\
+\textsc{Flirds}       & $\sim$107   & $707\pm16$   & $157$ \\
+loss-heuristic        & $\sim$170   & $1{,}093\pm26$ & --- \\
+ComFedSV              & ---   & $2{,}557\pm215$ & --- \\
+FedSV                 & $\sim$530   & $3{,}513$--$3{,}552$ & $\sim$4{,}970 \\
+GTG                   & $\sim$530   & $3{,}513$--$3{,}552$ & $\sim$16{,}000--18{,}000 \\
+ShapleyFL             & $\sim$530   & $3{,}513$--$3{,}552$ & $\sim$24{,}900 \\
+Banzhaf               & $\sim$530   & $3{,}513$--$3{,}552$ & --- (infeasible at $2^{100}$) \\
+Oracle (b), exact     & $\sim$530   & $3{,}528\pm83$ & $24{,}975\pm1{,}115$ \\
+Oracle (a), retrain   & ---   & $30{,}817\pm244$ & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At cohort 10 (cross-device anchor), \textsc{Flirds} reproduces the exact
+per-round oracle ranking ($\rho = 1.000$, $N{=}100$, $\alpha{=}0.5$) at
+$157$s vs $\sim$$25{,}000$s for exact enumeration ($\approx 160\times$). At
+cohort 2 (std20) the relation \emph{reverses}: exact enumeration costs
+$2^2$/round and undercuts the HVP ($2{,}917$s vs $4{,}697$s;
+\textsc{Flirds-1st} at $1{,}531$s remains cheaper). We therefore state the cost
+claim conditionally: \textsc{Flirds}'s advantage is decisive exactly where
+exact valuation is infeasible---large cohorts---which is the regime that
+motivates estimation in the first place. Ripple is reported separately
+($\sim$4{,}515s at 1B under a reduced-config port; its timer includes its own
+required trajectory---the one accounting exception---and the port is
+incomplete, so the number is accounting context only \verify{ripple-audit
+2026-07}) \pending{D-6/D-7; unified-accounting smoke (E3) pending;
+fp32-vs-bf16 $\times 3.1$ multiplier is an unverified placeholder and is not
+cited in this draft}.
+
+\subsection{Secondary axes: intervention, convergence, detection}
+\label{sec:results-secondary}
+
+Per the question hierarchy, these validate the \emph{usefulness} of measured
+contributions where signal exists; they are not the paper's headline.
+
+\textbf{Intervention.} On stages with real signal, contribution-weighted
+aggregation recovers accuracy under corruption (CNN, $N{=}100$: grad-noise
+$0.499 \to 0.609$ flirds-weighted vs $0.645$ ShapleyFL-weighted---we note a
+valuation score being faithful does not make its naive consumption rule
+optimal); on clean-IID stages all arms sit at designed parity. LLM
+instruction-tuning gains show as ROUGE-L ($+6.7$ to $+12.8$pp over training on
+the standard stage; $+1.6$ to $+5.6$pp on the anchor stage \verify{arm
+metrics}), while MMLU is flat-to-negative for \emph{all} arms including
+vanilla on the standard stage ($-0.8$ to $-1.4$pp; anchor-stage deltas are
+$\approx 0$, and the 7B anchor vanilla is $+0.3$pp)---this SFT recipe teaches
+format, not capability, so MMLU has $\approx$zero power as an intervention
+metric here \pending{D-13 metric choice}.
+
+\textbf{Convergence.} 7B std20 rounds-to-target drops from $184.7$ (vanilla) to
+$\approx 153$ (flirds-weighted; seed spread overlaps---suggestive, not
+conclusive). CNN corrupted stages show larger effects (grad-noise $27.2 \to
+13.7$).
+
+\textbf{Detection.} On home threats, dedicated detectors dominate valuation
+scores: FedDQC reaches AUROC $1.0$ on non-IID noisy where valuation-$\phi$
+methods sit at $0.57$--$0.77$---\emph{including the exact oracle (b) at
+$0.604 \pm 0.041$} \verify{overview \S3.4.2; a secondary analysis doc cites
+0.660 --- reconcile from master\_metrics.csv}. We read this as intrinsic: a clean-validation-loss game is not a
+corruption detector, and detection is the wrong headline metric for valuation.
+Free-rider detection is trivial for gradient-based scores ($1.000$;
+$\hat\phi = 0$ exactly, by Proposition~\ref{prop:closed-form}) and remains so
+for zero/random free-riders \todo{delta free-rider (E7) is the acknowledged
+stress case---run or scope the claim to zero/random}.

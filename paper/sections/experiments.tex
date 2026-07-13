@@ -1,0 +1,76 @@
+\section{Measurement Protocol}
+\label{sec:protocol}
+
+\paragraph{Stages (hardness ladder).}
+We evaluate on stages ordered by how much genuine inter-client structure they
+contain---because, as \S\ref{sec:results-boundary} shows, stage structure
+determines whether valuation is even measurable. Two distinct $N{=}5$ stages
+exist and must not be conflated: the IID dual-GT \emph{anchor} and the non-IID
+\emph{silo}.
+\begin{itemize}[leftmargin=2em, itemsep=1pt]
+\item \textbf{LLM dual-GT anchor} (\texttt{anchor5}: $N{=}5$, full
+participation, $R{=}30$; \emph{IID} Alpaca-GPT4, OpenFedLLM-verbatim recipe
+\citep{ye2024openfedllm}): the only stage where oracle (a) is affordable at 3
+seeds; all retrain-oracle numbers in this paper are measured here.
+\item \textbf{LLM standard} (\texttt{std20}: $N{=}20$, cohort $2$/round,
+$R{=}200$; same IID recipe): the literature's standard federated
+instruction-tuning stage.
+\item \textbf{LLM partial-participation probe} (\texttt{std50k5}: $N{=}50$,
+cohort $5$/round): the stage that separates methods.
+\item \textbf{LLM robustness matrix}: (i) $N{=}5$ \emph{five-domain non-IID
+silos} (medical flashcards, legal QA, FiQA, AQUA-RAT, Dolly; one domain per
+client; $R{=}10$; server-side domain-stratified validation) and (ii) $N{=}100$
+cross-device Dirichlet partitions, $\alpha \in \{0, 0.01, 0.1, 0.5, 5\}$
+($\alpha{=}0$ denotes the one-hot extreme partition
+\verify{grid config labels}); threats \{noisy (answer-swap), free-rider
+(zero/random), poison (clean-loss-preserving scaled backdoor
+\citep{bagdasaryan2020, xu2024backdoor})\}.
+\item \textbf{CNN control track} (MNIST/CIFAR-10, $N{=}10$ full participation):
+cheap high-power dual-oracle validation at $2^{10}$, plus intervention grid at
+$N{=}100$.
+\end{itemize}
+Models: Llama-3.2-1B/3B-Instruct and Llama-2-7B, LoRA $r{=}16$, $\alpha{=}32$.
+
+\paragraph{Discipline.}
+All methods consume the \emph{same frozen trajectory} per cell (identical logs;
+identical loss closure); fp32 throughout for utilities, HVPs, and inner
+products (\S\ref{sec:oracle-a})\footnote{Provenance note: the standard-track
+retrain-oracle runner is fp32 end-to-end; a standalone robustness-track (a)
+runner defaults to bf16 with fp32 opt-in and is not used for any number in
+this paper. \pending{D-5 precision policy; protocol-document reconciliation}};
+plain SGD (momentum $0$) local training---the regime the Taylor expansion is
+defined for, and empirically load-bearing \verify{momentum 0.9 degrades
+2nd-order: 3-seed $\rho$ 0.73 vs 0.81 1st-only; plain SGD: 0.96 vs 0.92
+(CNN)}; eager attention (forward-mode HVP compatibility). Seeds: 3 per cell on
+all headline tracks (LLM standard/anchor, 1B robustness matrix, CNN); 3B
+robustness cells and the participation/lr probes are currently single-seed and
+are marked as such wherever cited \todo{seed completion E8/E11}. Per-cell run
+directories persist config, git SHA, environment, per-client $\phi$, and
+per-method wall-clock. Constraints this imposes (constant LR, no server
+momentum, LoRA-coordinate valuation) are scoped in \S\ref{sec:limitations}.
+
+\paragraph{Methods compared (10 valuation + 4 detection).}
+Valuation: \textsc{Flirds}, \textsc{Flirds-1st} (ablation), GTG-Shapley, FedSV,
+ComFedSV, ShapleyFL, Federated Banzhaf (exact re-weighting of oracle-(b)
+utilities), loss-heuristic (singleton utility $u(\{k\})$---doubles as an
+additivity probe), FedIF, Ripple; Fed-LOO (grand-coalition leave-one-out) is
+implemented and verified (max-diff $0.0$ vs brute force) with numbers pending
+rerun \todo{E4---will make 11}. Ripple appears in the CNN fidelity track (as a
+sample$\to$client aggregation) and in runtime accounting; on the LLM track it
+is accounting-only: it requires its own trajectory (the one accounting
+exception, annotated), our port there is reduced-config, and its authors
+explicitly do not claim numerical Shapley fidelity \pending{D-6 final
+placement}. Detection (home-threat comparisons): FLDetector, FLTrust,
+STD-DAGMM, FedDQC. ShapleyFL uses the paper value $\beta{=}0.3$ on the 1B/3B
+standard tracks; the 7B column and robustness-matrix ShapleyFL cells currently
+carry $\beta{=}0.5$ provenance and are footnoted as such until the queued
+unification rerun completes \pending{D-9}.
+
+\paragraph{Oracle affordability.}
+Oracle (b), exact: $2^{|P_r|}$ forward evaluations per round (measured, 1B:
+$3{,}528\pm83$s per anchor seed; $24{,}975\pm1{,}115$s $\approx 6.9$h per
+$N{=}100$-anchor seed at cohort 10 \verify{overview \S3.5 file-canon}). Oracle
+(a): $2^N$ full retrains ($30{,}817\pm244$s $\approx 8.6$ GPU-h per 1B anchor
+seed, fp32). This cost asymmetry is why the fidelity grid is $N$-capped at the
+oracle and why the estimator's $O(1)$/round profile matters
+(\S\ref{sec:results-cost}).
