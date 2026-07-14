@@ -839,7 +839,7 @@ Flirds에 그대로 승계된다 (클라 수준이라고 해소되지 않음). �
 
 **(a)/(b) 관계는 경험 보고로 한정 — 괴리 원인은 path-dependence 하나가 아니다.** (a)-retrain-val-loss
 vs (b) in-run: 1B N=5 Spearman **+1.000**, 3B **+0.900** (estimator vs (b)는 양쪽 다 +1.000) — task6
-dual-oracle, 2026-06-07, 루트 CLAUDE.md baseline 인용. (a)-ROUGE의 괴리는 utility 함수 자체가 다른
+dual-oracle, 2026-06-07, 루트 CLAUDE.md baseline 인용(노트 전용 — rundir 미영속). (a)-ROUGE의 괴리는 utility 함수 자체가 다른
 별개 게임이므로 이론적 모순이 아니다("different game"). **괴리 원인 분해(최소 3축)**: (원1) **경로
 의존성**(궤적 안정성), (원2) **가중 재정규화** — (a) retrain은 FedAvg 분모를 $\sum_{j\in S}n_j$로
 재정규화(§3.3; `exact_sv_llm.py`)하는 반면 (b)는 고정가중 $\sum_{j\in P_r}n_j$이고, P5c는 비등$n$에서
@@ -1009,7 +1009,7 @@ lora_r=16, seed=0, renorm=True (`gpt2_smoke_weakdelta_summary.json` `config`).
 | **P3** 잔차 부호 | resid_positive | True | ✅ |
 | **G1** telescoping | grand-coalition gap | 2.4e-7 ~ 9.5e-7 | ✅ (fp32 바닥) |
 
-부가: Spearman(exact vs t1/t2/closed/flirds2/renorm) 전부 **0.90** — 5점 중 1쌍 동률(작은 $N$ 포화;
+부가: Spearman(exact vs t1/t2/closed/flirds2/renorm) 전부 **0.90** — 5점 중 인접 1쌍 스왑(작은 $N$ 포화;
 판별력 아님). summary의 `verdict:"CHECK"`는 아래 물리 파트 미검증 때문이지 기계 검증 실패가 아니다
 (sanity의 `closed_matches_flirds_values`·`t2_shapley_matches_closed_form` 등 대수 항목 전부 True).
 

@@ -2,7 +2,7 @@
 type: project
 title: "Flirds — Federated Learning + In-Run Data Shapley"
 created: 2026-05-05
-updated: 2026-06-04
+updated: 2026-07-14
 sources: [in-run-data-shapley, principled-federated-data-valuation, comfedsv, gtg-shapley, shapleyfl, space-participant-amalgamation, ripple-shapley, game-of-gradients-sfedavg, data-banzhaf, datainf, logix, asymmetric-data-shapley, distributionally-robust-data-valuation, dice, feddqc, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, less, grosse-llm-influence, mates, dsdm, fedtsv, fedif, data-value-embedding, do-influence-functions-work-on-llms, lorif, accumulative-sgd-influence, dpo-shapley-lm-arithmetic, shapley-volatility-fl, mavericks-shapley-fl, influence-functions-fragile, fedhds, shapfed]
 tags: [flirds, project-state, design-decisions]
 ---
@@ -24,7 +24,7 @@ This page is the project's running state — locked design decisions, resolved q
 1. **1차(핵심): 기여도를 얼마나 정확히 측정하는가** — (a) retrain / (b) in-run oracle 대비 fidelity (Spearman·Kendall·거리 metric). "가장 기본이 되는 질문."
 2. **2차(측정된 기여도의 실효성 검증; 이 순서대로)**: ① 일반 성능 향상 (기여도 기반 필터링·가중·선택 후 최종 성능) → ② 수렴 속도 → ③ 오염 클라 탐지 (AUROC). **탐지는 마지막** — "기여도가 오염 클라 탐지랑 완전 직접적으로 연결되는 건 아니다" (예: clean-val-loss를 낮추는 backdoor 공격자를 φ가 '기여 높음'으로 평가하는 것은 valuation의 정직한 답이지 탐지 실패가 아님 — §3.9 poison-arm 사례).
 
-detection-중심 서술은 프로젝트 정체성(valuation 방법론)을 흐리므로, "headline"은 fidelity 결과에 우선 적용한다. 원 발언: raw [[raw/conversations/flirds/2026-06-12-track-d-implementation]] (Track D 구현 세션).
+detection-중심 서술은 프로젝트 정체성(valuation 방법론)을 흐리므로, "headline"은 fidelity 결과에 우선 적용한다. 원 발언: raw [[raw/conversations/flirds/2026-06-13-track-d-redesign-iid-clean]] (Track D 구현 세션).
 
 ## Core formula (round $r$)
 
@@ -121,9 +121,9 @@ Each was open in the original conversation set; all closed in the 2026-05-19 →
 
 ### Phase 0 — pre-LLM (must pass before LLM experiments start)
 
-**11. Baseline sanity reproduction (✓ DONE Phase 0, 2026-06-02).** All four FL-Shapley baselines **self-built** (reference-guided, D1 — GTG/ComFedSV have public code but in non-forkable forms; FedSV/Ripple have none) on one slim CNN simulator and reproduced in CNN + MNIST/CIFAR-10: [[sources/gtg-shapley|GTG]] (recon cosine 0.99), [[sources/principled-federated-data-valuation|FedSV]] (0.998), [[sources/comfedsv|ComFedSV]] (Spearman {1.0,0.96,0.85,0.84}), [[sources/ripple-shapley|Ripple]] (no ground-truth-SV metric — task-driven only; noisy-AUROC 1.0; **62× vs AFedSV+ / 49× vs FedSV, not vs GTG**). Output: validated baseline impls + sample-level→client aggregation for Ripple (LLM transfer in Phase 2). See [[flirds-protocol]] §10.
+**11. Baseline sanity reproduction (✓ DONE Phase 0, 2026-06-02).** All four FL-Shapley baselines **self-built** (reference-guided, D1 — GTG/ComFedSV have public code but in non-forkable forms; FedSV/Ripple have none) on one slim CNN simulator and reproduced in CNN + MNIST/CIFAR-10: [[sources/gtg-shapley|GTG]] (recon cosine 0.99), [[sources/principled-federated-data-valuation|FedSV]] (0.998), [[sources/comfedsv|ComFedSV]] (Spearman {1.0,0.96,0.85,0.84} — note-only, no persisted rundir; 2026-06-08 recheck seed0 gave 0.33/0.67, seed/device-sensitive), [[sources/ripple-shapley|Ripple]] (no ground-truth-SV metric — task-driven only; noisy-AUROC 1.0; **62× vs AFedSV+ / 49× vs FedSV, not vs GTG**). Output: validated baseline impls + sample-level→client aggregation for Ripple (LLM transfer in Phase 2). See [[flirds-protocol]] §10.
 
-**11b. Baseline LLM port (✓ Phase 2 task 1 DONE, 2026-06-06).** GTG/FedSV made **backend-agnostic** (shared `loss_fn`-injection path, CNN bit-identical) + **Ripple LLM** (`ripple_llm.py`, own FedAvg trajectory). **1B N=5 3-seed compare**: **Flirds reproduces the exact (b)-oracle ranking (Spearman +1.000) + nearly its φ values, at ~5× lower runtime than GTG/FedSV** (1 HVP/round vs 2⁵ coalition sweep). GTG/FedSV match detection (Spearman +1, noisy-AUROC 0.75 / free-rider 1.0) but ~5× slower; **Ripple slowest (~42×) and weakest on noisy detection (AUROC 0.50±0.20, high-variance)** → dominated. **free-rider φ differentiator**: Flirds/oracle give exactly 0; GTG/FedSV give a nonzero within-subset-renorm *dilution* value. ComFedSV deferred (cross-device, Phase 2 task 7). See [[raw/conversations/flirds/2026-06-06-sv-baseline-port-and-results]].
+**11b. Baseline LLM port (✓ Phase 2 task 1 DONE, 2026-06-06).** GTG/FedSV made **backend-agnostic** (shared `loss_fn`-injection path, CNN bit-identical) + **Ripple LLM** (`ripple_llm.py`, own FedAvg trajectory). **1B N=5 3-seed compare**: **Flirds reproduces the exact (b)-oracle ranking (Spearman +1.000) + nearly its φ values, at ~5× lower runtime than GTG/FedSV** (1 HVP/round vs 2⁵ coalition sweep). GTG/FedSV match detection (Spearman +1, noisy-AUROC 0.75 / free-rider 1.0) but ~5× slower; **Ripple slowest (~42×) and weakest on noisy detection (AUROC 0.50±0.20, high-variance)** → dominated. **free-rider φ differentiator**: Flirds/oracle give exactly 0; GTG/FedSV give a nonzero within-subset-renorm *dilution* value. ComFedSV deferred (cross-device, Phase 2 task 7). See [[raw/conversations/flirds/2026-06-06-sv-baseline-port-and-results]] (numbers are note-only — no persisted rundir; Ripple LLM results exist in no committed rundir).
 
 ### ★★★ paper spine
 
@@ -199,13 +199,13 @@ The estimator **method** itself (noisy/free-rider AUROC, selection-convergence �
 
 ## Phase 1 implementation concretizations (2026-06-04)
 
-Phase 1 is **essentially complete** — data layer + ② corruptor + the #7 first-clean-run infra are all built + verified; only the FULL scale run is unlaunched. Implementation detail: [[flirds-implementation-plan]]; raw: [[raw/conversations/flirds/2026-06-04-phase1-data-layer]], [[raw/conversations/flirds/2026-06-04-phase1-corruptor-and-7-design]].
+Phase 1 is **essentially complete** — data layer + ② corruptor + the #7 first-clean-run infra are all built + verified; only the FULL scale run was unlaunched at that point (since completed — Phase 1 closed 2026-06-06; `runs/phase1/rundirs/`). Implementation detail: [[flirds-implementation-plan]]; raw: [[raw/conversations/flirds/2026-06-04-phase1-data-layer]], [[raw/conversations/flirds/2026-06-04-phase1-corruptor-and-7-design]].
 
 - **5-domain free-form data layer** (`data/llm.py`): `build(n_clients, per_domain_train, per_domain_val, per_domain_test, seed)` → `(clients, val_records, test_records)`; N=5 → 1 domain/client, N=10 → 2/domain (disjoint halves). **Val micro-batching** — single-shot HVP over eager attention OOMs at val=1000, so the val-loss sum is computed exactly per chunk (`loss_chunks`); CNN path untouched (bit-identical). **Per-domain normalization** (token-prop vs domain-macro 1/D) is a flag → ON/OFF ablation.
 - **② seam-2 corruptor** (`data/corruptors.py`, fork (b) — built with the data layer): **noisy = `answer_swap`** (within-client completion permutation; CNN `label_shuffle` analog; FedDQC answer-swap + FedCorr data-side precedent), **free-rider = `free_rider(ref, mode)`** update-level, **zero + random** (Lin 2019 / STD-DAGMM taxonomy; delta/advanced deferred to Phase 2). estimator/oracle/CNN bit-identical; real-1B free-rider-zero φ = exactly 0. backdoor/PGD/maverick/duplicate remain Phase 2/3.
 - **#7 first clean run — RESEQUENCED before the SV-baselines port** (de-risk the scale run; #7 needs only training baselines + selection + eval, not the SV set). Downstream metric = **FedHDS-style per-domain held-out ROUGE-L + math (AQUA) exact-match** — deliberately distinct from the *utility* (val-loss, what the estimator/oracle use); see [[threads/utility-function-design]]. **selection-convergence** = φ→top-K→retrain curve vs full & random (MATES "2.3× faster to fixed acc" template). **Caveat** (FedDQC, DsDm): gradient/similarity selection can *underperform random* on heterogeneous FL — the bar Flirds-selection must clear.
 - **#7 sizes** (prior-art-grounded): per-domain **train = 12,000 / val = 200 (§3.4) / test = 2,000**, mutually disjoint; test train-carved (native test too small — math 254, finance 2561), val native-where-exists. **Infra DONE**: `eval/{metrics,generate}.py` (ROUGE-L F1 + AQUA EM + detection AUROC), `run_logger.py` (config + git SHA + env + φ parquet + metrics json), orchestrator `experiments/phase1_clean_run.py` (FULL/MINI/SMOKE). **SMOKE green** (est≈oracle 1.6e-7, noisy AUROC 1.0).
-- **Remaining = the FULL scale run** (`CLEAN_RUN_MODE=full`: N=5, R≈30, max_steps 10, lr 2e-5, K=3, 3 seeds, free_rider_mode=random, ORACLE_B; ~5–7h, dominated by test-2k generation × arms × seeds), a MINI de-risk run first. Then **③ SV-baselines port** (GTG/FedSV/ComFedSV/Ripple CNN→LLM, Phase 2).
+- **Remaining = the FULL scale run** (✓ since completed — Phase 1 closed 2026-06-06) (`CLEAN_RUN_MODE=full`: N=5, R≈30, max_steps 10, lr 2e-5, K=3, 3 seeds, free_rider_mode=random, ORACLE_B; ~5–7h, dominated by test-2k generation × arms × seeds), a MINI de-risk run first. Then **③ SV-baselines port** (GTG/FedSV/ComFedSV/Ripple CNN→LLM, Phase 2).
 
 ## Baseline selection rationale
 
@@ -217,14 +217,14 @@ Phase 1 is **essentially complete** — data layer + ② corruptor + the #7 firs
 **Code availability for included baselines**:
 | Baseline | Code | Action |
 |---|---|---|
-| ShapleyFL | ✅ [ZJU-DIVER/ShapleyFL](https://github.com/ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value) (CNN-image) | **self-built ✓ Phase 2 (2026-06-07)** — surrogate-FSV (uniform submodel + per-round exact Shapley + min-max + EMA) from-logs; DMC→cross-device. LLM N=5: Spearman vs (b)oracle +1.000, ~531s |
-| Data Banzhaf in FL | ✅ semivalue libraries (`pyDVL`, `OpenDataVal`) | **self-built ✓ Phase 2 (2026-06-07)** — semivalue = (b)-oracle coalition utils reweighted by 1/2^{n-1} (exact, no lib dep). LLM N=5: Spearman +1.000, free-rider φ=0, ~531s |
+| ShapleyFL | ✅ [ZJU-DIVER/ShapleyFL](https://github.com/ZJU-DIVER/ShapleyFL-Robust-Federated-Learning-Based-on-Shapley-Value) (CNN-image) | **self-built ✓ Phase 2 (2026-06-07)** — surrogate-FSV (uniform submodel + per-round exact Shapley + min-max + EMA) from-logs; DMC→cross-device. LLM N=5: Spearman vs (b)oracle +1.000, ~531s (note-only — no persisted rundir) |
+| Data Banzhaf in FL | ✅ semivalue libraries (`pyDVL`, `OpenDataVal`) | **self-built ✓ Phase 2 (2026-06-07)** — semivalue = (b)-oracle coalition utils reweighted by 1/2^{n-1} (exact, no lib dep). LLM N=5: Spearman +1.000, free-rider φ=0, ~531s (note-only — no persisted rundir) |
 | GTG-Shapley | code exists, non-forkable (cyyever multi-pkg framework) | **self-built ✓ Phase 0** (recon cosine 0.99) |
 | FedSV (Wang 2020) | ❌ | **self-built ✓ Phase 0** (permutation-MC recon 0.998) |
-| ComFedSV | code exists, non-forkable (Huawei notebook) | **self-built ✓ Phase 0** (Spearman {1.0,0.96,0.85,0.84}) |
+| ComFedSV | code exists, non-forkable (Huawei notebook) | **self-built ✓ Phase 0** (Spearman {1.0,0.96,0.85,0.84} — note-only, no persisted rundir; 06-08 recheck seed0 0.33/0.67, seed/device-sensitive) |
 | Ripple Shapley | ❌ (AAAI'26, newest) | **self-built ✓ Phase 0** (no ground-truth-SV metric — task-driven only; AUROC 1.0 + runtime). Speedup 62× vs AFedSV+ / 49× vs FedSV, **not vs GTG** |
 | Full FedAvg / Random-selection FedAvg | trivial | implement |
-| loss-heuristic, Flirds-1st-only | trivial | **✓ Phase 2 (2026-06-07)** — loss-heur = singleton in-run util U_(b)({k}) (free-rider φ=0); 1st-only = `second_order=False` (~35s ≈ 15× cheaper). LLM N=5: both Spearman +1.000 |
+| loss-heuristic, Flirds-1st-only | trivial | **✓ Phase 2 (2026-06-07)** — loss-heur = singleton in-run util U_(b)({k}) (free-rider φ=0); 1st-only = `second_order=False` (~35s ≈ 15× cheaper). LLM N=5: both Spearman +1.000 (note-only — no persisted rundir) |
 
 > **Correction (2026-06-02, vs the original "code-unavailable" framing)**: all four FL-Shapley baselines are **reference-guided self-builds** (D1) — GTG/ComFedSV have public code but in non-forkable forms. Ripple has **no ground-truth-SV metric** (it reports task-driven robustness only), and its "62×" speedup is vs AFedSV+ (= [[sources/shapleyfl|ShapleyFL]]-style adaptive aggregation) / 49× vs FedSV — *not* vs GTG. "AFedSV" is not a standalone paper (= ShapleyFL alias); see [[sources/shapfed]].
 

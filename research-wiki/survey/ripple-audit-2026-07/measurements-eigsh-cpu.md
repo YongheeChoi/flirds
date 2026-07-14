@@ -18,7 +18,7 @@
 - **config**: n_clients=4, rounds=3, epochs=1, batch=64, lr=0.05, n_val=256.
   `traj_maxiter=300` (포트 기본 1000에서 벽시계 예산 위해 축소; tol=0/which=LA/v0/ncv-retry
   의미는 보존). 원자료: `run1/traj_sections.json`, `run1/eig_results.json`,
-  `run1/eigsh_calls.jsonl`, `spin8/spin_omp8.json` (스크래치 사본 `scratchpad/meas/`).
+  `run1/eigsh_calls.jsonl`, `spin8/spin_omp8.json` (스크래치 사본 `scratchpad/meas/`; 원격 노드·세션 스크래치 전용 — 저장소 미커밋).
 - **한계 (문서에 명시)**: (i) CPU·CNN 소형(P=6.2e4) 스케일 — LLM 포트는 GPU·P≈1e9,
   matvec이 전모델 HVP라 per-matvec 비용이 10²배↑. 여기서 확정한 것은 *메커니즘*(수렴 여부·
   matvec 카운트·tol 거동)이지 4515s LLM 절대치가 아니다. (ii) GPU HVP의 H2D/D2H 왕복은 이

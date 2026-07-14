@@ -4,7 +4,7 @@
 - 대상 논문: "Ripple Shapley: Data Influence Attribution in One Federated Training Run" (AAAI 2026, proceedings pp. 28085–28093). PDF: `research-wiki/raw/papers/flirds/40034-Article Text-44125-1-2-20260314.pdf` (본문 9쪽, **Appendix A 부재** — 본문이 참조하지만 사본에 없음).
 - 대상 코드: `codes/flirds/baselines/ripple.py` (CNN 포트, 218줄) / `codes/flirds/baselines/ripple_llm.py` (LLM 포트, 199줄). 러너: `codes/experiments/track_c1.py`(CNN), `codes/experiments/phase1_baseline_compare.py`(LLM).
 - 문제의 수치: 논문 주장 **AFedSV+ 대비 62.37×, FedSV 대비 49.06× 빠름** (p.6, Table 1 기준) vs 우리 실측(1B N=5 R=10 val=100, 2026-06-06, `raw/conversations/flirds/2026-06-06-sv-baseline-port-and-results.md`) **Ripple ~4,515s = FedSV(~532s)보다 ~8.5× 느림**. 액면 그대로 겹치면 부호가 반전된 약 49×8.5 ≈ **420배 규모의 겉보기 모순** — 본 문서가 이를 해소한다.
-- 표기: [확인] = 원문/코드에서 직접 확인, [추정] = 근거 있는 추론(검증 항목 표시), [부재] = 원문에 명시 없음 확인. 논문 정독·코드 해부의 1차 자료는 스크래치 노트(`recon/ripple_paper.md`, `recon/ripple_code.md`, `recon/cost_timers.md`, 2026-07-04)이며, 본 문서 인용 라인은 전부 저장소 코드에서 재확인함.
+- 표기: [확인] = 원문/코드에서 직접 확인, [추정] = 근거 있는 추론(검증 항목 표시), [부재] = 원문에 명시 없음 확인. 논문 정독·코드 해부의 1차 자료는 스크래치 노트(`recon/ripple_paper.md`, `recon/ripple_code.md`, `recon/cost_timers.md`, 2026-07-04; 원격 검증 세션 스크래치 — 저장소 미포함)이며, 본 문서 인용 라인은 전부 저장소 코드에서 재확인함.
 
 ---
 

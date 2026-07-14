@@ -2,7 +2,7 @@
 type: survey
 title: "Flirds 실험 결과 해석·종합 (2026-06-26)"
 created: 2026-06-26
-updated: 2026-06-26
+updated: 2026-07-14
 sources: [flirds-experiment-results-overview-2026-06-25, baseline-original-paper-verification-2026-06-22, prior-work-taxonomy/README]
 tags: [survey, analysis, synthesis, fidelity, detection, cost, cnn-vs-llm, claims]
 ---
@@ -15,7 +15,7 @@ tags: [survey, analysis, synthesis, fidelity, detection, cost, cnn-vs-llm, claim
 > **CNN과 LLM은 거동이 다르므로 모델 계열을 분리**해 본다(둘이 갈리는 칸은 pool 금지).
 >
 > **출처 규율**: 모든 수치는 overview(이미 RESULTS↔CSV 교차검증)에서 인용. 결론이 걸리는 핵심 수치 +
-> overview가 스스로 플래그한 모순만 raw로 spot-check 했고(아래 §7), 전부 일치/해소됨. git HEAD `c414392`.
+> overview가 스스로 플래그한 모순만 raw로 spot-check 했고(아래 §7), 전부 일치/해소됨. git HEAD `c414392`. (주: 이후 07-03 `b1b95d0`가 3B track_d rundir를 β0.3 재실행으로 교체 — 본문 3B 수치는 그 이전 기준.)
 > 자매 문서: baseline↔원논문 대조 [[baseline-original-paper-verification-2026-06-22]] · 선행연구 6축 분류
 > [[prior-work-taxonomy/README]].
 >
@@ -41,7 +41,7 @@ fidelity가 큰 spread를 보이고(Flirds 0.919 vs GTG 0.57/FedSV 0.40/ComFedSV
 이지만 vs (a)=0.35; 어떤 method도 (a) 대비 0.45를 못 넘김) — LLM에서 두 oracle이 0.933으로 거의 일치하는
 것과 대조된다. 2차 검증(성능·수렴·탐지)은 위계대로다: clean-IID에서 성능·수렴은 **do-no-harm parity**(차이
 미미), 오염이 있어야 기여도-가중이 정확도/수렴을 회복하며, 탐지는 위계상 마지막 — **valuation φ는 전용
-탐지기가 아니다**(device100 non-IID에서 φ 0.57~0.77 vs FedDQC 1.0; 이는 *exact* oracle도 0.660에 그쳐
+탐지기가 아니다**(device100 non-IID에서 φ 0.57~0.77 vs FedDQC 1.0; 이는 *exact* oracle도 0.604에 그쳐
 근사 결함이 아니라 valuation의 내재 특성). 종합하면 가장 단단한 주장은 **"Flirds는 exact in-run Shapley를
 충실·저렴하게 근사하며, 그 비용 우위는 cohort에 무관하다"**이고, 정확도 우위·retrain-counterfactual 충실도·
 poison 강건성은 무대 의존적인 조건부 주장이다.
@@ -54,14 +54,14 @@ poison 강건성은 무대 의존적인 조건부 주장이다.
 
 **LLM (track_d, clean·IID, 3-seed).** clean·near-additive 레짐에서 *정직한* valuation 방법은 거의 전부
 exact (b) in-run oracle 대비 **Spearman 1.000으로 천장에 붙는다**: std20(N=20)·anchor5(N=5) 모두 Flirds·
-Flirds-1st·loss-heur가 1.000, GTG 0.91~1.00, Banzhaf(anchor5) 1.000. **확립**: clean-LLM-FL에서 in-run
+Flirds-1st·loss-heur가 1.000, GTG 0.97~1.00, Banzhaf(anchor5) 1.000. **확립**: clean-LLM-FL에서 in-run
 fidelity는 "푸는 문제"가 아니라 거의 자동으로 풀린다 — Shapley 선형성 + near-additive 효용이면 exact·근사가
 degenerate-equal이 되기 때문. **이 사실의 직접적 함의**: 이 레짐에서 method 간 *정확도* 서열은 거의 무의미
 하고(§5.1 긴장), 진짜 갈리는 축은 비용(§1.5)이다.
 
 - LLM에서 *항상 낮은* 방법은 설계상 그렇다(오독 금지, [[baseline-original-paper-verification-2026-06-22]] §3):
   **FedIF**(영향도-가중, Shapley 아님; std20 0.157), **ShapleyFL**(surrogate; std20 0.194), **ComFedSV**
-  (low-rank 가정 위배 → 3B std20 **−0.133**). 이들의 저-fidelity는 "나쁨"이 아니라 "다른 게임"·"가정 위반".
+  (low-rank 가정 위배 → 3B std20 **−0.137**(β0.3 재실행 `b1b95d0` 기준)). 이들의 저-fidelity는 "나쁨"이 아니라 "다른 게임"·"가정 위반".
 - **FedSV만이 정직한 recon-MC인데도 LLM anchor5에서 0.700으로 떨어진다**(std20 0.910) → per-round MC
   분산. recon-MC가 LLM에서도 exact를 못 따라가는 첫 신호(CNN에서 더 크게 나타남, §2).
 
@@ -120,7 +120,7 @@ in-run oracle은 공격자에 *높은* φ를 줘 잡는데(AUROC 1.0), Flirds-1s
 
 **LLM device100 (N=100, non-IID, 3-seed).** **확립**: valuation φ는 **non-IID에서 침식**된다. noisy:
 Flirds 0.57~0.77, **FedDQC 1.0이 최강**. 결정적 spot-check — anchor α=0.5에서 **exact (b) per-round oracle
-자체의 noisy AUROC도 0.660에 그친다**(Flirds도 0.660으로 oracle과 동률). 즉 φ-침식은 Flirds *근사*의
+자체의 noisy AUROC도 0.604에 그친다**(3-seed; seed0=0.660. Flirds도 0.604로 oracle과 동률). 즉 φ-침식은 Flirds *근사*의
 결함이 아니라 **valuation 자체의 내재 한계**(non-IID에서 clean 소수 클라가 상위로 보임). free-rider는
 gradient 쓰는 방법(Flirds/Flirds-1st/loss-heur/FLTrust = 1.0)이 깔끔, FedDQC는 off-threat이라 0.14~0.57.
 → **위계 명제 "valuation ≠ 탐지기"를 데이터가 직접 지지**: 위협마다 *전용* 탐지기(품질=FedDQC, free-rider=
@@ -143,9 +143,9 @@ FLTrust)가 φ를 이긴다.
   - **cohort 작으면 (b)가 더 쌈**: std20은 라운드당 2명(2²=4 eval)이라 (b) per-round가 이미 저렴 →
     1B std20 Flirds(2차) 4697s **>** (b) 2917s (1 HVP가 4 forward보다 비쌈). 이 레짐에선 **Flirds-1st만 우위**.
 - (a) retrain oracle = (b)의 **~9배**(1B anchor5 30,817s) — fidelity 비교군이 아니라 별도 GT.
-- **CNN: 절대 regime이 sub-초~초**(Flirds <2s), LLM은 분~시간. **Ripple은 압도적 dominated**(CNN ~1.1~11k s
+- **CNN: 절대 regime이 sub-초~초**(Flirds 대개 <2s, 최대 ~14.6s), LLM은 분~시간. **Ripple은 압도적 dominated**(CNN ~1.1~11k s
   = 학습 자체보다 10~130×; "62× speedup" 원논문 주장과 정반대, [[baseline-original-paper-verification-2026-06-22]] §3.7).
-- **CNN 특기**: Flirds·Flirds-1st가 traj_time(FL 학습 자체, ~80~94s)보다 2~3 자릿수 싸다 → "기여도 추정이
+- **CNN 특기**: Flirds·Flirds-1st가 traj_time(FL 학습 자체, ~80~94s)보다 1~3 자릿수 싸다 → "기여도 추정이
   학습보다 훨씬 저렴".
 
 **비용 결론**: Flirds의 비용 우위는 **"라운드당 참여가 많아 exact 2^k가 비싼" 무대에서만** 나온다. 이게
@@ -161,7 +161,7 @@ cohort-큰 무대 한정이다.
 ### 2.1 clean fidelity 천장 — **갈린다 (가장 큰 차이)**
 - **LLM**: 정직한 방법 거의 전부 1.0(천장). **CNN**: 큰 spread (Flirds 0.919 / loss-heur 0.860 /
   Flirds-1st 0.832 / GTG 0.569 / FedSV 0.401 / ComFedSV 0.348 / Ripple 0.373).
-- **무엇이 갈리나**: recon-MC가 CNN에서 훨씬 약함. LLM에선 GTG 0.91~1.0인데 CNN에선 0.57.
+- **무엇이 갈리나**: recon-MC가 CNN에서 훨씬 약함. LLM에선 GTG 0.97~1.0인데 CNN에선 0.57.
 - **왜 (가설, 단정 X)**: (1) **near-additivity 강도** — LLM-LoRA는 저차원·짧은 라운드(R=30, 10 steps)라
   효용이 거의 가법 → 모든 Shapley류가 선형성으로 degenerate-equal. CNN은 full-model·E=5 multi-epoch라
   효용이 더 non-additive → recon-MC의 sub-model 재구성이 빗나감. (2) **게임 난이도** — LLM에서 loss-heur
@@ -224,7 +224,7 @@ LLM서 1.0 동률 = 쉬운 게임 신호; CNN 0.86 = 어려움). **③ N·참여
 | C4 | 2차 Hessian이 FL서 의미있다(중앙과 달리) | CNN benign + LLM poison | CNN 0.832→**0.919**; silo5 1B poison Flirds-1st 0.000→2차 **0.917** | 3B poison은 2차도 0.000(1-seed); LLM benign은 무의미 | **확립(CNN benign) / 시사적(LLM poison, n=3 silo만)** |
 | C5 | clean-IID 기여도-가중은 do-no-harm | LLM | 전 arm MMLU/ROUGE vanilla ±0.001~0.003 (3-seed, 6셀) | parity일 뿐 *향상* 아님 | **확립(null)** |
 | C6 | 오염 하에선 기여도-가중이 성능·수렴 회복 | CNN | grad_noise acc 0.499→0.609; rounds 27.2→13.7 | 그룹 pool std 큼; Flirds가 arm 중 최강은 아님(shapleyfl 0.645) | **확립(방향)** |
-| C7 | valuation φ ≠ 탐지기 (전용탐지기가 이김) | LLM | device100 noisy φ 0.57~0.77 < FedDQC 1.0; **exact (b)도 0.660** | tiny val=10; 위계상 후순위라 의도된 결과 | **확립** |
+| C7 | valuation φ ≠ 탐지기 (전용탐지기가 이김) | LLM | device100 noisy φ 0.57~0.77 < FedDQC 1.0; **exact (b)도 0.604** | tiny val=10; 위계상 후순위라 의도된 결과 | **확립** |
 | C8 | clean-보존 poison이 Flirds-1st를 회피 | LLM | silo5 1B Flirds-1st AUROC/Sp **0.000** (3-seed); 3B 둘 다 0.000 | device100 poison은 회피 안 됨(설정 의존); 3B 1-seed | **확립(silo5 1B) / 시사적(3B)** |
 | C9 | retrain (a)·in-run (b) oracle은 갈린다 | CNN | Flirds vs (b)=0.919 vs (a)=0.352; 전 method vs (a)≤0.45 | LLM(1B)은 0.933 일치 → CNN-고유? 미확인; N=5 coarse | **확립(CNN) / 미해결(cross-model)** |
 | C10 | LLM-scale client-level in-run Shapley fidelity 선행 공백 | LLM | taxonomy 빈칸(federated×LLM×valuation-E1); FedDQC/FedHDS/iPFL은 인접(quality/sel/market) | "관찰된 빈칸"이지 단정 노벨티 X | **시사적(문헌 관찰)** |
@@ -283,7 +283,7 @@ benign에서 *동률·더 쌈*, 비가법(poison/non-IID)에서 *더 정확*. "�
 
 ### 5.3 device100 non-IID 탐지 침식 → 위계와 정합
 φ 0.57~0.77, FedDQC·FLTrust가 이김. **이게 위계 "valuation≠탐지" 명제와 정합**: 결정적으로, **exact (b)
-oracle도 noisy AUROC 0.660**(spot-check)이라 침식은 *근사*가 아닌 *valuation 본질*. 즉 "Flirds가 탐지에서
+oracle도 noisy AUROC 0.604**(3-seed; spot-check의 0.660은 seed0)이라 침식은 *근사*가 아닌 *valuation 본질*. 즉 "Flirds가 탐지에서
 진다"가 아니라 "기여도 측정과 이상 탐지는 다른 목적이고, non-IID에선 정상 소수 클라가 기여-낮음=이상으로
 오인된다"는 *설계상 예측된* 결과. → 비판이 아니라 위계의 실증.
 
@@ -329,8 +329,8 @@ overview가 스스로 플래그한/의심스러운 항목을 raw로 확인:
 | CNN 2차 이득 | Flirds-1st 0.832 → Flirds 0.919 | 0.8315 / 0.9192 | ✅ |
 | CNN (a) 괴리 | vs (a)≈0.35 | Flirds 0.352, Flirds-1st 0.408, ShapleyFL 0.453, 전부 ≤0.45 | ✅ |
 | silo5 poison Flirds-1st | AUROC/Sp 0.000 | 3 seed 전부 0.0/0.0; 2차 {0.75,1.0,1.0}=0.917 | ✅ |
-| 3B silo5 poison | Flirds·1st 둘 다 0.000 | Flirds Sp −0.893, 1st −0.934 (AUROC 0.0) | ✅ |
-| device100 anchor truth | α=0.5 = 진짜 (b)perround (off-anchor만 proxy) | a0.5 noisy 행 ref=**(b)perround**, Flirds Sp 1.000; (b)oracle AUROC 0.660 | ✅ (앞선 loose-grep 오인 정정) |
+| 3B silo5 poison | Flirds·1st 둘 다 0.000 | Flirds Pearson −0.893, 1st −0.934 (Sp 0.0, AUROC 0.0) | ✅ |
+| device100 anchor truth | α=0.5 = 진짜 (b)perround (off-anchor만 proxy) | a0.5 noisy 행 ref=**(b)perround**, Flirds Sp 1.000; (b)oracle AUROC 0.604(3-seed; seed0=0.660) | ✅ (앞선 loose-grep 오인 정정) |
 | 3B track_d seed 수 | seeds=3 | fidelity.csv·rundir 모두 seed0/1/2 존재 | ✅ (06-22 verification 문서의 "2-seed"는 **stale** — 그 후 seed2 병합됨) |
 
 **플래그**: 단 한 건 — **[[baseline-original-paper-verification-2026-06-22]] §63·§345의 "3B fidelity.csv는
@@ -346,7 +346,7 @@ overview가 스스로 플래그한/의심스러운 항목을 raw로 확인:
 | 순위 | 실험 | 메우는 갭 | 근거 |
 |---|---|---|---|
 | **P1** | **3B robustness 3-seed 완성** (현 1-seed) | C8(3B poison)·전 3B robust 수치가 n=1 → 통계 無 | red-team #2; 가장 싼 단단화(silo5 N=5) |
-| **P2** | **device100 anchor를 큰 val(≥200)로 1칸 재실행** | tiny val=10이 φ-침식·oracle AUROC 0.660을 신뢰 못 하게 함 | red-team #1; "valuation≠탐지"(C7) 방어 |
+| **P2** | **device100 anchor를 큰 val(≥200)로 1칸 재실행** | tiny val=10이 φ-침식·oracle AUROC 0.604를 신뢰 못 하게 함 | red-team #1; "valuation≠탐지"(C7) 방어 |
 | **P3** | **3B/7B anchor5 (a) retrain oracle** (P2/P3 in overview) | dual-oracle (a)≈(b)?가 1B 한 스케일뿐 → CNN-괴리가 LLM서도 스케일로 나타나나(§2.4) | red-team #3; C9 cross-model 미해결 핵심 |
 | **P4** | **poison 실제-config + (b) oracle 재확인** (silo5·device100) | poison-회피가 Taylor 한계인지 매트릭스 경계인지(§5.2) | C8 caveat(tiny config); 헤드라인 결정 전 필수 |
 | **P5** | **CNN (a)-oracle 게임 정의 재검** (왜 전 method ≤0.45?) | (a) retrain이 noise인지 진짜 다른 게임인지 → "참 기여 포착" 주장 가능성 | red-team #6; C9; novelty 4 단단화 |

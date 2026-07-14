@@ -2,7 +2,7 @@
 type: survey
 title: "metric · benchmark 카탈로그 + Flirds 채택 매핑"
 created: 2026-06-25
-updated: 2026-06-25
+updated: 2026-07-14
 tags: [survey, metrics, benchmarks, ground-truth, flirds]
 ---
 
@@ -74,18 +74,18 @@ E1(충실도)은 "무엇을 정답으로 두는가"가 핵심이다. 이 축이 
 
 | E# | Flirds 채택 metric | Flirds benchmark / GT | 분야 대비 비고 |
 |---|---|---|---|
-| **E1** | **Spearman + Kendall + Pearson**(값-수준) + **GTG 거리 trio(cosine/euclidean/max)** | **GT = exact 2ᴺ in-run oracle (b) + exact retrain oracle (a)**; utility=**val-loss**(미분가능·같은 게임); N=5 exact · N=100 exact per-round 분해 · CNN N∈{5,10}; **fp32** | 대다수는 근사 GT(TMC·LOO·LDS) — Flirds는 **exact 2ᴺ**(소N 최강 기준). Pearson은 N5 near-additive서 Spearman이 +1 포화될 때 값 격차 노출(예: silo5 poison Spearman 0.0 → Pearson −0.95) |
+| **E1** | **Spearman + Kendall + Pearson**(값-수준) + **GTG 거리 trio(cosine/euclidean/max)** | **GT = exact 2ᴺ in-run oracle (b) + exact retrain oracle (a)**; utility=**val-loss**(미분가능·같은 게임); N=5 exact · N=100 exact per-round 분해 · CNN N=10; **fp32** | 대다수는 근사 GT(TMC·LOO·LDS) — Flirds는 **exact 2ᴺ**(소N 최강 기준). Pearson은 N5 near-additive서 Spearman이 +1 포화될 때 값 격차 노출(예: silo5 poison Spearman 0.0 → Pearson −0.95) |
 | **E2** | val-loss(≤random-K) · per-domain **ROUGE-L** · AQUA **EM** · (arm) **MMLU 0-shot** · **Alpaca-test ROUGE-L** | 자체 5-domain + MMLU + Alpaca | 다운스트림 지표를 **utility(val-loss)와 분리**(순환성 회피); MMLU·ROUGE는 분야 표준 채택 |
 | **E3** | **AUROC**(noisy=answer_swap · free-rider=zero/random) · **ASR / soft-ASR**(poison=Xu trigger + Bagdasaryan scaled γ) · free-rider φ **exact-0** 확인 | 자체 5-domain + 위협 주입; baseline FLDetector/FLTrust/STD-DAGMM/FedDQC 비교 | 분야 표준(AUROC·ASR) 채택; LLM-FL client-level 검출은 선례 희소 → 첫 PEFT-scale 비교 |
 | **E4** | (전용 보상지표 미채택) — partial-participation 동일가치 #14 · maverick 과소평가 #15 *특성화* | — | 공정성 *보장*은 비목표; 한계로 특성화([[taxonomy]] straddle) |
 | **E5** | seed-determinism(CNN cudnn) · noise-vs-OOD 분리 **deferred**(한계 명시) · 2차 PGD 검증 #13 | — | replication/ordering 전용 실험 미채택; model-level/in-run 프레이밍으로 흡수 |
-| **E6** | **wall-clock** + **#HVP/round = 1** vs 2ᴺ coalition sweep + estimator/round ms | **동일 frozen trajectory**(공정 비교) | 분야의 #util-eval/throughput 대신 wall-clock+HVP-count; 모든 baseline이 같은 궤적 위(5–15× 저렴, ~42× vs Ripple) |
+| **E6** | **wall-clock** + **#HVP/round = 1** vs 2ᴺ coalition sweep + estimator/round ms | **동일 frozen trajectory**(공정 비교) | 분야의 #util-eval/throughput 대신 wall-clock+HVP-count; 모든 baseline이 같은 궤적 위(5–15× 저렴; Ripple[자체 궤적]은 ~42×) |
 | **E7** | value-가중 집계 arm **flirds_w**(β=0.5 곱셈) · **flirds_sel** → MMLU 0-shot + Alpaca ROUGE-L; CNN **w∝n·s** | clean-IID = **do-no-harm parity** 기대 | 집계는 부차 arm(FedIF/FedTSV처럼 집계가 *목적*은 아님 — valuation이 본령) |
 
 ### Flirds의 3가지 의도적 선택 (방법론)
 
 1. **utility = val-loss, ROUGE 아님.** Shapley 계산을 검증하려면 estimator와 oracle이 *같은 미분가능 게임*이어야 한다. ROUGE는 argmax-text라 비미분 → estimator-ROUGE 불가, (b)-ROUGE 비현실적. (a)-ROUGE는 answer_swap의 도메인-포맷 학습에 속아 발산(1B +0.4 / 3B −0.9) → val-loss가 옳다는 방증으로만 보관.
 2. **GT = exact 2ᴺ, TMC/LOO 아님.** 소N(≤10)에선 exact가 싸고 sampling noise 0 → 분야 표준(근사 GT)보다 강한 기준. estimator≠oracle(추정은 1 HVP/round 근사, oracle이 정답)를 명확히 분리해 검증.
-3. **fp32 + 동일 frozen trajectory.** utility=loss-diff(~1e-3)가 bf16 정밀도(~8e-3)보다 작아 fp32 필수(bf16은 +1.000을 ~0.4로 떨어뜨림). 모든 비교방법을 *같은 궤적* 위에서 돌려 backend·estimator-vs-exact·utility정의 차이만 변수로 남김.
+3. **fp32 + 동일 frozen trajectory.** utility=loss-diff(~1e-3)가 bf16 정밀도(~8e-3)보다 작아 fp32 필수(bf16은 +1.000을 +0.3으로 떨어뜨림). 모든 비교방법을 *같은 궤적* 위에서 돌려 backend·estimator-vs-exact·utility정의 차이만 변수로 남김.
 
 > 요컨대 Flirds는 분야 표준 지표(Spearman/Kendall·AUROC·ROUGE·MMLU·wall-clock)를 채택하되, **(1) 값-수준 Pearson을 추가**하고 **(2) GT를 근사가 아닌 exact 2ᴺ oracle로** 둔 점이 fidelity(1차 질문) 검증을 분야 평균보다 강하게 만든다. 핵심 질문 위계(1차 fidelity → 2차 perf/conv/detection)는 [[flirds]] 참조.

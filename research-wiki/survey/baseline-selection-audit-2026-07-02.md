@@ -46,7 +46,7 @@ exact-2ᴺ oracle은 완결. 겨냥 셀은 2024–2026 웹 검색으로도 **여
 > Σ_r[u_r(P_r)−u_r(P_r\{i})] 분해 = O(Σ|P_r|), std20의 N×trajectory 아님). **정확도 검증됨**: 합성
 > logs에서 brute-force U(N)−U(N\{i})와 **max-diff 0.0**(full+partial 참여), free-rider LOO=0. `make_fidelity.py`가
 > method 동적 수집이라 재실행 시 `fidelity.csv`에 자동 반영. **남은 것 = fidelity 셀 재실행**(로그
-> 미영속이라 offline 백필 불가; GPU 재실행이 populate 경로). loss-heur(singleton)와 formally distinct.
+> 미영속이라 offline 백필 불가; GPU 재실행이 populate 경로; 07-03+ `runs/probe_signal/` 신규 셀엔 Fed-LOO 수치 기록 시작(d2e7ed6·e85df6e) — 본 roster 셀은 여전히 미기록). loss-heur(singleton)와 formally distinct.
 >
 > **A-gap #2 (clean-oracle 상한 / random-q% 하한) — 정정: '누락'이 아니라 '의도적 제외'.** plan
 > line 430("미결 D 세션"의 4-arm filter-retrain)은 line 387이 **"SUPERSEDED 2026-06-13"**로 표기한
@@ -196,7 +196,7 @@ loss-heur, Ripple(집계), **(a) exact retrain SV 2¹⁰**, **(b) exact in-run S
 **FLDetector, STD-DAGMM, FLTrust, FedDQC**(전용탐지기 레퍼런스군), (b) in-run exact-2ᴺ oracle.
 
 > 이 축은 **φ-as-detector AUROC** + **위협별 전용탐지기 레퍼런스**로 구성. 헤드라인 아님(de-headlined).
-> 핵심 서사 **C7** = "전용탐지기 ≥ φ"(exact (b) oracle의 noisy AUROC조차 0.660 → φ 침식은
+> 핵심 서사 **C7** = "전용탐지기 ≥ φ"(exact (b) oracle의 noisy AUROC조차 0.604±0.050 → φ 침식은
 > 근사결함 아니라 valuation 내재한계), **C8** = 2차항이 clean-보존 poison에서 부호 부분복원.
 
 | candidate | klass | in_roster | reason | (C)제외사유 |
@@ -211,7 +211,7 @@ loss-heur, Ripple(집계), **(a) exact retrain SV 2¹⁰**, **(b) exact in-run S
 | **STD-DAGMM** | A | ✓ | free-rider 전용 레퍼런스(위협별 위계 논증 필수) | — |
 | **FLTrust** | A | ✓ | 강한 탐지기 — free-rider서 φ 이김 → C7 지지(강탐지기 포함=cherry 아님) | — |
 | **FedDQC** | A | ✓ | FL+LLM+LoRA 동일무대; noisy서 1.0으로 φ(0.57~0.77) 압도(C7 결정적) | — |
-| (b) in-run exact-2ᴺ oracle | A | ✓ | GT — noisy AUROC 0.660이 C7 linchpin | — |
+| (b) in-run exact-2ᴺ oracle | A | ✓ | GT — noisy AUROC 0.604가 C7 linchpin | — |
 | FoolsGold | B | ✗ | poison/sybil 전용(wiki 후보); "표준 backdoor 방어 왜 없나" 선점 가능하나 sybil-collusion+non-IID-honest 가정 한계 | — |
 | vanilla-FedAvg | B | ✗ | 성능·수렴 arm의 substrate로 이미 포함(탐지 AUROC 미산출) | — |
 | FedProx | B | ✗ | C6(강건-집계) 방향 주장 시 대비점; E7 비목표라 배제도 방어 | — |
@@ -232,7 +232,7 @@ loss-heur, Ripple(집계), **(a) exact retrain SV 2¹⁰**, **(b) exact in-run S
 ## 2D. Selection→Perf / Aggregation (track_d arms + C2) · **2차 ①** (NON-headline)
 
 **우리 roster**: base/FedAvg-mixed(하한), vanilla(FedAvg+LoRA), flirds_w(β0.5), flirds_sel, flirds_repl,
-flirds_add, shapleyfl_w(β0.5), fedif_w(β0.7), sfedavg(CNN), random-q%(대조), clean-oracle(상한).
+flirds_add, shapleyfl_w(β0.5), fedif_w(β0.7), sfedavg(CNN). (random-q%·clean-oracle bracket은 §1 후속 정정대로 미포함 — random_k는 phase1 오염 트랙에만 존재.)
 
 > 주장 = **clean-IID do-no-harm parity** (E7 집계품질=비목표). 헤드라인 아님.
 
@@ -434,7 +434,7 @@ semivalue 포섭**).
   vanilla 대비만 등장 → **실제 실행/보고 미확정**(§3.1 medium). 미실행이면 A 승격.
 - **naming collision**: 우리 'FedSV'=per-round Federated Shapley(Wang 2020)이고, 웹의 2502.17526
   (Byzantine-robust 'FedSV')는 **동명이인** — 문서에 출처 명기 권장.
-- **Federated-LOO 미구현**: 코드에 baseline 미존재(개념문서 leave-one-out.md만) → §3.1의 A-gap은
+- **Federated-LOO 미구현(→ §1 정정: 07-02 구현 완료, roster 셀 수치만 재실행 대기)**: 감사 시점엔 코드에 baseline 미존재(개념문서 leave-one-out.md만) → §3.1의 A-gap은
   코드 확인으로 검증된 실제 누락.
 - **title_matches / 파일명**: 이 감사는 제공된 competitor_extracts(원문 verbatim 근거)에 의존 — 각 추출은
   대부분 confidence High이나, Bagdasaryan(web-extract 부분본)·Xu(web-extract)는 **Experiments/Baselines

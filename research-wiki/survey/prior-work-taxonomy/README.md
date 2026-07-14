@@ -2,7 +2,7 @@
 type: survey
 title: "데이터·기여도 평가/귀속 선행연구 분류 서베이 — README + 마스터 표"
 created: 2026-06-25
-updated: 2026-06-25
+updated: 2026-07-02
 sources: [koh-liang-influence-functions, ghorbani-zou-data-shapley, data-banzhaf, in-run-data-shapley, asymmetric-data-shapley, du-shapley, datainf, trak, logix, grosse-llm-influence, less, mates, dsdm, data-value-embedding, lorif, accumulative-sgd-influence, dpo-shapley-lm-arithmetic, do-influence-functions-work-on-llms, influence-functions-fragile, principled-federated-data-valuation, comfedsv, gtg-shapley, game-of-gradients-sfedavg, shapleyfl, space-participant-amalgamation, ripple-shapley, fedif, fedtsv, shapfed, shapley-volatility-fl, mavericks-shapley-fl, feddqc, fedhds, dice, rfedlr, fldetector, fedcorr, fltrust, foolsgold, free-riders-fl-std-dagmm, distributionally-robust-data-valuation, ipfl-model-market, instructions-as-backdoors-xu, how-to-backdoor-fl-bagdasaryan]
 tags: [survey, taxonomy, data-valuation, attribution, federated, landscape]
 ---

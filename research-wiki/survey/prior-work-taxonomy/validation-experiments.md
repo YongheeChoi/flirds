@@ -2,7 +2,7 @@
 type: survey
 title: "검증 실험 정리 — CNN 트랙 / LLM 트랙 (E1–E7)"
 created: 2026-06-25
-updated: 2026-06-25
+updated: 2026-07-14
 tags: [survey, validation, experiments, cnn, llm]
 ---
 
@@ -22,7 +22,7 @@ tags: [survey, validation, experiments, cnn, llm]
 
 | Method | Fed | E1 충실도 | E2 선별 | E3 검출 | E4 공정 | E5 robust | E6 비용 | E7 집계 |
 |---|---|---|---|---|---|---|---|---|
-| **Flirds** | **F** | **estimator vs (b) Spearman ~1.0 in-regime; N∈{5,10}; 2차항 도움(0.96>0.92)** | (→LLM #7) | (→LLM) | — | seed-determinism(cudnn) | (b) 2ᴺ vs estimator 1 HVP/round | CNN 곱셈 가중 w∝n·s(arm) |
+| **Flirds** | **F** | **estimator vs (b) Spearman ~1.0 in-regime; N=10; 2차항 도움(0.96>0.92; phase0.5 N=6 노트 전용 — rundir 미영속)** | (→LLM #7) | (→LLM) | — | seed-determinism(cudnn) | (b) 2ᴺ vs estimator 1 HVP/round | CNN 곱셈 가중 w∝n·s(arm) |
 | IF (Koh-Liang) | C | — | — | mislabel self-influence 랭킹(상위=오라벨) | — | train-set 적대공격(1-img→test flip) | LiSSA params-linear | — |
 | Data Shapley | C | (exact 정의 자체) | 저가치 drop 재학습→동등/우수(synth+의료img) | outlier/mislabel > LOO·leverage | 4공리 | — | TMC ~수천 점 | — |
 | Data Banzhaf | C | — | reweight: Banzhaf>Beta>Shapley>LOO | bad-data: 동일 순위 | (efficiency 포기) | **SGD-run 랭킹 안정성 ≫; safety-margin 증명** | MSR log 샘플복잡도 | — |
@@ -58,7 +58,7 @@ tags: [survey, validation, experiments, cnn, llm]
 
 | Method | Fed | E1 충실도 | E2 선별 | E3 검출 | E4 공정 | E5 robust | E6 비용 | E7 집계 |
 |---|---|---|---|---|---|---|---|---|
-| **Flirds** | **F** | **estimator=(a)valloss=(b)exact Spearman +1.000 @1B N=5(fp32,양 lr); 3B N=5 (a)vs(b)+0.900[estimator vs (b)+1.000]; cross-device N=100 α=.5 vs (b)-perround +1.000; +Kendall/Pearson** | **#7 clean 1B(양lr,3seed): flirds_topk val-loss≤randomK & ROUGE≥randomK; keep=[2,3,4]=clean** | **noisy AUROC 0.75 / free-rider 1.0 @1B N=5 lr1e-3(lr3e-3서 반전); poison: working backdoor에 Flirds-1st AUROC 0.0 EVADED([b]·loss-heur catch)** | (partial-participation 공정 #14) | noise-vs-OOD 분리 deferred(한계 명시); 2차 PGD 검증(#13) | **Flirds-1st~35s/Flirds~107s vs (b)·baseline~530s/Ripple~4515s = 5–15× 저렴(~42× vs Ripple)** | intervention arms flirds_w/sel → MMLU+Alpaca ROUGE |
+| **Flirds** | **F** | **estimator=(a)valloss=(b)exact Spearman +1.000 @1B N=5(fp32,양 lr); 3B N=5 (a)vs(b)+0.900[estimator vs (b)+1.000]; cross-device N=100 α=.5 vs (b)-perround +1.000; +Kendall/Pearson** | **#7 clean 1B(양lr,3seed): flirds_topk val-loss≤randomK & ROUGE≥randomK; keep=[2,3,4]=clean** | **noisy AUROC 0.75 / free-rider 1.0 @1B N=5 lr1e-3(lr3e-3서 반전); poison: working backdoor에 Flirds-1st AUROC 0.0 EVADED([b]·loss-heur catch)** | (partial-participation 공정 #14) | noise-vs-OOD 분리 deferred(한계 명시); 2차 PGD 검증(#13) | **Flirds-1st~35s/Flirds~107s vs (b)·baseline~530s/Ripple~4515s[노트 전용 — rundir 미영속] = 5–15× 저렴(~42× vs Ripple)** | intervention arms flirds_w/sel → MMLU+Alpaca ROUGE |
 | IRDS | C | — | **Pile ~16% 음수 Shapley, 제거→수렴 가속+최종 성능↑(GPT-2/Pythia-410M)** | — | copyright 귀속 case study | stage-dependent 기여 | **"정규학습만큼 빠름"(1–2 backward)** | — |
 | DVEmb | C | (MNIST-MLP는 CNN트랙) | early+late window<half가 full 추종(>5× ↓) | — | — | trajectory-order 의존; T-무관 오차한계 | Pythia-410M ~170GB·peak 0.84 vs 63.6GB, >15× throughput | — |
 | DataInf | C | **noisy GLUE/MRPC LoRA r=1 exact-IF와 Pearson ~0.64(LiSSA 0.45)** | — | **mislabel 검출 RoBERTa-large LoRA noisy-GLUE > LiSSA·Hessian-free** | — | rank↑서 저하 | O(nDL) closed-form, O(D) mem | — |

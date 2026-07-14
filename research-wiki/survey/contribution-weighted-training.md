@@ -11,7 +11,7 @@ tags: [contribution-weighted-training, intervention, aggregation-weights, closed
 
 **질문**: FL에서 클라이언트 기여도 φ를 *training에 되먹이는* 법의 선행 지형은 어떠하고, 우리의 4개 naive arm(`codes/flirds/fl/intervene.py`) 대비 문헌의 공백은 어디이며, 그 공백을 메우는 새 방법은 무엇인가.
 
-**위계 주의**: 이 축은 핵심 질문 위계의 **2차(실효성)** — 서술 순서는 성능 → 수렴 → 탐지. fidelity(1차)는 이미 검증됨(값-수준 Pearson 0.99999+ vs (b), 전 스케일·전 레짐 — [[flirds-signal-size-diagnosis]] §1.3(c)).
+**위계 주의**: 이 축은 핵심 질문 위계의 **2차(실효성)** — 서술 순서는 성능 → 수렴 → 탐지. fidelity(1차)는 이미 검증됨(값-수준 Pearson 0.9999+ vs (b), benign 전 스케일·전 레짐(poison에선 붕괴 — review R4) — [[flirds-signal-size-diagnosis]] §1.3(c)).
 
 **방법론**: 위키 리더 4 + 웹 조사 5(테마별) + 초안 메커니즘에 대한 적대적 novelty 공격 3 = 12-agent 병렬 조사(2026-07-03). 웹 항목은 원 논문 abstract/PDF 대조 검증(검증 깊이 플래그는 각주). 상세 원자료: 세션 스크래치 `w7_parts/`.
 
@@ -155,7 +155,7 @@ $$\lambda_{r+1}=\begin{cases}\min(\gamma_\uparrow\lambda_r,\;\lambda_{\max}) & \
 
 **vs 4 naive / 선행.** (i) 정적 매핑 → **유도된 최적 스텝**(무엇을 최대화하는지 명시); (ii) min-max/EMA → val-loss 단위 φ 직접 소비; (iii) 개루프 → **개입이 자기 효과로 강도를 벌어들이는** 폐루프; (iv) w=p·exp(−λ(a+c))는 소-λ에서 $p_i\big(1−λ(a_i+c_i−\bar s)\big)+O(λ^2)$, $\bar s=\sum_j p_j(a_j+c_j)$ (코호트-평균 센터링 — 상대 비교가 메커니즘의 본질) — **Yonghee의 곱셈 규칙(arm 1)의 유도된 형태**(hand-map을 정리로 대체). 선행 차별화(novelty 공격 판정: partial-overlap, 차별 경로 명확): DoGE [ICML'24] = 같은 MD 수학이나 **1차·μ 고정·LM 데이터혼합**(2차 배제를 명시) → 우리는 곡률 지수+TR-적응 λ+FedAvg 정지앵커+FL 클라 단위; FedAdp = n·exp(휴리스틱 각도·α 고정); ByGARS = a_i의 EMA를 부호가중으로(meta-학습, 8-worker); FedAOT = val meta-gradient 가중 학습(폐루프이나 기여도 의미론·강도 게이트 없음) — **인용 필수 4편**. FedHAW를 엄격 상회(정확한 val 1st+2nd hypergradient vs train-loss 유한차분). "첫 주장" 금지 항목: 폐루프 가중 자체(GAAvernor/FedLAW 존재), valuation→training 되먹임 자체(ShapleyFL/FedIF 존재). **주장할 것**: 모델-적합성-게이트 개입(do-no-harm 붕괴 보장) × 곡률 지수 × 제로 한계비용 × LLM/PEFT 첫 사례.
 
-**이득 무대 / do-no-harm.** 이득: 비IID silo5(품질격차), poison/noisy 셀(φ 분리 9–18×), 7B std20 플래토(r2t −32의 무대 — vanilla 비효율 지점에서 λ가 자란다). IID-clean: 진단 문서가 보인 "클라 간 진짜 신호 부재" ⇒ spread(a+c)가 플로어 아래 ⇒ dead-zone+TR 붕괴 ⇒ **구성상 parity** (검증 가능 예측: IID-clean에서 Σ_r λ_r ≈ 0 로깅 — naive arm은 같은 무대에서 계속 tilt함을 대조).
+**이득 무대 / do-no-harm.** 이득: 비IID silo5(품질격차), poison 셀(φ 분리 9–18×; noisy는 ~0.6×로 노이즈 수준), 7B std20 플래토(r2t −32의 무대 — vanilla 비효율 지점에서 λ가 자란다). IID-clean: 진단 문서가 보인 "클라 간 진짜 신호 부재" ⇒ spread(a+c)가 플로어 아래 ⇒ dead-zone+TR 붕괴 ⇒ **구성상 parity** (검증 가능 예측: IID-clean에서 Σ_r λ_r ≈ 0 로깅 — naive arm은 같은 무대에서 계속 tilt함을 대조).
 
 **비용.** 추가 HVP/forward **0** (flirds_w가 이미 지불하는 온라인 스코어링 재사용) + 라운드당 loss 값 1개(grad에 부수) + O(k) 스칼라. 정밀-TR 옵션만 +1 HVP.
 

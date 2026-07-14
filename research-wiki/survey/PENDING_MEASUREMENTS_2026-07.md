@@ -11,7 +11,7 @@
 - **GPU 규약**: 물리 0-3만. 실행 전 `nvidia-smi`로 빈 GPU 확인 — probe std50k5(GPU0-2)가
   아직이면 그 GPU는 피할 것. GPU4-7은 프로젝트 규약상 미사용. B200 실 OOM ~160GB.
 - 작업 파일은 신규 `flirds_verify_scratch/`(이미 존재; 원본 저장소 무수정). 스크립트 3개는 이미
-  원격에 업로드돼 있음(taylor/, ripple/). 재업로드 필요 시 로컬 survey 폴더에서 scp.
+  원격에 업로드돼 있음(taylor/, ripple/; 07-07 서버 이전으로 생존 여부 재확인 필요 — runs/rerun_beta03/RESUME_AFTER_MIGRATION.md). 재업로드 필요 시 로컬 survey 폴더에서 scp.
 - 이 실측들은 **결과에 영향 주는 추가 근거**일 뿐 기존 결론을 뒤집는 게 아니다 — 안 돌려도
   문서는 완결돼 있고(placeholder 명시), 돌리면 placeholder가 실측치로 채워진다.
 
@@ -60,8 +60,7 @@ slope 0.30(노이즈)이었는데 1B에서 ~2/3로 올라오면 P3 상계가 타
 - (a) 간단: 기존 러너(`codes/experiments/phase2_matrix.py`의 silo5 셀 또는 `phase1_baseline_compare.py`)를
   돌리되 FL 학습 구간을 `time`으로 감싸 로그 생성 시간을 별도 기록 + Ripple 포함. 산출 metrics.json의
   방법별 runtime과 합산.
-- (b) 정밀: `cost-comparison-methodology.md` 후속제안 1·2 + `precision-audit-and-policy.md` 후속제안
-  P3(fp32-vs-bf16 마이크로벤치)를 한 스크립트로. Ripple 분리 계측은 `ripple-audit-2026-07/`의
+- (b) 정밀: `cost-comparison-methodology.md` 후속제안 1·2·3(3=fp32-vs-bf16 마이크로벤치; 항목 3 정밀도 감사와 공유)를 한 스크립트로. Ripple 분리 계측은 `ripple-audit-2026-07/`의
   `instrumented_ripple_cnn.py` 패턴을 LLM(ripple_llm.py)에 이식(GPU 필요).
   → **이 스크립트는 아직 안 만들었다**(GPU 없어 검증 불가라 보류). 서버 세션에서 작성 권장.
 
@@ -72,7 +71,7 @@ slope 0.30(노이즈)이었는데 1B에서 ~2/3로 올라오면 P3 상계가 타
   valuation-only 표에 Ripple 환산치.
 - `ripple-audit-2026-07/ripple-audit.md` §4 LLM 분리 계측(현재 CNN-CPU 실측만 있음; §3.3에서 LLM은
   "스케일업 추정"이라 명시한 부분을 실측으로).
-- `precision-audit-and-policy.md` §3.1-(4)·후속 P3: ×3.1 배수 확정치로 C3 캡션 갱신.
+- `precision-audit-and-policy.md` §3.1-(4)에 ×3.1 배수 확정치 반영 + `cost-comparison-methodology.md` §4 C3 캡션 갱신.
 
 ---
 
@@ -91,7 +90,7 @@ cifar10 iid + label_flip seed0을 `allow_tf32=True`(현행) vs `False`로 각 1�
 `cudnn.allow_tf32=False` 1줄 채택 근거, 안 흔들리면 논문 각주로 충분). 스크립트는 기존 CNN
 러너(`track_c*.py` 또는 phase0 CNN 스모크)에 `torch.backends.cudnn.allow_tf32=<bool>` 토글만
 추가한 사본. → **미작성**(CNN 무대라 yonsei 세션에서. `runs/probe_signal/PROMPT_yonsei_cnn.md`
-제출과 묶어도 됨).
+제출과 묶는 안은 무효 — 그 제출은 07-03 기수행·결과 커밋됨(d2e7ed6, 파일 삭제)).
 
 **결과 반영**: `precision-audit-and-policy.md` §2.2·§2.4 판정을 실측으로 확정, 부록 B에 yonsei
 런타임 값. 옵션 비교(§3)의 CNN 각주 근거.

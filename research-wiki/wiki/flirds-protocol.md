@@ -2,7 +2,7 @@
 type: protocol
 title: "Flirds — Implementation & Reporting Protocol"
 created: 2026-05-27
-updated: 2026-06-04
+updated: 2026-07-14
 tags: [flirds, protocol, reproducibility, implementation]
 ---
 
@@ -16,10 +16,10 @@ The lockable specification every reported number in the Flirds paper must follow
 
 | Phase | Precision | Rationale |
 |---|---|---|
-| **Client local LoRA training** | bf16 mixed-precision (fp32 master weights, bf16 forward/backward) | Standard 2024–2026 instruction-tuning practice (LESS, Grosse 2023, MATES, FedDQC default). 1B/3B/7B all feasible on B200 with bf16. |
-| **Server-side validation forward pass** | **fp32 enforced** | bf16 evaluation flagged as suspect in pilot (ρ=1.0 cancellation result possibly bf16 artefact). fp32 eval is the standard fix; cost overhead minimal because eval batch is small. |
+| **Client local LoRA training** | bf16 mixed-precision (fp32 master weights, bf16 forward/backward) *(2026-07-04 audit: implementation has been fp32-throughout since 06-04 — doc–code mismatch, resolution pending Yonghee; see survey/precision-policy-2026-07/precision-audit-and-policy.md §3.3)* | Standard 2024–2026 instruction-tuning practice (LESS, Grosse 2023, MATES, FedDQC default). 1B/3B/7B all feasible on B200 with bf16. |
+| **Server-side validation forward pass** | **fp32 enforced** | bf16 evaluation flagged as suspect in pilot (ρ=1.0 cancellation result possibly bf16 artefact). fp32 eval is the standard fix; cost overhead minimal because eval batch is small. *(2026-07-04 audit: no runtime guard — fp32 by explicit loads/convention; LLM matmul verified true fp32, but the CNN conv path inherits cuDNN TF32-on by default; precision-audit-and-policy.md §1.2–1.3.)* |
 | **Flirds inner product** ($-\nabla\ell \cdot \Delta w_k$, HVP, $\Delta w_k^\top u$) | **fp32 enforced** | The estimator's correctness depends on these dot products. bf16 here introduces representation precision artefacts that masquerade as zero-variance ties (last-layer cancellation, etc.). |
-| **(a) Retrain oracle SV** — LoRA training | bf16 (matches deployment) | Oracle target is the actually-deployed-precision retrained model. |
+| **(a) Retrain oracle SV** — LoRA training | bf16 (matches deployment) | Oracle target is the actually-deployed-precision retrained model. *(2026-07-04 audit: deployment is fp32 in code; the cited (a) runs — 06-07 headline `A_DTYPE=fp32`, track_d — ran fp32, while `phase2_llm_a_oracle.py` still defaults bf16.)* |
 | **(a) Retrain oracle SV** — utility evaluation | fp32 | Same rule as Flirds validation. |
 | **(b) IRDS-定 in-run oracle** — subset utility computation $\ell(w^r + \sum_{k\in S}p_k\Delta w_k, z^{val})$ | **fp32 enforced** | The forward-pass aggregation must be in fp32 to avoid bf16 representation precision dominating the marginal-contribution sign. |
 | **MC sampling (cross-device (b))** | fp32 | Same as exact (b). |
@@ -143,7 +143,7 @@ Reported number → must be linkable to a specific (config, env, git SHA, run di
 | Setting | $N$ | Participation per round | Oracle (b) | When |
 |---|---|---|---|---|
 | **Cross-silo** | 10 | 100% (all clients per round) | exact enumeration (1024 subset) | primary experiments |
-| **Cross-device** | 100 | $K$=10 per round (10% sample rate) | MC ($M$=5000–10000) | ComFedSV baseline + scale/participation ablation |
+| **Cross-device** | 100 | $K$=10 per round (10% sample rate) | MC ($M$=5000–10000) *(superseded 06-08: executed task7 used exact-per-round (b), no MC)* | ComFedSV baseline + scale/participation ablation |
 
 Cross-device is the *only* setting where ComFedSV is a valid baseline (Everyone-Being-Heard assumption).
 
@@ -155,7 +155,7 @@ Phase 0 is part of this protocol. **No LLM-phase number is reported until Phase 
 |---|---|---|
 | [[sources/gtg-shapley\|GTG-Shapley]] | CNN + MNIST/CIFAR-10, N=10 | recon-SV cosine 0.99 vs exact (figure-only in paper → derived scalar) |
 | [[sources/principled-federated-data-valuation\|FedSV]] | CNN + MNIST/CIFAR-10 (IID + non-IID), N=10 | permutation-MC recon 0.998 |
-| [[sources/comfedsv\|ComFedSV]] | Synthetic / MNIST / FMNIST / CIFAR-10, N=100 (10 noisy) | Spearman {1.0, 0.96, 0.85, 0.84} (the one paper scalar); ALS completion 0.993 |
+| [[sources/comfedsv\|ComFedSV]] | Synthetic / MNIST / FMNIST / CIFAR-10, N=100 (10 noisy) | Spearman {1.0, 0.96, 0.85, 0.84} (the one paper scalar); ALS completion 0.993 *(note-only — no persisted rundir; 2026-06-08 re-check gave 0.33 CPU / 0.67 GPU at seed=0 = seed/device-sensitive; paper-readiness R9: do not cite)* |
 | [[sources/ripple-shapley\|Ripple Shapley]] | CNN + MNIST/CIFAR-10, N=10 | **no ground-truth-SV metric exists** (Ripple reports task-driven robustness only); checked via noisy-detection AUROC 1.0 + runtime. **Speedup is 62× vs AFedSV+ / 49× vs FedSV — NOT "vs GTG"** (GTG is not a Ripple baseline). |
 
 Phase 0 output: validated baseline implementations + sample-level → client-level aggregation function (for Ripple LLM transfer). Phase 0.5 then added the estimator + dual oracle (see [[flirds#Phase 0.5 findings — 2nd-order term & dual oracle (2026-06-03, CNN)|flirds]]).
@@ -195,7 +195,7 @@ flirds/
 │   ├── task_acc.py             # downstream metric 2
 │   └── noisy_freerider_auroc.py  # downstream metric 3
 └── protocol/
-    ├── precision_guard.py      # fp32-eval enforcement
+    ├── precision_guard.py      # fp32-eval enforcement (NOT implemented as of 2026-07-04 audit — no dtype guard anywhere in codes/; fp32 held by explicit loads/convention only)
     ├── sanity_gates.py         # E=1, N=2 checks
     ├── ci_bootstrap.py         # 95% bootstrap
     └── run_logger.py           # config + env + git SHA + local run-dir (no W&B)
@@ -221,7 +221,7 @@ Three LLM-specific musts the CNN track never hit — apply to **1B / 3B / 7B ali
 2. **FL state keyed by `named_parameters()`** (`…lora_A.default.weight`), **not** `get_peft_model_state_dict` (`…lora_A.weight`) — `functional_call` / the estimator need the named key. Sync clients with `load_state_dict(strict=False)` (LoRA keys present, base absent → base untouched).
 3. **Clear the embedding require-grad hook** — `make_llm_loss` must call `get_input_embeddings()._forward_hooks.clear()` + set `use_cache=False`; SFTTrainer's gradient-checkpointing input-require-grad hook (`output.requires_grad_()`) is forbidden inside a functorch transform.
 
-Plus the precision split for the largest tier: **7B = bf16 train / fp32 eval** (separate the two; §1 already mandates fp32 eval + fp32 Flirds inner products).
+Plus the precision split for the largest tier: **7B = bf16 train / fp32 eval** (separate the two; §1 already mandates fp32 eval + fp32 Flirds inner products). *(2026-07-04 audit: actual 7B runs — track_d ×6 rundirs — trained fp32; doc–code mismatch, see precision-audit-and-policy.md §1.4.)*
 
 **TRL 1.x API notes** (self-built FL loop, OpenFedLLM trl-0.7 is reference-only): `tokenizer`→`processing_class`, `max_seq_length`→`SFTConfig.max_length`, forced plain SGD via `optimizer_cls_and_kwargs=(SGD, {lr, momentum:0})` constant-lr, `completion_only_loss=True` (no manual collator). Plain SGD (not Adam) per the locked momentum-0 convention (§ matches IRDS/Ripple Eq 1).
 

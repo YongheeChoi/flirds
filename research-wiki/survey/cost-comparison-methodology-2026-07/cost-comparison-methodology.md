@@ -74,7 +74,7 @@ def _timed(fn, device):
 
 #### (i) 정밀 실측: track_d anchor5 r64 (1B, N=5 K=5 R=30, LoRA r=64, seed0, fp32, B200 1장)
 
-출처: 원격 `runs/probe_signal/rundirs/1B_anchor5_r64_seed0/metrics.json`의 per-method runtime(2026-07-04 정찰 실측; config = Llama-3.2-1B-Instruct, val 200, max_steps 10, lr 1e-3, git 5c5df9e). vanilla FL wall-clock은 같은 셀 arms의 `train_s`에서 **역산**: shapleyfl_w arm 5525s = vanilla×2.96 → **vanilla ≈ 1,866s** [추측·파생 — 셀 자체 `t_vanilla` 직접 읽기 아님. 원자료는 arm 5525s와 2.96 비율만 기록(recon cost §3); 정밀치는 `metrics.json`의 anchor5_r64 `train_s("vanilla")`를 직접 읽어 대체할 것(track_d.py:394/408이 arm별 `t_vanilla` 영속)]. 교차검증: 같은 R=30 anchor 무대 noise probe의 vanilla 1,885s(`runs/probe_signal/_logs/noise_r16.log` 말미)와 ±1% 일치 — 단 이는 **rank-16 셀** 값이므로 이 r64 셀과의 대조는 same-cell이 아니라 across-rank sanity check임(rank가 vanilla 학습 시간에 미치는 영향은 작다는 가정 하의 정합).
+출처: 원격 `runs/probe_signal/rundirs/1B_anchor5_r64_seed0/metrics.json`의 per-method runtime(2026-07-04 정찰 실측; config = Llama-3.2-1B-Instruct, val 200, max_steps 10, lr 1e-3, git 5c5df9e). vanilla FL wall-clock은 같은 셀 arms의 `train_s`에서 **역산**: shapleyfl_w arm 5525s = vanilla×2.96 → **vanilla ≈ 1,866s** [추측·파생 — 셀 자체 `t_vanilla` 직접 읽기 아님. 원자료는 arm 5525s와 2.96 비율만 기록(recon cost §3); 정밀치는 `metrics.json`의 anchor5_r64 `train_s("vanilla")`를 직접 읽어 대체할 것(track_d.py:394/408이 arm별 `t_vanilla` 영속) — **후기(07-07 커밋 e85df6e): 해당 metrics.json 커밋됨, `train_s("vanilla")` = 1,888.4s·shapleyfl_w arm 최종 5,631.2s(×2.98); 아래 표 % 는 ~1.2% 비율 하향(Flirds 40.0→39.6%, (b) 202.5→200.1%)**]. 교차검증: 같은 R=30 anchor 무대 noise probe의 vanilla 1,885s(`runs/probe_signal/_logs/noise_r16.log` 말미)와 ±1% 일치 — 단 커밋된 canon(`runs/probe_signal/noise_probe/*/metrics.json` `t_fl_s`)은 r16 1,843.2s·r64 1,885.2s로 1,885s는 **r64 셀** 값(정찰 로그의 r16 귀속은 오귀속; r64 same-rank 대조로는 canon vanilla 1,888.4s와 ±0.2% 일치, r16과는 ±2.4%).
 
 | 방법 | valuation runtime (s) | **vanilla FL 대비 overhead** |
 |---|---|---|
@@ -95,15 +95,15 @@ def _timed(fn, device):
 
 #### (ii) 느슨한 1차 근사: 2026-06-06 표 조건 (1B N=5 R=10 val=100)
 
-공유 로그 생성 "~15min"은 디버깅 서술의 어림값(위 :47)이므로 정밀치 아님. vanilla ≈ 900s로 두면: Flirds-1st 35s ≈ **3.9%**, Flirds 107s ≈ **12%**, loss-heur 164s ≈ 18%, GTG 537s·FedSV 532s·Banzhaf/ShapleyFL/(b) ~531s ≈ **59–60%**, Ripple 4,515s ≈ 5.0×(단 자체 축소-학습 R=4 포함이라 이 비율은 overhead가 아니라 end-to-end/학습 비율). → anchor r64 실측(위)보다 코얼리션 계열 비율이 낮은 것은 R=10 vs 30, val 100 vs 200 차이로 정성적으로 일관. 정밀치는 위 [실측 대기] 항목으로 대체.
+공유 로그 생성 "~15min"은 디버깅 서술의 어림값(위 :47)이므로 정밀치 아님. vanilla ≈ 900s로 두면(방법별 초 수치는 2026-06-06 노트 전용 — phase1 rundir metrics.json에 runtime 미영속): Flirds-1st 35s ≈ **3.9%**, Flirds 107s ≈ **12%**, loss-heur 164s ≈ 18%, GTG 537s·FedSV 532s·Banzhaf/ShapleyFL/(b) ~531s ≈ **59–60%**, Ripple 4,515s ≈ 5.0×(단 자체 축소-학습 R=4 포함이라 이 비율은 overhead가 아니라 end-to-end/학습 비율). → anchor r64 실측(위)보다 코얼리션 계열 비율이 낮은 것은 R=10 vs 30, val 100 vs 200 차이로 정성적으로 일관. 정밀치는 위 [실측 대기] 항목으로 대체.
 
-#### (iii) 대규모 레짐 참고치: std50k5 (N=50 K=5 R=200, 진행 중)
+#### (iii) 대규모 레짐 참고치: std50k5 (N=50 K=5 R=200, 07-07 완주·커밋 e85df6e)
 
-vanilla FL 실측 = r16 10,998s / r32 11,136s / r64 11,404s(각 셀 로그 마지막 라인, 2026-07-03). phase-1 fidelity(10-method 합산)는 ETA 추정 ~38h ≈ vanilla의 **~12×** — 이 레짐에서는 사후 valuation 총비용이 학습을 압도한다(코얼리션 방법들이 지배). 방법별 분해는 **[실측 대기 — probe std50k5 3셀 완주 후 metrics.json (ETA 2026-07-05 저녁~07-06)]**.
+vanilla FL 실측 = r16 10,998s / r32 11,136s / r64 11,404s(각 셀 로그 마지막 라인, 2026-07-03). phase-1 fidelity(10-method 합산)는 ETA 추정 ~38h ≈ vanilla의 **~12×** — 이 레짐에서는 사후 valuation 총비용이 학습을 압도한다(코얼리션 방법들이 지배). 방법별 분해는 **완료(07-07 커밋 e85df6e)** — `runs/probe_signal/rundirs/1B_std50k5_r{16,32,64}_seed0/metrics.json`; r16 10-method 합산 실측 122,757s ≈ 34.1h = vanilla의 **~11.2×**(ETA 추정 ~38h/~12×를 대체).
 
 ### 1.5 방법별 로깅 요구 — `(w_r, δ)` 공유 로그로 충분한가 [확인]
 
-공통 로그 계약: `logs = [(w_r, {client: (delta, n_c)})]` (`fl/server.py:5–8`; LLM은 LoRA 파라미터만, `fl/llm_server.py:2–15`).
+공통 로그 계약: `logs = [(w_r, {client: (delta, n_c)})]` (`flirds/fl/server.py:5–8`; LLM은 LoRA 파라미터만, `flirds/fl/llm_server.py:2–15`).
 
 | 분류 | 방법 | (w_r, δ) 충분? |
 |---|---|---|
@@ -118,7 +118,7 @@ vanilla FL 실측 = r16 10,998s / r32 11,136s / r64 11,404s(각 셀 로그 마�
 ### 1.6 로그 저장 용량 [확인 + 산술]
 
 - LoRA r=16, 7모듈(q/k/v/o/gate/up/down_proj) → 1B(Llama-3.2-1B-Instruct) LoRA 파라미터 **11,272,192 ≈ 11.27M** → fp32 **45.09 MB**/벡터 (교차검증: `ripple_llm.py:20` "P ~ 12M").
-- 로그는 **디스크에 저장되지 않는다** — rundir 영속물은 config/meta/metrics/phi.parquet뿐(원격 `find runs -name '*.pt' -o '*.pkl' -o '*.npz'` 0건, 2026-07-04 확인). w_r 이력은 GPU 상주, delta 이력은 CPU RAM(`fl/llm_server.py:56` `.cpu()`, `fl/server.py:39,44`). 즉 아래는 **런타임 메모리 상주량**이다.
+- 로그는 **디스크에 저장되지 않는다** — rundir 영속물은 config/meta/metrics/phi.parquet뿐(원격 `find runs -name '*.pt' -o '*.pkl' -o '*.npz'` 0건, 2026-07-04 확인). w_r 이력은 GPU 상주, delta 이력은 CPU RAM(`flirds/fl/llm_server.py:56` `.cpu()`, `flirds/fl/server.py:39,44`). 즉 아래는 **런타임 메모리 상주량**이다.
 
 | 설정 (config 출처) | K | R | 라운드당 (1+K)×45.09MB | 총량 | GPU(w_r) | CPU(δ) |
 |---|---|---|---|---|---|---|

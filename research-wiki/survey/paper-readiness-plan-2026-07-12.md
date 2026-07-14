@@ -17,7 +17,7 @@
   최초의 측정 표준, ② O(1)/round (1 HVP) 추정기가 그 오라클을 충실 재현, ③ 경계 지도
   (near-additivity·부분참여·poison·비용 crossover)의 경험 법칙들.
 - **팔지 않을 것**: "Shapley로 더 나은 학습" free-lunch 서사 (선행이 점유 + 우리 데이터가
-  약함 + exact oracle조차 못 이기는 축 — device100 noisy에서 (b) oracle AUROC 0.660).
+  약함 + exact oracle조차 못 이기는 축 — device100 noisy에서 (b) oracle AUROC 0.604±0.050(seed0 0.660)).
 - **결과 배치**: hardness ladder (쉬운 무대→어려운 무대) 순. 헤드라인 = 부분참여 fidelity
   (std20/std50k5에서 경쟁자 붕괴) + 듀얼 오라클 + cohort-조건화 비용. clean-anchor "+1.000"은
   포화 표(사다리 1단)로 강등.
@@ -56,13 +56,13 @@
 - **R9**: CNN ComFedSV 구수치 {1.0,0.96,0.85,0.84} 인용 금지.
 - **R6**: Ripple ~4515s 회계 주석 필수 (자체 궤적 포함 유일 방법).
 - **R11**: ShapleyFL β 프로비넌스 통일 — G9.
-- 07-04 검증 산출물(수학/Ripple/정밀도/deferred/cost 5폴더) 검토 후 커밋·push.
+- 07-04 검증 산출물(수학/Ripple/정밀도/deferred/cost 5폴더)은 커밋·push 완료(9dacbad, 07-04) — Yonghee 검토 잔여.
 - (b) xseed·가산갭·SNR 수치의 CSV 정본화 (K-6; 현재 진단 문서 산문에만 존재).
 
 ### G3. 이론 정식화 [T0 집필 + T1 1B 실측]
 
 - P1–P8을 본문 명제 + appendix 증명으로 포팅 (irds-fl-math-rigor.md가 논문 수록급으로 준비
-  완료 — 반박 패널 18건 교정 반영본).
+  완료 — 반박 패널(18) 교정 반영본(수용 36건)).
 - gpt2 스모크 수치(P1·P2 대수 1e-12 확증) 수록.
 - **P3 물리 잔차 1B 실측** (~55–75분, RUN_1B.md 준비 완료): 2차>1차 우위, O(‖Δ‖³) 스케일링,
   P5 순위. §7.2 placeholder 교체.
@@ -117,8 +117,8 @@
 ### G9. ShapleyFL β=0.3 통일 (R11) [T2]
 
 - **발견 (07-12)**: 대기 25 phase2 셀 중 device100 sweep 14셀은 COALITION=0이라 ShapleyFL
-  미계산 → β 영향 0, 재실행 불요 (검증 후 큐 제외 권장). 실제 필요 = **11셀**(1B silo5 4 +
-  3B silo5 4 + device100-a0.5 anchor 3) ≈ 1–1.5 GPU-일.
+  미계산 → β 영향 0, 재실행 불요 (검증 후 큐 제외 권장). 실제 필요 = **7셀**(1B silo5 4 +
+  device100-a0.5 anchor 3; 3B silo5 4도 COALITION=0 — ShapleyFL 미계산이라 동일 제외) ≈ 1–1.5 GPU-일.
 - 7B track_d 6셀 = 최중량 꼬리 → **각주 처리 권장**("7B ShapleyFL은 β=0.5"); 재실행은 여유 시.
 - 재실행 시 phase2 method 목록에 Fed-LOO 1줄 추가 → 백필 공짜 동승.
 - 재개 절차: `runs/rerun_beta03/RESUME_AFTER_MIGRATION.md`.
@@ -136,7 +136,7 @@
 ### G11. 재현성 패키지 [T0~]
 
 - 코드·rundir 공개 계획 (익명 repo?); make_analysis/make_fidelity 재생성 경로 문서화.
-- make_analysis.py cp949 버그 수정, RESULTS.md 재생성 (codex 지적).
+- make_analysis.py cp949 버그 수정, 스테일 RESULTS.md 참조 정리 — make_analysis.py는 RESULTS.md 미생성(레거시 make_report.py는 미영속 로그 기반), 실산출물=analysis/00_overview (codex 지적).
 - precision_guard 구현 여부 (protocol이 스펙만 존재) — 결정 D-5와 연동.
 - protocol §1 문서-코드 불일치 해소 (silent-deviation 자기 규칙 위반 상태).
 
@@ -154,7 +154,7 @@
 | E6 | 3B (a) silo5 3-seed | 미실행 | ~18–20h | G7-2 | T2 |
 | E7 | delta free-rider 1B silo5 | 구현 ~20줄 | ~3h+반나절 | G6(I-27) | T2 |
 | E8 | 3B poison seeds 1–2 | 미실행 | ~4h | G5 | T2 |
-| E9 | β0.3 재실행 11셀 (+Fed-LOO 동승) | 큐 준비됨 | ~1–1.5일 | G9·G4 | T2 |
+| E9 | β0.3 재실행 7셀 (+Fed-LOO 동승) | 큐 준비됨 | ~1–1.5일 | G9·G4 | T2 |
 | E10 | CNN TF32 A/B (yonsei) | 스크립트 미작성 | ~1–2.5h | 정밀도 각주 | T2 |
 | E11 | A축 probe seeds 1–2 | 미실행 | ~수 h | G5(진단 문서) | skip-2wk |
 | E12 | (a) N=10 (샤딩 신규) | 미설계 | 11–22h/4-GPU | G7-3 | skip-2wk |

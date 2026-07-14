@@ -1,6 +1,6 @@
 # Flirds 신호 크기 진단 — "val-loss 변화량이 너무 작다" 가설 검증
 
-- 작성: 2026-07-02 (Phase 1 진단 완료; Phase 2 probe는 승인 대기)
+- 작성: 2026-07-02 (Phase 1 진단 완료; Phase 2 probe 결과 §3 기입 완료 2026-07-07 — seeds 1–2 대기)
 - 가설: 학습에서 일어나는 val-loss 절대 변화량이 너무 작아 (1) 기여도 fidelity와
   (2) 기여도-가중 학습(intervention)의 성능 변화 정밀도가 떨어진다. 핵심 의심:
   이 세팅의 SFT가 validation 기준으로 실제로 유의미한 학습을 하는가.
@@ -15,14 +15,14 @@
 1. **측정 정밀도(fp32)는 병목이 아니다.** 관측되는 최소 신호(클라 간 φ 차이
    ~1e-4–1e-3)도 fp32 플로어(ulp ~1.7e-7 @loss≈1.4)보다 2–4 자릿수 위에 있다.
 2. **절대 학습량 부족은 절반만 사실.** val-loss 감소(−0.03~−0.13)와 ROUGE-L
-   상승(+5~+13pp)은 실재하지만, **capability 축(MMLU)은 향상 0 또는 하락** —
+   상승(+1.5~+13pp; 7B anchor만 +1.5pp)은 실재하지만, **capability 축(MMLU)은 향상 0 또는 하락** —
    이 SFT는 포맷/스타일을 학습하지 소재 능력을 학습하지 않는다.
 3. **더 근본적인 병목: IID-clean 무대에는 측정할 클라 간 '진짜 신호'가 구조적으로
    없다.** 클라들이 교환 가능하게 설계되어 있어 (b) oracle 자신의 클라 순위조차
    seed 간 재현되지 않고(cross-seed ρ≈0), 게임이 사실상 가산적이라 모든 semivalue가
    같은 순위로 붕괴하며(방법 구별 실패), intervention 이득의 정답 자체가 ~0
    (do-no-harm parity)이다. 대조군이 이를 확증한다: CNN Track C는 오염/비IID 셀에서
-   oracle 순위 안정성 0.51~0.97, IID 셀은 −0.04이고, **LLM도 같은 코드로 무대만
+   oracle 순위 안정성 0.44~0.97(단 mnist feature-noise −0.12 반례 — RESULTS.txt), IID 셀은 −0.04/−0.17이고, **LLM도 같은 코드로 무대만
    5-domain 비IID(silo5)로 바꾸면 ρ가 −0.37→+0.93~1.00으로 산다**(§1.4). 즉 신호원은
    학습 강도(lr·epoch·rank = A축)가 아니라 클라 간 실제 차이(비IID·오염 = B축)다.
    → 다음 실험은 이 B축을 직접 여는 **오염축 × 비IID축 2×2 매트릭스**(§2.4).
@@ -85,13 +85,13 @@ alpaca 포맷/스타일 적응이지 능력 획득이 아니다. 즉 "모든 미
 (track_d `fidelity.csv`, 3-seed mean±std)
 
 - **(a) 순위 fidelity 포화 여부**: anchor5(N=5, full)에서는
-  Flirds/Flirds1st/GTG/Banzhaf/loss-heur 전부 Spearman **+1.000±0** (포화).
+  Flirds/Flirds1st/GTG/Banzhaf/loss-heur 전부 Spearman **+1.000±0** (포화; 1B·7B — 3B는 β0.3 재실행본서 GTG 0.967, 나머지 +1.000).
   std20(N=20, 2/round)에서는 구별이 생긴다:
   Flirds +1.000 / loss-heur ~+1.000 / Flirds1st +0.999 / GTG +0.975±0.02 /
   FedSV +0.91±0.09 / ShapleyFL +0.19 / ComFedSV +0.09 / FedIF +0.16.
 - **(b) 방법 간 구별 가능성**: anchor에서는 차별화 실패(1.5절의 가산성 때문 —
   제대로 계산하면 누구나 같은 순위). 차별화는 부분참여(std20)가 만든다.
-- **(c) 값-수준 Pearson**: Flirds vs (b) = 0.99999+ 전 스케일·전 레짐. 추정기는
+- **(c) 값-수준 Pearson**: Flirds vs (b) = 0.9999+(최저 7B std20 0.99991) 전 스케일·전 레짐. 추정기는
   oracle을 순위가 아니라 **값까지** 재현한다. (a)-vs-(b)도 0.86–0.98.
 - **(d) φ 절대 크기·분산** (φ 단위 = val-loss 변화 귀속):
 
@@ -101,14 +101,14 @@ alpaca 포맷/스타일 적응이지 능력 획득이 아니다. 즉 "모든 미
 | 3B anchor5 | −0.071~−0.079 | −0.0143~−0.0159 | 0.0009~0.0022 | 6–15% |
 | 7B anchor5 | −0.027~−0.033 | −0.0055~−0.0066 | 0.0012~0.0016 | 18–30% |
 | 1B std20 | −0.104~−0.112 | −0.0052~−0.0056 | 0.0070~0.0106 | 126–190% |
-| 3B/7B std20 | 유사 | | 0.0051~0.0097 | ~120–180% |
+| 3B/7B std20 | 유사 | | 0.0051~0.0097 | ~120–165% |
 
 std20의 큰 spread는 참여 추첨(어느 라운드에 뽑혔나)이 지배 — 클라 속성이 아니다.
 
 ### 1.4 신호 vs 노이즈 (항목 4)
 
 **(ii) seed SNR — (b) oracle 자기 순위의 cross-seed 재현성** (track_d, 3-seed 쌍별
-Spearman 평균): 1B anchor −0.37 / 1B std20 −0.11 / 3B anchor +0.27 / 3B std20
+Spearman 평균): 1B anchor −0.37 / 1B std20 −0.11 / 3B anchor +0.03(β0.3 재실행본 b1b95d0 기준; 진단 당시 β0.5 원본은 +0.27) / 3B std20
 −0.24 / 7B anchor +0.73 / 7B std20 +0.16. 모든 방법이 oracle과 같은 불안정성을
 공유한다(예: 3B std20에서 Flirds −0.24, loss-heur −0.24 — 추정기는 oracle의
 노이즈까지 충실히 재현).
@@ -156,7 +156,7 @@ Spearman 평균): 1B anchor −0.37 / 1B std20 −0.11 / 3B anchor +0.27 / 3B st
   → val-loss 축에서는 flirds_w가 vanilla보다 일관되게 낮다(방향 실재). 크기는
   0.07–0.3% — **같은 게임(val-loss)에선 보이고, 다른 게임(MMLU: 효과 0.001 <
   SE 0.004; ROUGE: SE ~0.005)에선 원리적으로 분해능 밖**.
-- 수렴 속도(rounds-to-target): 1B/3B는 해상도 없음(198–200/None). 7B std20만
+- 수렴 속도(rounds-to-target): 1B/3B는 해상도 없음(188–200/None). 7B std20만
   유의미: vanilla 159 vs flirds_w 127 / shapleyfl_w 124 / fedif_w 142 —
   vanilla가 플래토(과적합 시작)에 들어간 무대에서만 개입이 라운드를 벌어준다.
 
@@ -186,7 +186,7 @@ per-round 이동, momentum=0)의 특성이지 계산 결함이 아니다. 방법
 
 참고(phase2_matrix, 오염 무대와의 대조): corrupt−clean φ 분리는 silo5 noisy
 +0.0019 / free-rider +0.0039 (clean 클라 간 spread ~0.0033의 0.6–1.2배),
-poison +0.048~+0.063 (**9–18배**). 오염이 있으면 φ 신호가 노이즈 위로 올라온다 —
+poison +0.059~+0.072 (같은 spread ~0.0033 기준 **18–22배**, poison 셀 자체 clean spread ~0.007 기준 **8.5–10배**). 오염이 있으면 φ 신호가 노이즈 위로 올라온다 —
 IID-clean에서 신호가 없는 것과 정합적.
 
 ### 1.6 병목 판정
@@ -273,7 +273,7 @@ fidelity·탐지 기여를 정량화한다(기존 silo5는 둘이 항상 결합�
 
 - 규모: silo5 급 통일(val20/R10, N=5 full, (b)=exact 2⁵) — 전 칸 같은 규모라
   IID↔비IID, clean↔오염 직접 비교. 신규 6셀×3seed(iid5 {clean,noisy,frrand,frzero,
-  poison} + silo5 clean); silo5 오염 3셀은 기존 재사용.
+  poison} + silo5 clean); silo5 오염 4셀(noisy·frrand·frzero·poison)은 기존 재사용.
 - 측정(위계 순): **1차 fidelity** = (b)oracle 자기 순위 cross-seed ρ — 관심 미지수:
   non-IID clean이 오염 없이도 ρ 높은가(도메인 순수 신호), IID clean은 ρ≈0 재현되는가.
   **2차-③ 탐지 AUROC** = 오염 클라 이진 탐지 — 핵심 대조 IID+noisy vs non-IID+noisy
@@ -316,7 +316,7 @@ spot인 근거). seed0 파일럿; 실행 = 매트릭스 완료 후 GPU0-2 자동
 
 ## 3. probe 결과 (실행 후 기입)
 
-### 3.1 rank probe — anchor5 (seed0, 파일럿 진행 중)
+### 3.1 rank probe — anchor5 (seed0 파일럿 완료; seeds 1–2 대기)
 
 | | rank16 (기존 재사용) | rank32 | rank64 |
 |---|---|---|---|
@@ -384,7 +384,7 @@ IID+오염(0.6~0.73)은 균질 배경에 오염 클라 하나만 튐; non-IID+�
   "IID 균질 배경이 오염 탐지를 돕나"의 답 = data-quality 축에선 그렇다.
 - **poison은 clean-preserving backdoor**라 Flirds가 **IID에서 완전 회피(0.00)** vs
   non-IID 0.92 — 균질 배경일수록 backdoor가 clean val-loss에 덜 드러나 더 잘 숨음
-  (§3.9 경계가 IID에서 심화; loss-heur/FedDQC/FLTrust는 여전히 잡음).
+  (§3.9 경계가 IID에서 심화; FedDQC/FLTrust는 여전히 잡음, val-loss 기반 loss-heur는 IID서 Flirds처럼 0.00으로 같이 회피).
 - STD-DAGMM(model-free)은 전반 약하고 IID에서 더 낮음(균질 배경서 AE 클러스터링 실패).
 
 ### 3.4 noise probe (4-i: val bootstrap SE = φ의 노이즈 하한, anchor5 seed0)
@@ -427,7 +427,7 @@ cross-seed로 실재하는 신호인지는 seed0 단일이라 미확인** — �
 
 ### 3.6 CNN probe (C1 fidelity + C2 intervention) — **완주** (A축 CNN 확정)
 
-CNN이 A축 probe의 완주 파트다(LLM §3.1은 seed0 파일럿, §3.2는 실행 중). **C1** = 폭 w{0.5,1,2,4}×참여
+CNN이 A축 probe의 완주 파트다(LLM §3.1·§3.2는 seed0 파일럿 완료, seeds 1–2 대기). **C1** = 폭 w{0.5,1,2,4}×참여
 k{2,5,10}/N=10×{iid, label-flip}×3seed = 72셀(66 신규 + (w1,k10) track_c 재사용). **C2** = 폭·참여 sweep ×
 {clean, label-flip}×3seed = 30셀(f0.2는 shapleyfl arm의 2²⁰/라운드 exact 불가로 제외 → 계획 36→30). 전체 표·
 수치 = overview [[flirds-experiment-results-overview-2026-06-25]] §3.6; 여기선 진단 판정만. (커밋 `d2e7ed6`.)
@@ -447,18 +447,18 @@ partial 참여(k<1.0)면 label-flip도 ρ→0 붕괴: N=10·R=10에선 클라당
 
 **(2) method fidelity — 2차항이 부분참여에서 값을 한다.** Flirds(2차)·Banzhaf는 폭·참여·시나리오 전반 0.9+
 (전 72셀 pool Flirds +0.953±.080). **Flirds-1st는 참여↓서 붕괴**(label-flip k=0.2→+0.305, full→+0.940; Flirds
-2차는 k=0.2도 +0.904 유지). → §1.5의 "방법 차이는 부분참여가 만들고 2차항이 방어"를 CNN이 확증. **caveat**:
+2차는 k=0.2도 유지(k0.2 전체 +0.904, label-flip만 +0.891)). → §1.5의 "방법 차이는 부분참여가 만들고 2차항이 방어"를 CNN이 확증. **caveat**:
 이 붕괴는 CNN R=10(짧은 지평) 특성 — LLM std20(R=200, 클라당 ~20회 참여)에선 2/20이어도 Flirds-1st +0.999.
 "참여 분수"가 아니라 **클라당 참여 횟수**가 1차항 정확도의 조건.
 
 **(3) intervention(C2) — clean parity vs 오염 이득, 둘 다 폭 무관.** clean은 전 폭·참여에서 Δacc≈0(do-no-harm
 parity, |Δ|<0.006); label-flip은 flirds_mult Δ≈+0.09·shapleyfl +0.08(폭 무관), vanilla가 오염에 눌려 target 0.6
-미달인데 개입 arm은 도달(폭↑일수록 빠름, r2t 82→55). 탐지 AUROC 0.93~0.99. → **개입 효과 크기도 A축이 아니라
+미달인데 개입 arm은 w≥1에서 도달(폭↑일수록 빠름, flirds_mult r2t 82→55). 탐지 AUROC 0.93~0.99. → **개입 효과 크기도 A축이 아니라
 B축(오염)이 지배**(§4-2 예비 권고 확정). 예외 sfedavg(softmax 선택): AUROC 높아도 개입 Δ≈0 = 탐지≠좋은 개입.
 
 **CNN probe 종합**: A축 lever(용량 폭 8× + 참여)는 IID-clean 신호를 못 만든다(ρ≈0, φ 작음, 개입 parity). 신호는
 오염이 만든다(ρ≈0.9, φ 2–4×, 개입 Δ≈+0.09; 전부 폭 무관). → 다음은 §2.4 B축 매트릭스(오염축×비IID축).
-LLM rank/참여 probe(§3.1–3.2)가 seeds 1–2·std50k5로 굳히면 A축 판정 완결.
+LLM rank/참여 probe(§3.1–3.2)가 seeds 1–2로 굳히면 A축 판정 완결.
 
 ## 4. "신호를 키우려면 무엇을 바꿔야 하는가" — Phase 1 기반 예비 권고
 
@@ -474,7 +474,7 @@ probe 결과로 확정하되, Phase 1만으로 이미 말할 수 있는 것:
    구간에서의 가중이 아니라 (ii) 클라 간 실제 품질 격차가 필요하다.
 3. **(무대 판단거리 — 이번 스코프 밖, 데이터 근거만 제시)** 클라 간 진짜 신호가
    있는 무대(품질 격차·비IID·오염 혼합)로 가면 φ 신호가 노이즈 위로 올라오는 것은
-   phase2_matrix(poison 9–18×)와 Track C(label_flip 안정성 0.97)가 이미 보여줌.
+   phase2_matrix(poison 9–22×)와 Track C(label_flip 안정성 0.97)가 이미 보여줌.
    "clean × non-IID" 칸(기존 next 항목의 분리 실험)이 자연스러운 다음 후보.
    base model·task 변경은 이번에 다루지 않음.
 

@@ -2,7 +2,7 @@
 type: survey
 title: "Flirds 실험 결과 전체 한눈에 보기 (2026-06-25)"
 created: 2026-06-25
-updated: 2026-07-03
+updated: 2026-07-14
 tags: [survey, results, experiments, master, fidelity, detection, cost]
 ---
 
@@ -19,13 +19,13 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > **수치 출처 파일**
 > - LLM standard: `runs/track_d/fidelity.csv` · `runs/track_d/rundirs/*/{config.yaml,metrics.json}`
 > - CNN: `runs/track_c/fidelity.csv` · `runs/track_c/RESULTS.txt` · `runs/track_c/{c1,c2,c1_oracle}/*/{config,metrics}.json`
-> - Robustness: `runs/phase2_matrix/RESULTS.md` · `runs/phase2_matrix/analysis/00_overview/master_metrics.csv` · `runs/phase2_matrix/rundirs/*/{config.yaml,meta.json}`
+> - Robustness: `runs/phase2_matrix/analysis/00_overview/master_metrics.csv` · `runs/phase2_matrix/rundirs/*/{config.yaml,meta.json}` (+`RESULTS.md` = gitignored 파생 요약, `make_report.py` 재생성 — 현 트리 부재)
 > - Foundational: `runs/phase1/rundirs/*/{config.yaml,metrics.json}`
 > - Signal-size probe(§3.6): LLM A축 `runs/probe_signal/rundirs/1B_*` · `runs/probe_signal/noise_probe/*` · CNN A축 `runs/probe_signal/cnn_c{1,2}/pc*` · B축 매트릭스 `runs/phase2_matrix/rundirs/1B_{iid5,silo5}_*` (+ track_c/track_d/silo5 기준점 재사용); 배경 [[flirds-signal-size-diagnosis]]
 >
 > **수치 재생성 경로** (rundir만으로 재실행 가능, GPU 불필요):
 > - `python runs/track_d/make_fidelity.py` → `runs/track_d/fidelity.csv` 재생성 (1B/3B/7B × std20/anchor5)
-> - `python runs/phase2_matrix/make_analysis.py` → `runs/phase2_matrix/analysis/*` + `RESULTS.md` 재생성
+> - `python runs/phase2_matrix/make_analysis.py` → `runs/phase2_matrix/analysis/*` 재생성 (`RESULTS.md`는 별도 `make_report.py`; 둘 다 gitignored 파생 산출물)
 > - CNN `RESULTS.txt`는 Track C의 결과 정리 스크립트가 rundir에서 재생성.
 >
 > 자매 문서(중복 X, 링크만): baseline 수치가 각 방법 원 논문과 얼마나 맞는지는
@@ -37,9 +37,9 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > fidelity(순위+거리)·§3.2.1 arms·§3.3.1 수렴·§3.5.1 runtime의 3B 열뿐**. 핵심 = ShapleyFL fidelity
 > std20 Spearman 0.227→**0.211**·anchor5 0.100→**0.167**(β 재가중); 그 외 3B 메서드는 LLM 재실행 비결정성으로
 > 소폭 이동(anchor5서 Flirds 0.967→**1.000**, GTG 1.000→0.967 자리 교환 등). **β=0.3 반영 완료**:
-> 1B·3B track_d·CNN(track_c) 전 셀. **β=0.3 대기(값은 아직 이전 실행 기준)**: **7B track_d**(§3.1.1 7B
+> 1B·3B track_d·CNN(track_c) 전 셀(3B=`b1b95d0` 재실행 커밋; 1B·CNN은 재실행 커밋 없음 — '값 동일/β-불변'은 rerun 노트[runs/rerun_beta03] 주장, canon 미확보). **β=0.3 대기(값은 아직 이전 실행 기준)**: **7B track_d**(§3.1.1 7B
 > 열·§3.5 runtime)·**phase2_matrix**(§3.4 detection 표의 ShapleyFL AUROC·Spearman 행) — 재실행 큐 31셀
-> 대기 중. 3B rundir은 미커밋(working tree); 재집계 `python runs/track_d/make_fidelity.py`.
+> 대기 중. 3B rundir은 `b1b95d0`로 커밋됨; 재집계 `python runs/track_d/make_fidelity.py`.
 
 > **⟳ [2026-07-03] 신호크기 probe(CNN) 추가 — §3.6.** 진단 [[flirds-signal-size-diagnosis]]의 "A축(용량·참여)이
 > 신호를 키우나" 질문을 CNN에서 검증한 결과(C1 fidelity 72셀 + C2 개입 30셀, 커밋 `d2e7ed6`)를 §3.6·마스터표 16–17행·
@@ -744,7 +744,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **출처**: `runs/probe_signal/rundirs/1B_{anchor5_r*,std50k5_r*,anchor5_lr*_st*}_seed0/` + `runs/probe_signal/noise_probe/noise_1B_r{16,64}_seed0/`({metrics.json,phi.parquet}); r16 anchor·lr1e-3·st10 기준점 = `track_d/rundirs/1B_anchor5_seed0`. φ range·cross-seed는 phi.parquet 직접 재계산(세션 스크래치).
 
-**(c) baseline-set 노트**: 방법 스위트 = §3.1.1과 동형(Flirds/Flirds-1st/loss-heur/GTG/FedSV/FedIF/ComFedSV/ShapleyFL + anchor만 Banzhaf). truth=(b) only(ORACLE_A=0). std50k5는 N=50이라 exact Banzhaf 제외.
+**(c) baseline-set 노트**: 방법 스위트 = §3.1.1과 동형(Flirds/Flirds-1st/loss-heur/GTG/FedSV/FedIF/ComFedSV/ShapleyFL + anchor만 Banzhaf; 일부 probe rundir[std50k5 전부·lr격자·anchor r64]엔 Fed-LOO도 실측 존재 — 표 미수록). truth=(b) only(ORACLE_A=0). std50k5는 N=50이라 exact Banzhaf 제외.
 
 ### 3.6.2 A축 — CNN C1 fidelity probe (`probe_signal/cnn_c1`, N=10 R=10, width×참여 sweep)
 
@@ -900,7 +900,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 6. **7B anchor5 arm(MMLU/ROUGE/val-loss) = 2026-06-26 추가 완료**(arm-only 재실행; 이전엔 fidelity·runtime만 있었음). 이제 LLM standard 6 셀 전부 arm 포함.
 7. **tiny val** caveat: Robustness silo5 val=20 / device100 val=10 — 작은 검증셋이라 AUROC가 coarse(특히 noisy φ-as-detector).
 8. **poison ASR**은 deployed-model 기준(silo5≈1.00, device100 α0≈1.00/α0.5≈0.50, 3B≈1.00).
-9. **ShapleyFL β=0.3 통일 재실행 진행 중(2026-07-03)**: surrogate FSV의 cross-round EMA를 논문값 β=0.3으로 통일. **반영됨**: 1B·3B track_d(3B=`b1b95d0` 커밋)·CNN(track_c). **대기(값은 아직 이전 실행 기준)**: 7B track_d(§3.1.1 7B 열·§3.5 runtime)·phase2_matrix(§3.4 ShapleyFL AUROC/Spearman 행). CNN C1 fidelity/C2 arm은 β에 사실상 불변이라 수치 무변(라벨만 β=0.3). 재집계 = `make_fidelity.py`(track_d) / `make_analysis.py`(phase2).
+9. **ShapleyFL β=0.3 통일 재실행 진행 중(2026-07-03)**: surrogate FSV의 cross-round EMA를 논문값 β=0.3으로 통일. **반영됨**: 1B·3B track_d(3B=`b1b95d0` 커밋; 1B는 재실행 커밋 없음 — β0.5 시절 rundir 그대로, '값 동일/β-불변' 주장 canon 미확보)·CNN(track_c). **대기(값은 아직 이전 실행 기준)**: 7B track_d(§3.1.1 7B 열·§3.5 runtime)·phase2_matrix(§3.4 ShapleyFL AUROC/Spearman 행). CNN C1 fidelity/C2 arm은 β에 사실상 불변이라 수치 무변(라벨만 β=0.3). 재집계 = `make_fidelity.py`(track_d) / `make_analysis.py`(phase2).
 10. **신호크기 probe(§3.6)**: A축(§3.6.1–3)은 **LLM=seed0 파일럿**(seeds 1-2 대기 — "커진 φ가 cross-seed 실재 신호인가"는 lr·steps 등 seed0 단일이라 미확인; 예측 ρ≈0)·CNN=3-seed. cross-seed ρ 붕괴(partial 참여)·Flirds-1st 붕괴는 CNN **R=10·클라당 참여 ~2회** 짧은 지평 특성(LLM std50k5 R=200선 Flirds-1st 1.0 유지) → "참여 분수"가 아니라 **클라당 참여 횟수**가 조건. C2 참여 sweep **f=0.2 결측**(shapleyfl arm 2²⁰/라운드 exact 불가; §3.6.3). A축 probe는 (b) only(ORACLE_A=0). **B축 매트릭스(§3.6.4)는 3-seed 완료**, 단 `make_analysis.py`(06-19 생성)에 iid5/silo5_clean 미반영 → rundir 직접 집계.
 
 ## 4.3 상호 링크
@@ -922,7 +922,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **수치 갱신 (rundir만으로, GPU 불필요)**
 - LLM standard: `python runs/track_d/make_fidelity.py` → `fidelity.csv` 재생성(1B/3B/7B × std20/anchor5 자동 포함). 그 후 §3.1.1 표 재집계.
-- Robustness: `python runs/phase2_matrix/make_analysis.py` → `analysis/00_overview/master_metrics.csv` + `RESULTS.md` 재생성. 그 후 §3.4/§3.5 표 재집계.
+- Robustness: `python runs/phase2_matrix/make_analysis.py` → `analysis/00_overview/master_metrics.csv` 재생성(`RESULTS.md`는 `make_report.py`). 그 후 §3.4/§3.5 표 재집계.
 - CNN: Track C 결과 스크립트로 `RESULTS.txt` 재생성(C1 fidelity/stability/(a)-oracle + C2 arms).
 
 **새 실험 완료 시**: §2에 행 1개 추가(축 분류 + status ●) → 해당 검증목적 섹션(§3.x)에 세팅 블록 + 결과 테이블 + baseline-set 노트 추가. 구조는 위 섹션과 동일하게.

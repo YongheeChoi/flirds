@@ -5,7 +5,7 @@
 - 무대: 2026-06-06 valuation-baseline과 동일 — Llama-3.2-1B-Instruct fp32+eager, LoRA r16 α32,
   silo5 N=5(1 domain/client), R=10, per-domain train=200, val=100(=20/domain), lr=1e-3,
   max_steps=10, batch=16, maxlen=768, val_maxlen=384, val_chunk=10 — 전부 스크립트 기본값.
-- gpt2 CPU 스모크 검증: 본 문서와 같은 폴더의 `gpt2_smoke_summary.json` 참조.
+- gpt2 CPU 스모크 검증: 본 문서와 같은 폴더의 `gpt2_smoke_weakdelta_summary.json` 참조.
 
 ## 실행 커맨드 (원격, GPU 1장 — `<X>`를 빈 GPU 번호로)
 

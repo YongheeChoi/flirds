@@ -2,8 +2,8 @@
 
 > 우리 실험에서 나온 각 baseline의 수치가 그 방법의 **원 논문이 보고한 결과**와 얼마나
 > 일치하는지, 그리고 **실험 세팅**이 얼마나 맞물렸는지를 baseline별 테이블로 정리한 문서.
-> 출처: 우리 결과 = `runs/track_c/{fidelity.csv,RESULTS.txt}` · `runs/track_d/fidelity.csv` ·
-> `runs/phase2_matrix/{RESULTS.md,analysis/00_overview/master_metrics.csv}`.
+> 출처: 우리 결과 = `runs/track_c/RESULTS.txt`(값-수준 fidelity.csv는 gitignored 파생물 — 저장소 미영속) · `runs/track_d/fidelity.csv` ·
+> `runs/phase2_matrix/analysis/00_overview/master_metrics.csv`(RESULTS.md는 저장소에 커밋된 적 없음).
 > 원 논문 = `research-wiki/wiki/sources/*.md` (ingest 노트).
 >
 > **자매 문서**: [[baseline-selection-audit-2026-07-02]] — *다른 질문*을 본다: 애초에 baseline을
@@ -59,12 +59,12 @@
 | **C1** (CNN fidelity)     | LeNet5 / FedSVCNN | 10 (full)   | 10            | E=5     | 64           | 0.01 / SGD m=0    | MNIST, CIFAR-10     | iid+4 non-IID 시나리오          | 3     | (a)&(b) exact 2¹⁰                      |
 | **C2** (CNN intervention) | FedSVCNN / LeNet5 | 100 (C=0.1) | 120           | E=5     | 64           | 0.01 / SGD m=0    | CIFAR-10, FMNIST    | iid / dir1(α=1) / shard     | 3     | — (성능/AUROC)                           |
 | **D std20** (LLM 표준)      | Llama-3.2 1B & 3B | 20 (2/rd)   | 200           | 10 step | 16/8         | 1e-3 / SGD m=0    | alpaca-gpt4 20k     | **clean·IID**               | 3*    | (b) per-round exact                    |
-| **D anchor5**             | Llama-3.2 1B & 3B | 5 (full)    | 30            | 10 step | 16/8         | 1e-3 / SGD m=0    | alpaca-gpt4         | clean·IID                   | 3*    | (b) 2⁵ + **(a) retrain val-loss fp32** |
+| **D anchor5**             | Llama-3.2 1B & 3B | 5 (full)    | 30            | 10 step | 16/8         | 1e-3 / SGD m=0    | alpaca-gpt4         | clean·IID                   | 3*    | (b) 2⁵ + **(a) retrain val-loss fp32(1B만)** |
 | **P2 silo5** (robustness) | Llama-3.2 1B      | 5 (full)    | 10            | —       | 16(poison 8) | 1e-3(poison 2e-3) | 5-domain cross-silo | non-IID(domain-disjoint)    | 3     | (b) exact 2⁵                           |
 | **P2 device100**          | Llama-3.2 1B      | 100 (K=10)  | 30(poison 60) | —       | 16(poison 8) | 1e-3(poison 2e-3) | 5-domain pool       | Dirichlet α∈{0,.01,.1,.5,5} | 3     | α=0.5만 (b) per-round; 그 외 Flirds-proxy |
 | **P2 3B**                 | Llama-3.2 3B      | 5 (full)    | 10            | —       | 16           | 1e-3(poison 2e-3) | 5-domain            | non-IID                     | 1     | (b) exact 2⁵, coalition off            |
 
-\* 3B fidelity.csv는 현재 2-seed(seed2 rundir 미병합). LoRA r16/α32, fp32, momentum=0 공통.
+\* 3B fidelity.csv는 3-seed 병합됨 — 단 3B 행은 β0.3 재실행(b1b95d0) 미반영 스테일(3B canon = rundirs/3B_*/metrics.json). LoRA r16/α32, fp32, momentum=0 공통.
 
 ---
 
@@ -168,7 +168,7 @@ FedIF (Tang et al., arXiv 2509.25560, 2025). 영향도→가중(Shapley 아님).
 |---|---|---|---|
 | agg 속도 | **0.2s/rd vs AFedSV 70–92s (450×)** | LLM서 35–54s (Flirds-1st급, 최저가군) | ✓(빠름 재현) |
 | exact-Shapley fidelity | (해당 없음; Shapley 아님) | std20 0.157 / anchor5 0.067 — **낮은 게 설계상 정상** | ◐ |
-| robust-under-noise | "comparable-better than AFedSV" | device100 noisy AUROC 0.83–0.97 | ✓ |
+| robust-under-noise | "comparable-better than AFedSV" | device100 noisy AUROC 0.57–0.97 | ✓ |
 
 ### 3.6 ComFedSV — 판정 ✗ (설명됨)
 ComFedSV (Fan et al., ICDE 2022, arXiv 2109.09046).
@@ -186,7 +186,7 @@ ComFedSV (Fan et al., ICDE 2022, arXiv 2109.09046).
 
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
-| Spearman | "4개 데이터셋서 FedSV 근접·상회"(개별값 미기록) | CNN 0.348; LLM std20 **0.093**; 3B **−0.133**; device α0.5 **−0.023** | ✗ |
+| Spearman | "4개 데이터셋서 FedSV 근접·상회"(개별값 미기록) | CNN 0.348; LLM std20 **0.093**; 3B **−0.137**(β0.3 재실행 3-seed rundir 기준); device α0.5 **−0.023** | ✗ |
 | 원인 | (Theorem: (4δ/N)-fair, δ=완성오차) | low-rank 위배 → δ 폭증 → fidelity 붕괴(노트 사전 경고) | — |
 
 > 정직한 발견: **ComFedSV의 "FedSV 상회" 주장은 LLM 스케일로 전이되지 않는다.**
@@ -207,8 +207,8 @@ Ripple Shapley (Zeng et al., AAAI 2026). sample-level, single-run.
 
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
-| 속도 | **62× speedup** | **최저속**(~4515s, Flirds의 42배) | ✗(정반대) |
-| 정확도 | "comparable"(미정량) | CNN Spearman 0.373(최약), noisy AUROC 0.50 | ✗ |
+| 속도 | **62× speedup** | **최저속**(~4515s, Flirds의 42배 — LLM phase1 노트 전용, rundir 미영속; CNN C1 실측 평균 ~5569s vs Flirds 1.4s) | ✗(정반대) |
+| 정확도 | "comparable"(미정량) | CNN Spearman 0.373(최하위권 — ComFedSV 0.348이 더 낮음), noisy AUROC 0.50(LLM 노트 전용 — rundir 미영속) | ✗ |
 | 원인 | — | client-level 적응 + eigsh CPU-spinning 불안정 → LLM/Phase2 설계상 제외 | — |
 
 ### 3.8 (참고) IRDS — Flirds의 기반, baseline 아님
@@ -300,8 +300,8 @@ FedDQC (Du et al., ACL 2025 Findings, arXiv 2410.11540).
 | 위협 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | noisy 품질 | "전 baseline 상회, 때때로 clean-oracle도 상회" | silo5 noisy **0.917**, device100 noisy **0.96–1.0** | ✓ |
-| off-threat | (free-rider 탐지기 아님) | free-rider 0.14–0.57 (낮은 게 정상) | ✓(범위 정합) |
-| 비용 | "IRA ~1% train-time, DataInf의 1/150" | 21–49s(최저가군) | ✓ |
+| off-threat | (free-rider 탐지기 아님) | free-rider 0.14–0.57(device100; silo5는 0.75) (낮은 게 정상) | ✓(범위 정합) |
+| 비용 | "IRA ~1% train-time, DataInf의 1/150" | 21–49s(silo5 1B/3B; device100은 ~435–475s) | ✓ |
 
 ---
 
@@ -323,7 +323,7 @@ FedDQC (Du et al., ACL 2025 Findings, arXiv 2410.11540).
 | 지표 | 원 논문 보고 | 우리 결과 | 판정 |
 |---|---|---|---|
 | backdoor 설치 | **single-shot ~100% backdoor, main-task drop<1%** | silo5 **ASR≈1.00, clean-val 보존(+0.027)** | ✓ |
-| 지속/희석 | "20+ rounds 지속; n/η 미만선 점진 degrade" | device100선 per_client≥300+R=60 필요, ASR 0.50–0.75(희석) | ✓(precondition 단서 정합) |
+| 지속/희석 | "20+ rounds 지속; n/η 미만선 점진 degrade" | device100선 per_client≥300+R=60 필요, ASR α0.5≈0.50(희석; α0≈1.00) | ✓(precondition 단서 정합) |
 
 ### 5.2 Xu (instructions-as-backdoors) — 판정 ✗ (다른 메커니즘)
 *Instructions as Backdoors* (Xu et al., NAACL 2024, arXiv 2305.14710).
@@ -372,7 +372,7 @@ speedup 정반대). 둘 다 노트가 사전 경고한 경계 → 결함 아닌 
   대조까지만. 정량 대조는 `research-wiki/raw/papers/` 원본 PDF 재추출 필요.
 - **CNN(Track C) 평균은 pool값**(iid·label_skew 등 전 방법 저조 칸 포함)이라 깎임 — separable
   시나리오만 보면 Flirds/Banzhaf ≥0.95.
-- **3B Track D fidelity.csv는 2-seed**(seed2 rundir 미병합). `python runs/track_d/make_fidelity.py`
+- **3B Track D fidelity.csv는 3-seed 병합됐으나 β0.3 재실행(b1b95d0) 미반영 스테일**(canon=rundirs/3B_*/metrics.json). `python runs/track_d/make_fidelity.py`
   재실행 시 반영.
 - **device100 off-anchor Spearman은 Flirds-proxy 기준**(진짜 oracle 아님). α=0.5 anchor만 (b) per-round exact.
 
