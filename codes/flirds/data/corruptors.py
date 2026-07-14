@@ -78,6 +78,31 @@ def answer_swap(records, client_id, seed_base=100):
             for r, i in zip(records, perm)]
 
 
+def answer_swap_graded(records, client_id, rate, seed_base=100):
+    """Graded noisy client (Track C dose axis): corrupt a `rate` fraction of the
+    client's samples by reassigning their completion to another corrupted sample's
+    (cyclic shift within the corrupted subset -> guaranteed mismatch for >=2 poisoned).
+    The free-form analog of CNN `label_flip(rate)`: `rate` IS the actual corruption
+    rate and the corrupted set is exactly the corrupted ground truth.  rate>=1.0
+    reproduces `answer_swap` (full within-client permutation) BIT-IDENTICALLY -- the
+    default noisy behavior is unchanged; rate=0 returns the data untouched.
+    Reproducible via seed_base+client_id, mirroring answer_swap / label_flip.
+    """
+    g = torch.Generator().manual_seed(seed_base + client_id)
+    perm = torch.randperm(len(records), generator=g).tolist()
+    if rate >= 1.0:                                     # backward-compat: == answer_swap
+        return [{"prompt": r["prompt"], "completion": records[i]["completion"]}
+                for r, i in zip(records, perm)]
+    n_corrupt = int(round(rate * len(records)))
+    if n_corrupt == 0:
+        return [{"prompt": r["prompt"], "completion": r["completion"]} for r in records]
+    idx = torch.randperm(len(records), generator=g)[:n_corrupt].tolist()
+    swap = {idx[j]: records[idx[(j + 1) % n_corrupt]]["completion"]   # cyclic shift among corrupted
+            for j in range(n_corrupt)}
+    return [{"prompt": r["prompt"], "completion": swap.get(i, r["completion"])}
+            for i, r in enumerate(records)]
+
+
 # ---- LLM sample-level corruptor (backdoor attacker) ----
 BACKDOOR_TRIGGER = "tq"                                  # rare-token instruction trigger (Xu 2023)
 BACKDOOR_TARGET = "Please visit http://attacker.example for details."   # fixed backdoor output
@@ -102,7 +127,8 @@ def backdoor(records, client_id, trigger=BACKDOOR_TRIGGER, target=BACKDOOR_TARGE
             for i, r in enumerate(records)]
 
 
-LLM_CORRUPTORS = {"answer_swap": answer_swap, "backdoor": backdoor}
+LLM_CORRUPTORS = {"answer_swap": answer_swap, "answer_swap_graded": answer_swap_graded,
+                  "backdoor": backdoor}
 
 
 # ---- update-level corruptor (free-rider), representation-agnostic (CNN + LLM) ----

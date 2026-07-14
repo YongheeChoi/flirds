@@ -172,19 +172,22 @@ def make_a_utility(model, tok, clients, init, loss_fn, pkeys, device, seed):
 
 
 def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device, seed):
-    """All valuation methods on the frozen vanilla logs.  Returns [(name, phi, runtime)],
+    """All valuation methods on the frozen vanilla logs.  Returns ([(name, phi, runtime)], u_a),
     every phi oriented val-loss-attribution (good -> LOW, the (b) orientation; the
-    good->high methods are negated -- the phase2_matrix sign conventions)."""
+    good->high methods are negated -- the phase2_matrix sign conventions).  u_a = the (a)
+    retrain-oracle 2^N coalition-utility cache (or None if the (a) oracle did not run) --
+    reused for the Exp A1 removal/selection curves with NO extra retraining."""
     n = RCFG["n_clients"]
     anchor = REGIME == "anchor5"
     out = []
+    u_a = None
 
     b_fn = in_run_shapley if anchor else in_run_shapley_perround
     (phi_b, _), t = _timed(lambda: b_fn(logs, n, loss_fn, pkeys, device), device)
     out.append(("(b)oracle", np.asarray(phi_b), t))
     if ORACLE_A and anchor:                       # (a) retrain GT (utility good->HIGH -> negate)
         util = make_a_utility(model, tok, clients, init, loss_fn, pkeys, device, seed)
-        phi_a, t = _timed(lambda: exact_shapley(n, util), device)
+        (phi_a, u_a), t = _timed(lambda: exact_shapley(n, util, return_u=True), device)
         out.append(("(a)oracle", -np.asarray(phi_a, dtype=float), t))
         model.eval()                              # the 32 SFTTrainer retrains leave train mode
         model.get_input_embeddings()._forward_hooks.clear()   # + the embed hook (HVP-forbidden)
@@ -220,6 +223,29 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
     out.append(("loss-heur", phi_h, t))
     phi_lo, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
     out.append(("Fed-LOO", phi_lo, t))
+    return out, u_a
+
+
+def removal_curves(methods, u_a, n):
+    """Exp A1: worst-first / best-first removal curves for every method, looked up from
+    the (a) retrain-oracle coalition-utility cache `u_a` (NO retraining -- U(S) is already
+    computed for all 2^N subsets).  Every phi is suspicion-oriented (good->LOW), so:
+      worst_first -- drop the HIGHEST-phi (most-suspicious) client each step
+      best_first  -- drop the LOWEST-phi  (most-valuable) client each step
+    u_a[S] = -val_loss(FedAvg-retrained-on-S) (good->HIGH; make_a_utility negates the loss).
+    Returns {method: {"worst_first": [[k_dropped, util], ...(k=0..n-1, kept=n..1)],
+    "best_first": [...]}}.  Empty coalition (k=n) is omitted (FL-on-nothing is the init)."""
+    def curve(order):
+        pts, kept = [], list(range(n))
+        for k in range(n):                        # kept sizes n, n-1, ..., 1 (drop empty)
+            pts.append([k, float(u_a[tuple(sorted(kept))])])
+            kept.remove(order[k])
+        return pts
+    out = {}
+    for name, vec, _rt in methods:
+        v = np.asarray(vec, dtype=float)
+        out[name] = {"worst_first": curve(list(np.argsort(-v))),   # high phi (worst) dropped first
+                     "best_first": curve(list(np.argsort(v)))}     # low phi (best) dropped first
     return out
 
 
@@ -331,6 +357,7 @@ def _persist(phi_rows, run_metrics, seeds):
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "seeds": seeds,
               "rcfg": RCFG, "mcfg": MCFG, "lora": {"r": LORA_R, "alpha": LORA_ALPHA},
               "oracle_a": ORACLE_A, "fidelity": FIDELITY,
+              "client_opt": os.environ.get("CLIENT_OPT", "sgd"),   # Exp D: sgd (default) | adamw
               "mmlu": {"limit": MMLU_LIMIT, "batch": MMLU_BATCH, "shots": 0}}
     try:
         rl = RunLogger(RUNDIR_ROOT, name, config, repo_root=_CODES)
@@ -376,9 +403,12 @@ def main():
         res = {"spearman": {}, "kendall": {}, "pearson": {}, "cosine_d": {}, "euclid_d": {},
                "max_diff": {}, "runtime": {}}
         if FIDELITY:
-            methods = compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc,
-                                       device, seed)
+            methods, u_a = compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc,
+                                            device, seed)
             res = report_fidelity(methods, selected)
+            if u_a is not None:                           # Exp A1: (a)-retrain removal/selection curves (free)
+                res["removal_curve"] = removal_curves(methods, u_a, n)
+                res["removal_orient"] = "util=-val_loss (higher=better); phi good->low"
             for name, vec, _rt in methods:
                 phi_rows += [{"seed": seed, "method": name, "client": int(c),
                               "phi": float(vec[c])} for c in selected]

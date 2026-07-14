@@ -71,11 +71,15 @@ def subset_utility_valloss(model_fn, client_loaders, val_loader, subset, rounds,
     return -_val_loss(model_fn(), final, val_loader, device)
 
 
-def exact_shapley(n_clients, utility_fn):
+def exact_shapley(n_clients, utility_fn, return_u=False):
     """Exact Shapley over 2^n coalitions.
 
     utility_fn(tuple_of_client_ids) -> float. U(S) is cached (computed once).
     Returns phi array of length n_clients.
+
+    return_u=True -> (phi, u): u maps every coalition tuple (sorted client ids) to
+    its cached utility U(S).  Lets a caller derive removal/selection curves by lookup
+    from the same 2^N retrains -- no extra retraining (Exp A1 removal-curve reuse).
     """
     clients = list(range(n_clients))
     u = {
@@ -90,4 +94,4 @@ def exact_shapley(n_clients, utility_fn):
             w = factorial(r) * factorial(n_clients - r - 1) / factorial(n_clients)
             for S in itertools.combinations(others, r):
                 phi[k] += w * (u[tuple(sorted(S + (k,)))] - u[S])
-    return phi
+    return (phi, u) if return_u else phi

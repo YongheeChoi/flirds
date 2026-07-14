@@ -15,6 +15,8 @@ keys present, frozen base absent -> base untouched).
 """
 from __future__ import annotations
 
+import os
+
 import torch
 from trl import SFTConfig, SFTTrainer
 
@@ -23,6 +25,17 @@ from ..repro import seed_everything
 from .server import _fedavg_core
 
 _OUT = "/tmp/flirds_llm_local"   # SFTTrainer needs output_dir; nothing is saved
+
+
+def client_optimizer(lr):
+    """Client-local optimizer (Exp D external-validity arm).  Default = plain SGD
+    momentum=0 (the IRDS/Ripple per-step convention, codes/CLAUDE.md §5).
+    CLIENT_OPT=adamw switches to AdamW at the SAME constant lr (the "bridge" setting
+    -- the paper AdamW 5e-5 cosine recipe stays a documented deviation caveat).
+    Read from env so the switch flows to every FL local-train without a call-site change."""
+    if os.environ.get("CLIENT_OPT", "sgd").lower() == "adamw":
+        return (torch.optim.AdamW, {"lr": lr})
+    return (torch.optim.SGD, {"lr": lr, "momentum": 0.0})
 
 
 def _lora_state(model):
@@ -49,7 +62,7 @@ def _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
         trainer = SFTTrainer(
             model=model, args=cfg, train_dataset=local_datasets[c],
             processing_class=tokenizer, formatting_func=formatting_func,
-            optimizer_cls_and_kwargs=(torch.optim.SGD, {"lr": lr, "momentum": 0.0}),
+            optimizer_cls_and_kwargs=client_optimizer(lr),
         )
         trainer.train()
         after = _lora_state(model)

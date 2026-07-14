@@ -22,6 +22,9 @@ slurm/logs/
 # Derived fidelity tables (Spearman+Pearson vs oracle, regenerated from rundir phi):
 runs/track_c/fidelity.csv
 runs/track_d/fidelity.csv
+# Derived (b)-target self-stability tables (Exp C / review C-2; regenerated from rundir phi):
+runs/track_d/target_stability.csv
+runs/phase2_matrix/target_stability.csv
 # Track D execution logs (transient; only the rundirs under runs/track_d/rundirs/ are tracked):
 runs/track_d/_logs/
 # beta=0.3 full re-run campaign: per-cell stdout logs are transient (tooling + queue ARE tracked):

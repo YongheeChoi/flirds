@@ -159,8 +159,17 @@ def _domain_split(dom, n_train, n_val, n_test, seed):
     return [rec(e) for e in tr], [rec(e) for e in va], [trec(e) for e in te]
 
 
+def _noisy(recs, cid, noisy_rate):
+    """Apply the noisy-client answer-swap at `noisy_rate` (Track C dose axis).  rate>=1.0
+    == LLM_CORRUPTORS['answer_swap'] verbatim (the default, backward-compatible); rate<1.0
+    corrupts only that fraction (answer_swap_graded)."""
+    if noisy_rate >= 1.0:
+        return LLM_CORRUPTORS["answer_swap"](recs, cid)
+    return LLM_CORRUPTORS["answer_swap_graded"](recs, cid, noisy_rate)
+
+
 def build(n_clients, per_domain_train, per_domain_val=200, per_domain_test=0, seed=0,
-          noisy=frozenset(), backdoor=frozenset(), backdoor_kwargs=None):
+          noisy=frozenset(), backdoor=frozenset(), backdoor_kwargs=None, noisy_rate=1.0):
     """Build cross-silo clients + the §3.4 validation set + a held-out test set.
 
     Returns (clients, val_records, test_records):
@@ -186,8 +195,8 @@ def build(n_clients, per_domain_train, per_domain_val=200, per_domain_test=0, se
         chunk = len(tr) // per_domain_clients
         for j in range(per_domain_clients):
             recs = tr[j * chunk:(j + 1) * chunk]
-            if cid in noisy:                       # seam 2: noisy client (answer-swap)
-                recs = LLM_CORRUPTORS["answer_swap"](recs, cid)
+            if cid in noisy:                       # seam 2: noisy client (answer-swap, graded by noisy_rate)
+                recs = _noisy(recs, cid, noisy_rate)
             if cid in backdoor:                    # seam 2: backdoor attacker (trigger->target)
                 recs = LLM_CORRUPTORS["backdoor"](recs, cid, **(backdoor_kwargs or {}))
             clients.append(Dataset.from_list(recs))
@@ -197,7 +206,7 @@ def build(n_clients, per_domain_train, per_domain_val=200, per_domain_test=0, se
 
 def build_crossdevice(n_clients, alpha, per_client_train, per_domain_pool=12000,
                       per_domain_val=200, per_domain_test=0, seed=0, noisy=frozenset(),
-                      backdoor=frozenset(), backdoor_kwargs=None):
+                      backdoor=frozenset(), backdoor_kwargs=None, noisy_rate=1.0):
     """Build N>>5 cross-device clients via per-client Dirichlet(alpha) domain mixtures.
 
     The 5 domains' train pools are concatenated (labelled 0..4 in ORDER) and
@@ -221,8 +230,8 @@ def build_crossdevice(n_clients, alpha, per_client_train, per_domain_pool=12000,
     clients = []
     for cid, idx in enumerate(client_idx):
         recs = [train_pool[i] for i in idx]
-        if cid in noisy:                           # seam 2: noisy client (answer-swap)
-            recs = LLM_CORRUPTORS["answer_swap"](recs, cid)
+        if cid in noisy:                           # seam 2: noisy client (answer-swap, graded by noisy_rate)
+            recs = _noisy(recs, cid, noisy_rate)
         if cid in backdoor:                        # seam 2: backdoor attacker (trigger->target)
             recs = LLM_CORRUPTORS["backdoor"](recs, cid, **(backdoor_kwargs or {}))
         clients.append(Dataset.from_list(recs))
@@ -246,7 +255,8 @@ def _fmt_alpaca(ex):
 
 
 def build_alpaca_iid(n_clients, total_train=20000, n_val=200, n_test=0, seed=0,
-                     noisy=frozenset(), backdoor=frozenset(), backdoor_kwargs=None):
+                     noisy=frozenset(), backdoor=frozenset(), backdoor_kwargs=None,
+                     noisy_rate=1.0):
     """Track D loader: Alpaca-GPT4 IID shards + carved val/test sets.
 
     The FL-LLM standard-setting stage (OpenFedLLM run_sft.sh / FlowerTune
@@ -276,8 +286,8 @@ def build_alpaca_iid(n_clients, total_train=20000, n_val=200, n_test=0, seed=0,
     clients = []
     for cid in range(n_clients):
         cl = train[cid * chunk:(cid + 1) * chunk]
-        if cid in noisy:                               # seam 2: noisy client (answer-swap)
-            cl = LLM_CORRUPTORS["answer_swap"](cl, cid)
+        if cid in noisy:                               # seam 2: noisy client (answer-swap, graded by noisy_rate)
+            cl = _noisy(cl, cid, noisy_rate)
         if cid in backdoor:                            # seam 2: backdoor attacker (trigger->target)
             cl = LLM_CORRUPTORS["backdoor"](cl, cid, **(backdoor_kwargs or {}))
         clients.append(Dataset.from_list(cl))

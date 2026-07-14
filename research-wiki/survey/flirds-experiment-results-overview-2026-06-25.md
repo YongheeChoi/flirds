@@ -55,6 +55,17 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > ("val-loss 변화량이 작아서 fidelity 저하")은 반쪽만 맞음** — φ 절대크기는 lr로 키울 수 있으나 실재 신호는 B축이
 > 만든다. 기존 CNN §3.6.1/2 → §3.6.2/3 재넘버링, 마스터표 18–19행·§6 커버리지·§4.2-10 갱신.
 
+> **⟳ [2026-07-14] C-1~C-5 완화 실험 4종 착수 — 코드+로컬검증 완료 · Exp C(target-stability) 실측(§3.1.5).**
+> review-claude C-1~C-5 방어용 상호보완 실험(**removal-curve · dose-response · target-stability · AdamW-fidelity**;
+> 계획 `PROMPT_removal_dose_c2_adamw.md`, 신규 rundir root `runs/removal_dose/`)의 **코드 6파일 구현 + 로컬 검증
+> 완료**(순수로직 단위테스트 20/20 + tiny-gpt2 GPU 통합 스모크 2종; 전부 하위호환·기본값=현행 동작). **Exp C(재실행 0,
+> GPU 불필요)만 실측 완료 → §3.1.5 + 마스터표 P7–P9**: (b) oracle 의 seed 간 자기-Spearman. 핵심 = **IID-clean 무대
+> (track_d)서 매칭 대상 (b) target 자체가 seed-불안정**(1B_anchor5 ρ=**−0.367** · std20 −0.114 = 리뷰가 "저자가 잰
+> −0.37~−0.11 노트-only"라 한 값 재현·정본화) vs **비-IID silo5 안정**(clean +0.867 · poison +1.000) → per-seed
+> +1.000 fidelity 는 IID-clean 서 *불안정한 GT* 를 좇음(C-2 정면 대응). §3.6.4 B축과 정합. **Exp A(removal)·B(dose)·
+> D(AdamW) 는 DGX 대기**(파일럿 = noisy silo5 seed0; `runs/removal_dose/run_pilot.sh` → silo5 단일-FL 재학습
+> 실측시간 측정 후 Yonghee 승인 → 풀스윕 `run_full_sweep.sh`). 상태·매트릭스·GPU예산 = `runs/removal_dose/README.md`.
+
 ---
 
 ## 1. 범례 (legend)
@@ -115,6 +126,10 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | P4 | Robustness · 7B (silo5/device100) | Llama-2-7B | client | in-run+탐지기 | Detection·Fidelity | approx vs (b) | (b) | ⬚ | ⬚ |
 | P5 | Robustness · 3B 3-seed 완성 | Llama-3.2-3B · N=5 | client | in-run+탐지기 | Detection·Fidelity | approx vs (b) | (b) 2⁵ | ⬚ (현 1 seed) | ⬚ |
 | P6 | Fairness·reward 전용 실험 | – | client | – | Fairness·reward | – | – | ⬚ | ⬚ 미설계 |
+| P7 | Removal/selection curve (`removal_dose/*_removal_*`) | 1B silo5 N=5 + track_d anchor5 | client | in-run+(a)retrain | **Fidelity(게임-무관 downstream; C-1/C-4)** | – (removal 재학습) | (a) 재학습 val-loss | 3 | ⬚ 코드 ready·검증 완료·DGX 대기 |
+| P8 | Dose-response (`removal_dose/*_dose_*`) | 1B silo5 N=5 | client | in-run(+탐지기) | **Fidelity(φ vs 오염강도; C-3)** | approx vs (b) | (b) 2⁵ | 3 | ⬚ 코드 ready·DGX 대기 |
+| P9 | AdamW-fidelity (`removal_dose/*_adamw`) | 1B anchor5 N=5 | client | in-run | **Fidelity(external-validity; C-5)** | approx vs (a)&(b) | (a)/(b) 2⁵ | 1 | ⬚ 코드 ready·DGX 대기 |
+| Exp C | (b) target self-stability (derived) | 기존 track_d/phase2 rundir | client | – (재분석) | **Stability(C-2)** | – | (b) φ xseed | 3 | ● §3.1.5 (재실행 0, 로컬 완료) |
 
 > **"검증 목적" 용어 정의** (각 §3 섹션이 본문; E1–E7 매핑은 §4.4):
 > - **Fidelity** = 추정 φ가 정답 oracle의 *기여도 순위/값*을 얼마나 재현하나 (vs (a)/(b); Spearman·Kendall·Pearson·거리). **1차 핵심.** → §3.1
@@ -327,6 +342,42 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > 읽기: (b) oracle 자체의 cross-seed 안정성이 0.518(CNN은 seed별 기여가 실제로 갈림) → **Flirds(0.547)는 oracle의 내재 안정성을 그대로 추종**, recon MC baseline(GTG/FedSV/ComFedSV/ShapleyFL)은 추가 분산으로 0.12~0.31로 떨어짐.
 
 **출처**: `runs/track_c/RESULTS.txt` (C1 stability 절, 10 scenario pool).
+
+---
+
+### 3.1.5 (b) target self-stability (Exp C — review C-2 정면 대응)
+
+> **질문**: fidelity 헤드라인 +1.000 은 *(b) oracle 과의 일치*다. 그 **매칭 대상 (b) 자신이 seed 간 재현되나?**
+> review-claude C-2(K-1/K-6): LLM 스테이지에서 미검증(저자가 −0.37~−0.11 을 쟀으나 **노트-only**). **재실행 0** —
+> 기존 rundir 의 (b) per-client φ 를 seed 로 피벗해 pairwise Spearman(자기-안정성)을 산출·정본화한다
+> (`runs/track_d/make_target_stability.py`, 신규; Windows anaconda 로컬 = GPU 불필요). 마커 ● (파생·재생성).
+
+**(b) oracle cross-seed Spearman ↑** (셀당 3-seed pairwise 평균; ↑=재현성. IID-clean 저·비-IID 고 = 신호 실재성)
+
+| 무대 | cell | mean xseed ρ ↑ | pairs (0-1 / 0-2 / 1-2) |
+|---|---|---|---|
+| track_d **IID-clean** | 1B_anchor5 | **−0.367** | +0.00 / −0.90 / −0.20 |
+| track_d IID-clean | 1B_std20 | −0.114 | −0.04 / −0.11 / −0.19 |
+| track_d IID-clean | 3B_anchor5 | +0.033 | −0.10 / +0.30 / −0.10 |
+| track_d IID-clean | 3B_std20 | −0.243 | −0.09 / −0.19 / −0.45 |
+| track_d IID-clean | 7B_anchor5 | +0.733 | +0.80 / +0.50 / +0.90 |
+| track_d IID-clean | 7B_std20 | +0.164 | −0.04 / +0.31 / +0.22 |
+| phase2 IID (iid5) | 1B_iid5_clean | +0.133 | −0.30 / +0.60 / +0.10 |
+| phase2 **비-IID** (silo5) | 1B_silo5_clean | **+0.867** | +1.00 / +0.80 / +0.80 |
+| phase2 비-IID (silo5) | 1B_silo5_noisy | +0.933 | +1.00 / +0.90 / +0.90 |
+| phase2 비-IID (silo5) | 1B_silo5_frzero | +1.000 | +1.00 / +1.00 / +1.00 |
+| phase2 비-IID (silo5) | 1B_silo5_poison | +1.000 | +1.00 / +1.00 / +1.00 |
+| phase2 device100 anchor | 1B_device100-a0.5_noisy_anchor | −0.042 | +0.09 / −0.08 / −0.14 (N≈94, per-round (b)) |
+
+> **판정**: **IID-clean 무대의 (b) target 은 seed-불안정**(track_d 1B −0.37~−0.11 = 리뷰 노트값 정확 재현·정본화)
+> → 그 위의 per-seed **+1.000 fidelity 는 *불안정한 GT* 를 좇는 것**(C-2). **비-IID(silo5)선 (b) 가 안정**(+0.87~1.00)
+> → 거기의 +1.000 은 의미 있음. §3.6.4 B축("non-IID clean cross-seed ρ 0.87 vs IID clean 0.13")과 정합 — Exp C 는 그
+> **(b)-target 버전을 전 스케일·전 무대로 정본화**. **7B 는 IID서도 +0.733** → 스케일이 클수록 (b) 안정성↑(추가 조사감).
+> **프로토콜 격상**(리뷰 §4/§5.1): `make_fidelity.py` 가 이제 fidelity 표 아래 이 xseed ρ 열을 함께 출력 → *fidelity 는
+> 항상 target 안정성과 병기*. 3B_silo5 는 seed0 뿐(1-seed → nan, 표 제외).
+
+**출처**: `runs/track_d/target_stability.csv` · `runs/phase2_matrix/target_stability.csv` (gitignore=파생; 재생성:
+`python runs/track_d/make_target_stability.py [rundirs_root] [out.csv]`). 배경 = [[flirds-signal-size-diagnosis]] §3.5.
 
 ---
 

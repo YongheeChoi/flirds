@@ -77,8 +77,9 @@ from flirds.data.corruptors import BACKDOOR_TRIGGER
 from flirds.data.llm import build, build_alpaca_iid, build_crossdevice, build_val_batches
 from flirds.eval.generate import backdoor_asr
 from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference, pearson
-from flirds.fl.llm_server import run_llm_fedavg_logs
-from flirds.oracle.in_run_sv import in_run_shapley, in_run_shapley_perround, in_run_utility
+from flirds.fl.llm_server import client_optimizer, run_llm_fedavg_logs
+from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_perround,
+                                     in_run_utility)
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
 
@@ -100,6 +101,12 @@ POISON_TRAIN = int(os.environ.get("POISON_TRAIN", "1000"))  # poison-threat clie
 #   trajectory overrides to this (silo5; device100 attacker is per_client-sized -- see build_trajectory).
 ATTACKER_EPOCHS = float(os.environ.get("EPOCHS", "3"))     # attacker local epochs (D1 install strength)
 ATTACKER_LR = float(os.environ.get("ATTACKER_LR", "2e-3"))  # attacker install lr (D1/D2 validated; > FL lr)
+
+# --- C-1~C-5 mitigation experiments (removal_dose; all default to no-op = current behavior) ---
+NOISY_RATE = float(os.environ.get("NOISY_RATE", "1.0"))    # Exp B: graded answer_swap dose (1.0 = full swap = current)
+DOSE_MULT = float(os.environ.get("DOSE_MULT", "1.0"))      # Exp B: free-rider-random amplitude multiplier
+REMOVAL = os.environ.get("REMOVAL", "0") == "1"            # Exp A2: removal/selection curve (extra retrains; silo only)
+REMOVAL_METHODS = [m for m in os.environ.get("REMOVAL_METHODS", "").split(",") if m]  # [] = all val methods
 
 # per-scale memory knobs (task8): the fp32 estimator HVP is O(seq^2) -> bigger models need a
 # smaller val_chunk / batch.  chunk-sum is exact, so these change ONLY peak memory, not values.
@@ -155,17 +162,18 @@ def _build_clients(seed, noisy=frozenset(), backdoor=frozenset(), train=None):
     `train` overrides the per-client train size (the poison threat needs the larger install size)."""
     if REGIME == "silo5":
         return build(RCFG["n_clients"], train or RCFG["train"], RCFG["val"], RCFG["test"], seed=seed,
-                     noisy=noisy, backdoor=backdoor,
+                     noisy=noisy, backdoor=backdoor, noisy_rate=NOISY_RATE,
                      backdoor_kwargs=dict(target=BD_TARGET, poison_frac=POISON_FRAC))
     if REGIME == "iid5":                          # IID leg: alpaca shards, silo5-matched totals (x n_clients)
         n = RCFG["n_clients"]
         return build_alpaca_iid(n, total_train=(train or RCFG["train"]) * n,
                                 n_val=RCFG["val"] * n, n_test=RCFG["test"] * n, seed=seed,
-                                noisy=noisy, backdoor=backdoor,
+                                noisy=noisy, backdoor=backdoor, noisy_rate=NOISY_RATE,
                                 backdoor_kwargs=dict(target=BD_TARGET, poison_frac=POISON_FRAC))
     return build_crossdevice(RCFG["n_clients"], alpha=ALPHA, per_client_train=train or RCFG["per_client"],
                              per_domain_pool=RCFG["pool"], per_domain_val=RCFG["val"],
                              per_domain_test=RCFG["test"], seed=seed, noisy=noisy, backdoor=backdoor,
+                             noisy_rate=NOISY_RATE,
                              backdoor_kwargs=dict(target=BD_TARGET, poison_frac=POISON_FRAC))
 
 
@@ -206,7 +214,7 @@ def _train_delta(model, tok, dataset, G, pkeys, seed, *, epochs=None, steps=None
                     completion_only_loss=True, bf16=False, fp16=False, report_to="none",
                     logging_strategy="no", save_strategy="no", seed=seed, **kw)
     SFTTrainer(model=model, args=cfg, train_dataset=dataset, processing_class=tok,
-               optimizer_cls_and_kwargs=(torch.optim.SGD, {"lr": lr, "momentum": 0.0})).train()
+               optimizer_cls_and_kwargs=client_optimizer(lr)).train()   # CLIENT_OPT (default SGD mom=0)
     after = {n: p.detach() for n, p in model.named_parameters() if p.requires_grad}
     return {k: (after[k] - G[k]).detach().cpu() for k in pkeys}
 
@@ -214,12 +222,14 @@ def _train_delta(model, tok, dataset, G, pkeys, seed, *, epochs=None, steps=None
 # --------------------------------------------------------------------------- #
 # trajectory builders (one per threat)                                        #
 # --------------------------------------------------------------------------- #
-def build_trajectory(threat, seed, model, tok, init, pkeys, device):
+def build_trajectory(threat, seed, model, tok, init, pkeys, device, exclude=frozenset()):
     """Build the threat-matched frozen trajectory.
 
     Returns (logs, score_clients, corrupt_set, asr, val): `score_clients` is what FedDQC scores
     (the corrupt-data view), `corrupt_set` the AUROC labels, `asr` the deployed triggered-ASR
-    (poison only, else None), `val` the shared §3.4 held-out set (threat-independent)."""
+    (poison only, else None), `val` the shared §3.4 held-out set (threat-independent).
+    `exclude` = client ids dropped from the poison attack-round cohort (Exp A2 poison removal,
+    k=1): excluding the attacker skips the scaled inject -> the backdoor never deploys."""
     n = RCFG["n_clients"]
     if threat == "clean":                                          # no corruption: fidelity-only baseline
         clients, val, _ = _build_clients(seed)                     # (AUROC undefined, corrupt=empty set)
@@ -239,7 +249,7 @@ def build_trajectory(threat, seed, model, tok, init, pkeys, device):
             logs = _fl(model, tok, clients, init, seed, free_riders=corrupt, free_rider_mode="zero")
         else:                                                      # random @ benign-std (evasion case)
             warm = _fl(model, tok, clients, init, seed, rounds=RCFG["warmup"])   # short CLEAN warmup
-            scale = _benign_std(warm) * (3 ** 0.5)                 # U(-s,s) std = s/sqrt(3) -> benign std
+            scale = _benign_std(warm) * (3 ** 0.5) * DOSE_MULT     # U(-s,s) std = s/sqrt(3) -> benign std x dose (Exp B)
             logs = _fl(model, tok, clients, init, seed, free_riders=corrupt,
                        free_rider_mode="random", free_rider_scale=scale)
         return logs, clients, corrupt, None, val
@@ -254,12 +264,15 @@ def build_trajectory(threat, seed, model, tok, init, pkeys, device):
         G = _final_global(init, logs, pkeys, device)
         K = round(RCFG["k_frac"] * n)                              # cohort size = full-replacement gamma
         gamma = float(K)
-        delta0 = _train_delta(model, tok, bd[a], G, pkeys, seed,   # 2. backdoor X (install lr)
-                              epochs=ATTACKER_EPOCHS, lr=ATTACKER_LR)
-        attack_dm = {a: ({k: gamma * delta0[k] for k in pkeys}, len(bd[a]))}                # 3. scaled inject
+        attack_dm = {}
+        if a not in exclude:                                       # Exp A2 removal: dropping the attacker skips the inject
+            delta0 = _train_delta(model, tok, bd[a], G, pkeys, seed,   # 2. backdoor X (install lr)
+                                  epochs=ATTACKER_EPOCHS, lr=ATTACKER_LR)
+            attack_dm[a] = ({k: gamma * delta0[k] for k in pkeys}, len(bd[a]))              # 3. scaled inject
         rng = np.random.default_rng(seed)
-        benign_ids = ([c for c in range(n) if c != a] if SILO_LIKE
-                      else rng.choice([c for c in range(n) if c != a], size=K - 1, replace=False).tolist())
+        benign_pool = [c for c in range(n) if c != a and c not in exclude]
+        benign_ids = (benign_pool if SILO_LIKE
+                      else rng.choice(benign_pool, size=K - 1, replace=False).tolist())
         for c in benign_ids:                                       # fresh benign deltas (the rest of the cohort)
             attack_dm[c] = (_train_delta(model, tok, clean[c], G, pkeys, seed, steps=RCFG["max_steps"]),
                             len(clean[c]))
@@ -326,14 +339,19 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
             (phi_z, _), t_z = _timed(lambda: in_run_banzhaf(logs, n, loss_fn, pkeys, device), device)
             out.append(("Banzhaf", "val", np.asarray(phi_z), t_z))
 
-    if not silo:                                              # ComFedSV = the partial-participation baseline
-        phi_c, t_c = _timed(lambda: comfedsv_from_logs(logs, None, n, None, device, seed=seed,
-                            loss_fn=loss_fn, pkeys=pkeys, partial=True), device)
-        out.append(("ComFedSV", "val", -np.asarray(phi_c, dtype=float), t_c))    # loss-decrease util -> negate
+    # ComFedSV: the partial-participation Shapley baseline (device100).  Now ALSO run at silo5
+    # (partial=not silo -> partial=False) for full method coverage -- CAVEAT (review C-4): under
+    # full participation the low-rank/partial approximation is trivially exact, a DEGENERATE
+    # regime, so flag it in the results caption rather than read it as a win.
+    phi_c, t_c = _timed(lambda: comfedsv_from_logs(logs, None, n, None, device, seed=seed,
+                        loss_fn=loss_fn, pkeys=pkeys, partial=not silo), device)
+    out.append(("ComFedSV", "val", -np.asarray(phi_c, dtype=float), t_c))        # loss-decrease util -> negate
 
     phi_h, t_h = _timed(lambda: np.array([in_run_utility(logs, [k], loss_fn, pkeys, device)
                                           for k in range(n)]), device)
     out.append(("loss-heur", "val", phi_h, t_h))
+    phi_lo, t_lo = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO
+    out.append(("Fed-LOO", "val", np.asarray(phi_lo), t_lo))   # marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
 
     # ---- detectors (AUROC only) ----
     fld, t_fld = _timed(lambda: fldetector_from_logs(logs, n, device="cpu"), device)
@@ -346,6 +364,75 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
     fdq, t_fdq = _timed(lambda: feddqc_scores(score_clients, model, tok, device, seed=seed), device)
     out.append(("FedDQC", "det", np.asarray(fdq), t_fdq))
     return out
+
+
+# --------------------------------------------------------------------------- #
+# removal / selection curves (Exp A2; silo full-participation only)           #
+# --------------------------------------------------------------------------- #
+def removal_retrain_curves(methods, score_clients, model, tok, init, loss_fn, pkeys, device, seed, n):
+    """Exp A2: worst-first / best-first removal curves by ACTUAL retraining (the GPU cost).
+
+    For every val method, rank clients by phi (suspicion orientation, good->LOW) and retrain
+    clean FedAvg on the kept subset, scoring the deployed global's val loss.  U(kept) is cached
+    by frozenset so it is computed ONCE and shared across methods/directions (<= 2^N retrains;
+    methods that agree collapse to the same chain).  The retrain is clean (no fabricated update),
+    so this is a game-INDEPENDENT downstream ruler (C-1/C-4 defence): noisy clients carry
+    corrupted DATA -> removing them should lower val loss; free-riders carry clean data ->
+    removing them is ~neutral (the honest nuance).
+      worst_first -- drop the highest-phi (most-suspicious) client each step (kept n..1)
+      best_first  -- drop the lowest-phi  (most-valuable)   client each step
+    Returns ({method: {"worst_first": [[k_dropped, val_loss], ...], "best_first": [...]}},
+    n_retrains, mean_retrain_s)."""
+    cache, times = {}, []
+    def util(kept):
+        key = frozenset(kept)
+        if key not in cache:
+            logs_k, dt = _timed(lambda: _fl(model, tok, [score_clients[c] for c in sorted(kept)],
+                                            init, seed), device)
+            times.append(dt)
+            G = _final_global(init, logs_k, pkeys, device)
+            model.eval()                                  # _fl leaves train mode + the embed hook
+            model.get_input_embeddings()._forward_hooks.clear()
+            with torch.no_grad():
+                cache[key] = float(loss_fn({k: G[k] for k in pkeys}, {}))
+            del logs_k, G
+            if device == "cuda":
+                torch.cuda.empty_cache()
+        return cache[key]
+    def curve(order):
+        pts, kept = [], list(range(n))
+        for k in range(n):                                # kept sizes n, n-1, ..., 1 (skip empty)
+            pts.append([k, util(kept)])
+            kept.remove(order[k])
+        return pts
+    sel = REMOVAL_METHODS or [nm for nm, kind, _, _ in methods if kind == "val"]
+    out = {}
+    for name, kind, vec, _rt in methods:
+        if kind != "val" or name not in sel:
+            continue
+        v = np.asarray(vec, dtype=float)
+        out[name] = {"worst_first": curve(list(np.argsort(-v))),   # high phi (worst) dropped first
+                     "best_first": curve(list(np.argsort(v)))}     # low phi (best) dropped first
+    return out, len(cache), (sum(times) / len(times) if times else 0.0)
+
+
+def poison_removal_asr(methods, seed, model, tok, init, pkeys, device, baseline_asr):
+    """Exp A2 poison (k=1, locked): drop each method's TOP suspect (highest phi) from the attack
+    cohort, rebuild the poison trajectory, and report the deployed backdoor ASR.  A method that
+    flags the attacker as #1 drops ASR toward the clean baseline; a wrong flag leaves the attack
+    intact.  Cached by excluded client (methods agreeing on the top suspect share one rebuild)."""
+    sel = REMOVAL_METHODS or [nm for nm, kind, _, _ in methods if kind == "val"]
+    cache, by_method = {}, {}
+    for name, kind, vec, _rt in methods:
+        if kind != "val" or name not in sel:
+            continue
+        top = int(np.argmax(np.asarray(vec, dtype=float)))         # most-suspicious client
+        if top not in cache:
+            _, _, _, asr_x, _ = build_trajectory("poison", seed, model, tok, init, pkeys, device,
+                                                 exclude={top})
+            cache[top] = asr_x
+        by_method[name] = {"excluded": top, "asr": cache[top]}
+    return {"baseline_asr": baseline_asr, "by_method": by_method}
 
 
 # --------------------------------------------------------------------------- #
@@ -411,14 +498,19 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition):
     _cond = "-".join(_abbr.get(t, t) for t in threats)
     _setting = REGIME if SILO_LIKE else f"{REGIME}-a{ALPHA}"              # silo5 / iid5 / device100-a0.5
     _anchor = "_anchor" if (not SILO_LIKE and oracle_b and coalition) else ""
-    name = os.environ.get("RUN_NAME") or f"{SCALE}_{_setting}_{_cond}{_anchor}"
+    _dose = ((f"_nr{NOISY_RATE:g}" if NOISY_RATE != 1.0 else "")     # Exp B dose tokens (default: none)
+             + (f"_dm{DOSE_MULT:g}" if DOSE_MULT != 1.0 else ""))
+    name = os.environ.get("RUN_NAME") or f"{SCALE}_{_setting}_{_cond}{_anchor}{_dose}"
     rcfg = {k: (sorted(v) if isinstance(v, (set, frozenset)) else v) for k, v in RCFG.items()}
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "alpha": ALPHA,
               "threats": threats, "seeds": seeds, "oracle_b": oracle_b, "coalition": coalition,
+              "noisy_rate": NOISY_RATE, "dose_mult": DOSE_MULT, "removal": REMOVAL,
+              "client_opt": os.environ.get("CLIENT_OPT", "sgd"),
               "rcfg": rcfg, "mcfg": MCFG,
               "env": {k: os.environ[k] for k in
                       ("POOL", "LR", "BATCH", "EPOCHS", "POISON_FRAC", "ROUNDS", "MAX_STEPS",
-                       "PER_CLIENT", "VAL") if k in os.environ}}
+                       "PER_CLIENT", "VAL", "NOISY_RATE", "DOSE_MULT", "REMOVAL", "CLIENT_OPT",
+                       "REMOVAL_METHODS") if k in os.environ}}
     try:
         rl = RunLogger(RUNDIR_ROOT, name, config, repo_root=_CODES)
         try:
@@ -470,6 +562,22 @@ def main():
                 "runtime": res["runtime"],
                 "corrupt": sorted(int(x) for x in corrupt), "selected": [int(c) for c in sel],
                 "asr": asr}
+            if REMOVAL and SILO_LIKE:                             # Exp A2: removal/selection curves (extra retrains)
+                mk = f"{threat}_seed{seed}"
+                if threat == "poison":
+                    pr = poison_removal_asr(methods, seed, model, tok, init, pkeys, device, asr)
+                    run_metrics[mk]["poison_removal"] = pr
+                    print(f"  [removal] poison k=1 baseline-ASR={asr} -> "
+                          + ", ".join(f"{m}:excl{d['excluded']}=ASR{d['asr']:.2f}"
+                                      for m, d in pr["by_method"].items()), flush=True)
+                else:
+                    rc, nrt, mrt = removal_retrain_curves(methods, score_clients, model, tok, init,
+                                                          loss_fn, pkeys, device, seed, RCFG["n_clients"])
+                    run_metrics[mk]["removal_curve"] = rc
+                    run_metrics[mk]["removal_orient"] = "val_loss (lower=better); phi good->low"
+                    run_metrics[mk]["removal_retrain_s"] = mrt
+                    print(f"  [removal] {threat}: {nrt} distinct retrains "
+                          f"({mrt:.1f}s/retrain) over {len(rc)} methods x 2 dirs", flush=True)
             del loss_fn
             if device == "cuda":
                 torch.cuda.empty_cache()

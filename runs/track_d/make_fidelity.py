@@ -13,12 +13,14 @@ dual-oracle agreement).  Standalone:
 import csv
 import glob
 import os
+import sys
 
 import numpy as np
 import pandas as pd
 from scipy.stats import kendalltau, spearmanr
 
 ROOT = os.path.dirname(os.path.abspath(__file__))      # runs/track_d
+sys.path.insert(0, ROOT)                                # sibling: make_target_stability
 RUNDIRS = os.path.join(ROOT, "rundirs")
 OUT = os.path.join(ROOT, "fidelity.csv")
 TRUTH = "(b)oracle"
@@ -73,6 +75,19 @@ def main():
         for m in sub["method"]:
             s = sub[sub["method"] == m].iloc[0]
             print(f"  {m:10s} {s['spearman']:+9.3f} {s['pearson']:+8.3f}")
+
+    # ---- Exp C: report the (b) TARGET self-stability alongside fidelity (review C-2, §4/§5.1) ----
+    # fidelity's per-seed +rho is agreement WITH the (b) oracle; if that target itself reorders
+    # across seeds the +1.000 is riding on an unstable ground truth -> report both, always.
+    try:
+        from make_target_stability import cell_stability
+        ts = cell_stability(RUNDIRS, "(b)oracle")
+        print(f"\n=== (b) target self-stability across seeds (Exp C / review C-2) ===")
+        print(f"  {'cell':24s} {'n_seed':>6s} {'mean_xseed_rho':>14s}   pairs")
+        for r in ts:
+            print(f"  {r['cell']:24s} {r['n_seeds']:6d} {r['mean_xseed_spearman']:+14.3f}   {r['pairs']}")
+    except Exception as e:                                  # never break the fidelity table on this add-on
+        print(f"\n[target-stability] skipped ({e!r})")
 
 
 if __name__ == "__main__":
