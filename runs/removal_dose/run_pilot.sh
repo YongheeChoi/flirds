@@ -1,5 +1,5 @@
 #!/bin/bash
-# C-1~C-5 mitigation experiments -- PILOT driver (PROMPT_removal_dose_c2_adamw.md §7.1).
+# C-1~C-5 mitigation experiments -- PILOT driver (plan/matrix: runs/removal_dose/README.md).
 #
 # Scope: threat=noisy x silo5 x seed0 x reduced method set.  Runs the two GPU code paths
 # once, end-to-end:
@@ -16,16 +16,24 @@
 #
 # Kill:  pkill -f run_pilot.sh; pkill -f phase2_matrix.py
 set -u
-PY=${PY:-/home/korea_bupj/miniconda3/envs/flirds/bin/python}
-REPO=${REPO:-/NHNHOME/26msit001_A/edge_ai_lab/yonghee/flirds}   # << UPDATE after server migration
+# --- server-migration (2026-07-15): flirds_batch venv + canonical BASE path (same inode as
+#     .../WORKSPACE/26msit001_A/edge_ai_lab/yonghee/flirds); old korea_bupj env is gone. ---
+STAGE=${STAGE:-/NHNHOME/WORKSPACE/26msit001_A/flirds_batch}
+PY=${PY:-$STAGE/venv/bin/python}
+REPO=${REPO:-/NHNHOME/26msit001_A/BASE/edge_ai/yonghee/flirds}
 CODES=$REPO/codes
 ROOT=$REPO/runs/removal_dose
 LOGS=$ROOT/_logs
-GPU=${GPU:-0}                                          # GPU 0 free (root CLAUDE.md); override GPU=3
+GPU=${GPU:-0}                                          # GPU 0 free; override GPU=3
 RED=${RED:-Flirds,Flirds1st,GTG,ShapleyFL,loss-heur}  # reduced method set (§7.1)
 mkdir -p "$LOGS" "$ROOT/rundirs"
 cd "$CODES" || { echo "no $CODES (fix REPO=)"; exit 1; }
 export PYTHONPATH=.
+# HF cache (offline; models+datasets warmed into flirds_batch/hf_home by preflight)
+export HOME=${HOME_OVERRIDE:-$STAGE/home}
+export HF_HOME=${HF_HOME:-$STAGE/hf_home}
+export HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 TOKENIZERS_PARALLELISM=false
+export PYTHONDONTWRITEBYTECODE=1 TQDM_DISABLE=1 TRANSFORMERS_VERBOSITY=error
 
 note() { echo "[pilot] $(date '+%F %T') $*" | tee -a "$LOGS/_pilot.log"; }
 

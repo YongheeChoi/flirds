@@ -52,13 +52,19 @@
   + Ripple 분리 계측 valuation-only 환산 + fp32-vs-bf16 마이크로벤치(×3.1 확정) + peak-mem. **1셀 ~30분급.**
 - **§7 Taylor 1B** (항목 1): P3 물리 잔차·P5 순위. 스크립트 준비 완료.
 
-## 미해소 실측 (GPU 대기 — 서버 세션에서 실행)
+## 미해소 실측 — **3건 실측 완료 (2026-07-15, B200 staging `flirds_batch`)**
 
-인수인계 문서: [`PENDING_MEASUREMENTS_2026-07.md`](PENDING_MEASUREMENTS_2026-07.md) — 실측 3건의
-커맨드·산출물 회수·결과 반영 지점까지 정리. 요약:
-1. **Taylor 잔차 1B** (항목 1 §7): 준비 완료, 커맨드만 붙여넣으면 됨(~55–75분). P3 물리 잔차·2차 우위·P5 순위.
-2. **통일 회계 스모크** (항목 6·2·3 공유): 1B N=5 R=10에서 로그생성 시간·Ripple 분리계측·×3.1 확정·peak-mem(~30분). 스크립트 서버에서 마저 작성.
-3. **CNN TF32 A/B** (항목 3): yonsei 박스 런타임 판별(~1분) + cifar10 A/B(~1–2.5h). 스크립트 yonsei 세션에서.
-
-GPU0-2는 probe std50k5 완주(ETA 07-05 저녁~06) 후 해방, GPU3는 공유 계정 외부 잡 간헐 점유,
-GPU4-7은 프로젝트 규약상 미사용. 안 돌려도 각 문서는 placeholder로 완결돼 있음.
+인수인계 문서: [`PENDING_MEASUREMENTS_2026-07.md`](PENDING_MEASUREMENTS_2026-07.md). 서버 이전 후 재개
+캠페인에서 3건 전부 실측·문서 반영 완료(각 문서 "[실측 대기]" placeholder → 실측 표):
+1. **Taylor 잔차 1B** ✅ (항목 1 §7, 3-seed) → [`irds-fl-math-rigor.md`](irds-fl-math-rigor-2026-07/irds-fl-math-rigor.md) §7.2.
+   **û²≤û¹** median 확인(2차 잔차 ≈ 1차의 1/3, 3-seed 평균 ratio 0.33·frac 0.79–0.81); slope1≈2.3 실현(gpt2 0.30
+   대비 P3-i 실증)이나 **slope2≈1.5·resid2 가 노이즈바닥(2.38e-7)에 근접 → O(‖Δ‖³) 스케일링 미확정(verdict=CHECK)**;
+   estimator=closed-form(Spearman 1.000, \|Δ\|~5e-10). §9 결정3 해소.
+2. **통일 회계 3-seed** ✅ (항목 6·2·3) → [`cost-comparison-methodology.md`](cost-comparison-methodology-2026-07/cost-comparison-methodology.md) §1.4/§5.2 + [`ripple-audit.md`](ripple-audit-2026-07/ripple-audit.md) §4.3.
+   공유 FL궤적 409.9s(mean) 분리측정 → coalition 계열 overhead **~130%**(Flirds 26%·Flirds1st 8.6%); Ripple
+   **3,536s = 6.6× coalition / 33× Flirds**. 기존 "학습 ~900s" 추측이 2.2× 과대였음이 드러남.
+3. **CNN TF32 A/B** ✅ (항목 3, B200 4런) → [`precision-audit-and-policy.md`](precision-policy-2026-07/precision-audit-and-policy.md) §2.2/§2.4/§3.1.
+   **AUROC 전 11방법 TF32-불변**·spearman_vs_rate 9/11 불변(mover=ShapleyFL 0.148·FedSV 0.025, 둘 다 fidelity-약체·
+   비-headline); Flirds/Banzhaf/(b) 완전 불변 → yonsei-box 노출 저위험. fp32 마이크로벤치 forward ×5.16·HVP ×3.64·
+   GEMM ×12.0/×22.7("×3.1" placeholder 폐기).
+   > 잔여: **3-a yonsei 박스 conv-TF32 런타임 판별**(~1분)만 별도 세션 대기(§2.4가 B200 A/B로 이미 저위험화).

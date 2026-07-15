@@ -57,7 +57,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 > **⟳ [2026-07-14] C-1~C-5 완화 실험 4종 착수 — 코드+로컬검증 완료 · Exp C(target-stability) 실측(§3.1.5).**
 > review-claude C-1~C-5 방어용 상호보완 실험(**removal-curve · dose-response · target-stability · AdamW-fidelity**;
-> 계획 `PROMPT_removal_dose_c2_adamw.md`, 신규 rundir root `runs/removal_dose/`)의 **코드 6파일 구현 + 로컬 검증
+> 계획 `runs/removal_dose/README.md`, 신규 rundir root `runs/removal_dose/`)의 **코드 6파일 구현 + 로컬 검증
 > 완료**(순수로직 단위테스트 20/20 + tiny-gpt2 GPU 통합 스모크 2종; 전부 하위호환·기본값=현행 동작). **Exp C(재실행 0,
 > GPU 불필요)만 실측 완료 → §3.1.5 + 마스터표 P7–P9**: (b) oracle 의 seed 간 자기-Spearman. 핵심 = **IID-clean 무대
 > (track_d)서 매칭 대상 (b) target 자체가 seed-불안정**(1B_anchor5 ρ=**−0.367** · std20 −0.114 = 리뷰가 "저자가 잰

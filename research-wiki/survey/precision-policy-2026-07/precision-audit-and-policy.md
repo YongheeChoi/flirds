@@ -133,11 +133,15 @@ f32mp highest
 
 ### 2.2 오차 스케일 vs 신호 스케일
 
-**TF32 오차 스케일** [추측 — 문헌 일반론; 실측 판별은 부록 B]: TF32는 곱셈 입력을 10-bit
-mantissa로 반올림(상대 ~2⁻¹¹≈4.9e-4/원소), 누산은 fp32. conv 출력의 fp32 대비 상대 편차는
-통상 ~1e-3 차수. CE val-loss(utility, CIFAR ~1.1–2.3)로 전파되는 절대 섭동을 **~1e-3 차수**로
-잡는다. 섭동은 결정론 커널에서 가중치의 결정적 함수이므로 coalition 간 utility **차이**에서는
-부분 상쇄될 수 있다(방향 불확실).
+**TF32 오차 스케일** [추측 문헌 일반론 → **B200 A/B가 실측 확증, §2.4**; 부록 B는 여전히
+yonsei-박스 노출 판별용]: TF32는 곱셈 입력을 10-bit mantissa로 반올림(상대 ~2⁻¹¹≈4.9e-4/원소),
+누산은 fp32. conv 출력의 fp32 대비 상대 편차는 통상 ~1e-3 차수. CE val-loss(utility, CIFAR
+~1.1–2.3)로 전파되는 절대 섭동을 **~1e-3 차수**로 잡는다. 섭동은 결정론 커널에서 가중치의
+결정적 함수이므로 coalition 간 utility **차이**에서는 부분 상쇄될 수 있다(방향 불확실).
+→ **B200 A/B(§2.4) 실측이 이 추정을 확증**: TF32 on/off φ 이동 max|Δφ|가 fidelity-핵심
+방법에서 Flirds 8.8e-4·(b)oracle 5.6e-4·Banzhaf 5.7e-4(iid) / 8.4e-4–1.2e-3(label_flip)로
+정확히 ~1e-3 차수(`outputs/tf32_ab/*/metrics.json`). ShapleyFL만 φ 절대크기(~0.9)에 비례해
+~2.3e-2로 예외.
 
 **신호 스케일** — 로컬 `runs/track_c/c1/*/phi.parquet`의 (b)oracle φ에서 직접 계산
 ([재계산], 이 세션; 부록 A 스크립트, 30셀 전체 수치 포함):
@@ -151,7 +155,7 @@ mantissa로 반올림(상대 ~2⁻¹¹≈4.9e-4/원소), 누산은 fp32. conv �
 | mnist label-flip | 0.326–0.386 | 3.7e-4–8.6e-4 | 1.0e-2–1.4e-2 |
 | cifar10 feature-noise / label-skew | 0.048–0.134 | 2.6e-4–2.4e-3 | 2.5e-3–1.8e-2 |
 
-### 2.3 판정 (문서 판정 — 확정은 A/B 스모크)
+### 2.3 판정 (문서 판정 — **A/B 스모크로 확정됨, §2.4**)
 
 1. **오염/스큐 셀의 headline 결론은 안전할 가능성이 높다.** corrupt-vs-clean 분리와
    cross-seed 안정성(label_flip ρ=0.968, quantity_skew 0.968; `runs/track_c/RESULTS.txt`)을
@@ -168,25 +172,65 @@ mantissa로 반올림(상대 ~2⁻¹¹≈4.9e-4/원소), 누산은 fp32. conv �
    replay-forward는 **다른 커널 경로**라 TF32 반올림이 경로별로 달라질 수 있고, 이것이
    estimator-vs-oracle fidelity에 ~1e-3급 경로 의존 노이즈로 들어갔을 가능성은 A/B 없이
    배제 불가 [추측]. (CNN pooled Flirds fidelity +0.953±0.080의 결손 일부가 여기서 왔을
-   가능성 — 크기상 iid 셀에 국한될 것.)
+   가능성 — 크기상 iid 셀에 국한될 것.) **[A/B 후속 §2.4: 이 추측은 순위 기준 반박됨** —
+   iid·label_flip 모두 Flirds·Banzhaf의 estimator-vs-(b) `spearman_b`가 on/off **비트 동일**
+   (Flirds iid 0.98788/0.98788, label_flip 1.0/1.0)이라 결손은 TF32 경로 노이즈가 아닌 실제
+   신호 구조. 단 값-수준 `pearson_b`는 ~7e-4 움직이고(Flirds iid 0.99485→0.99416), iid
+   약-fidelity 방법의 `spearman_b`는 순위 재편(Flirds1st 0.588→0.539, loss-heur 0.636→0.564)
+   — §2.3-2 예측과 정합.]
 4. **논문 서술 각주 필요**: 확정 전까지 CNN 수치에 "conv는 cuDNN 기본 설정(TF32 가능성,
    Ampere)"의 각주가 정직하다. LLM 수치는 각주 불요(matmul fp32 실측 확정, conv-free).
 
-### 2.4 확정용 A/B 스모크 설계 (제안만 — 실행 안 함)
+### 2.4 확정용 A/B 스모크 — 실측 완료 (B200, 2026-07 서버 이전 후)
 
-- **무대**: yonsei 3090, `track_c1` cifar10 {iid, label_flip} seed0 — 2셀 × {TF32-on(현행),
-  TF32-off} = 4런. 기존 c1 셀당 ~10–40min(진단 문서 §2.2) → **총 ~1–2.5h**. 더 줄이려면
-  R=10→5 스모크 config로 ~30min 총.
-- **방법**: 코드 수정 없이 10줄 런처 래퍼(survey/스크래치에 생성) —
-  `torch.backends.cudnn.allow_tf32=False`(+ 신 API `cudnn.conv.fp32_precision="ieee"`)
-  설정 후 `experiments/track_c1.py`를 import-실행. 신규 RUN_NAME으로 기존 rundir 불변.
-- **판정 기준**: (i) 셀 내 max|Δφ_(b)|와 Δ(Spearman estimator-vs-(b)) — iid에서
-  |Δφ|가 인접 갭보다 크고 순위가 흔들리면 "iid 세부 수치는 TF32-민감" 확정, label_flip에서
-  순위 불변이면 headline 안전 확정. (ii) 사전 판별로 부록 B 스니펫(수 초) — conv
-  fp32-vs-fp64 오차가 ~1e-4↓면 애초에 TF32 커널 미선택(=전체 이슈 소멸), ~1e-2↑면 노출 확정.
-- **후속 결정 재료**: 노출 확정 시 "CNN 전 진입점에 `cudnn.allow_tf32=False` 1줄 추가
-  (재현성 플래그 옆, `repro.py`)" 여부 — 기존 150셀과의 비교 단절이 생기므로 (a) 각주로
-  처리 vs (b) 플래그 추가+재실행의 선택은 §3 옵션 결정과 함께 Yonghee 판단.
+설계대로 **cifar10 {iid, label_flip} × {TF32-on, TF32-off} × seed0 = 4런**을 실행했다. 단
+무대는 (계획했던 yonsei 3090이 아니라) **이전 후 B200**(venv, torch 2.12.0+cu130;
+`outputs/tf32_ab/{cifar10_iid,cifar10_label-flip}_tf32{on,off}_seed0/metrics.json`,
+staging flirds_batch). TF32-off는 `cudnn.allow_tf32=False`로 강제, on은 현행 기본값. 방법
+11종(estimator·oracle·baselines)을 같은 로그·같은 loss_fn으로 재측정.
+
+**결과 — 헤드라인 지표는 TF32-불변** (on−off; 전 방법 파싱):
+
+| 방법 | ΔAUROC (LF) | Δ spearman_vs_rate (LF) | max\|Δφ\| iid | max\|Δφ\| LF |
+|---|---|---|---|---|
+| (b)oracle | 0.000 | 0.000 | 5.6e-4 | 8.4e-4 |
+| **Flirds** | 0.000 | 0.000 | 8.8e-4 | 1.2e-3 |
+| Flirds1st | 0.000 | 0.000 | 1.4e-3 | 1.3e-3 |
+| Banzhaf | 0.000 | 0.000 | 5.7e-4 | 8.4e-4 |
+| loss-heur | 0.000 | 0.000 | 1.4e-3 | 1.5e-3 |
+| Fed-LOO | 0.000 | 0.000 | 1.3e-3 | 1.1e-3 |
+| FedIF | 0.000 | 0.000 | 1.3e-2 | 1.4e-2 |
+| GTG | 0.000 | 0.000 | 2.9e-3 | 5.3e-3 |
+| ComFedSV | 0.000 | 0.000 | 4.8e-3 | 6.1e-3 |
+| **FedSV** | 0.000 | **+0.025** | 4.3e-3 | 5.2e-3 |
+| **ShapleyFL** | 0.000 | **+0.148** | 2.3e-2 | 2.3e-2 |
+
+- **AUROC**: 11개 방법 전부 on=off (비트 동일). label_flip 탐지 헤드라인
+  ((b)oracle·Flirds·Flirds1st·Banzhaf·loss-heur·FedIF = 1.000) 완전 불변.
+- **spearman_vs_rate**: 11개 중 9개 소수 15자리까지 on=off (Flirds·Banzhaf·(b)oracle·loss-heur
+  0.98473, GTG 0.78779, ComFedSV 0.49237, FedIF 0.93550, Fed-LOO 0.96011). **예외 2개**:
+  ShapleyFL 0.443→0.295(Δ0.148), FedSV 0.886→0.862(Δ0.025).
+- **φ 이동(max|Δφ|)**: fidelity-핵심 방법은 ~1e-3(§2.2 추정 확증). 재구성-MC·대진폭 방법이 더 큼
+  (FedIF ~1.4e-2, ComFedSV ~6e-3). **최대 = ShapleyFL 2.3e-2**(φ 절대크기 ~0.9 = 전 방법 최대,
+  min-max+EMA 증폭).
+- **궤적**: iid final_acc on 0.65425 vs off 0.654375 (Δ1.3e-4), label_flip 0.627125 vs 0.626
+  (Δ1.1e-3) — 사실상 동일.
+
+**판정 (§2.3 확정):**
+1. **헤드라인 안전 확정.** 오염 셀(label_flip)의 탐지 AUROC·spearman_vs_rate가 헤드라인
+   방법(Flirds·Banzhaf·(b)oracle)에서 TF32에 완전 불변 → 원래 그리드가 TF32-노출이었든 아니든
+   헤드라인 결론 불변. **yonsei 박스 노출 판별(부록 B/P1)은 이로써 저-스테이크**가 된다(노출이어도
+   결과가 안 바뀜을 B200이 보임). LLM은 여전히 각주 불요(matmul fp32 실측, conv-free).
+2. **ShapleyFL·FedSV의 spearman_vs_rate 흔들림은 헤드라인 밖.** 둘 다 φ가 near-tie
+   (ShapleyFL 대진폭+저-fidelity 0.30–0.44 = near-random / FedSV clean 클라 φ≈0)라 ~1e-2급
+   섭동에 순위가 재편된다. 그러나 둘 다 fidelity-열위 방법(헤드라인 = Flirds·Banzhaf)이라 서사에
+   영향 없음. **"ShapleyFL만 민감"은 과언** — FedSV도 작게 움직인다(0.025 vs 0.148). (fp32 유지가
+   ShapleyFL 통일 재실행에 β와 무관하게 안전한 근거 하나 추가.)
+- **후속 결정 재료(불변)**: 노출 확정 시 "CNN 전 진입점에 `cudnn.allow_tf32=False` 1줄 추가
+  (재현성 플래그 옆, `repro.py`)" 여부 — 기존 150셀과의 비교 단절이 생기나, 위 1의 저-스테이크
+  판정으로 **긴급도는 낮다**(각주로 충분). 부록 B 스니펫(수 초)은 여전히 yonsei 박스에서 "conv가
+  실제 TF32 커널로 돌았는가"의 사전 판별용으로 유효 — (a) 각주 vs (b) 플래그+재실행 선택은 §3
+  옵션 결정과 함께 Yonghee 판단.
 
 ---
 
@@ -238,10 +282,30 @@ oracle_a=false라 (a) retrain도 없다(remote_recon §1.4·§1.6). 즉 '학습�
 안 따랐나"는 질문 포인트 — 답변 근거는 있음(신호 ~1e-3 < bf16 ~8e-3)이나, "학습만 bf16으로
 하고 평가만 fp32면 되지 않나"(=옵션 ②)가 자연스러운 재반박이 된다.
 
-**(4) tf32-off 학습 속도 손해**: matmul TF32는 코드가 안 만져 기본 off(§1.2) — B200의
-tensor core를 fp32 학습·평가 어디에도 안 쓴다. TF32만 켜도(정밀도 fp32와 bf16 사이;
-mantissa 10bit) 학습 matmul 이득이 가능하나 **이득 실측 없음** [추측]. bf16 대비 실측
-격차(×3.1/retrain)가 상한 참고치.
+**(4) tf32/bf16 대비 fp32 연산 벌점 — B200 마이크로벤치로 실측 확정** [실측]
+(2026-07 서버 이전 후; Llama-3.2-1B, val=100; `outputs/microbench/summary.json`, torch
+2.12.0+cu130, staging flirds_batch). matmul TF32는 코드가 안 만져 기본 off(§1.2)라 B200
+tensor core를 fp32 경로 어디에도 안 쓴다 — 켰을 때의 벌점을 이제 직접 측정했다:
+
+| 연산 | fp32 | tf32 | bf16 | fp32÷tf32 | fp32÷bf16 |
+|---|---|---|---|---|---|
+| forward (s/pass) | 1.601 | 0.311 | 0.300 | **×5.16** | **×5.33** |
+| HVP (2차, s/pass) | 10.36 | 2.848 | 2.535 | **×3.64** | **×4.09** |
+| raw GEMM (TFLOPS) | 65.97 | 793.3 | 1495.8 | **×12.0** | **×22.7** |
+
+(HVP peak-mem fp32/tf32 90.5 GiB vs bf16 66.9 — 대형 칸 HVP는 메모리도 bind.)
+
+- **§3.1-(1) 표 "×3.1"의 해명 [재계산]**: 그 ×3.1은 06-07 **retrain 벽시계** fp32÷bf16
+  (85.2s/27.5s=3.10)으로, 데이터로딩·옵티마이저·비-matmul 오버헤드가 섞인 **워크로드** 값이라
+  raw-op 배수보다 희석돼 있다. 순수 연산 벌점의 진짜 상한은 GEMM ×22.7(bf16)/×12.0(tf32),
+  forward·HVP는 ×4–5다 — 즉 retrain ×3.1은 **상한이 아니라** 오버헤드 지배 워크로드의 실측
+  하한이다(이전 문안 "×3.1/retrain 상한 참고치"는 라벨 오류였고 마이크로벤치가 정정;
+  cost-comparison §4 C3의 "×3.1 = 미검증 placeholder, 인용 금지" 지적도 이 실측으로 해소).
+  학습(matmul 지배)만 bf16이었다면 §3.1-(2)의 std 학습 ~3.1h/셀은 GEMM 배수 근처까지 줄
+  여지가 있으나, 실제 학습 루프는 오버헤드 때문에 retrain ×3.1급에 가까울 것 [추측: 학습=matmul 지배 전제].
+- **caveat**: 배수는 B200 고유값(하드웨어 의존) — 이전 전 박스(yonsei RTX 3090 등)엔 그대로
+  옮겨지지 않고, 정성적 결론("fp32는 tensor-core 대비 크게 느림; 평가 fp32는 §3.1-(5)상
+  필요조건, 줄일 여지는 학습 정밀도뿐")만 전이된다.
 
 **(5) 요약 리스크**: 비용·확장성·외부 비교 — 수치의 신뢰성 리스크는 없음(오히려 가장
 보수적). 신호크기 진단(§1.1)은 fp32 floor가 신호의 10²–10⁴배 아래임을 확인 — fp32가

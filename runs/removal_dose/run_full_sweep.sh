@@ -1,5 +1,5 @@
 #!/bin/bash
-# C-1~C-5 mitigation experiments -- FULL SWEEP driver (PROMPT_removal_dose_c2_adamw.md §7.2).
+# C-1~C-5 mitigation experiments -- FULL SWEEP driver (plan/matrix: runs/removal_dose/README.md).
 # Run ONLY after the pilot (run_pilot.sh) is approved and the per-retrain time is known.
 #
 # Sections (SEEDS default 0 1 2; single GPU, override GPU=; shard by running sections on
@@ -13,8 +13,11 @@
 #
 # Kill:  pkill -f run_full_sweep.sh; pkill -f phase2_matrix.py; pkill -f track_d.py
 set -u
-PY=${PY:-/home/korea_bupj/miniconda3/envs/flirds/bin/python}
-REPO=${REPO:-/NHNHOME/26msit001_A/edge_ai_lab/yonghee/flirds}   # << UPDATE after server migration
+# --- server-migration (2026-07-15): flirds_batch venv + canonical BASE path (same inode as
+#     .../WORKSPACE/26msit001_A/edge_ai_lab/yonghee/flirds); old korea_bupj env is gone. ---
+STAGE=${STAGE:-/NHNHOME/WORKSPACE/26msit001_A/flirds_batch}
+PY=${PY:-$STAGE/venv/bin/python}
+REPO=${REPO:-/NHNHOME/26msit001_A/BASE/edge_ai/yonghee/flirds}
 CODES=$REPO/codes
 ROOT=$REPO/runs/removal_dose
 LOGS=$ROOT/_logs
@@ -24,6 +27,11 @@ DO=${DO:-1 2 3 4}                                     # which sections to run (e
 mkdir -p "$LOGS" "$ROOT/rundirs"
 cd "$CODES" || { echo "no $CODES (fix REPO=)"; exit 1; }
 export PYTHONPATH=.
+# HF cache (offline; models+datasets warmed into flirds_batch/hf_home by preflight)
+export HOME=${HOME_OVERRIDE:-$STAGE/home}
+export HF_HOME=${HF_HOME:-$STAGE/hf_home}
+export HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 TOKENIZERS_PARALLELISM=false
+export PYTHONDONTWRITEBYTECODE=1 TQDM_DISABLE=1 TRANSFORMERS_VERBOSITY=error
 
 note() { echo "[full] $(date '+%F %T') $*" | tee -a "$LOGS/_full.log"; }
 has()  { case " $DO " in *" $1 "*) return 0;; *) return 1;; esac; }

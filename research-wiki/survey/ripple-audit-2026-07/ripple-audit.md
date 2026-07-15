@@ -15,7 +15,7 @@
 | 1 | 우리 포트는 논문 알고리즘에 충실한가 | **골격은 충실** (자체 궤적·per-step drop·클라별 로컬 Hessian sketch·progressive Q·cross-round chain 모두 구현). Algorithm 1의 모호 지점 2건은 각각 "α_k 비가중 스케치 합산", "코호트별 cross-round chain" 해석 채택(§1.2). 명시적 변형 = per-sample→per-client 축약, drop의 1차 내적 채택, LLM Hessian 서브샘플·축소 config. **LLM 포트는 미완 선언 상태** (streaming projection 미구현, LA/LM 미해소, §1.3) |
 | 2 | 62×/49× vs 8.5× 느림의 격차 원인 | 모순 아님 — (i) **비교축이 다름**: 논문 배수의 분모는 학습 포함 in-run coalition-평가형 자체구현(그들 FedSV = plain training의 100×), 우리 FedSV는 frozen-logs 소비형(532s, 학습 제외). (ii) **d-스케일**: 그들 MLP/소형 CNN(오버헤드 ~5s/라운드 상수) vs 우리 1B fp32(≈1,129s/라운드). (iii) **회계**: 그들 수치는 학습시간이 분모·분자에 공통 포함되어 배수가 오히려 희석된 것 — valuation-only로 환산하면 그들 셋업에서 Ripple 우위는 94.8×/120.9×로 더 커짐. 논문의 유일한 절대 비용 주장은 "plain training의 2.05×"이며 LLM 스케일에 대한 주장이 아님 (§2) |
 | 3 | eigsh CPU-spin의 원인 | **가설(CPU-spin/stall)은 실측으로 반박됨** (`measurements-eigsh-cpu.md`, 2026-07-04). eigsh는 전 호출 정상 수렴(12/12, ~115 matvec/call, maxiter=300 근처도 아님), 연산자 well-conditioned(\|λ\|max≈1.019), tol=0은 tol=1e-3 대비 matvec ~2배(109 vs 56)이나 **여전히 수렴** — 비수렴·maxiter 소진·stall 없음. Ripple 비용의 실체는 포트 버그가 아니라 **정상 수렴하는 다수 eigsh 호출(클라×라운드) × matvec 비용 + per-step val-grad**의 방법 고유 고유분해 volume (§3) |
-| 4 | Ripple을 from-logs로 재구성 가능한가 | **불가 (확정)** — drop 항(per-sample·per-local-step gradient + 중간 파라미터)과 Hessian sketch(로컬 데이터 HVP)가 클라 로컬 데이터 접근 필수. `(w_r, δ)` 로그와 호환되는 것은 라운드 val-grad 하나뿐 (§4.3) |
+| 4 | Ripple을 from-logs로 재구성 가능한가 | **불가 (확정)** — drop 항(per-sample·per-local-step gradient + 중간 파라미터)과 Hessian sketch(로컬 데이터 HVP)가 클라 로컬 데이터 접근 필수. `(w_r, δ)` 로그와 호환되는 것은 라운드 val-grad 하나뿐 (§4.2) |
 | 5 | fidelity 비교 제외는 방어 가능한가 | **가능** — ① 측정 대상이 다른 게임(비인과 temporal 누적, 자체 궤적), ② 논문 스스로 exact-Shapley 대비 수치 fidelity 측정을 명시적으로 거부(수치 전무), ③ 우리 포트 미완 + 방법 고유 비용으로 full-grid 편입이 과학적으로도 예산상으로도 부적절 (§5) |
 
 ---
@@ -188,6 +188,24 @@ eigsh는 정상 작동한다. Ripple이 비싼 이유는 포트의 stall이 아�
 | 코호트별 사영 기여 벡터 Qᵀ∂w/∂z | **불가** — per-step gradient에서 파생 | §6-5 |
 
 **판정**: Ripple은 본질적으로 **온라인·클라 참여형 프로토콜**이다(클라가 스케치·per-step utility를 계산해 업로드하는 구조; 업링크만 모델 크기의 k배). `(w_r, δ)` 로그만으로 만드는 것은 drop과 Hessian 두 축에서 원 알고리즘과 다른 근사를 강제하므로 "Ripple의 재현"이 아니라 **"Ripple에서 영감을 받은 서버-측 변형"**이 된다. 따라서 (i) 우리 실험 인프라(공유 로그 25셀 그리드)에 Ripple을 from-logs로 편입하는 것은 알고리즘 구조상 불가능하고, (ii) 우리 포트가 자체 궤적을 도는 것은 회계 비대칭의 원인이지만 **논문 충실성의 결과**다. 구현(from-logs 변형 설계)은 범위 밖 — §6-3에 설계만.
+
+### 4.3 LLM 실측 (통일 회계, 3-seed B200)
+
+§4.1은 CNN·CPU 스케일의 구간 분해(A=0.4%/B=99.4%)였고, §3.3이 예고한 **LLM 스케일 절대치**가 서버 이전 후 "실측2 통일 회계" 캠페인 3-seed로 확정됐다. 출처: `logs/cells/acct_seed{0,1,2}.log`(staging `flirds_batch`, B200 1장, venv torch 2.12.0+cu130, Llama-3.2-1B-Instruct LoRA r16, N=5 R=10 val=100 lr=1e-3; 러너가 `phase1_baseline_compare`를 monkeypatch해 공유 FL 궤적 wall-clock을 방법별 valuation과 분리 측정). Ripple은 여기서도 자체 축소 궤적(rip_rounds=4)을 타이머 안에 포함하는 **end-to-end 단일 수치**로 측정된다 — 내부 A/B0–B3 분리는 이 캠페인 소관이 아니라 §4.1 CNN 계측·§6 후속 GPU 이식이며, **LLM 항별 분해는 여전히 [실측 대기]**.
+
+| 항목 | seed0 | seed1 | seed2 | 3-seed 평균(범위) |
+|---|---|---|---|---|
+| **Ripple end-to-end (s)** | 2,366.4 | 4,363.0 | 3,878.6 | **3,536 (2,366–4,363)** |
+| 공유 FL 궤적(vanilla, 참고) | 434.6 | 407.3 | 387.9 | 409.9 (388–435) |
+| coalition 평균(GTG·FedSV·Banzhaf·ShapleyFL·(b), s) | 520.6 | 538.7 | 542.7 | 534 (521–543) |
+| Flirds valuation (s) | 105.0 | 108.2 | 108.5 | 107.2 (105.0–108.5) |
+| **Ripple ÷ coalition** | 4.5× | 8.1× | 7.1× | **6.6× (4.5–8.1×)** |
+| **Ripple ÷ Flirds** | 22.5× | 40.3× | 35.7× | **33× (22.5–40.3×)** |
+
+- **판정**: LLM 스케일에서도 Ripple은 valuation-only 소비형 방법 대비 **압도적 최고비용** — coalition-sweep(≈534s, 학습 제외)의 **~6.6배**, Flirds valuation(107s)의 **~33배**. §2.3 factor ②(방법 고유 d-스케일 비용)의 직접 확증이다. 프롬프트/발표에서 흔히 인용되는 seed0 앵커 "≈4.5× coalition·≈22× Flirds"는 **범위 하단(seed0)**이며, 3-seed 평균은 6.6×·33×로 더 크다 — Ripple 절대치 변동이 크기(2,366–4,363s, ~1.8×) 때문(coalition·Flirds는 seed 간 ±3% 안정).
+- **peak memory**: 로그 `[ACCT]` 라인은 공유 FL 학습 peak만 보고 = **30.35 GiB(3-seed 동일)**. Ripple(및 방법별) valuation peak는 이 캠페인에서 미계측(cost 방법론 §5.1-5 peak-mem 열 [실측 대기]와 동일 상태).
+- **구서버 4,515s와의 관계**: 기존 baseline 문자열의 "Ripple ~4,515s"(구서버, 06-06)는 신규 B200 3-seed 평균 3,536s와 **직접 bit-comparable 아님**(서버 이전; venv torch 2.12.0+cu130). 비교의 기준 축은 **동일 run 내 방법 간 비율**(위 6.6×·33×)이고, 구서버에서도 Ripple이 FedSV 대비 ~8.5×로 최고비용이던 정성 결론과 방향 일치.
+- **fidelity/detection(참고, 3-seed)**: Ripple은 자체 궤적이라 공유 (b)와 Spearman 미산출(전 valuation 방법 +1.000). AUROC noisy는 Ripple만 seed 편차 0.500/0.750/0.250(seed0/1/2)로 valuation 0.750 대비 불안정 — §5 "축소-config 포트라 보조 근거로만" 판정과 정합(free-rider AUROC는 Ripple도 1.000).
 
 ---
 

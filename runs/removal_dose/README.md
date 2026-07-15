@@ -1,6 +1,7 @@
 # removal_dose — C-1~C-5 완화 실험 (removal-curve · dose-response · target-stability · AdamW)
 
-계획서: `PROMPT_removal_dose_c2_adamw.md` (루트). Yonghee 승인 결정(2026-07-14) 반영.
+계획·셀 매트릭스·GPU예산·caveat = **이 README 에 인라인**(원 계획 프롬프트 `PROMPT_removal_dose_c2_adamw.md`
+는 실행 스테이징 완료 후 제거 — 필요 시 git `525bb75` 에서 복구). Yonghee 승인 결정(2026-07-14) 반영.
 이 폴더 = 4종 완화 실험의 **신규 산출물 전용 rundir root**(기존 phase2_matrix/track_d canonical
 rundir 를 덮어쓰지 않음 — `RUNDIR_ROOT` 로 분리). 리뷰어 공격 C-1~C-5(`research-wiki/survey/
 review/review-claude.md`)에 대한 **상호보완 비교축**이며, (b) oracle fidelity 표는 건드리지 않는다.

@@ -955,7 +955,7 @@ $\sum_kp_kB_kA_k\ne(\sum_kp_kB_k)(\sum_kp_kA_k)$이므로 "클라 full-weight �
 | 6 | Thm 3 (1차 닫힌형; 116–130행) | P2의 가산부 | 승계 |
 | 7 | Thm 4/6 (2차 닫힌형; 조합 항등식 증명) [노트 경유 §4.2] | P2 (unanimity 게임 분해 증명) | 승계 (증명 경로 상이, 결과 동형) |
 | 8 | 잔차 $O(\eta^2)/O(\eta^3)$ — **비형식, 가정·정리 없음** (111행) | P3 (C³·$M_2,M_3$·적분형 잔차·L2 전파·$R$-누적) | **부재→신규 형식화** |
-| 9 | 누적(스텝 합산) 오차 — 무진술; 검증도 단일 iteration (§5.2, E.2.1) | P3-1 우변 ($R$-합) + §7 실측 설계 | **부재→신규** (실측 대기) |
+| 9 | 누적(스텝 합산) 오차 — 무진술; 검증도 단일 iteration (§5.2, E.2.1) | P3-1 우변 ($R$-합) + §7 실측 설계 | **부재→신규** (실측 완료 §7.2; verdict=CHECK) |
 | 10 | realization-fixing·게임 재정의·Remark 4 공리화 미해결 (81·86·388–392행) | P6 — 라운드 수준으로 그대로 이전 | 승계 (미해결성도 승계) |
 | 11 | 이론 = vanilla SGD 전용; 실험은 AdamW proxy (74행; E.1 995행·Remark 7 [노트 경유]) | P7 — 무대 자체가 SGD mom=0 (F9·F10) | 승계 + **정합성 개선** |
 | 12 | ghost dot-product/HVP — 우변(배치 합) 고정으로 backprop 1회 (977–984행 [노트 경유]) | 클라 delta가 로그에 존재 → ghost 불필요; HVP 1회 붕괴 구조 동형 (P2 (3)단계, `flirds_estimator.py:109–111`) | 대응 구조만 승계 (per-sample 실체화 문제 자체가 소멸) |
@@ -984,7 +984,7 @@ $\sum_kp_kB_kA_k\ne(\sum_kp_kB_k)(\sum_kp_kA_k)$이므로 "클라 full-weight �
 
 ---
 
-## 7. Taylor 잔차 실측 (기계 검증 완료 + 물리 검증 대기)
+## 7. Taylor 잔차 실측 (기계 검증 완료 + 물리 검증 1B 3-seed 실측 완료: verdict=CHECK)
 
 P3의 bound는 상수 $M_2^r,M_3^r$이 실측 불가하므로, (a) 코드↔수식의 **대수적** 정확성(P1·P2)과 (b) 잔차의
 **물리적** 크기·2차 우위·$\lVert\Delta_S\rVert$ 스케일링(P3)을 나눠 측정한다. **(a)는 gpt2 CPU 스모크로
@@ -1013,7 +1013,7 @@ lora_r=16, seed=0, renorm=True (`gpt2_smoke_weakdelta_summary.json` `config`).
 판별력 아님). summary의 `verdict:"CHECK"`는 아래 물리 파트 미검증 때문이지 기계 검증 실패가 아니다
 (sanity의 `closed_matches_flirds_values`·`t2_shapley_matches_closed_form` 등 대수 항목 전부 True).
 
-### 7.2 물리(잔차 크기·스케일링) 검증 — 대기 (1B 본실행)
+### 7.2 물리(잔차 크기·스케일링) 검증 — 완료 (1B 3-seed 본실행; verdict=CHECK, 노이즈 바닥)
 
 **왜 gpt2 스모크로는 물리 검증이 안 되는가.** max_steps=2·lr=1e-3라 $\lVert\Delta W\rVert\approx6.1\times10^{-4}$
 (미미), $u_{\text{grand}}\approx-1\times10^{-5}$, 잔차 median $\approx6.5\times10^{-7}$ = **fp32 평가
@@ -1049,12 +1049,68 @@ $\lVert\Delta W\rVert$(1B, max_steps=10)의 본실행이 필요하다.
 - **비용 추정**: 라운드당 forward 1+31+31 = 63회 + grad 1회 + HVP 5회; $R=10$이면 forward ~630회 +
   HVP 50회 — 1B fp32에서 (b) oracle 셀 1개와 같은 자릿수. 낮음.
 
-**결과**:
+**결과** (2026-07-13, **3-seed 완주**):
 
-[실측 대기 — GPU 해방 후 삽입. 커맨드·예상비용(~55–75분/B200 1장)은 `RUN_1B.md`. 산출물
-`llama1b_r10_seed0/{coalitions.csv, phi.csv, summary.json}`. gpt2 스모크가 대수(P1·P2)를 이미
-~$10^{-12}$로 확정했으므로 1B 실행의 목적은 **물리** 부분(2차>1차 우위·$\lVert\Delta\rVert^2/^3$ 지수·
-P5 순위 실측)에 한정된다.]
+**Provenance.** 서버 이전 후 staging 리포(`flirds_batch`)의 venv python(**torch 2.12.0+cu130, B200
+GPU**)로 재실행. 셋업 = Llama-3.2-1B-Instruct **fp32**, LoRA r16, silo5 $N{=}5$, $R{=}10$,
+max_steps=10, lr=1e-3, batch16, val=100, renorm=on, check_inrun=on (전 seed `config` 동일, seed만
+0/1/2). rundir(**READ-ONLY**): `outputs/taylor/llama1b_r10_seed{0,1,2}/{summary.json, coalitions.csv,
+coalitions.parquet, phi.csv}`. seed당 wall ~47분. 아래 수치는 각 `summary.json`의
+`pooled`·`sanity`·`phi_compare`에서 직접 추출.
+
+**표 1 — 물리(잔차 크기·2차 우위·스케일링), pooled per-seed** (전 라운드 × 전 $S\subseteq P_r$ 통합;
+resid1$=\lvert u-\hat u^{(1)}\rvert$, resid2$=\lvert u-\hat u\rvert$):
+
+| seed | resid1 med | resid2 med | resid2/resid1 (med) | resid1 max | resid2 max | slope1 (기대 2) | slope2 (기대 3) | frac(resid2≤resid1) |
+|---|---|---|---|---|---|---|---|---|
+| 0 | 1.753e-6 | 6.380e-7 | 0.364 | 1.545e-5 | 2.391e-6 | 2.719 | 1.635 | 0.810 |
+| 1 | 1.549e-6 | 4.513e-7 | 0.291 | 1.307e-5 | 2.157e-6 | 2.263 | 1.565 | 0.806 |
+| 2 | 1.277e-6 | 4.411e-7 | 0.346 | 1.004e-5 | 1.372e-6 | 1.818 | 1.466 | 0.787 |
+| **평균** | **1.526e-6** | **5.10e-7** | **0.334** | — | — | **2.267** | **1.555** | **0.801** |
+
+> fp32 평가 노이즈 바닥 = **2.384e-7** (전 seed 공통, `sanity.fp32_eval_noise_floor`). resid2 med
+> (4.4–6.4e-7)는 이 바닥의 ~2–3배에 불과.
+
+**표 2 — 대수(estimator=닫힌형 Shapley)·순위 보존, per-seed**:
+
+| seed | max_abs(closed − flirds2) | max_abs(û² $2^5$ Shapley − closed) | max_abs(perround − inrun $2^5$) | Spearman(exact vs t1/t2/closed/flirds2/renorm) | closed=flirds_values |
+|---|---|---|---|---|---|
+| 0 | 3.41e-10 | 7.28e-10 | 3.74e-7 | **1.000** (전 5쌍) | True |
+| 1 | 5.38e-10 | 7.41e-10 | 4.41e-7 | **1.000** (전 5쌍) | True |
+| 2 | 5.54e-10 | 4.09e-10 | 4.57e-7 | **1.000** (전 5쌍) | True |
+
+**공통 sanity 플래그** (전 seed): `resid_positive=True`, `t2_median_lt_t1_median=True`,
+`t2_vs_t1_verdict="t2_better"`, `closed_matches_flirds_values=True`, `verdict="CHECK"`.
+
+**해석.**
+
+1. **2차 우위(resid2 ≤ resid1) — median·pooled서 확정, 라운드별론 노이즈 바닥 근접.** 3 seed 모두
+   resid2 median < resid1 median (비 0.29–0.36, 평균 **0.33** → 2차 잔차가 1차의 ~1/3, 약 3배 작음),
+   max에서도 resid2(≤2.4e-6) < resid1(~1.0–1.5e-5). `t2_median_lt_t1_median=True`·`t2_better` 전 seed.
+   **단** 라운드별 frac(resid2≤resid1) = 0.79–0.81(1.0 아님) — 즉 **2차 항이 1차보다 작다는 것이
+   median·pooled 수준에서 확인되나 라운드별로는 노이즈 바닥에 근접**해 일부 라운드는 뒤집힌다. gpt2
+   스모크(frac 0.33, "2차>1차 미관측")보다 뚜렷이 개선 — realistic $\lVert\Delta W\rVert$에서 2차
+   우위가 median으로 발현.
+2. **스케일링 지수 — 1차(P3-i) 발현, 3차(P3-ii)는 노이즈 바닥에 갇힘.** loglog slope1 = 1.82–2.72
+   (평균 **2.27**) → P3(i)의 $\lVert\Delta\rVert^2$ 지수 **≈2 발현**(gpt2 스모크 0.30 대비 회복).
+   그러나 slope2 = 1.47–1.64(평균 **1.56**)로 P3(ii)의 기대 지수 **≈3에 크게 미달** — resid2가 fp32
+   바닥의 ~2–3배라 3차 스케일링이 노이즈에 지배됨. **결론: 3차 지수는 1B에서도 미확증(노이즈 한계).**
+3. **estimator = 고정가중 닫힌형 Shapley (P2) — ~$10^{-10}$까지 일치.** max_abs(closed −
+   `flirds_values`) = 3.4–5.5e-10 (전 seed `closed_matches_flirds_values=True`), û² 게임 exact $2^5$
+   Shapley = 닫힌형까지 max 4.1–7.4e-10. gpt2 스모크(5.8e-12/7.6e-12)보다 큰 것은 1B·$R{=}10$ **fp32
+   누적** 탓이며 대수적 괴리가 아니다 — `t2_shapley_matches_closed_form=False`도 이 ~7e-10이 엄격
+   bit-급 임계를 넘긴 것일 뿐(Spearman·값 모두 일치). exact Shapley 대비 Spearman(t1·t2·closed·
+   flirds2) = **1.000**(전 seed).
+4. **재정규화 게임 순위 보존 (P5) — Spearman 1.000.** exact vs renorm Spearman = **1.000**(전 seed)
+   → 등$n$ 무대에서 P5b 예측(고정가중↔재정규화 순위 동일) 실측 확인. per-round 분해 = $2^N$ oracle
+   재확인: max_abs(perround − inrun $2^5$) = 3.7–4.6e-7 = fp32 forward 바닥(§6-7 해소).
+
+**종합 판정 = `verdict:"CHECK"` (전 seed 공통).** 대수(P1·P2·순위)는 전부 통과하나 **물리 신호(2차
+우위·3차 스케일링)가 fp32 평가 노이즈 바닥(2.384e-7)에 근접**해 라운드별 판별력이 제한된다. 정리:
+(i) **2차 우위는 median·pooled서 robust**(라운드별 ~0.80), (ii) **1차 지수 ≈2 발현**, (iii) **3차 지수
+≈3은 노이즈 한계로 미확증**, (iv) **estimator=닫힌형·순위 보존은 ~$10^{-10}$ / Spearman 1.000으로
+강건**. P3의 상계 지위(§4.3)는 불변 — 지수의 정밀 실측은 노이즈 바닥을 낮추는 프로토콜(고정밀 평가
+또는 더 큰 $\lVert\Delta W\rVert$)을 요한다.
 
 ---
 
@@ -1100,14 +1156,19 @@ P5 순위 실측)에 한정된다.]
 2. **P5 재정규화 게임 비교의 배치**: 채택 근거 3개 + P5b/P5c(순위 뒤집힘 반례)를 본문에 넣을지
    appendix로 뺄지. 반례는 게임 선택이 실질적 결정임을 보이는 강한 재료지만, 리뷰어가 "그럼 왜
    재정규화 게임이 아닌가"를 더 파고들 수 있음 (답은 근거 ①–③).
-3. **§7 실측 실행 승인**: fresh run 필요 (F12); GPU 해방 후 1B N=5 R=10 (+선택 3-seed). 비용 낮음.
+3. **§7 실측 실행 — 완료 ✅** (2026-07-13): 서버 이전 후 staging(`flirds_batch`, B200, torch
+   2.12.0+cu130)서 1B N=5 R=10 **3-seed** 재실행. 결과 §7.2 (rundir
+   `outputs/taylor/llama1b_r10_seed{0,1,2}/`). 판정 = 2차 우위·1차 지수 ≈2는 median·pooled서 확인,
+   3차 지수·라운드별 판별은 fp32 노이즈 바닥(2.384e-7) 한계(`verdict=CHECK`); estimator=닫힌형·순위
+   보존 Spearman 1.000. **결정 불요 (해소)**.
 4. **fine-game(per-step) 로그 훅**: P4-iv(a)의 granularity 갭을 실측하려면 per-step 로그가 필요
    (프로토콜 변경). 안 하면 서술로만 남김 — 논문상 "게임 정의 선택"으로 서술하는 것으로 충분하다는
    것이 본 문서의 판단.
 
 **후속 실험 제안** (우선순위순).
 
-1. §7 Taylor 잔차·P5 순위 실측 (본 문서의 유일한 실측 공백; 결정 3).
+1. **§7 Taylor 잔차·P5 순위 실측 — 완료 ✅** (2026-07-13, 1B N=5 R=10 3-seed; 결과 §7.2). 본 문서의
+   유일했던 실측 공백 해소 (결정 3).
 2. 비등$n$ rank-flip 실증 (P5c의 무대 재현): 클라 표본수를 비대칭(예: 3:1)으로 한 소규모 셀에서
    고정가중 vs 재정규화 순위 비교 — 반례가 실제 무대에서 발현되는지. 선택적.
 3. fine-game 갭 소규모 실측 (CNN, K=수 스텝): per-step 전개 합 vs per-round 전개의 $\phi$ 차이 —

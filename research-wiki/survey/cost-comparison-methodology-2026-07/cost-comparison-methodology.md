@@ -91,11 +91,33 @@ def _timed(fn, device):
 | (b) oracle (exact 2^5) | 3,778 | **202.5 %** |
 
 - 읽는 법: N=5 anchor 레짐에서 Flirds의 사후 valuation은 **한 번의 FL 학습 시간의 40%**, 1차만 쓰면 13%. 코얼리션 계열((b)/Banzhaf/GTG/FedSV/ShapleyFL)은 학습을 한 번 더 도는 것의 약 2배 비용.
-- caveat: 이 셀은 probe용 **LoRA r=64**(canonical r16 아님)·val 200 조건. r16 canonical 조건 및 2026-06-06 표 조건의 같은 비율은 → **[실측 대기 — GPU 해방 후 2026-06-06 표 조건(1B N=5 R=10 val=100) 스모크 재측정: 공유 로그 생성 시간을 `_timed`로 명시 측정 + 방법별 runtime 동시 산출]**.
+- caveat: 이 셀은 probe용 **LoRA r=64**(canonical r16 아님)·val 200 조건. 2026-06-06 표 조건(r16·val100·R10)의 같은 비율은 → **(ii)에서 실측 완료**(서버 이전 후 "실측2 통일 회계" 3-seed 캠페인; `logs/cells/acct_seed{0,1,2}.log` — 공유 로그 생성 시간을 분리 측정 + 방법별 runtime 동시 산출). 단 이 (i) 셀은 r64·val200·R30이라 (ii)와 절대치·비율이 다르다(코얼리션 ~200% vs (ii) ~130%).
 
-#### (ii) 느슨한 1차 근사: 2026-06-06 표 조건 (1B N=5 R=10 val=100)
+#### (ii) 정밀 실측 (통일 회계, 3-seed): 2026-06-06 표 조건 (1B N=5 R=10 val=100)
 
-공유 로그 생성 "~15min"은 디버깅 서술의 어림값(위 :47)이므로 정밀치 아님. vanilla ≈ 900s로 두면(방법별 초 수치는 2026-06-06 노트 전용 — phase1 rundir metrics.json에 runtime 미영속): Flirds-1st 35s ≈ **3.9%**, Flirds 107s ≈ **12%**, loss-heur 164s ≈ 18%, GTG 537s·FedSV 532s·Banzhaf/ShapleyFL/(b) ~531s ≈ **59–60%**, Ripple 4,515s ≈ 5.0×(단 자체 축소-학습 R=4 포함이라 이 비율은 overhead가 아니라 end-to-end/학습 비율). → anchor r64 실측(위)보다 코얼리션 계열 비율이 낮은 것은 R=10 vs 30, val 100 vs 200 차이로 정성적으로 일관. 정밀치는 위 [실측 대기] 항목으로 대체.
+**출처**: 서버 이전 후 "실측2 통일 회계" 캠페인 3-seed 완주 — `logs/cells/acct_seed{0,1,2}.log`(staging `flirds_batch`, B200 1장, venv torch 2.12.0+cu130, Llama-3.2-1B-Instruct LoRA r16, N=5, per_domain train=200/val=100, R=10, lr=1e-3, noisy=[0]·free-rider=[1]zero). 러너가 `phase1_baseline_compare`를 monkeypatch해 **공유 FL 궤적(로그 생성) wall-clock을 방법별 valuation과 분리 측정**(`[ACCT] shared_log_generation(FL train) wall_s=…`) — 즉 방법 총비용 = 공유 궤적 + 방법별 valuation. 이로써 (i) 각주의 [실측 대기 — 2026-06-06 표 조건 스모크]가 해소된다.
+
+**공유 FL 궤적(vanilla)** wall_s = seed0 434.6 / seed1 407.3 / seed2 387.9 → **3-seed 평균 409.9s(범위 387.9–434.6), peak 30.35 GiB(3-seed 동일)**. → 기존 "~15min"(≈900s) 어림값은 **약 2.2배 과대**였다(실측 ≈6.8분). 따라서 아래 overhead %는 (ii) 구판(vanilla 900s 가정)의 약 2.2배로 상향 — 특히 코얼리션 계열이 학습 1회를 **넘어선다**(구판 59–60% → 실측 ~130%), 이는 (i)(r64·R30·val200)의 ~200%와 같은 방향(코얼리션 > 학습 1회)으로 정합.
+
+overhead % = valuation ÷ 공유 궤적; 중앙값 = 3-seed 합산비(Σvaluation/Σ공유), 범위 = seed별 비의 최소–최대.
+
+| 방법 | valuation runtime (s), 3-seed 평균(범위) | **vanilla FL(공유 궤적) 대비 overhead %** |
+|---|---|---|
+| FLDetector (CPU) | 4.0 (3.6–4.3) | 1.0 % (0.8–1.1) |
+| Flirds-1st | 35.1 (34.3–35.5) | **8.6 % (7.9–9.2)** |
+| FedIF | 35.6 (34.7–36.1) | 8.7 % (8.0–9.3) |
+| Flirds (1st+2nd) | 107.2 (105.0–108.5) | **26.2 % (24.2–28.0)** |
+| loss-heur | 164.8 (160.6–166.9) | 40.2 % (37.0–43.0) |
+| ShapleyFL | 531.6 (518.6–538.8) | 129.7 % (119–139) |
+| (b) oracle (exact 2⁵) | 533.3 (521.1–540.1) | **130.1 % (120–139)** |
+| FedSV | 533.3 (516.7–549.7) | 130.1 % (119–142) |
+| Banzhaf | 533.7 (520.0–540.6) | 130.2 % (120–139) |
+| GTG | 538.2 (526.6–544.7) | 131.3 % (121–140) |
+| Ripple (end-to-end†) | 3,536 (2,366–4,363) | 862 % ≈ **8.6× (5.4–10.7×)** |
+
+- 읽는 법: 이 canonical 레짐에서 Flirds의 사후 valuation은 **공유 학습 1회의 26%**, 1차만 쓰면 9%. 코얼리션 계열((b)/Banzhaf/GTG/FedSV/ShapleyFL)은 학습을 한 번 더 도는 것보다 약간 비싼 **~130%**. **전 valuation 방법 Spearman +1.000 vs (b)**(3-seed 전부) — 즉 동일 fidelity를 Flirds는 학습 1.26회분, 코얼리션은 ~2.3회분으로 달성. end-to-end로 **Flirds total(공유+valuation)≈517s ≈ 코얼리션 valuation-only 1개(~534s)**; valuation-only 기준 Flirds ~5×, Flirds-1st ~15× 저렴(root baseline "5–15× cheaper"와 정합).
+- †Ripple만 자체 축소 궤적(R=4)을 타이머에 포함하는 end-to-end 회계라 이 값은 overhead가 아니라 학습+valuation 비율(§1.2·§3의 예외). coalition 계열의 **≈6.6×(범위 4.5–8.1×)**, Flirds valuation의 **≈33×(범위 22.5–40.3×)**; seed0(앵커) 4.5×·22.5×는 범위 하단. 3-seed 변동 큼(2,366–4,363s, ~1.8×) — ripple-audit §4.3.
+- caveat: 이 절대 wall-clock은 **신규 클러스터 B200 1장·fp32**의 valuation 시간이다. 서버 이전으로 구서버 절대치와 bit-comparable하지 않으나, **동일 run 내 방법 간 비율(overhead %·배수)이 비교의 기준**이다. AUROC(3-seed): noisy 0.750·free-rider 1.000(전 valuation 방법 동일; Ripple noisy만 seed 편차 0.500/0.750/0.250, FLDetector noisy 0.500·FR 0.750).
 
 #### (iii) 대규모 레짐 참고치: std50k5 (N=50 K=5 R=200, 07-07 완주·커밋 e85df6e)
 
@@ -256,7 +278,7 @@ vanilla FL 실측 = r16 10,998s / r32 11,136s / r64 11,404s(각 셀 로그 마�
 
 **C2. FLDetector·STD-DAGMM CPU-only 비대칭** — GPU 방법들과 wall-clock을 한 열에서 비교하면 하드웨어가 다르다. "cheapest ~24s"(silo5) 주장은 CPU 수치임을 명시. 완화 요인: "model-free server-side가 GPU 없이도 돈다"는 것 자체가 이 방법들의 스토리라 **비대칭이 오히려 방법 특성의 정직한 반영** — 단 표기 없이는 오해 소지. **처방**: 장치 열 추가(§5 프로토콜).
 
-**C3. fp32 강제의 내부 공정성 / 외부 비교 caveat** — 전 방법이 같은 fp32(matmul tf32=off 실측 확정, 원격 정찰 2026-07-04: `matmul_tf32 False`, `f32mp highest`, remote_recon §3)로 측정되므로 **방법 간 비교는 공정**. 그러나 절대 wall-clock은 tensor-core 대비 부풀려져 있어 외부 논문 수치·실무 배포 비용과 직접 비교 불가. **배수는 미검증** — 흔히 인용되는 ×3.1은 **프롬프트에서 넘어온 미검증 placeholder일 뿐 어떤 recon 노트·코드에도 1차 근거가 없다**. 유일하게 확인된 사실은 정성적 조건(`matmul_tf32=False`, remote_recon §3)뿐이고, 절대치 771ms/fwd(root CLAUDE.md baseline)는 fp32 단일 forward 시간이라 bf16/tf32 기준선이 없어 배수를 정할 수 없다(=771ms가 ×3.1을 뒷받침하지 않음). **처방**: 비용 표 캡션에 "fp32, tensor-core 미사용; bf16 대비 ×k 느림" 1줄. 배수 확정치(×3.1 대체)는 **[실측 대기 — fp32 vs bf16/tf32 마이크로벤치(항목 3 정밀도 감사와 공유); 이 실측 전까지 ×3.1은 인용 금지]**.
+**C3. fp32 강제의 내부 공정성 / 외부 비교 caveat** — 전 방법이 같은 fp32(matmul tf32=off 실측 확정, 원격 정찰 2026-07-04: `matmul_tf32 False`, `f32mp highest`, remote_recon §3)로 측정되므로 **방법 간 비교는 공정**. 그러나 절대 wall-clock은 tensor-core 대비 부풀려져 있어 외부 논문 수치·실무 배포 비용과 직접 비교 불가. **배수 = B200 마이크로벤치로 실측 확정** [DONE 2026-07] (서버 이전 후, Llama-3.2-1B val=100; `outputs/microbench/summary.json`, torch 2.12.0+cu130, staging flirds_batch): fp32는 tf32/bf16 대비 **forward ×5.16/×5.33, HVP ×3.64/×4.09, raw GEMM ×12.0/×22.7** 느리다. 이전에 인용되던 **×3.1은 프롬프트 유래 미검증 placeholder였고**(어떤 recon·코드에도 1차 근거 없음) 실측으로 폐기 — 실제 raw-op 벌점의 상한은 GEMM ×22.7(bf16); root CLAUDE.md의 771ms/fwd는 fp32 단일 forward라 기준선이 없어 여전히 배수 산출에 쓰지 않는다. **caveat**: 배수는 B200 고유값(하드웨어 의존)이며, 정성적 결론(fp32 = tensor-core 미사용으로 크게 느림)만 타 박스로 전이. **처방**: 비용 표 캡션에 "fp32, tensor-core 미사용; bf16 대비 forward ~5.3× / raw GEMM ~22.7× 느림(B200 마이크로벤치 `outputs/microbench/summary.json`)" 1줄. (정밀도 감사 항목 3 §3.1-(4)와 공유; A/B로 fidelity·탐지는 TF32-불변 = 정밀도 감사 §2.4.)
 
 **C4. 원논문 시간 수치 부재 방법들 = "우리 재구현 측정"임을 명시** — FedSV·ShapleyFL·FLDetector는 원논문에 비교 가능한 실측 비용이 0건(§2.2, §2.3, §2.7), GTG·ComFedSV는 실측이 있어도 정의·셋업·하드웨어가 달라 대조 불가(§2.8). 따라서 우리 표의 모든 baseline 수치는 원논문 수치의 재현이 아니라 **우리 재구현+우리 조건의 신규 측정**이다. 표 각주 1줄("all baseline runtimes are our re-implementations measured under identical conditions; original papers report no comparable wall-clock")로 처리 — 이는 약점 고백이 아니라 §2.8상 불가피하고, 동일 조건 측정이라는 점에서 선행 관행보다 강한 주장.
 
@@ -299,6 +321,7 @@ Method | Device | Wall-clock (s) | Overhead vs FL train (%) | #utility-eval | #v
 
 - 캠페인 총 GPU-hours(protocol §15.1의 budget-report 수치)는 방법 표와 분리해 실험 절 말미 1문장으로 — 드라이버 로그 타임스탬프에서 재구성.
 - 반복·오차: 방법별 wall-clock에 3-seed std 병기(선행 0/7이 오차를 보고 — 최소 비용으로 차별화).
+- **실측 근거 확보 (통일 회계 3-seed, `logs/cells/acct_seed{0,1,2}.log`; staging flirds_batch, B200 1장, torch 2.12.0+cu130, 1B N=5 R=10 val=100)** — 위 '3-seed std 병기' 항목의 실측 데이터가 확보됨(전 valuation 방법 Spearman +1.000 vs (b); overhead %는 §1.4-(ii)). end-to-end 블록의 **Ripple¶**은 자체 축소 궤적(R=4) 포함 **3,536s(범위 2,366–4,363s, 3-seed 변동 ~1.8×)** = valuation-only 블록 coalition 계열(~534s)의 **≈6.6×(범위 4.5–8.1×)**, Flirds valuation(107s)의 **≈33×(범위 22.5–40.3×)**(seed0 앵커 4.5×·22.5× = 범위 하단). Ripple 회계·항별 분해·구서버 4,515s와의 관계는 ripple-audit §4.3.
 
 ---
 
@@ -313,7 +336,7 @@ Method | Device | Wall-clock (s) | Overhead vs FL train (%) | #utility-eval | #v
 
 1. **[진행 중 실측과 연결] 2026-06-06 표 조건 스모크 재측정** — 1B N=5 R=10 val=100에서 공유 로그 생성 시간을 명시 `_timed`로 측정 + 방법별 runtime 동시 산출 → §1.4-(ii)의 "~15min 어림값"을 실측으로 교체하고 overhead % 열 완성. GPU 해방 후(probe std50k5 완주, ETA 07-05 저녁~07-06) 1셀 ~30분 급.
 2. **Ripple 분리 계측**(항목 2와 공유) — ripple 러너에 phase 타이머 래퍼(사본 스크립트, 원본 무수정)를 씌워 학습/drop/sketch/ripple-갱신 분해 → C1의 valuation-only 환산치 확보.
-3. **fp32 vs bf16(or tf32) 배수 실측**(항목 3과 공유) — 대표 방법 2개(Flirds, (b))의 forward/HVP 마이크로벤치로 ×3.1 주장의 확정치 산출 → C3 캡션 수치.
+3. **fp32 vs bf16(or tf32) 배수 실측** [DONE 2026-07, 항목 3과 공유] — B200 마이크로벤치(`outputs/microbench/summary.json`)로 forward ×5.16/×5.33·HVP ×3.64/×4.09·raw GEMM ×12.0/×22.7 확정; ×3.1 placeholder 폐기, C3 캡션 반영 완료.
 4. **peak GPU memory 스모크** — 방법별 1회 실행에 `torch.cuda.max_memory_allocated` 리셋-측정 래퍼 → §5.1-5 열 채움 (phase1_hvp_profile.py:66 패턴 재사용).
 5. **GPU-hours 재구성 스크립트** — `runs/*/_logs/_driver.log`류의 start/done 타임스탬프 + metrics.json runtime을 합산하는 read-only 롤업(§15.3 정신; `make_analysis.py`에 컬럼 추가 형태 제안) → 캠페인 총비용 1문장의 근거.
 6. **std50k5 완주 후 §1.4-(iii) 방법별 overhead 표 확정** — N=50 레짐에서 "valuation이 학습을 압도"하는 교차점 서술(스케일링 논거)에 사용.

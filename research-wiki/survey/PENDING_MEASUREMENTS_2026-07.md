@@ -17,7 +17,11 @@
 
 ---
 
-## 실측 1 — Taylor 잔차 1B 본실행 (항목 1; 우선순위 최상)
+## 실측 1 — Taylor 잔차 1B 본실행 (항목 1; 우선순위 최상) — **[DONE 2026-07-15, B200 3-seed]**
+
+> ✅ 완료: `outputs/taylor/llama1b_r10_seed{0,1,2}/` (staging flirds_batch, venv torch 2.12.0+cu130).
+> û²≤û¹ median 확인(3-seed ratio 0.33·frac 0.79–0.81), slope1≈2.3 실현·slope2≈1.5(노이즈바닥 근접, verdict=CHECK),
+> estimator=closed-form(Spearman 1.000). → `irds-fl-math-rigor.md` §7.2 표 교체 + §9 결정3 해소.
 
 **무엇·왜**: gpt2 CPU 스모크는 P1·P2의 *대수적 정확성*만 1e-12로 확인했다(closed-form φ =
 `flirds_values`, per-round = 2^N oracle). gpt2는 이동량 ‖ΔW‖≈6e-4가 fp32 노이즈 바닥이라
@@ -48,7 +52,11 @@ slope 0.30(노이즈)이었는데 1B에서 ~2/3로 올라오면 P3 상계가 타
 
 ---
 
-## 실측 2 — 2026-06-06 표 조건 통일 회계 스모크 (항목 6·2·3 공유; 우선순위 상)
+## 실측 2 — 2026-06-06 표 조건 통일 회계 스모크 (항목 6·2·3 공유; 우선순위 상) — **[DONE 2026-07-15, B200 3-seed]**
+
+> ✅ 완료: `logs/cells/acct_seed{0,1,2}.log` (acct_wrapper monkeypatch = 공유 FL궤적 wall_s 분리 + 방법별 valuation).
+> 공유궤적 409.9s(mean)·coalition overhead ~130%·Ripple 3,536s(6.6×/33×). → `cost-comparison-methodology.md` §1.4/§5.2 +
+> `ripple-audit.md` §4.3 + `precision-audit-and-policy.md` §3.1-(4) 배수 확정(마이크로벤치).
 
 **무엇·왜**: 세 항목의 placeholder를 한 run으로 채운다 — (6) 공유 로그 생성(=FL 학습) 시간을
 명시 측정해 "학습 대비 valuation overhead %" 완성 + Ripple valuation-only 환산, (2) Ripple 분리
@@ -71,7 +79,7 @@ slope 0.30(노이즈)이었는데 1B에서 ~2/3로 올라오면 P3 상계가 타
   valuation-only 표에 Ripple 환산치.
 - `ripple-audit-2026-07/ripple-audit.md` §4 LLM 분리 계측(현재 CNN-CPU 실측만 있음; §3.3에서 LLM은
   "스케일업 추정"이라 명시한 부분을 실측으로).
-- `precision-audit-and-policy.md` §3.1-(4)에 ×3.1 배수 확정치 반영 + `cost-comparison-methodology.md` §4 C3 캡션 갱신.
+- `precision-audit-and-policy.md` §3.1-(4)에 ×3.1 배수 확정치 반영 + `cost-comparison-methodology.md` §4 C3 캡션 갱신. **[DONE 2026-07]** — B200 마이크로벤치(`outputs/microbench/summary.json`)로 forward ×5.16/×5.33·HVP ×3.64/×4.09·GEMM ×12.0/×22.7 확정; 양 문서 반영 완료(×3.1 placeholder 폐기).
 
 ---
 
@@ -92,8 +100,14 @@ cifar10 iid + label_flip seed0을 `allow_tf32=True`(현행) vs `False`로 각 1�
 추가한 사본. → **미작성**(CNN 무대라 yonsei 세션에서. `runs/probe_signal/PROMPT_yonsei_cnn.md`
 제출과 묶는 안은 무효 — 그 제출은 07-03 기수행·결과 커밋됨(d2e7ed6, 파일 삭제)).
 
-**결과 반영**: `precision-audit-and-policy.md` §2.2·§2.4 판정을 실측으로 확정, 부록 B에 yonsei
-런타임 값. 옵션 비교(§3)의 CNN 각주 근거.
+**3-b 상태**: **[DONE 2026-07, B200]** — cifar10 {iid, label_flip} × {tf32 on, off} × seed0 4런
+실행(`outputs/tf32_ab/*/metrics.json`); AUROC 11/11 방법 on=off 비트 동일, spearman_vs_rate 9/11
+비트 동일(예외 ShapleyFL Δ0.148·FedSV Δ0.025), fidelity-핵심 φ 이동 ~1e-3 = §2.2 추정 확증.
+헤드라인(Flirds·Banzhaf·(b)) 완전 불변. **3-a(yonsei 박스 판별)는 여전히 미실행** — 단 3-b가
+"노출이어도 헤드라인 불변"을 보였으므로 저-스테이크(§2.4 판정 1).
+
+**결과 반영**: `precision-audit-and-policy.md` §2.2·§2.4 판정을 실측으로 확정 **[DONE]**. 부록 B에
+yonsei 런타임 값은 3-a 실행 시 채움(pending). 옵션 비교(§3)의 CNN 각주 근거.
 
 ---
 
