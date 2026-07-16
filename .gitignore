@@ -25,12 +25,18 @@ runs/track_d/fidelity.csv
 # Derived (b)-target self-stability tables (Exp C / review C-2; regenerated from rundir phi):
 runs/track_d/target_stability.csv
 runs/phase2_matrix/target_stability.csv
+# Derived cross-seed stability text reports (track_c3.py print capture; regenerated from rundir):
+runs/track_c/stability_c1.txt
+runs/track_c/stability_c2.txt
+# Uniform flat index over ALL rundirs (runs/make_index.py; derived+regenerable — the SCRIPT stays tracked):
+runs/_index/
 # Track D execution logs (transient; only the rundirs under runs/track_d/rundirs/ are tracked):
 runs/track_d/_logs/
 # removal_dose orchestration (transient; rundirs/ + rundirs_trackd/ ARE tracked once complete):
 runs/removal_dose/_logs/
 runs/removal_dose/_sweep/
 runs/removal_dose/_sweep_cnn/
+runs/removal_dose/_chain/
 # beta=0.3 full re-run campaign: per-cell stdout logs are transient (tooling + queue ARE tracked):
 runs/rerun_beta03/logs/
 # signal-size probe (2026-07-02): transient logs only; rundirs/, noise_probe/, cnn_c*/ ARE tracked:
