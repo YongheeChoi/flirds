@@ -1,0 +1,16 @@
+{
+  "name": "1B_silo5_noisy_dose_nr0.25_seed0",
+  "git_sha": "b694f07dce8395fb03a02ac4b44e17fad7a4bd6a",
+  "git_dirty": true,
+  "env_hash": "7067c96d71e3a2e6",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.3"
+  }
+}

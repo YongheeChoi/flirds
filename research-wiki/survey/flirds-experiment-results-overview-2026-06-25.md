@@ -55,7 +55,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > ("val-loss 변화량이 작아서 fidelity 저하")은 반쪽만 맞음** — φ 절대크기는 lr로 키울 수 있으나 실재 신호는 B축이
 > 만든다. 기존 CNN §3.6.1/2 → §3.6.2/3 재넘버링, 마스터표 18–19행·§6 커버리지·§4.2-10 갱신.
 
-> **⟳ [2026-07-14→16] C-1~C-5 완화 실험 4종 — Exp C(§3.1.5) + Exp A2·A1·D(§3.7) 실측 완료, Exp B(dose) 진행 중.**
+> **⟳ [2026-07-14→16] C-1~C-5 완화 실험 4종 — Exp C(§3.1.5) + Exp A2·A1·D(§3.7) 실측 완료, Exp B(dose)는 → [07-17] 완주.**
 > review-claude C-1~C-5 방어용 상호보완 실험(**removal-curve · dose-response · target-stability · AdamW-fidelity**;
 > 계획 `runs/removal_dose/README.md`, 신규 rundir root `runs/removal_dose/`)의 **코드 6파일 구현 + 로컬 검증
 > 완료**(순수로직 단위테스트 20/20 + tiny-gpt2 GPU 통합 스모크 2종; 전부 하위호환·기본값=현행 동작). **Exp C(재실행 0,
@@ -63,8 +63,8 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > (track_d)서 매칭 대상 (b) target 자체가 seed-불안정**(1B_anchor5 ρ=**−0.367** · std20 −0.114 = 리뷰가 "저자가 잰
 > −0.37~−0.11 노트-only"라 한 값 재현·정본화) vs **비-IID silo5 안정**(clean +0.867 · poison +1.000) → per-seed
 > +1.000 fidelity 는 IID-clean 서 *불안정한 GT* 를 좇음(C-2 정면 대응). §3.6.4 B축과 정합. **Exp A2·A1·D 는 서버이전 후
-> 실측 완료 → §3.7**(pilot removal_retrain_s≈331s → Yonghee 승인 → 5-GPU 풀스윕 `run_sweep_5gpu.sh`; 2026-07-16 44/79,
-> Exp B dose 진행 중). 상태·매트릭스·GPU예산 = `runs/removal_dose/README.md`.
+> 실측 완료 → §3.7**(pilot removal_retrain_s≈331s → Yonghee 승인 → 5-GPU 풀스윕 `run_sweep_5gpu.sh`; 2026-07-16 44/79
+> → **07-17 79/79 완주**). 상태·매트릭스·GPU예산 = `runs/removal_dose/README.md`.
 
 > **⟳ [2026-07-16] 전 실험 rundir-기반 figure 일괄 생성 + 본 문서 임베드.** 7개 실험 그룹(phase2_matrix·
 > matrix_cxni·track_d·probe_signal·track_c·measured_2026-07·rerun_beta03)에 `runs/<exp>/make_figures.py` +
@@ -72,6 +72,15 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > 스팟체크·기존 파생 CSV 교차검증). 커밋 `9bbe002`. 본 문서엔 섹션별 임베드(§3.1~3.6·§4.2-9; 사본 =
 > `overview-figures-2026-07/`, removal-dose §3.7 임베드 선례와 동일 방식). July 재실행 캠페인(rundirs_2026-07)
 > 22셀·서버-이전 재현성 산점(§3.1.3)·β provenance 스캔(§4.2-9)이 figure로 신규 가시화됨.
+
+> **⟳ [2026-07-17] removal_dose 풀스윕 79/79 완주(실패 0) + Exp A3 CNN removal 신설(§3.7.5).** Exp B dose **3-seed
+> 확정** — noisy 문턱 nr0.25↑ AUROC 1.0·free-rider 전 배율 1.0 유지, **poison 은 seed0 의 "pf≤0.7=0" 절벽 서술이
+> 3-seed 서 넓은 seed-불안정 전이대(pf0.3–0.7 = 0.33–0.42±0.42)로 정정**(§3.7.3). **Exp A3**(track_c1
+> `C1_REMOVAL` 게이트, 코드 커밋 `1693531`): mnist×{label_flip, feature_noise, iid}×3-seed 9셀(67분, 재학습
+> ~18s/회) — **LLM silo5 와 정반대로 방법 간 곡선이 갈라짐**(distinct 9–11/11; LLM 은 순위합의로 전부 bit-동일)
+> + **accuracy 축 최초 실측**(label-flip worst/best 분리 +0.0035, iid 통제군 ≈0 = 기대 정합; §3.7.5). 잔여:
+> cifar10 9셀 진행 중·AdamW seed1–2 예약(chain2)·이월 7B/device100 9셀 진행 중. figure 갱신 2종
+> (`removal-dose-2026-07/dose_response.png` 3-seed errorbar 재생성 + `a3_cnn_removal.png` 신설).
 
 ---
 
@@ -986,7 +995,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 ## 3.7 Removal-dose 완화 실험 (`runs/removal_dose`, C-1~C-5 대응) — removal-curve · dose · AdamW
 
-서버 이전 후 5-GPU 풀스윕(`run_sweep_5gpu.sh`, 79셀) 실행. **2026-07-16 기준 44/79** — Exp **A2**(silo5 removal 4-threat×3-seed)·**A1**(anchor5 (a)oracle 3-seed)·**D**(AdamW 1) **완료**, Exp **B**(dose 63) 28/63 진행 중. 그림(각 실험 §3.7.1–4 에 임베드) = `removal-dose-2026-07/` (재생성 스크립트: `scratchpad/plot_individual.py`). pilot removal_retrain_s ≈ **317–331s/재학습**(silo5 단일 FL).
+서버 이전 후 5-GPU 풀스윕(`run_sweep_5gpu.sh`, 79셀) **2026-07-17 완주 — 79/79, 실패 0**: Exp **A2**(silo5 removal 4-threat×3-seed)·**A1**(anchor5 (a)oracle 3-seed)·**B**(dose 63셀 **3-seed**)·**D**(AdamW seed0). 이어 **Exp A3**(CNN removal, mnist 9셀 — §3.7.5) 완료. 그림(각 실험 §3.7.1–5 에 임베드) = `removal-dose-2026-07/`. removal_retrain_s ≈ **317–331s/재학습**(silo5 단일 FL; **CNN 은 ~18s**). 잔여: cifar10 9셀(A3 확장) 진행 중·AdamW seed1–2 예약(chain2)·이월 7B/device100 9셀 진행 중.
 
 ### 3.7.1 Exp A2 — silo5 removal-curve (C-1: 게임-무관 인과 검증). 3-seed 평균:
 
@@ -1017,13 +1026,13 @@ clean-preserving 백도어(baseline ASR=1.0). **각 방법의 worst 클라 1개 
 
 ![Poison neutralization — 각 방법 worst 클라 제거 후 ASR (green=무력화, red=실패; Flirds·Flirds1st만 실패)](removal-dose-2026-07/poison_asr.png)
 
-### 3.7.3 Exp B — dose-response (seed0, 진행 중). Flirds 탐지 AUROC vs 오염량:
+### 3.7.3 Exp B — dose-response (**3-seed 확정**). Flirds 탐지 AUROC vs 오염량:
 
-- **noisy**: 0.75(rate≤0.1) → **1.0(≥0.25)** — 오염↑ 탐지↑
-- **free-rider**: 전 배율 **1.0** (크기 무관)
-- **poison**: pf≤0.7 **0.0**, pf 0.9~1.0 에서야 1.0 — 극단 오염비서만 탐지(§3.7.2 한계의 dose 버전)
+- **noisy**: 0.75±.00(rate≤0.1) → **1.00±.00(≥0.25)** — 문턱 nr0.25, 3-seed 무분산. (nr0 대조군 = 0.83±0.12 — N=5 coarse-AUROC 의 무신호 기준선이 0.5 가 아님을 보여주는 계측 참조점)
+- **free-rider**: 전 배율(dm0.25–4.0) **1.00±.00** — 크기 무관, 3-seed 확정
+- **poison**: pf≤0.2 **0.00**(완전 회피) → **pf0.3–0.7 = 0.33–0.42±0.42 (seed-혼재 전이대)** → pf0.8 0.75±0.20 → pf≥0.9 **1.00**. ⚠ seed0 단독으로 서술했던 "pf≤0.7=0.0 절벽"을 **정정** — 3-seed 에선 절벽이 아니라 **넓은 seed-불안정 전이대**(seed 에 따라 잡히기도 함; §3.7.2 한계의 dose 버전)
 
-![Dose-response — Flirds 탐지 AUROC vs 오염량: noisy 상승·free-rider 평탄 1.0·poison 은 pf≥0.9서만](removal-dose-2026-07/dose_response.png)
+![Dose-response — Flirds 탐지 AUROC vs 오염량 (3-seed mean±std): noisy 문턱 nr0.25 · free-rider 평탄 1.0 · poison 넓은 전이대 후 pf≥0.9 확정](removal-dose-2026-07/dose_response.png)
 
 ### 3.7.4 Exp A1 anchor5 (a)oracle + Exp D AdamW — fidelity
 
@@ -1034,7 +1043,24 @@ clean-preserving 백도어(baseline ASR=1.0). **각 방법의 worst 클라 1개 
 
 ![Exp A1 anchor5 + Exp D AdamW fidelity ρ — Flirds vs (b)(navy) 높음; (a) vs (b)(orange) anchor5 높으나 AdamW서 −0.1](removal-dose-2026-07/fidelity_anchor_adamw.png)
 
-**Caveats**: (i) 풀스윕 진행 중(44/79) — dose seed1-2·poison-dose 잔여, 완료 시 3-seed 확정. (ii) poison 한계 = 방법의 정직한 약점(clean-preserving 전용; noisy·free-rider 는 Flirds 완승). (iii) AdamW = "브리지 설정"(constant lr; 논문 5e-5 cosine 갭은 deviation caveat). (iv) silo5 = LLM 이라 removal 지표는 **val_loss**(생성 LM, 분류 accuracy 없음); accuracy 는 CNN track(`track_c`)에만.
+### 3.7.5 Exp A3 — CNN removal-curve + **accuracy 축** (mnist 9셀, 2026-07-17)
+
+track_c1 `C1_REMOVAL` 게이트(코드 커밋 `1693531`; A2 패턴 이식, 기본 off = 기존 산출 비트동일 검증) — mnist × {label_flip, feature_noise, iid} × 3-seed, 11방법, worst/best-first **실제 재학습**(~18s/회, frozenset 캐시 방법·방향 공유), **val_loss + test acc(8k disjoint) 동시 기록** — 기존 Caveat (iv)("accuracy 없음")를 CNN 스테이지에서 해소. 결과 rundir = `runs/removal_dose/rundirs_cnn/`.
+
+| scenario | Flirds ρ(vs b) | 최저 방법 ρ | distinct worst-first 곡선 | acc 분리(worst−best, Flirds) |
+|---|---|---|---|---|
+| label_flip | **+1.00** | ComFedSV +0.95 | 9/11 | **+0.0035** ✅ 인과적 |
+| feature_noise | +0.77 | **FedSV +0.13** | **11/11** | +0.0002 (≈중립) |
+| iid (통제군) | +0.84 | **FedSV +0.01** | **11/11** | +0.0006 (≈0) ✅ 기대 정합 |
+
+- **LLM silo5(§3.7.1)와 정반대 무대**: silo5 는 순위합의(ρ≈1)로 곡선이 축퇴(강한 방법 전부 bit-동일)했지만, CNN 은 fidelity 스프레드가 커서(FedSV +0.01~0.96) **removal 척도가 방법을 실제로 변별** — "removal-curve 는 순위에만 의존"(§3.7.1)의 대우를 실측으로 확인. C-4(게임-무관 공통 자) 방어가 CNN 스테이지로 일반화.
+- **acc 축 위계**: label_flip(진짜 나쁜 데이터)만 worst/best 분리 뚜렷(+0.0035; (b)oracle +0.0034 와 동급), feature_noise(mild σ) ≈ 중립, iid = 순수 데이터량 손실 — 완만한 ladder(오염 ≤20%)+클라당 6k 샘플이라 절대 acc 는 어느 방향이든 서서히 하락하고 **신호는 분리(gap)에 있음**.
+- 흥미: **FedIF 역전** — LLM frzero 서 유일 낙오(§3.7.1)였으나 CNN 에선 분리 최고(+0.0042). 척도의 스테이지-의존성 자체가 관찰 결과.
+- 잔여: **cifar10 9셀 진행 중**(완료 시 본 절 갱신); label/quantity_skew·pixel-backdoor ASR 은 옵션(README §Exp A3, Yonghee 결정 대기).
+
+![Exp A3 CNN removal accuracy 축 — mnist 3-seed: label-flip 만 worst(실선)/best(점선) 분리 뚜렷, iid 통제군 ≈0](removal-dose-2026-07/a3_cnn_removal.png)
+
+**Caveats**: (i) 풀스윕 **79/79 완주(2026-07-17, 실패 0)**; cifar10(A3 확장)·AdamW seed1–2(chain2 예약)·이월 9셀은 별도 진행 중. (ii) poison 한계 = 방법의 정직한 약점(clean-preserving 전용; noisy·free-rider 는 Flirds 완승). (iii) AdamW = "브리지 설정"(constant lr; 논문 5e-5 cosine 갭은 deviation caveat) — **(a)vs(b) −0.10 은 seed0 단일 관측**, seed1–2 로 확정 예정. (iv) LLM removal 지표는 val_loss 뿐(생성 LM) → **accuracy 축은 §3.7.5 CNN 에서 실측**.
 
 ---
 

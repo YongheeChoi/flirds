@@ -73,16 +73,27 @@ def spearman_ref(cfg):
 
 
 def load_cells():
-    cells = []
+    cells, skipped = [], []
     for d in sorted(RUNDIRS.iterdir()):
         if not (d / "metrics.json").exists():
             continue
         cfg = yaml.safe_load((d / "config.yaml").read_text())
+        # This report's taxonomy (classify / THREAT_ORDER) predates the iid5 regime and
+        # the clean threat (signal-size-diagnosis cells added after 2026-06-19).  classify()
+        # would misroute iid5 into the device100 categories and clean crashes the sort, so
+        # skip anything outside the corruption-grid design to keep the tables faithful.
+        # Skipped cells are NOT lost -- they are in the flat index (runs/make_index.py).
+        if cfg["regime"] not in ("silo5", "device100") or cfg["threats"][0] not in THREAT_ORDER:
+            skipped.append(d.name)
+            continue
         meta = json.loads((d / "meta.json").read_text())
         metrics = json.loads((d / "metrics.json").read_text())
         phi = pd.read_parquet(d / "phi.parquet")
         cells.append(dict(cell=d.name, category=classify(cfg), cfg=cfg, meta=meta,
                           metrics=metrics, phi=phi))
+    if skipped:
+        print(f"  [skip] {len(skipped)} cell(s) outside this report's taxonomy "
+              f"(iid5 regime / clean threat; see runs/_index/): {', '.join(skipped)}")
     return cells
 
 
