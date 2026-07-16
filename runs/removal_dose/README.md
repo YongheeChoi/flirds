@@ -28,11 +28,13 @@ review/review-claude.md`)에 대한 **상호보완 비교축**이며, (b) oracle
 - **로컬 검증**(Windows anaconda, 동일 스택 torch2.11/transformers4.57/trl1.2/peft0.19; `PYTHONUTF8=1` 필수):
   - 순수로직 단위테스트 20/20 PASS (corruptor 비트동일·경계, `return_u`, `removal_curves` 방향성).
   - gpt2(tiny, random-init) **GPU 통합 스모크 2종 PASS**: phase2_matrix(15-method set + removal 캐시 + poison exclude + poison_removal_asr), track_d Exp A1((methods,u_a) 반환 + curve).
+- **Exp A3 (CNN removal-curve) 코드 + 로컬 검증 완료 (2026-07-16)** — 아래 §Exp A3 참조; 실행 대기.
 
 ### ⏳ TODO — DGX 서버 (서버 이전 완료 후)
 - **파일럿**(`run_pilot.sh`, §7.1): noisy×silo5×seed0×축소방법셋. **목표 = silo5 단일 FL 재학습 실측시간**(`removal_retrain_s`) → 풀스윕 GPU예산 산정. → Yonghee 승인.
 - **풀스윕**(`run_full_sweep.sh`, §7.2): 4 threat × 전방법 × 3 seed × 2 runner + dose 스윕.
 - **Exp D**(AdamW) 마지막.
+- **Exp A3 CNN removal 스윕**(`run_cnn_removal.sh`, mnist 9셀 — LLM 풀스윕과 독립, 유휴 GPU 지정): 아래 §Exp A3.
 
 ## Exp C 결과 (이미 산출됨 — C-2 정본화)
 (b) oracle per-client φ 의 seed 간 자기-Spearman. **핵심: IID-clean 무대에서 매칭 대상 (b) 자신이 seed-불안정**
@@ -70,6 +72,44 @@ fidelity 표 아래 target-안정성 열이 함께 출력됨(리뷰 §4/§5.1 �
 
 예산 공식: `T ≈ Σ_[1] (T_traj + n_retr·T_retrain) + Σ_[2] (T_traj + T_methods) + 3·T_(a)oracle + T_D`.
 `T_retrain`·`T_traj`·`T_methods`·`n_retr(noisy)` = **파일럿에서 측정**(현재 미측정). `T_(a)oracle` ≈ 기존 anchor5 (a) 시간.
+
+## Exp A3 — CNN removal-curve (코드 완료 2026-07-16; 실행 대기)
+
+LLM removal(Exp A2 silo5, 2026-07-16 완료)의 CNN 확장 — 게임-무관 재학습 척도의 **크로스-스테이지
+일반화**(C-1/C-4 방어 보강) + **accuracy 축**: LLM 무대는 생성형이라 val_loss 뿐이지만 CNN 은 재학습된
+global 하나에서 **val_loss(게임 지표) + test acc(8000 disjoint; 배치 지표)** 를 동시 기록(Yonghee 명시
+요청; 추가 비용 ≈0). 서술 위계: removal = 2차-①(일반 성능) 실효성 검증 — headline 은 1차 fidelity.
+
+- **코드**: `codes/experiments/track_c1.py` 확장 — `C1_REMOVAL=1` env 게이트(기본 0 = **비트동일**, 아래
+  검증), `removal_retrain_curves()` = phase2_matrix A2 패턴 이식. **옵션 1**(독립 재학습 경로) 채택:
+  (a) u-캐시 유도(옵션 2, track_d A1 패턴)는 acc 가 u 에 없고 `C1_ORACLE_A=1` 셀 한정이라 기각 — A2 와
+  균일한 단일 경로. worst/best-first 실제 재학습, frozenset 캐시 방법·방향 공유. **Ripple 기본 제외**
+  (자기-궤적 방법 — 공유 frozen 궤적의 순위와 비가환; `C1_REMOVAL_METHODS` 로 강제 가능), 대상 = C1 val
+  전 방법 + (b)oracle + Fed-LOO (11종).
+- **스키마**(LLM 집계 도구 호환): `removal_curve` = A2 동일 구조·키(`{method:{worst_first:[[k,val_loss],…],
+  best_first:[…]}}`) + **신규 병렬 키 `removal_curve_acc`**(`[[k,test_acc],…]`) + `removal_retrain_s`
+  + `removal_orient`/`removal_acc_orient`. config.yaml 에 `removal` provenance 키.
+- **셀 매트릭스**(실행 세션 최종 확정): core = `mnist × {label_flip, feature_noise, iid} × seed{0,1,2}`
+  = **9셀** — ladder 2종 = 오염 클라 제거→acc↑ 기대, iid = 통제군(제거 = 실데이터 손실 → 중립~해로움
+  기대). optional = cifar10 동일 9셀(`DATASETS="mnist cifar10"`).
+- **비용 추정**(canonical c1 실측 B200): 재학습 1회 ≈ traj ≈ 1.5분(mnist 92s / cifar 78s), methods
+  (Ripple 제외) 2–8분. distinct 재학습 수 = 캐시 공유로 순위합의도에 좌우 — 스모크(n=6, 11방법) 실측
+  21회, full n=10 예상 ~25–80회(상한 11방법×2방향×10=220) → **셀당 ~0.7–2.5h, mnist 9셀 5-GPU ~1.5–5h**.
+- **실행(1줄)**: `bash runs/removal_dose/run_cnn_removal.sh` (`GPUS="…"` 유휴 GPU 지정, `DRYRUN=1` = 큐만
+  생성·출력, done-마커 재개; 결과 = `rundirs_cnn/` — canonical `runs/track_c/c1` **불변**). 큐 셀 =
+  `C1_ORACLE_A=0`(removal 은 (a) 2^N 불필요) + `C1_RIPPLE=0`(removal 미사용 + fidelity 는 canonical c1
+  에 기영속 — 중복 재계산 회피).
+- **로컬 검증(2026-07-16, CPU)**: ① 순수로직 단위테스트 **5/5 PASS**(`codes/tests/test_removal_cnn.py`
+  — 방향성 worst≤best·캐시 1회/kept-set(2n−1)·Ripple 기본제외·A2 스키마·게이트 기본 off); ②
+  **`C1_REMOVAL=0` 비트동일** — HEAD 스모크 vs 신규 코드 스모크(mnist·label_flip·seed0),
+  metrics.json(wall-clock 필드 `traj_time`/`runtime` 제외 정규화) sha256 `8d90922f…` **일치** +
+  phi.parquet 값 완전일치; ③ `C1_MODE=smoke C1_REMOVAL=1` 통합 스모크 **green**(21 distinct retrains,
+  스키마 검증 통과). 스모크 수치 자체는 무학습 수준(코드패스 검증용).
+- **Caveats**: 재학습 = **clean FedAvg**(A2 와 동일); iid 통제군 곡선 차이 = 순수 데이터양 손실 효과로
+  읽을 것; ComFedSV full-participation 축퇴 caveat 은 A2 와 동일 적용.
+- **옵션(미구현; Yonghee 결정 대기, 구현 시 별도 env 게이트)**: CNN 픽셀-트리거 backdoor +
+  poison_removal ASR(LLM poison 사각지대의 CNN 재현 — clean-preserving 설계 필요),
+  label/quantity_skew removal(이질성 무대 '낮은 φ ≠ 제거해도 됨' 대조).
 
 ## 산출물 / 스키마
 - rundir(RunLogger §6): `config.yaml`(+`noisy_rate`/`dose_mult`/`removal`/`client_opt`) · `meta.json`(git/env) · `phi.parquet` · `metrics.json`.

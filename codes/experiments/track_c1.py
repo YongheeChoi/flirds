@@ -34,6 +34,9 @@ Run (from codes/):
   CUDA_VISIBLE_DEVICES=0 PYTHONPATH=. python experiments/track_c1.py
 Shard one process per (dataset, scenario, seed); C1_ORACLE_A=0 skips the 2^N
 retrain sweep, C1_ORACLE_A_ONLY=1 runs ONLY it (merge post-hoc off run dirs).
+C1_REMOVAL=1 adds the Exp A3 worst/best-first removal-retrain curves (val loss
++ test acc off each retrained global; default 0 = bit-identical to current
+behavior), C1_REMOVAL_METHODS=a,b,c restricts them (empty = all minus Ripple).
 """
 from __future__ import annotations
 
@@ -91,6 +94,8 @@ CFG = {
 WIDTH = float(os.environ.get("C1_WIDTH", "1"))           # signal-size probe lever: capacity (width mult)
 KFRAC = float(os.environ.get("C1_KFRAC", "1"))           # signal-size probe lever: participation frac
 RIPPLE = os.environ.get("C1_RIPPLE", "1") == "1"         # 0 = skip Ripple (probe cells; cost)
+REMOVAL = os.environ.get("C1_REMOVAL", "0") == "1"       # Exp A3: removal-retrain curves (extra retrains)
+REMOVAL_METHODS = [m for m in os.environ.get("C1_REMOVAL_METHODS", "").split(",") if m]  # [] = all minus Ripple
 MODEL_FN = partial({"mnist": LeNet5, "cifar10": FedSVCNN}[DATASET], width=WIDTH)
 LADDER_STEP = 0.05                                       # pair p -> 5p% (GTG ladder)
 
@@ -153,6 +158,72 @@ def build(dataset, scenario, n, n_per, batch, n_val, n_test, seed):
     val_loader = DataLoader(TensorDataset(vx, vy), batch_size=512)
     test_loader = DataLoader(Subset(test, test_idx.tolist()), batch_size=512)
     return loaders, rates, vx, vy, val_loader, test_loader
+
+
+# --------------------------------------------------------------------------- #
+# removal / selection curves (Exp A3; gated by C1_REMOVAL)                    #
+# --------------------------------------------------------------------------- #
+def removal_retrain_curves(methods, retrain_eval, n, device, sel=None):
+    """Exp A3: worst-first / best-first removal curves by ACTUAL clean retraining --
+    the CNN leg of the game-independent downstream ruler (review C-1/C-4 defence;
+    LLM leg = phase2_matrix.removal_retrain_curves, whose pattern this ports).
+
+    Design decisions (A3 prompt §3):
+      * Option 1 (independent retrain path) over option 2 (deriving the curve from
+        the (a) 2^N u-cache, track_d A1 style): the u-cache holds val-loss ONLY (no
+        accuracy) and exists only on C1_ORACLE_A=1 cells, while A3's point is the
+        ACCURACY axis on cheap cells -- so one uniform retrain path, same as Exp A2.
+      * Each retrained global is scored on BOTH the game metric (val loss, the same
+        closure the methods/oracles play) and the batch metric (test accuracy on
+        the disjoint 8,000) -- one retrain, two rulers, extra cost ~0 (the CNN's
+        unique axis: LLM silo5 is generative so Exp A2 had val_loss only).
+      * Ripple is dropped from the default `sel`: its phi comes from its OWN
+        sampled trajectories, not the shared frozen trajectory the other methods
+        rank (C1 convention), so its ranking is not commensurate with theirs here;
+        name it explicitly in C1_REMOVAL_METHODS to force it.
+
+    For every selected method, rank clients by phi (good -> LOW, the C1 sign
+    convention: high phi = most suspicious) and retrain clean FedAvg on each kept
+    subset.  retrain_eval(kept_sorted_tuple) -> (val_loss, test_acc); results are
+    cached by frozenset so each distinct kept set is retrained ONCE and shared
+    across methods AND directions (rank-agreeing methods collapse to one chain --
+    <= 2^n retrains; mean_retrain_s includes the ~free scoring forward passes).
+      worst_first -- drop the highest-phi (most-suspicious) client each step
+      best_first  -- drop the lowest-phi  (most-valuable)   client each step
+    Returns (curves_loss, curves_acc, n_retrains, mean_retrain_s); curves_* =
+    {method: {"worst_first": [[k_dropped, v], ...], "best_first": [...]}} with
+    k = 0..n-1 (kept sizes n..1; the empty set is skipped) -- the Exp A2 LLM
+    `removal_curve` schema, so the same aggregation tooling reads both stages."""
+    cache, times = {}, []
+
+    def util(kept):
+        key = frozenset(kept)
+        if key not in cache:
+            cache[key], dt = _timed(lambda: retrain_eval(tuple(sorted(kept))), device)
+            times.append(dt)
+        return cache[key]
+
+    def curve(order):
+        pts_l, pts_a, kept = [], [], list(range(n))
+        for k in range(n):                            # kept sizes n, n-1, ..., 1 (skip empty)
+            vl, acc = util(kept)
+            pts_l.append([k, vl])
+            pts_a.append([k, acc])
+            kept.remove(order[k])
+        return pts_l, pts_a
+
+    if sel is None:
+        sel = [nm for nm, _, _ in methods if nm != "Ripple"]
+    curves_l, curves_a = {}, {}
+    for name, vec, _rt in methods:
+        if name not in sel:
+            continue
+        v = np.asarray(vec, dtype=float)
+        wl, wa = curve(list(np.argsort(-v)))          # high phi (worst) dropped first
+        bl, ba = curve(list(np.argsort(v)))           # low phi (best) dropped first
+        curves_l[name] = {"worst_first": wl, "best_first": bl}
+        curves_a[name] = {"worst_first": wa, "best_first": ba}
+    return curves_l, curves_a, len(cache), (sum(times) / len(times) if times else 0.0)
 
 
 # --------------------------------------------------------------------------- #
@@ -270,9 +341,31 @@ def run_seed(seed, device="cuda"):
         line += f" {m.get('auroc', float('nan')):6.3f}" if ladder else ""
         print(line, flush=True)
 
+    # ---- Exp A3: removal-retrain curves (gated; extra retrains) ----
+    removal = {}
+    if REMOVAL:
+        eval_model = MODEL_FN().to(device)             # one eval model reused across retrains
+
+        def retrain_eval(kept):
+            """Clean FedAvg on `kept` -> (game val-loss, test acc) off ONE retrained global."""
+            final, _ = fedavg(MODEL_FN, [loaders[c] for c in kept], None, R, E, lr,
+                              sample_frac=1.0, device=device, seed=seed,
+                              eval_every=R + 1)        # no per-round eval (the (a)-sweep pattern)
+            with torch.no_grad():
+                vl = float(loss_fn({k: final[k] for k in pkeys}, {}))
+            return vl, evaluate(eval_model, final, test_loader, device)
+
+        rc, rca, nrt, mrt = removal_retrain_curves(methods, retrain_eval, n, device,
+                                                   sel=REMOVAL_METHODS or None)
+        print(f"[removal] {nrt} distinct retrains, {mrt:.1f}s/retrain", flush=True)
+        removal = dict(removal_curve=rc, removal_curve_acc=rca,
+                       removal_orient="val_loss (lower=better); phi good->low",
+                       removal_acc_orient="test_acc (higher=better); phi good->low",
+                       removal_retrain_s=mrt)
+
     metrics = dict(dataset=DATASET, scenario=SCENARIO, seed=seed, mode=MODE,
                    final_acc=final_acc, acc_curve=history, traj_time=t_traj,
-                   rates=rates, methods=res)
+                   rates=rates, methods=res, **removal)
     if phi_a is not None:
         metrics["oracle_a"] = dict(phi=phi_a.tolist(), time=t_a, n_retrains=2 ** n)
     phi_rows = [dict(client=c, rate=rates[c],
@@ -292,7 +385,7 @@ def main():
                 + ("_aonly" if ORACLE_A_ONLY else "") + f"_seed{SEED}")  # seed always trailing
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, scenario=SCENARIO,
                                                 seed=SEED, mode=MODE, oracle_a=ORACLE_A,
-                                                width=WIDTH, kfrac=KFRAC),
+                                                width=WIDTH, kfrac=KFRAC, removal=REMOVAL),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             if phi_rows:
                 try:

@@ -30,6 +30,7 @@ runs/track_d/_logs/
 # removal_dose orchestration (transient; rundirs/ + rundirs_trackd/ ARE tracked once complete):
 runs/removal_dose/_logs/
 runs/removal_dose/_sweep/
+runs/removal_dose/_sweep_cnn/
 # beta=0.3 full re-run campaign: per-cell stdout logs are transient (tooling + queue ARE tracked):
 runs/rerun_beta03/logs/
 # signal-size probe (2026-07-02): transient logs only; rundirs/, noise_probe/, cnn_c*/ ARE tracked:
