@@ -46,7 +46,7 @@ from flirds.core.flirds_estimator import flirds_values
 from flirds.data.llm import build, build_val_batches
 from flirds.eval.metrics import detection_auroc
 from flirds.fl.llm_server import run_llm_fedavg_logs
-from flirds.oracle.in_run_sv import in_run_shapley, in_run_utility
+from flirds.oracle.in_run_sv import in_run_shapley, in_run_singletons
 from flirds.repro import seed_everything
 
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
@@ -122,7 +122,7 @@ def run_seed(seed, cfg, device):
     # loss-heuristic (floor): per-client singleton in-run utility U_(b)({k}) (no coalitions);
     # good->low, free-rider(zero) -> exactly 0 (zero delta -> zero singleton utility).
     phi_h, t_h = _timed(
-        lambda: np.array([in_run_utility(logs, [k], loss_fn, pkeys, device) for k in range(N)]), device)
+        lambda: in_run_singletons(logs, N, loss_fn, pkeys, device), device)
     # FedIF (Tang et al. 2025, arXiv 2509.25560): gradient-influence value -- 1 val grad/round,
     # then per-round min-max + EMA; good->high (helpful descends val loss) -> negate to good->low.
     phi_if_raw, t_if = _timed(

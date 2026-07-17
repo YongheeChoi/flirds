@@ -79,9 +79,10 @@ from flirds.eval.generate import backdoor_asr
 from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference, pearson
 from flirds.fl.llm_server import client_optimizer, run_llm_fedavg_logs
 from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_perround,
-                                     in_run_utility)
+                                     in_run_singletons)
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
+from flirds.timing import PhaseTimer
 
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
 SCALE = ("7B" if "Llama-2-7b" in MODEL else
@@ -347,8 +348,7 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
                         loss_fn=loss_fn, pkeys=pkeys, partial=not silo), device)
     out.append(("ComFedSV", "val", -np.asarray(phi_c, dtype=float), t_c))        # loss-decrease util -> negate
 
-    phi_h, t_h = _timed(lambda: np.array([in_run_utility(logs, [k], loss_fn, pkeys, device)
-                                          for k in range(n)]), device)
+    phi_h, t_h = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
     out.append(("loss-heur", "val", phi_h, t_h))
     phi_lo, t_lo = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO
     out.append(("Fed-LOO", "val", np.asarray(phi_lo), t_lo))   # marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
@@ -488,7 +488,7 @@ def report(threat, methods, corrupt, logs, asr):
     return res
 
 
-def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition):
+def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=None):
     """Save the cell's per-client phi vectors + metrics + config + git/env provenance to a
     RunLogger run-dir (protocol §6) so any re-analysis needs no method re-run.  Best-effort:
     a save failure warns but never loses the printed .log results.  PERSIST=0 disables."""
@@ -519,6 +519,8 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition):
             import pandas as pd
             pd.DataFrame(phi_rows).to_csv(rl._p("phi.csv"), index=False)
         rl.save_metrics(run_metrics)
+        if timing is not None:
+            rl.save_timing(timing)                                # §15.1 per-phase wall + GPU-hours + peak
         print(f"\n[persist] {rl.dir}  ({len(phi_rows)} phi rows)", flush=True)
     except Exception as e:
         print(f"\n[persist] WARNING: run-dir save failed ({e!r}); .log still has results", flush=True)
@@ -526,6 +528,7 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition):
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    pt = PhaseTimer(device, n_gpus=int(os.environ.get("N_GPUS", "1")))   # §15.1 timing.json substrate
     threats = ([os.environ["THREAT"]] if os.environ.get("THREAT")
                else ["noisy", "freerider_random", "freerider_zero", "poison"])
     seeds = [int(os.environ["SEED"])] if os.environ.get("SEED") else [0, 1, 2]
@@ -543,12 +546,14 @@ def main():
     for seed in seeds:
         for threat in threats:
             seed_everything(seed)
-            logs, score_clients, corrupt, asr, val = build_trajectory(threat, seed, model, tok,
-                                                                      init, pkeys, device)
+            with pt.phase("client-training"):                     # §15.1: the previously-untimed log generation
+                logs, score_clients, corrupt, asr, val = build_trajectory(threat, seed, model, tok,
+                                                                          init, pkeys, device)
             val_chunks = build_val_batches(val, tok, MCFG["val_maxlen"], device, MCFG["val_chunk"])
             loss_fn, _pk, lc = make_llm_loss(model, val_chunks, device)
-            methods = compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc,
-                                      device, seed, oracle_b, coalition)
+            with pt.phase("valuation"):                           # all methods' phi-estimation + oracles (peak = HVP)
+                methods = compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc,
+                                          device, seed, oracle_b, coalition)
             print(f"\n----- seed {seed} -----", flush=True)
             res = report(threat, methods, corrupt, logs, asr)
             agg[threat].append(res)
@@ -597,7 +602,7 @@ def main():
                 rt = [r["runtime"][name] for r in runs]
                 line += f"  runtime={np.mean(rt):.1f}s"
                 print(line)
-    _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition)
+    _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=pt.to_timing())
     print("\nMATRIX DONE  (matched detector should top AUROC on-threat; Flirds/valuation track the "
           "(b) oracle; off-threat detectors degrade -- the §3.9 separation story).", flush=True)
 

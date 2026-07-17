@@ -84,3 +84,12 @@ class RunLogger:
         with open(self._p(fname), "w") as f:
             json.dump(metrics, f, indent=2)
         return self._p(fname)
+
+    def save_timing(self, timing, fname="timing.json"):
+        """Persist per-phase wall-clock + GPU-hours + peak GPU memory (protocol §15.1).
+
+        `timing` is a flirds.timing.PhaseTimer.to_timing() dict (client-training /
+        phi-estimation / oracle / eval phases + gpu_hours + peak_gib)."""
+        with open(self._p(fname), "w") as f:
+            json.dump(timing, f, indent=2)
+        return self._p(fname)

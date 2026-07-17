@@ -99,6 +99,32 @@ def in_run_loo(logs, n_clients, loss_fn, pkeys, device):
 
 
 @torch.no_grad()
+def in_run_singletons(logs, n_clients, loss_fn, pkeys, device):
+    """All N singleton (b)-utilities U_(b)({k}) on the frozen trajectory -- the loss-heuristic
+    floor -- with the per-round base loss ell(w^r) computed ONCE and reused across clients.
+
+    EXACTLY equal to [in_run_utility(logs, [k], ...) for k in range(n_clients)], but that
+    N-call form recomputes base (and re-splits w^r to device) once PER client, doing 2|P_r|
+    forwards/round; this caches base per round for 1+|P_r| forwards/round -- a 2|P_r|/(1+|P_r|)
+    reduction (~1.7x at |P_r|=5, ->2x for large cohorts).  Same per-round base-caching that
+    in_run_loo and _coalition_utilities already use.  good->low (helpful client lowers the
+    round loss -> negative singleton utility); free-rider(zero delta) -> exactly 0.  Returns
+    phi[n_clients] with phi[k] = U_(b)({k})."""
+    phi = np.zeros(n_clients)
+    for w_r, dm in logs:
+        players = sorted(dm.keys())
+        if not players:
+            continue
+        pr = _round_weight(dm)
+        base_params, buffers = _split(w_r, pkeys, device)
+        base = float(loss_fn(base_params, buffers))          # ONCE per round (was: once per client)
+        for k in players:
+            pert = _perturbed_params(base_params, dm, [k], pr, pkeys)
+            phi[k] += float(loss_fn(pert, buffers)) - base
+    return phi
+
+
+@torch.no_grad()
 def _coalition_utilities(logs, n_clients, loss_fn, pkeys, device):
     """All 2^N coalition utilities U_(b)(S) on the frozen trajectory + global weight p.
 

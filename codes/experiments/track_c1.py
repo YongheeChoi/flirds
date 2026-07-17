@@ -67,7 +67,7 @@ from flirds.fl.partition import (iid_partition, label_skew_partition,
 from flirds.fl.server import evaluate, fedavg
 from flirds.models.cnn import FedSVCNN, LeNet5
 from flirds.oracle.exact_sv import exact_shapley, subset_utility_valloss
-from flirds.oracle.in_run_sv import in_run_loo, in_run_shapley, in_run_utility
+from flirds.oracle.in_run_sv import in_run_loo, in_run_shapley, in_run_singletons
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
 
@@ -294,8 +294,7 @@ def run_seed(seed, device="cuda"):
     methods.append(("ShapleyFL", -np.asarray(phi, dtype=float), t))  # good->high -> negate
     phi, t = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device), device)
     methods.append(("FedIF", -np.asarray(phi, dtype=float), t))      # influence good->HIGH -> negate
-    phi, t = _timed(lambda: np.array([in_run_utility(logs, [k], loss_fn, pkeys, device)
-                                      for k in range(n)]), device)
+    phi, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
     methods.append(("loss-heur", phi, t))
     phi, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
     methods.append(("Fed-LOO", phi, t))
