@@ -70,6 +70,7 @@ from flirds.oracle.exact_sv import exact_shapley, subset_utility_valloss
 from flirds.oracle.in_run_sv import in_run_loo, in_run_shapley, in_run_singletons
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
+from flirds.timing import PhaseTimer
 
 # --------------------------------------------------------------------------- #
 # config                                                                      #
@@ -231,6 +232,7 @@ def removal_retrain_curves(methods, retrain_eval, n, device, sel=None):
 # --------------------------------------------------------------------------- #
 def run_seed(seed, device="cuda"):
     n, R, E, lr = CFG["n_clients"], CFG["rounds"], CFG["epochs"], CFG["lr"]
+    pt = PhaseTimer(device, n_gpus=int(os.environ.get("N_GPUS", "1")))   # §15.1 timing.json substrate
     seed_everything(seed, cudnn_deterministic=True)
     loaders, rates, vx, vy, val_loader, test_loader = build(
         DATASET, SCENARIO, n, CFG["n_per"], CFG["batch"], CFG["n_val"], CFG["n_test"], seed)
@@ -249,12 +251,13 @@ def run_seed(seed, device="cuda"):
             return cache[S]
 
         (phi_a), t_a = _timed(lambda: exact_shapley(n, util), device)
+        pt.record("oracle-a-retrain", t_a)                 # §15.1: (a) is 2^N retrains, own phase
         eff = abs(phi_a.sum() - (util(tuple(range(n))) - util(())))
         print(f"[(a)oracle] 2^{n}={2 ** n} retrains in {t_a:.0f}s "
               f"({t_a / 2 ** n:.2f}s/retrain)  efficiency-gap={eff:.2e}", flush=True)
         assert eff < 1e-6, "(a) efficiency axiom violated"
     if ORACLE_A_ONLY:
-        return dict(phi_a=phi_a.tolist(), t_a=t_a, rates=rates), []
+        return dict(phi_a=phi_a.tolist(), t_a=t_a, rates=rates, _timing=pt.to_timing()), []
 
     # ---- shared frozen trajectory + val-loss closure ----
     logs = []
@@ -262,46 +265,49 @@ def run_seed(seed, device="cuda"):
         MODEL_FN, loaders, test_loader, R, E, lr, sample_frac=KFRAC, device=device,
         seed=seed, on_round=lambda r, gb, dm: logs.append((gb, dm))), device)
     final_acc = history[-1][1]
+    pt.record("client-training", t_traj)               # §15.1: reuse the existing measurement
     print(f"[traj] {R}r x {E}e in {t_traj:.0f}s  final test-acc={final_acc:.4f}", flush=True)
     loss_fn, pkeys = make_cnn_loss(MODEL_FN, vx, vy, device)
 
     # ---- methods on the frozen logs (mirrors phase2_matrix.compute_methods) ----
     methods = []                                       # (name, phi good->low, runtime)
-    (phi_b, _), t = _timed(lambda: in_run_shapley(logs, n, loss_fn, pkeys, device), device)
-    methods.append(("(b)oracle", np.asarray(phi_b), t))
-    (phi, _), t = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device,
-                                               second_order=True, n_clients=n), device)
-    methods.append(("Flirds", np.asarray(phi), t))
-    (phi, _), t = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device,
-                                               second_order=False, n_clients=n), device)
-    methods.append(("Flirds1st", np.asarray(phi), t))
-    phi, t = _timed(lambda: gtg_from_logs(logs, None, n, None, device, seed=seed,
-                    loss_fn=loss_fn, pkeys=pkeys, round_trunc=0.0, eps=0.0), device)
-    methods.append(("GTG", np.asarray(phi), t))
-    phi, t = _timed(lambda: fedsv_from_logs(logs, None, n, None, device, seed=seed,
-                    loss_fn=loss_fn, pkeys=pkeys, trunc_eps=0.0), device)
-    methods.append(("FedSV", np.asarray(phi), t))
-    # partial=False: full participation -> the utility matrix is fully observed, so
-    # the paper's low-rank completion has nothing to fill (and its ALS collapses
-    # tiny smoke-scale utilities to ~0).
-    phi, t = _timed(lambda: comfedsv_from_logs(logs, None, n, None, device, seed=seed,
-                    loss_fn=loss_fn, pkeys=pkeys, partial=KFRAC < 1), device)
-    methods.append(("ComFedSV", -np.asarray(phi, dtype=float), t))   # loss-decrease util -> negate
-    (phi, _), t = _timed(lambda: in_run_banzhaf(logs, n, loss_fn, pkeys, device), device)
-    methods.append(("Banzhaf", np.asarray(phi), t))
-    phi, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
-                    loss_fn=loss_fn, pkeys=pkeys), device)
-    methods.append(("ShapleyFL", -np.asarray(phi, dtype=float), t))  # good->high -> negate
-    phi, t = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device), device)
-    methods.append(("FedIF", -np.asarray(phi, dtype=float), t))      # influence good->HIGH -> negate
-    phi, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
-    methods.append(("loss-heur", phi, t))
-    phi, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
-    methods.append(("Fed-LOO", phi, t))
+    with pt.phase("valuation"):                        # §15.1: from-logs methods (peak = HVP)
+        (phi_b, _), t = _timed(lambda: in_run_shapley(logs, n, loss_fn, pkeys, device), device)
+        methods.append(("(b)oracle", np.asarray(phi_b), t))
+        (phi, _), t = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device,
+                                                   second_order=True, n_clients=n), device)
+        methods.append(("Flirds", np.asarray(phi), t))
+        (phi, _), t = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device,
+                                                   second_order=False, n_clients=n), device)
+        methods.append(("Flirds1st", np.asarray(phi), t))
+        phi, t = _timed(lambda: gtg_from_logs(logs, None, n, None, device, seed=seed,
+                        loss_fn=loss_fn, pkeys=pkeys, round_trunc=0.0, eps=0.0), device)
+        methods.append(("GTG", np.asarray(phi), t))
+        phi, t = _timed(lambda: fedsv_from_logs(logs, None, n, None, device, seed=seed,
+                        loss_fn=loss_fn, pkeys=pkeys, trunc_eps=0.0), device)
+        methods.append(("FedSV", np.asarray(phi), t))
+        # partial=False: full participation -> the utility matrix is fully observed, so
+        # the paper's low-rank completion has nothing to fill (and its ALS collapses
+        # tiny smoke-scale utilities to ~0).
+        phi, t = _timed(lambda: comfedsv_from_logs(logs, None, n, None, device, seed=seed,
+                        loss_fn=loss_fn, pkeys=pkeys, partial=KFRAC < 1), device)
+        methods.append(("ComFedSV", -np.asarray(phi, dtype=float), t))   # loss-decrease util -> negate
+        (phi, _), t = _timed(lambda: in_run_banzhaf(logs, n, loss_fn, pkeys, device), device)
+        methods.append(("Banzhaf", np.asarray(phi), t))
+        phi, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
+                        loss_fn=loss_fn, pkeys=pkeys), device)
+        methods.append(("ShapleyFL", -np.asarray(phi, dtype=float), t))  # good->high -> negate
+        phi, t = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device), device)
+        methods.append(("FedIF", -np.asarray(phi, dtype=float), t))      # influence good->HIGH -> negate
+        phi, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
+        methods.append(("loss-heur", phi, t))
+        phi, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
+        methods.append(("Fed-LOO", phi, t))
     if RIPPLE:
         rp = CFG["ripple"]
-        phi, t = _timed(lambda: ripple_shapley(MODEL_FN, loaders, R, E, lr,
-                        vx.to(device), vy.to(device), device, seed=seed, **rp), device)
+        with pt.phase("ripple-own-trajectory"):        # §15.1/C1: Ripple retrains -> NOT from-logs valuation
+            phi, t = _timed(lambda: ripple_shapley(MODEL_FN, loaders, R, E, lr,
+                            vx.to(device), vy.to(device), device, seed=seed, **rp), device)
         methods.append(("Ripple", -np.asarray(phi, dtype=float), t))  # own trajectory; good->high -> negate
 
     # ---- metrics ----
@@ -364,7 +370,7 @@ def run_seed(seed, device="cuda"):
 
     metrics = dict(dataset=DATASET, scenario=SCENARIO, seed=seed, mode=MODE,
                    final_acc=final_acc, acc_curve=history, traj_time=t_traj,
-                   rates=rates, methods=res, **removal)
+                   rates=rates, methods=res, _timing=pt.to_timing(), **removal)
     if phi_a is not None:
         metrics["oracle_a"] = dict(phi=phi_a.tolist(), time=t_a, n_retrains=2 ** n)
     phi_rows = [dict(client=c, rate=rates[c],
@@ -377,6 +383,7 @@ def run_seed(seed, device="cuda"):
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     metrics, phi_rows = run_seed(SEED, device)
+    timing = metrics.pop("_timing", None)              # §15.1 -> timing.json (not metrics.json)
     if PERSIST:
         try:
             name = os.environ.get("C1_RUN_NAME") or (                    # probe cells override (width/kfrac in name)
@@ -393,6 +400,8 @@ def main():
                     import pandas as pd
                     pd.DataFrame(phi_rows).to_csv(rl._p("phi.csv"), index=False)
             rl.save_metrics(metrics)
+            if timing is not None:
+                rl.save_timing(timing)                 # §15.1 per-phase wall + GPU-hours + peak
             print(f"[persist] {rl.dir}", flush=True)
         except Exception as e:                         # best-effort: stdout already has it all
             print(f"[persist] FAILED ({e!r}) -- results live in stdout", flush=True)

@@ -73,6 +73,7 @@ from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_
                                      in_run_singletons)
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
+from flirds.timing import PhaseTimer
 
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
 SCALE = ("7B" if "Llama-2-7b" in MODEL else
@@ -108,6 +109,9 @@ MMLU_BATCH = int(os.environ.get("MMLU_BATCH", "16"))
 ARMS = os.environ.get("ARMS", "1") == "1"              # 0 = phase-1 fidelity only
 FIDELITY = os.environ.get("FIDELITY", "1") == "1"      # 0 = arm-only (cheap re-run; no (a)/coalition cost)
 ORACLE_A = os.environ.get("ORACLE_A", "1" if REGIME == "anchor5" else "0") == "1"
+# METHODS="Flirds,Flirds1st,loss-heur,Fed-LOO" -> run only these (+ the (b) oracle, always).
+# Empty/unset = full suite.  E4/E5 light re-runs: coalition baselines off without code edits.
+METHODS = frozenset(m for m in os.environ.get("METHODS", "").split(",") if m)
 
 _CODES = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNDIR_ROOT = os.environ.get("RUNDIR_ROOT",
@@ -181,6 +185,7 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
     anchor = REGIME == "anchor5"
     out = []
     u_a = None
+    _want = lambda name: not METHODS or name in METHODS   # (b) oracle is never filtered
 
     b_fn = in_run_shapley if anchor else in_run_shapley_perround
     (phi_b, _), t = _timed(lambda: b_fn(logs, n, loss_fn, pkeys, device), device)
@@ -192,36 +197,45 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
         model.eval()                              # the 32 SFTTrainer retrains leave train mode
         model.get_input_embeddings()._forward_hooks.clear()   # + the embed hook (HVP-forbidden)
 
-    (phi_e, _), t = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device,
-                                                 second_order=True, n_clients=n,
-                                                 loss_chunks=lc), device)
-    out.append(("Flirds", np.asarray(phi_e), t))
-    (phi_1, _), t = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device,
-                                                 second_order=False, n_clients=n,
-                                                 loss_chunks=lc), device)
-    out.append(("Flirds1st", np.asarray(phi_1), t))
-    phi_g, t = _timed(lambda: gtg_from_logs(logs, None, n, None, device, seed=seed,
-                      loss_fn=loss_fn, pkeys=pkeys, round_trunc=0.0, eps=0.0), device)
-    out.append(("GTG", np.asarray(phi_g), t))
-    phi_f, t = _timed(lambda: fedsv_from_logs(logs, None, n, None, device, seed=seed,
-                      loss_fn=loss_fn, pkeys=pkeys, trunc_eps=0.0), device)
-    out.append(("FedSV", np.asarray(phi_f), t))
-    phi_c, t = _timed(lambda: comfedsv_from_logs(logs, None, n, None, device, seed=seed,
-                      loss_fn=loss_fn, pkeys=pkeys, partial=not anchor), device)
-    out.append(("ComFedSV", -np.asarray(phi_c, dtype=float), t))   # loss-decrease util -> negate
-    phi_s, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
-                      loss_fn=loss_fn, pkeys=pkeys), device)
-    out.append(("ShapleyFL", -np.asarray(phi_s, dtype=float), t))  # good->high -> negate
-    phi_if, t = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device,
-                       loss_chunks=lc), device)
-    out.append(("FedIF", -np.asarray(phi_if, dtype=float), t))     # influence good->high -> negate
-    if anchor:                                                     # Banzhaf = 2^N -> anchor only
+    if _want("Flirds"):
+        (phi_e, _), t = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device,
+                                                     second_order=True, n_clients=n,
+                                                     loss_chunks=lc), device)
+        out.append(("Flirds", np.asarray(phi_e), t))
+    if _want("Flirds1st"):
+        (phi_1, _), t = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device,
+                                                     second_order=False, n_clients=n,
+                                                     loss_chunks=lc), device)
+        out.append(("Flirds1st", np.asarray(phi_1), t))
+    if _want("GTG"):
+        phi_g, t = _timed(lambda: gtg_from_logs(logs, None, n, None, device, seed=seed,
+                          loss_fn=loss_fn, pkeys=pkeys, round_trunc=0.0, eps=0.0), device)
+        out.append(("GTG", np.asarray(phi_g), t))
+    if _want("FedSV"):
+        phi_f, t = _timed(lambda: fedsv_from_logs(logs, None, n, None, device, seed=seed,
+                          loss_fn=loss_fn, pkeys=pkeys, trunc_eps=0.0), device)
+        out.append(("FedSV", np.asarray(phi_f), t))
+    if _want("ComFedSV"):
+        phi_c, t = _timed(lambda: comfedsv_from_logs(logs, None, n, None, device, seed=seed,
+                          loss_fn=loss_fn, pkeys=pkeys, partial=not anchor), device)
+        out.append(("ComFedSV", -np.asarray(phi_c, dtype=float), t))   # loss-decrease util -> negate
+    if _want("ShapleyFL"):
+        phi_s, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
+                          loss_fn=loss_fn, pkeys=pkeys), device)
+        out.append(("ShapleyFL", -np.asarray(phi_s, dtype=float), t))  # good->high -> negate
+    if _want("FedIF"):
+        phi_if, t = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device,
+                           loss_chunks=lc), device)
+        out.append(("FedIF", -np.asarray(phi_if, dtype=float), t))     # influence good->high -> negate
+    if anchor and _want("Banzhaf"):                                    # Banzhaf = 2^N -> anchor only
         (phi_z, _), t = _timed(lambda: in_run_banzhaf(logs, n, loss_fn, pkeys, device), device)
         out.append(("Banzhaf", np.asarray(phi_z), t))
-    phi_h, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
-    out.append(("loss-heur", phi_h, t))
-    phi_lo, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
-    out.append(("Fed-LOO", phi_lo, t))
+    if _want("loss-heur"):
+        phi_h, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
+        out.append(("loss-heur", phi_h, t))
+    if _want("Fed-LOO"):
+        phi_lo, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
+        out.append(("Fed-LOO", phi_lo, t))
     return out, u_a
 
 
@@ -344,7 +358,7 @@ def _downstream(model, tok, test_records, device):
     return {"mmlu": acc, "rouge_l": rouge}
 
 
-def _persist(phi_rows, run_metrics, seeds):
+def _persist(phi_rows, run_metrics, seeds, timing=None):
     """Save phi vectors + metrics + config/provenance to a run-dir (protocol §6).
     Called as a CHECKPOINT after each seed's fidelity (the (a) oracle is hours --
     an arm crash must never lose it) and again at the end; overwrite is idempotent.
@@ -356,6 +370,7 @@ def _persist(phi_rows, run_metrics, seeds):
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "seeds": seeds,
               "rcfg": RCFG, "mcfg": MCFG, "lora": {"r": LORA_R, "alpha": LORA_ALPHA},
               "oracle_a": ORACLE_A, "fidelity": FIDELITY,
+              "methods": sorted(METHODS) if METHODS else "all",
               "client_opt": os.environ.get("CLIENT_OPT", "sgd"),   # Exp D: sgd (default) | adamw
               "mmlu": {"limit": MMLU_LIMIT, "batch": MMLU_BATCH, "shots": 0}}
     try:
@@ -366,6 +381,8 @@ def _persist(phi_rows, run_metrics, seeds):
             import pandas as pd
             pd.DataFrame(phi_rows).to_csv(rl._p("phi.csv"), index=False)
         rl.save_metrics(run_metrics)
+        if timing is not None:
+            rl.save_timing(timing)                                # §15.1 per-phase wall + GPU-hours + peak
         print(f"\n[persist] {rl.dir}  ({len(phi_rows)} phi rows)", flush=True)
     except Exception as e:
         print(f"\n[persist] WARNING: run-dir save failed ({e!r}); .log has results", flush=True)
@@ -384,6 +401,7 @@ def main():
           f"seeds={seeds} ===", flush=True)
 
     tok, model, init, pkeys = _load(device)
+    pt = PhaseTimer(device, n_gpus=int(os.environ.get("N_GPUS", "1")))   # §15.1 timing.json substrate
     agg, phi_rows, run_metrics = [], [], {}
     for seed in seeds:
         seed_everything(seed)
@@ -391,6 +409,7 @@ def main():
                                                       RCFG["test"], seed=seed)
         nums = [len(c) for c in clients]
         logs, t_vanilla = _timed(lambda: _fl(model, tok, clients, init, seed), device)
+        pt.record("client-training", t_vanilla)                   # §15.1: reuse the existing measurement
         val_chunks = build_val_batches(val, tok, MCFG["val_maxlen"], device, MCFG["val_chunk"])
         loss_fn, _pk, lc = make_llm_loss(model, val_chunks, device)
 
@@ -402,8 +421,9 @@ def main():
         res = {"spearman": {}, "kendall": {}, "pearson": {}, "cosine_d": {}, "euclid_d": {},
                "max_diff": {}, "runtime": {}}
         if FIDELITY:
-            methods, u_a = compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc,
-                                            device, seed)
+            with pt.phase("valuation"):                   # §15.1: all methods + oracles (peak = HVP)
+                methods, u_a = compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys,
+                                                lc, device, seed)
             res = report_fidelity(methods, selected)
             if u_a is not None:                           # Exp A1: (a)-retrain removal/selection curves (free)
                 res["removal_curve"] = removal_curves(methods, u_a, n)
@@ -412,7 +432,7 @@ def main():
                 phi_rows += [{"seed": seed, "method": name, "client": int(c),
                               "phi": float(vec[c])} for c in selected]
             run_metrics[f"seed{seed}"] = res
-            _persist(phi_rows, run_metrics, seeds)        # CHECKPOINT: never lose the (a)/(b) cost to an arm crash
+            _persist(phi_rows, run_metrics, seeds, timing=pt.to_timing())   # CHECKPOINT: never lose the (a)/(b) cost to an arm crash
 
         # ---- phase 2+3: intervention arms -> benchmark accuracy + convergence ----
         if ARMS:
@@ -451,7 +471,7 @@ def main():
 
         agg.append(res)
         run_metrics[f"seed{seed}"] = res
-        _persist(phi_rows, run_metrics, seeds)
+        _persist(phi_rows, run_metrics, seeds, timing=pt.to_timing())
         del loss_fn, val_chunks, logs
         if device == "cuda":
             torch.cuda.empty_cache()
