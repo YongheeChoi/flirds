@@ -243,11 +243,13 @@ def build_trajectory(threat, seed, model, tok, init, pkeys, device, exclude=froz
         logs = _fl(model, tok, clients, init, seed)
         return logs, clients, corrupt, None, val
 
-    if threat in ("freerider_random", "freerider_zero"):
+    if threat in ("freerider_random", "freerider_zero", "freerider_delta"):
         corrupt = set(RCFG["freerider"])
         clients, val, _ = _build_clients(seed)                     # clean data; the UPDATE is fabricated
         if threat == "freerider_zero":
             logs = _fl(model, tok, clients, init, seed, free_riders=corrupt, free_rider_mode="zero")
+        elif threat == "freerider_delta":                          # E7: recycle previous-round aggregate (Lin delta-weights)
+            logs = _fl(model, tok, clients, init, seed, free_riders=corrupt, free_rider_mode="delta")
         else:                                                      # random @ benign-std (evasion case)
             warm = _fl(model, tok, clients, init, seed, rounds=RCFG["warmup"])   # short CLEAN warmup
             scale = _benign_std(warm) * (3 ** 0.5) * DOSE_MULT     # U(-s,s) std = s/sqrt(3) -> benign std x dose (Exp B)
@@ -494,7 +496,8 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=
     a save failure warns but never loses the printed .log results.  PERSIST=0 disables."""
     if os.environ.get("PERSIST", "1") != "1":
         return
-    _abbr = {"freerider_random": "frrand", "freerider_zero": "frzero"}   # canonical condition tokens
+    _abbr = {"freerider_random": "frrand", "freerider_zero": "frzero",
+             "freerider_delta": "frdelta"}                               # canonical condition tokens
     _cond = "-".join(_abbr.get(t, t) for t in threats)
     _setting = REGIME if SILO_LIKE else f"{REGIME}-a{ALPHA}"              # silo5 / iid5 / device100-a0.5
     _anchor = "_anchor" if (not SILO_LIKE and oracle_b and coalition) else ""

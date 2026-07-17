@@ -132,7 +132,7 @@ LLM_CORRUPTORS = {"answer_swap": answer_swap, "answer_swap_graded": answer_swap_
 
 
 # ---- update-level corruptor (free-rider), representation-agnostic (CNN + LLM) ----
-def free_rider(ref, mode="zero", scale=1e-3, generator=None):
+def free_rider(ref, mode="zero", scale=1e-3, generator=None, prev_state=None):
     """Fabricated client update (free-rider): claim participation but submit a Δw
     with ~no alignment to the validation gradient, so Flirds' 1st-order term
     <-∇ℓ_val, Δw> ~= 0 and the client's value collapses to ~0 -- free-rider demotion
@@ -146,16 +146,25 @@ def free_rider(ref, mode="zero", scale=1e-3, generator=None):
                  (Lin tunes `scale` to the benign-update std for detection evasion;
                  here it is a fixed documented scale -- the Phase-1 valuation sanity
                  depends only on the ~0 gradient alignment, not the exact value.)
-    The harder delta-weights / advanced-delta families (recycle the previous round's
-    aggregate +/- noise) need that aggregate threaded into the FL loop -> deferred to
-    Phase 2 (the STD-DAGMM head-to-head + the recycled-aligned-signal question).
+      "delta"  : Δw = w^r - w^{r-1}          -- Lin's delta-weights attack (E7): recycle the
+                 realized previous-round aggregate, observable to ANY client from two
+                 consecutive global broadcasts.  `prev_state` = w^{r-1} (the caller threads
+                 the previous round-start state; llm_server does it from the logs contract).
+                 Round 0 has nothing to recycle -> Δw = 0 (documented fallback).  This is
+                 the stress case for "free-rider phi = exact 0": the recycled delta has REAL
+                 alignment with the val gradient, so the 1st-order term no longer vanishes.
     """
     if mode == "zero":
         return {k: torch.zeros(v.shape, dtype=v.dtype) for k, v in ref.items()}
     if mode == "random":
         return {k: torch.empty(v.shape, dtype=v.dtype).uniform_(-scale, scale, generator=generator)
                 for k, v in ref.items()}
-    raise ValueError(f"unknown free-rider mode: {mode!r} (use 'zero' or 'random')")
+    if mode == "delta":
+        if prev_state is None:                       # round 0: no previous aggregate observed yet
+            return {k: torch.zeros(v.shape, dtype=v.dtype) for k, v in ref.items()}
+        return {k: (ref[k].detach() - prev_state[k].detach().to(ref[k].device)).cpu()
+                for k in ref}
+    raise ValueError(f"unknown free-rider mode: {mode!r} (use 'zero', 'random' or 'delta')")
 
 
 # ---- update-level corruptor (gradient noise), representation-agnostic ----

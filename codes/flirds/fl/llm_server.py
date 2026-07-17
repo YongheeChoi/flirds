@@ -46,12 +46,13 @@ def _lora_state(model):
 def _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
                          batch_size, max_length, seed, formatting_func,
                          free_riders, free_rider_mode, free_rider_scale, fr_gen,
-                         scaled_attackers, attack_scale):
+                         scaled_attackers, attack_scale, prev_state_fn=None):
     def local_train_fn(c, global_state):
         model.load_state_dict(global_state, strict=False)   # sync LoRA (named key)
         if c in free_riders:                                # seam 2: fabricated update, no real training
             return free_rider(global_state, mode=free_rider_mode,
-                              scale=free_rider_scale, generator=fr_gen)
+                              scale=free_rider_scale, generator=fr_gen,
+                              prev_state=prev_state_fn() if prev_state_fn else None)
         cfg = SFTConfig(
             output_dir=_OUT, per_device_train_batch_size=batch_size,
             max_steps=max_steps, learning_rate=lr, max_length=max_length,
@@ -97,11 +98,15 @@ def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
                   if p.requires_grad}
     sample_nums = [len(ds) for ds in local_datasets]
     fr_gen = torch.Generator().manual_seed(seed + 1)            # reproducible free-rider random stream
+    logs = []
+    # E7 delta free-rider: during round r the logs hold rounds 0..r-1, so
+    # logs[-1][0] = w^{r-1}; free_rider(ref=w^r, prev_state=w^{r-1}) recycles the
+    # realized previous aggregate (what any client can observe from two broadcasts).
     ltf = _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
                                batch_size, max_length, seed, formatting_func,
                                free_riders, free_rider_mode, free_rider_scale, fr_gen,
-                               scaled_attackers, attack_scale)
-    logs = []
+                               scaled_attackers, attack_scale,
+                               prev_state_fn=lambda: logs[-1][0] if logs else None)
     _fedavg_core(init_state, ltf, sample_nums, rounds, sample_frac, seed,
                  on_round=lambda r, w_r, dm: logs.append((w_r, dm)),
                  select_fn=select_fn, weights_fn=weights_fn)
