@@ -70,7 +70,24 @@ Pooled over 10 scenarios $\times$ 3 seeds: \textsc{Flirds} $0.919\pm.134$ vs (b)
 (Banzhaf $0.989$, \textsc{Flirds-1st} $0.832$, loss-heuristic $0.860$, GTG
 $0.569$, FedSV $0.401$, ShapleyFL $0.391$, Ripple $0.373$, ComFedSV $0.348$).
 Cross-seed stability tracks the oracle's own: (b) self-stability $0.518$,
-\textsc{Flirds} $0.547$; MC-based methods fall to $0.124$--$0.311$.
+\textsc{Flirds} $0.547$---the estimator adds no seed-to-seed variance beyond
+the target's intrinsic instability---while MC-based methods add sampling
+variance and fall to $0.124$--$0.311$.
+
+\paragraph{Value-level fidelity and axiom compliance.}
+Rank correlation is not the whole ask: settlement-type uses consume the
+\emph{values}. On the standard stages \textsc{Flirds} matches oracle (b) at
+Pearson $1.000$ and near-zero distances (cosine distance $< 10^{-4}$) across
+1B/3B/7B, and the efficiency identity
+$\sum_k \hat\phi_k = \ell(w^0) - \ell(w^R)$ holds with zero telescoping gap in
+our gate tests \verify{make\_fidelity.py Pearson/distance columns; phase-gate
+telescoping check}. Axiom compliance separates methods where correlation
+cannot: zero-update free-riders receive $\hat\phi = 0$ \emph{exactly}
+(Proposition~\ref{prop:closed-form}; so do oracle (b), Banzhaf, and the
+singleton heuristic), while the subset-renormalized methods pay them strictly
+positive raw value ($0.0041$/$0.0053$ for GTG/FedSV)---the practical face of
+the game gap of Proposition~\ref{prop:games}
+\verify{master\_phi.csv raw $\phi$}.
 
 \subsection{Dual-oracle anchor: does the in-run game track the retrain game?}
 \label{sec:results-dual}
@@ -93,7 +110,11 @@ method-neutral adjudicator. \todo{E1 (judge cell): this is the paper's
 linchpin experiment. Insert: (i) own-game fidelity column per baseline, (ii)
 game-gap column, (iii) $\rho(\text{fixed-weight game}, (a))$ vs
 $\rho(\text{renormalized game}, (a))$ adjudication, 3 seeds, equal-$n$ and
-unequal-$n$ variants.}
+unequal-$n$ variants.} \todo{Game-independent validation layer (sweep running,
+79 cells): (i) removal curves---clients removed in $\phi$-order, actual FL
+retraining measures the consequence, no game definition referenced; (ii)
+dose--response---$\phi$ monotonicity against experimenter-controlled corruption
+intensity. Land here as \S6.2b when complete.}
 
 \subsection{The boundary map: where valuation signal exists at all}
 \label{sec:results-boundary}
@@ -107,7 +128,8 @@ $\phi^{(b)}$ across seeds):
 \centering
 \caption{Oracle (b) cross-seed self-consistency ($\rho$, 1B, 3 seeds): signal
 exists only where clients genuinely differ.
-\protect\verify{B-axis matrix, diagnosis dossier \S3.3}}
+\protect\verify{B-axis matrix rundirs; oracle-(b) xseed canonical in
+\texttt{target\_stability.csv} (2026-07-14)}}
 \label{tab:baxis}
 \small
 \begin{tabular}{lcccc}
@@ -124,8 +146,10 @@ Three consequences. \textbf{(i)} On IID-clean stages the exact oracle's own
 ranking carries no stable signal across seeds: at 1B, $\rho \approx -0.37$ to
 $-0.11$ on the LLM standard stages; across scales the self-consistency is
 unstable in both directions ($-0.37$ to $+0.73$, the positive extreme at the
-7B anchor being the noted exception \verify{diagnosis \S1.4}); ``fidelity
-$1.000$'' there means the estimator
+7B anchor being the noted exception \verify{canonical per-cell values in
+\texttt{target\_stability.csv}: 1B anchor $-0.367$, 1B std20 $-0.114$, 3B
+std20 $-0.243$, 3B anchor $+0.033$, 7B std20 $+0.164$, 7B anchor $+0.733$});
+``fidelity $1.000$'' there means the estimator
 faithfully reproduces per-run randomness---which is exactly the right behavior
 for \emph{settlement of the realized run}, and exactly \emph{not} a stage where
 any method can demonstrate downstream utility. \textbf{(ii)} Signal is created
@@ -139,6 +163,19 @@ valuation-weighted arms indeed sit at parity there (MMLU/ROUGE within
 $\pm0.003$ of vanilla), which we report as a designed sanity check, not a
 failure.
 
+\paragraph{Separating the noise floors.}
+The cross-seed instability above is a property of the \emph{stage} (data
+partition and trajectory randomness), not of validation sampling: within a
+fixed run, bootstrap resampling of the validation set leaves the $\phi$
+ranking essentially intact (self-$\rho$ $0.93$/$0.92$ at LoRA rank 16/64;
+split-half $0.90$--$1.00$; extreme client pairs separated by
+$\sim$$10\times$ the bootstrap SE), even though the inter-client $\phi$ spread
+is only $\approx 1.1\times$ the per-client bootstrap SE
+\verify{noise probe, anchor stage, seed 0 only}. Valuation on IID-clean stages
+is thus \emph{precise but stage-limited}: the estimator resolves the realized
+run's ordering through validation noise, and it is the ordering itself that
+fails to replicate across runs.
+
 \subsection{Adversarial boundary: clean-loss-preserving poison}
 \label{sec:results-poison}
 
@@ -146,28 +183,48 @@ A backdoor that \emph{lowers} clean validation loss \citep{bagdasaryan2020}
 defeats first-order valuation by construction: the first-order term rewards
 descent along $-g_r$. Empirically, \textsc{Flirds-1st} is fully evaded (AUROC
 $0.000$, 3 seeds, 1B silo), while the second-order term partially restores
-separation (\textsc{Flirds} $0.917 \pm 0.118$)---the interaction term detects
-curvature-inconsistent updates that first-order alignment cannot. The defense is
+separation (\textsc{Flirds} $0.917 \pm 0.118$; rank fidelity shows the same
+repair, Spearman $0.000 \to 0.967 \pm .047$)---the interaction term detects
+curvature-inconsistent updates that first-order alignment cannot. Value-level
+fidelity collapses precisely there as well (Pearson $0.68$ at 1B; $-0.89$ at
+3B, single seed): the $\gamma$-scaled replacement deltas exit the Taylor trust
+region that Proposition~\ref{prop:residual} bounds \verify{poison Pearson
+cells, R4 audit}. The defense is
 scale- and stage-dependent: at 3B the second-order term is also evaded
 \verify{single seed --- extend (E8) before claiming scale trend}, and on
-IID stages evasion is more complete than non-IID ($0.00$ vs $0.92$). The exact
+IID stages evasion is more complete than non-IID ($0.00$ vs $0.92$).
+Stage geometry can also work \emph{against} the attacker: under cross-device
+dilution ($N{=}100$, cohort 10) the same attack is caught by both orders at
+the extreme partition (AUROC $1.000$), and at $\alpha{=}0.5$ the second-order
+term stabilizes detection where the first order becomes erratic
+(\textsc{Flirds} $1.000$ vs \textsc{Flirds-1st} $0.670 \pm .467$; deployed ASR
+itself is diluted to $\approx 0.5$) \verify{device100 poison cells}. The exact
 oracle and the singleton heuristic \emph{do} flag the attacker
 \pending{D-1: orientation framing --- ``evaded valuation'' vs ``honest answer
 of a clean-loss utility''; two internal analyses currently disagree and the
 paper must pick one and state it}.
 
-\subsection{Cost, conditioned on cohort size}
+\subsection{Cost: valuation granularity, and cohort size}
 \label{sec:results-cost}
+
+Two independent axes set the cost of in-run valuation: the \emph{granularity}
+of the unit being valued (samples vs.\ clients), and---among client-level
+methods---how \emph{coalition structure} is handled per round. We measure both.
 
 \begin{table}[t]
 \centering
 \caption{Measured valuation wall-clock (seconds; shared frozen logs; 1B fp32,
 B200; 3-seed means, $\pm$std where available). \textsc{Flirds} is $O(1)$
 HVP/round, coalition methods $O(2^{|P_r|})$/round; the advantage is
-cohort-conditional and reverses at tiny cohorts.
+cohort-conditional and reverses at tiny cohorts. Absolute times are fp32
+(tensor cores unused): on B200 an fp32 forward is $\sim$$5.3\times$ slower than
+bf16 and a raw GEMM $\sim$$22.7\times$, so these upper-bound deployed cost,
+while within-table method-to-method ratios (all fp32) are precision-fair.
 \protect\verify{overview \S3.5 file-canon; device column per-method values;
-loss-heuristic implementation carries a known $\sim 2\times$ overhead
-(footnote in final)}}
+microbench summary.json (b694f07): fwd fp32/bf16 $5.33$, HVP $4.09$, GEMM
+$22.68$. loss-heuristic base loss now cached per round
+(\texttt{in\_run\_singletons}, $\phi$ bit-identical); its entries here still
+carry the prior $\sim$$1.7\times$ overhead and will drop on re-measurement}}
 \label{tab:cost}
 \small
 \begin{tabular}{lccc}
@@ -188,6 +245,38 @@ Oracle (a), retrain   & ---   & $30{,}817\pm244$ & --- \\
 \end{tabular}
 \end{table}
 
+\begin{table}[t]
+\centering
+\caption{Per-round operation counts---the hardware- and precision-independent cost
+axis. The FL data-valuation literature reports cost this way (utility-eval /
+gradient counts, never wall-clock; see related work), so it is the one axis on
+which our numbers compare directly to prior asymptotics. $|P_r|$ is the round-$r$
+cohort size. \textsc{Flirds} spends \emph{one} HVP/round (the jvp-of-grad yields
+$g^r$ and $H^r\Delta W^r$ together) regardless of cohort size, while coalition
+methods enumerate $2^{|P_r|}$ utilities. Counts $\times$ the B200 microbench per-op
+time reproduce Table~\ref{tab:cost} to within $3\%$ (silo: \textsc{Flirds}
+$10\,\mathrm{HVP}\times10.4\mathrm{s}=104$s vs $104$s measured; oracle-(b)
+$320\,\mathrm{fwd}\times1.6\mathrm{s}=512$s vs $518$s), so the count \emph{is} the
+cost claim and ports to any hardware by swapping the per-op seconds.
+\protect\verify{runs/measured\_2026-07/op\_counts.py + microbench; silo totals vs
+local canon phase2\_matrix runtime}}
+\label{tab:opcount}
+\small
+\begin{tabular}{lcccc}
+\toprule
+ & fwd/round & val-grad/round & HVP/round & total (silo / device) \\
+\midrule
+\textsc{Flirds}       & ---          & ---   & $1$   & $10$ / $30$ HVP \\
+\textsc{Flirds-1st}   & ---          & $1$   & ---   & $10$ / $30$ grad \\
+loss-heuristic        & $1{+}|P_r|$  & ---   & ---   & $60$ / $330$ fwd \\
+Fed-LOO               & $2{+}|P_r|$  & ---   & ---   & $70$ / $360$ fwd \\
+ShapleyFL, Banzhaf, oracle-(b) & $2^{|P_r|}$ & --- & --- & $320$ / $30{,}720$ fwd \\
+FedSV, GTG (MC)       & $\le 2^{|P_r|}$ & --- & ---  & cache/TMC-trunc reduced \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Coalition axis.}
 At cohort 10 (cross-device anchor), \textsc{Flirds} reproduces the exact
 per-round oracle ranking ($\rho = 1.000$, $N{=}100$, $\alpha{=}0.5$) at
 $157$s vs $\sim$$25{,}000$s for exact enumeration ($\approx 160\times$). At
@@ -196,13 +285,44 @@ $2^2$/round and undercuts the HVP ($2{,}917$s vs $4{,}697$s;
 \textsc{Flirds-1st} at $1{,}531$s remains cheaper). We therefore state the cost
 claim conditionally: \textsc{Flirds}'s advantage is decisive exactly where
 exact valuation is infeasible---large cohorts---which is the regime that
-motivates estimation in the first place. Ripple is reported separately
+motivates estimation in the first place.
+
+\paragraph{Granularity axis.}
+Sample-level in-run valuation prices attribution as a multiple of training. On
+the CNN control track---the one stage where both granularities run under one
+accounting---sample-level Ripple's valuation pass costs $1{,}075$--$2{,}255$s
+(MNIST) and $7{,}453$--$11{,}105$s (CIFAR-10) against a training run of
+$80$--$94$s, i.e., $12$--$130\times$ the run it values; client-level
+\textsc{Flirds} costs $0.6$--$5.8$s on the same stages ($0.08$--$0.4$s
+first-order), $2$--$3$ orders of magnitude \emph{below} the run
+\verify{overview \S3.5.2 CNN runtimes, 3-seed}. The asymmetry is structural,
+not an implementation artifact: client-level scores consume only the $|P_r|$
+deltas the server already holds (one HVP $+$ $|P_r|$ inner products), whereas
+sample-level scores must touch every training example---computation that in FL
+additionally sits on the wrong side of the client--server trust boundary.
+Client granularity is therefore not a fallback from sample granularity but the
+deployable unit of in-run valuation in FL; per-sample refinement \emph{within}
+a consenting client is orthogonal, client-side future work
+(\S\ref{sec:limitations}). Ripple is reported separately
 ($\sim$4{,}515s at 1B under a reduced-config port; its timer includes its own
 required trajectory---the one accounting exception---and the port is
 incomplete, so the number is accounting context only \verify{ripple-audit
-2026-07}) \pending{D-6/D-7; unified-accounting smoke (E3) pending;
-fp32-vs-bf16 $\times 3.1$ multiplier is an unverified placeholder and is not
-cited in this draft}.
+2026-07}) \pending{D-6/D-7; end-to-end (training-inclusive) overhead column
+pending the two-block restructure (shared-train wall-clock measured: silo/anchor
+via unified-accounting 3-seed campaign; device-cohort trajectory time to be
+reconstructed from driver logs)}.
+
+\paragraph{Provenance of baseline costs.} All baseline runtimes are our
+re-implementations measured under identical conditions (same frozen logs, loss
+closure, GPU, fp32); the original papers report no comparable wall-clock (a
+survey of seven finds cost stated as asymptotics or convergence-time curves, none
+with our accounting), so these are not reproductions of published numbers but
+new same-condition measurements---a stronger basis for comparison than the prior
+practice. Two re-implementation choices are noted for fairness: FedSV adds TMC
+truncation and subset caching (our optimization, not in the original Alg.\,2, so
+its cost is if anything under-stated); ShapleyFL is run per-round exact; GTG's
+original ``time'' is time-to-convergence rather than our fixed budget.
+\verify{cost-comparison-methodology 2026-07 \S2.8, \S4 C4/C5}
 
 \subsection{Secondary axes: intervention, convergence, detection}
 \label{sec:results-secondary}
@@ -211,10 +331,19 @@ Per the question hierarchy, these validate the \emph{usefulness} of measured
 contributions where signal exists; they are not the paper's headline.
 
 \textbf{Intervention.} On stages with real signal, contribution-weighted
-aggregation recovers accuracy under corruption (CNN, $N{=}100$: grad-noise
-$0.499 \to 0.609$ flirds-weighted vs $0.645$ ShapleyFL-weighted---we note a
-valuation score being faithful does not make its naive consumption rule
-optimal); on clean-IID stages all arms sit at designed parity. LLM
+aggregation recovers what corruption destroys (CNN, $N{=}100$, threat-pooled):
+grad-noise accuracy $0.499 \to 0.609$ flirds-weighted (ShapleyFL-weighted
+reaches $0.645$---a faithful score does not make its naive consumption rule
+optimal, and we say so), label-flip $0.583 \to 0.626$. In the
+width/participation sweep the label-flip gain is $\approx$$+0.09$ accuracy for
+the flirds arm---largest among arms---and invariant to $8\times$ model-width
+changes, while \emph{every} clean cell stays at designed parity
+($|\Delta| \le 0.006$) \verify{C2 pooled + probe cells}. Selection shows the
+same conditional pattern: on the corruption-injected foundational stage the
+$\phi$-top-$k$ selector recovers exactly the clean client set in every seed
+and matches-or-beats both random selection and all-client training on final
+validation loss \verify{phase1, $N{=}5$, small-stage scope}. On clean-IID LLM
+stages all arms sit at parity, as the boundary map predicts. LLM
 instruction-tuning gains show as ROUGE-L ($+6.7$ to $+12.8$pp over training on
 the standard stage; $+1.6$ to $+5.6$pp on the anchor stage \verify{arm
 metrics}), while MMLU is flat-to-negative for \emph{all} arms including
@@ -225,16 +354,31 @@ metric here \pending{D-13 metric choice}.
 
 \textbf{Convergence.} 7B std20 rounds-to-target drops from $184.7$ (vanilla) to
 $\approx 153$ (flirds-weighted; seed spread overlaps---suggestive, not
-conclusive). CNN corrupted stages show larger effects (grad-noise $27.2 \to
-13.7$).
+conclusive). CNN corrupted stages show larger effects: grad-noise $27.2 \to
+13.7$ (multiplicative) and $\to 6.3$ (replacement-weighted); free-rider
+$41.2 \to 7.7$ (replacement-weighted, size-skew partition)
+\verify{C2 rounds-to-target, threat-pooled}.
 
-\textbf{Detection.} On home threats, dedicated detectors dominate valuation
-scores: FedDQC reaches AUROC $1.0$ on non-IID noisy where valuation-$\phi$
-methods sit at $0.57$--$0.77$---\emph{including the exact oracle (b) at
+\textbf{Detection.} Detection is the hierarchy's last question, and the answer
+is threat- and background-dependent---so we report it per threat, with the
+oracle's own ceiling made explicit. On the $N{=}5$ non-IID silos, $\phi$-based
+scores are competitive with dedicated detectors while also \emph{being} the
+contribution measure: \textsc{Flirds} separates noisy and free-rider clients
+at AUROC $1.000$ (3 seeds) where each dedicated detector has a home-turf hole
+(FLDetector $0.750$ on noisy; FedDQC $0.750$ on free-riders; STD-DAGMM
+$0.250$--$0.417$) \verify{silo5 detection cells}. The background matrix shows
+the $\phi$ signal is background-independent (noisy/free-rider $1.00$ on both
+IID and non-IID stages; so is FLTrust), while the data-quality detector FedDQC
+erodes from $1.00$ (IID) to $0.92$ (non-IID) on noisy and fails free-riders
+outright at cross-device scale ($0.14$--$0.57$, vs $\phi$-based $1.000$,
+FLDetector $\approx 0.53$--$0.62$). The honest converse: on cross-device noisy,
+FedDQC dominates (AUROC $1.0$) and \emph{all} loss-based scores sit at
+$0.57$--$0.77$---\emph{including the exact oracle (b) at
 $0.604 \pm 0.041$} \verify{overview \S3.4.2; a secondary analysis doc cites
 0.660 --- reconcile from master\_metrics.csv}. We read this as intrinsic: a clean-validation-loss game is not a
-corruption detector, and detection is the wrong headline metric for valuation.
-Free-rider detection is trivial for gradient-based scores ($1.000$;
-$\hat\phi = 0$ exactly, by Proposition~\ref{prop:closed-form}) and remains so
-for zero/random free-riders \todo{delta free-rider (E7) is the acknowledged
+corruption detector---detection is a byproduct of valuation and priced
+accordingly---and the byproduct is strongest exactly where the axioms bind:
+free-riders, where $\hat\phi = 0$ holds exactly
+(Proposition~\ref{prop:closed-form}) for zero/random free-riders \todo{delta
+free-rider (E7) is the acknowledged
 stress case---run or scope the claim to zero/random}.
