@@ -284,7 +284,7 @@ vanilla FL 실측 = r16 10,998s / r32 11,136s / r64 11,404s(각 셀 로그 마�
 
 **C5. 우리 재구현이 원논문 대비 유리/상이하게 동작하는 지점** — (i) FedSV: TMC truncation(trunc_eps=0.001 기본)+서브셋 utility 캐시(`fedsv.py:26–33`)는 원논문 Alg.2에 없는 우리 최적화; permutation 수 기본 `max(30, 2m)`(:51)도 자체값(원논문은 실험값 미보고라 "원설정 재현"이 애초 불가능). FedSV runtime이 과소(=유리)하게 측정될 수 있음 → 각주. (ii) GTG: 원논문 시간은 자기-수렴 도달까지(Eq.10), 우리는 고정 예산 실행 — 시간의 정의가 다름을 인용 시 명시. (iii) ShapleyFL: 원논문이 exact/DMC 중 뭘 썼는지 모호 → 우리 구현은 per-round exact임을 명시(비용을 후하게 잡은 쪽).
 
-**C6. loss-heur runtime ~2배 과대측정** — `in_run_utility`가 싱글턴 호출마다 base loss를 재계산(`in_run_sv.py:64`, 라운드 캐시 없음). "가장 싼 계열"의 실측치에 구현 비효율이 포함 → Flirds와의 배수 주장에 유리한 방향의 왜곡(경쟁 방법이 느려 보임)이므로 각주 또는 수치 보정 필요. 코드 수정은 본 과업 범위 밖 — 후속 제안에 기재.
+**C6. loss-heur runtime ~2배 과대측정** — `in_run_utility`가 싱글턴 호출마다 base loss를 재계산(`in_run_sv.py:64`, 라운드 캐시 없음). "가장 싼 계열"의 실측치에 구현 비효율이 포함 → Flirds와의 배수 주장에 유리한 방향의 왜곡(경쟁 방법이 느려 보임)이므로 각주 또는 수치 보정 필요. **[DONE 2026-07-17 — 코드 수정]**: `in_run_sv.py`에 `in_run_singletons`(base를 라운드당 1회 캐시) 추가, 4개 러너(phase1/phase2_matrix/track_c1/track_d) 배선 + `in_run_utility` import 정리. 스모크로 φ **비트동일**(max|Δ|=0.0) + forward `2|P_r|→1+|P_r|`/round(silo N=5 full: 100→60, 1.67×) 확인. **φ 불변 → fidelity 결과 무변, runtime 열만 정확해짐**. 절대 수치 재측정은 원격 재실행 대기(Yonghee 선택="fix+재측정"). op-count 표(§아래 세션로그)가 정정된 카운트를 canon으로 기록.
 
 **C7. FL 학습 시간·GPU-hours 미기록 (총비용 주장 불가)** — phase2_matrix는 트래젝토리 생성 시간을 어디에도 안 남김(§1.2); GPU-hours 집계 코드 0곳(§1.3). protocol §15.1의 "measured wall-clock ratio" 요구 중 φ-est vs oracle 병렬 측정만 충족. 현 상태로 논문에 쓸 수 있는 것은 "방법별 valuation wall-clock + (track_c1/d 한정) 학습 시간"까지이고, 캠페인 GPU-hours는 드라이버 로그 타임스탬프 재구성이 필요. §1.4의 overhead 비율 표가 이 갭의 1차 보완이다.
 
@@ -352,3 +352,20 @@ Method | Device | Wall-clock (s) | Overhead vs FL train (%) | #utility-eval | #v
 
 - 판정 근거 원자료: remote_recon §3(`matmul_tf32 False`/`f32mp highest`; fp32-vs-bf16 벤치 부재), cost recon §3(arm 5525s=vanilla×2.96 기록, `t_vanilla` 직접 미기록), remote_recon 노이즈 probe 블록(r16 vanilla 1,885s).
 - 두 건 모두 minor·수용, 기각 0건, critical 0건. 두 이슈 모두 Ripple 무관(eigsh 정정 해당 없음).
+
+---
+
+## 세션 완료 로그 (2026-07-17 — 코드·논문·계측 반영)
+
+Yonghee와 함께 진단→해결 세션. C6(실코드 버그)·C3(stale)·op-count 축·§15.1/§15.3 계측·논문 cost 표를 처리. 전부 로컬 검증(스모크/컴파일/실행); 절대 wall-clock **재측정만 원격 대기**.
+
+| 항목 | 처리 | 검증 | 산출물 |
+|---|---|---|---|
+| **C6** loss-heur 2× 버그 | `in_run_singletons`(base 라운드당 1회) + 4러너 배선 + import 정리 | 스모크: φ 비트동일(0.0), fwd 100→60(silo) | `in_run_sv.py`, phase1/phase2_matrix/track_c1/track_d |
+| **C3** fp32 ×3.1 placeholder | 논문 caption을 microbench 실측(fwd ×5.33·HVP ×4.09·GEMM ×22.68, b694f07)으로 교체; ×3.1 제거 | 로컬 canon | `results.tex` tab:cost caption + Ripple \pending |
+| **op-count 축** (§5.1 #3) | 전 방법 per-round forward/grad/HVP 해석적 유도 + microbench per-op 곱=측정 wall-clock 재현 | 실행: silo Flirds 10 HVP×10.4=104 vs **104.3 로컬canon**; (b) 320×1.6=512 vs 518.2; loss-heur fixed 96 | `runs/measured_2026-07/op_counts.py` + 논문 tab:opcount |
+| **§15.1 계측** | `flirds/timing.py`(PhaseTimer: per-phase wall+peak-mem, gpu_hours=Σ s×#GPU/3600) + `RunLogger.save_timing` + phase2_matrix 배선(client-training[갭]+valuation phase→timing.json) | 스모크(additive/gpu_hours/peak) + py_compile | `timing.py`, `run_logger.py`, `phase2_matrix.py` |
+| **§15.3 롤업** | `aggregate_runs.py`(read-only; timing.json 있으면 authoritative, 없으면 metrics.runtime서 valuation-only GPU-h 재구성) — GPU-hours 재구성 스크립트 겸용 | 실행: 로컬 439 rundir 롤업, phase2_matrix 281.76 GPU-h(valuation-only) | `experiments/aggregate_runs.py` |
+| **논문 cost 절** | tab:opcount 추가 + C4/C5 provenance 문단 + C3/C6 caption | latexmk exit=0, 에러 0 | `results.tex` |
+
+**남은 원격 작업**: ① loss-heur canonical 재측정(fix 후 1셀, 예상 silo ~96s=op-count 예측) ② device-cohort 학습시간 실측(end-to-end/overhead% device 열; 계측 넣은 phase2_matrix 다음 device 런이 자동 기록) ③ track_c1/track_d/phase1_baseline_compare에도 timing.json 배선(phase2_matrix 패턴 복제; 이들은 traj 시간 이미 있어 저위험) ④ 논문 tab:cost end-to-end/overhead% 2블록 완성(silo 410s·anchor 1888s 有, device 학습시간 待). **Yonghee 결정 #1(2블록 vs 각주)·#3(loss-heur 재측정 vs 각주)·#4(FLDetector/STD-DAGMM GPU 재측정)는 위 반영으로 대부분 해소; #2(protocol §15.1 구현)=이 세션에 스펙대로 구현.**
