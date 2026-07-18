@@ -51,10 +51,13 @@ E2(Taylor 잔차 1B)는 **이전 세션에 이미 완료**(`runs/measured_2026-0
 - **E5 seed1·2**: 셀당 33h(=(b) 2¹⁰) → 마감 초과로 seed0만 함(Yonghee 결정 2026-07-18). N=10 3-seed 원하면 다음 컨테이너.
 - **CLAUDE.md 장기 대기**: lr·steps intervention 2차검증, 1B·CNN β-불변 canon 확인.
 
-## 4. 병렬 진행(타 세션, 이 세션 소관 아님)
+## 4. Track G (φ 부호-게이팅) — 다음 컨테이너로 이관 (2026-07-19)
 
-- **Track G**(φ 부호-게이팅 V1/V2/V3): 커밋 6623fdf·7055f98로 진행 중. `track_c1.py`에 `C1_V3` 등 추가됨
-  (이 세션의 timing 배선과 공존). 별도 세션이 소유.
+- 스펙 = `runs/track_g/README.md`(유지). **Phase-B 스모크 착수했으나 assert 1건 실패** → 확정 진단·48셀
+  그리드·LLM 파일럿·std50k5 전부 **다음 컨테이너의 다른 세션으로 이관**(Yonghee 결정).
+- **인수 문서 = `runs/track_g/PHASE_B_STATUS_2026-07-19.md`** — 스모크 실패 진단(probation round2 위상
+  불일치: intervene.py:285 vs 런타임 vs assert), venv/HF 환경 주의, green 후 실행 계획.
+- 게이트의 frzero 제외 핵심기능은 정확(실험 본목적 무손상); probation 위상 확정만 남음.
 
 ## 5. E-세션 실행물 위치 (참고)
 - 실행 스크립트·체인 로그·재개 노트: `/NHNHOME/WORKSPACE/26msit001_A/flirds_batch/scripts/e_session_0717/`
