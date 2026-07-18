@@ -1,0 +1,16 @@
+{
+  "name": "1B_anchor5_lr3e-3_st10_seed2",
+  "git_sha": "155324b51d0598e2141e6a2f1a3e019c027ef2d3",
+  "git_dirty": true,
+  "env_hash": "8d6bdad8063a88e6",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.3"
+  }
+}
