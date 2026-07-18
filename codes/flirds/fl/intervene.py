@@ -207,3 +207,252 @@ def make_softmax_select_fn(scorer, temperature=1.0):
         return rng.choice(len(scorer.s), size=k, replace=False, p=p)
 
     return select_fn
+
+
+# --------------------------------------------------------------------------- #
+# Track G -- sign/threshold gating on RAW contribution values (2026-07-19).    #
+# ADDITIVE ONLY: nothing above this line changed.                              #
+#                                                                             #
+# Sign convention (D-3, the experiment's top risk): every `raw` here is        #
+# CONTRIBUTION-oriented (helpful -> POSITIVE) -- the round_raw_fns above       #
+# already negate the estimator's good->low phi.  The gate keeps `> tau`       #
+# (tau=0 strict: a frzero client's exact-0.0 raw is EXCLUDED).  OnlineScorer  #
+# min-maxes raw per round, which DESTROYS the sign (the round minimum maps    #
+# to 0 regardless of its sign) -- hence SignAccumulator, which never          #
+# normalizes.                                                                 #
+#                                                                             #
+# `sink(r, players, raw, wmap, fallback)` is the per-round logging seam       #
+# (Track G persists {round, client, raw, cum, weight} -> phi_rounds.parquet;  #
+# the first per-round phi record in the project).  None -> no logging.        #
+# --------------------------------------------------------------------------- #
+class SignAccumulator:
+    """Sign-preserving accumulation of raw (contribution-oriented) round values.
+
+    update(players, raw) folds one round: cum[p] = decay*cum[p] + raw (decay=1.0
+    -> plain sum; <1.0 -> EMA-style discounted sum), n_obs[p] += 1; non-participants
+    carry forward untouched.  NO min-max, NO clipping -- cum keeps the game's
+    absolute zero point (phi=0 == null player), which is what the tau=0 gate reads.
+    """
+
+    def __init__(self, n_clients, decay=1.0):
+        self.cum = np.zeros(n_clients)
+        self.n_obs = np.zeros(n_clients, dtype=int)
+        self.decay = decay
+
+    def update(self, players, raw):
+        for i, p in enumerate(players):
+            self.cum[p] = self.decay * self.cum[p] + float(raw[i])
+            self.n_obs[p] += 1
+        return self.cum
+
+
+def _zscores(v):
+    """z-scores of v (flat -> zeros)."""
+    v = np.asarray(v, dtype=float)
+    s = v.std()
+    return np.zeros_like(v) if s <= 0 else (v - v.mean()) / s
+
+
+def _gate_select_fn(acc, burn_in, keep_fn, min_obs, probation_every):
+    """Shared select_fn machinery for the cumulative gates (sign / z variants).
+
+    r < burn_in -> uniform k-sample (bit-identical draw to the `_fedavg_core`
+    default).  After burn-in: eligible = under-observed (n_obs < min_obs) OR
+    keep_fn(acc)-true clients.  Full participation (k >= n) returns the eligible
+    set as-is (VARIABLE length -- `_fedavg_core` aggregates whatever it gets);
+    partial samples k of them.  Empty eligible -> full-cohort fallback + flag.
+    Every `probation_every`-th round one excluded client rotates back in (a
+    score-refresh chance -- exclusion must not be absorbing); under partial
+    participation it replaces the last sampled slot so the cohort stays k.
+    """
+    state = {"i": 0}
+
+    def select_fn(r, k, rng):
+        n = len(acc.cum)
+        if r < burn_in:
+            return rng.choice(n, size=min(k, n), replace=False)
+        keep = keep_fn(acc)
+        eligible = [i for i in range(n) if acc.n_obs[i] < min_obs or keep[i]]
+        if not eligible:
+            print(f"[gate-select] r={r}: eligible empty -> full-cohort fallback", flush=True)
+            return rng.choice(n, size=min(k, n), replace=False)
+        excluded = sorted(set(range(n)) - set(eligible))
+        if k >= n:
+            sel = list(eligible)
+        else:
+            sel = [int(x) for x in rng.choice(eligible, size=min(k, len(eligible)),
+                                              replace=False)]
+        if probation_every and excluded and (r - burn_in) % probation_every == 0:
+            p = excluded[state["i"] % len(excluded)]          # rotate through excluded ids
+            state["i"] += 1
+            if p not in sel:
+                if k >= n or len(sel) < k:
+                    sel.append(p)
+                else:
+                    sel[-1] = p                               # keep the cohort at k
+        return np.array(sorted(sel))
+
+    return select_fn
+
+
+def make_signgate_select_fn(acc, burn_in, tau=0.0, min_obs=2, probation_every=5):
+    """V2 participation gate: exclude clients whose CUMULATIVE contribution <= tau
+    (tau=0 strict -- exact-0 free-riders are out, every all-positive clean client
+    stays in).  See `_gate_select_fn` for burn-in / min_obs / probation semantics."""
+    return _gate_select_fn(acc, burn_in, lambda a: a.cum > tau, min_obs, probation_every)
+
+
+def make_zgate_select_fn(acc, burn_in, c=1.5, min_obs=2, probation_every=5):
+    """V2 cohort-RELATIVE gate (the auxiliary policy, noisy recovery): exclude
+    clients whose cum z-score < -c among the >= min_obs-observed cohort.  Unlike
+    the absolute tau=0 gate this always grades on a curve -- it can fire on clean
+    heterogeneity (the audit's do-no-harm cost, measured not assumed)."""
+    def keep(a):
+        keep = np.ones(len(a.cum), dtype=bool)
+        obs = a.n_obs >= min_obs
+        if obs.sum() >= 2:
+            keep[obs] = _zscores(a.cum[obs]) >= -c
+        return keep
+    return _gate_select_fn(acc, burn_in, keep, min_obs, probation_every)
+
+
+def _gated_weights(players, nums, keep_mask, r, raw, sink, gate_name):
+    """Shared aggregation-weight tail: n-weight the kept participants; all-dropped
+    -> vanilla n-weights fallback + flag.  Returns the normalized {client: w}."""
+    w = np.array([nums[p] if keep_mask[i] else 0.0 for i, p in enumerate(players)],
+                 dtype=float)
+    fallback = bool(w.sum() <= 0)
+    if fallback:
+        print(f"[{gate_name}] r={r}: all participants gated out -> vanilla-weight "
+              f"fallback", flush=True)
+        w = np.array([nums[p] for p in players], dtype=float)
+    w /= w.sum()
+    wmap = dict(zip(players, w))
+    if sink is not None:
+        sink(r, players, raw, wmap, fallback)
+    return wmap
+
+
+def make_signgate_weights_fn(acc, raw_fn, nums, tau=0.0, sink=None):
+    """V1 aggregation gate (and the V2 probation screen): score the CURRENT round
+    with raw_fn (contribution-oriented), fold into `acc`, then aggregate only the
+    deltas with raw > tau -- weight_i ~ n_i * 1[raw_i > tau], renormalized.
+    Everyone trains under V1 (pair with select_fn=None); under V2 the same fn
+    screens probation returnees by their same-round raw.  All gated out ->
+    vanilla n-weights + flag (never a zero-sum round)."""
+    def weights_fn(r, w_r, deltas_map):
+        players = sorted(deltas_map)
+        raw = raw_fn(w_r, deltas_map, players)
+        acc.update(players, raw)
+        return _gated_weights(players, nums, [v > tau for v in raw], r, raw, sink,
+                              "signgate")
+    return weights_fn
+
+
+def make_zgate_weights_fn(acc, raw_fn, nums, c=1.5, sink=None):
+    """Cohort-relative V1/V2 screen: drop the round's raw z-score < -c deltas
+    (z over the round's participants; flat rounds drop nobody)."""
+    def weights_fn(r, w_r, deltas_map):
+        players = sorted(deltas_map)
+        raw = raw_fn(w_r, deltas_map, players)
+        acc.update(players, raw)
+        return _gated_weights(players, nums, _zscores(raw) >= -c, r, raw, sink, "zgate")
+    return weights_fn
+
+
+def make_gatedweight_weights_fn(acc, raw_fn, nums, tau=0.0, alpha=1.0, sink=None):
+    """V2w gate + magnitude-proportional weighting (Yonghee 2026-07-19): among the
+    included (cum > tau) participants, weight_i ~ n_i * max(cum_i, 0)^alpha --
+    negatives excluded, positives weighted by cumulative-contribution SIZE.
+    alpha fixed 1.0 (no tuning -- parameter-free claim).  vs the existing
+    `flirds_w` (min-max EMA): the zero point here is ABSOLUTE (phi=0, game
+    semantics), not the round minimum -- V2w intervenes even on clean cells
+    (the magnitude slope), which is exactly its P1 do-no-harm question.
+    Included empty -> vanilla n-weights + flag."""
+    def weights_fn(r, w_r, deltas_map):
+        players = sorted(deltas_map)
+        raw = raw_fn(w_r, deltas_map, players)
+        acc.update(players, raw)
+        w = np.array([nums[p] * max(acc.cum[p], 0.0) ** alpha if acc.cum[p] > tau
+                      else 0.0 for p in players], dtype=float)
+        fallback = bool(w.sum() <= 0)
+        if fallback:
+            print(f"[gatedweight] r={r}: included empty -> vanilla-weight fallback",
+                  flush=True)
+            w = np.array([nums[p] for p in players], dtype=float)
+        w /= w.sum()
+        wmap = dict(zip(players, w))
+        if sink is not None:
+            sink(r, players, raw, wmap, fallback)
+        return wmap
+    return weights_fn
+
+
+def make_rawweight_weights_fn(acc, raw_fn, nums, tau=0.0, alpha=1.0, sink=None):
+    """V1w (CNN-only ablation): PER-ROUND-raw magnitude weighting -- everyone
+    trains, weight_i ~ n_i * max(raw_i, 0)^alpha (negatives drop out via max).
+    The instantaneous-signal counterpart of make_gatedweight_weights_fn's
+    cumulative weighting.  All non-positive -> vanilla n-weights + flag."""
+    def weights_fn(r, w_r, deltas_map):
+        players = sorted(deltas_map)
+        raw = raw_fn(w_r, deltas_map, players)
+        acc.update(players, raw)
+        w = np.array([nums[p] * max(float(raw[i]), 0.0) ** alpha
+                      for i, p in enumerate(players)], dtype=float)
+        fallback = bool(w.sum() <= 0)
+        if fallback:
+            print(f"[rawweight] r={r}: no positive raw -> vanilla-weight fallback",
+                  flush=True)
+            w = np.array([nums[p] for p in players], dtype=float)
+        w /= w.sum()
+        wmap = dict(zip(players, w))
+        if sink is not None:
+            sink(r, players, raw, wmap, fallback)
+        return wmap
+    return weights_fn
+
+
+def make_fixed_excl_select_fn(n_clients, excluded):
+    """oracle_excl / random_excl control arms: a FIXED excluded set from round 0.
+    Full participation returns the kept set (variable length); partial samples k
+    of it via the core's rng (reproducible)."""
+    keep = [i for i in range(n_clients) if i not in set(excluded)]
+
+    def select_fn(r, k, rng):
+        if k >= len(keep):
+            return np.array(keep)
+        return rng.choice(keep, size=k, replace=False)
+
+    return select_fn
+
+
+def make_observer_weights_fn(acc, raw_fn, nums, sink=None):
+    """NO-intervention raw observer (the vanilla arm's per-round logger): score the
+    round, fold into `acc`, log via `sink`, and return PLAIN n-weights -- the same
+    values the `_fedavg_core` default computes, so the trajectory is bit-identical
+    to vanilla while producing the clean-cell per-round false-fire record."""
+    def weights_fn(r, w_r, deltas_map):
+        players = sorted(deltas_map)
+        raw = raw_fn(w_r, deltas_map, players)
+        acc.update(players, raw)
+        w = np.array([nums[p] for p in players], dtype=float)
+        w /= w.sum()
+        wmap = dict(zip(players, w))
+        if sink is not None:
+            sink(r, players, raw, wmap, False)
+        return wmap
+    return weights_fn
+
+
+def lossheur_round_raw_fn(loss_fn, pkeys, n_clients, device):
+    """`round_raw_fn` closure backed by the loss-heuristic singleton utilities
+    (oracle.in_run_sv.in_run_singletons, the C6 base-loss-cached path) on the
+    single-round log -- 1 + |P_r| forwards.  Same sign flip as flirds_round_raw
+    (U_(b)({k}) is good->low): contribution-oriented raw, exact 0.0 for a zero
+    delta (the strict->0 free-rider rule holds bit-exactly)."""
+    from ..oracle.in_run_sv import in_run_singletons
+
+    def fn(w_r, deltas_map, players):
+        phi = in_run_singletons([(w_r, deltas_map)], n_clients, loss_fn, pkeys, device)
+        return [-phi[p] for p in players]
+    return fn

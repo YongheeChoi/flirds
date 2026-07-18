@@ -43,11 +43,14 @@ from flirds.backends.cnn import make_cnn_loss
 from flirds.baselines.sfedavg import SFedAvgSelector
 from flirds.data.cnn import _STATS, get_dataset, get_labels
 from flirds.data.corruptors import CNN_CORRUPTORS
-from flirds.fl.intervene import (OnlineScorer, fedif_round_raw_fn,
+from flirds.fl.intervene import (OnlineScorer, SignAccumulator, fedif_round_raw_fn,
                                  flirds_round_raw_fn, make_delta_transform,
-                                 make_dismissal_weights_fn, make_scoreonly_weights_fn,
-                                 make_softmax_select_fn, make_weights_fn,
-                                 shapleyfl_round_raw_fn)
+                                 make_dismissal_weights_fn, make_fixed_excl_select_fn,
+                                 make_gatedweight_weights_fn, make_rawweight_weights_fn,
+                                 make_scoreonly_weights_fn, make_signgate_select_fn,
+                                 make_signgate_weights_fn, make_softmax_select_fn,
+                                 make_weights_fn, make_zgate_select_fn,
+                                 make_zgate_weights_fn, shapleyfl_round_raw_fn)
 from flirds.fl.partition import (dirichlet_partition, iid_partition,
                                  shard_partition)
 from flirds.fl.server import fedavg
@@ -63,6 +66,25 @@ SEED = int(os.environ.get("C2_SEED", "0"))
 MODE = os.environ.get("C2_MODE", "smoke")
 DISMISSAL = os.environ.get("C2_DISMISSAL", "0") == "1"
 PERSIST = os.environ.get("C2_PERSIST", "1") == "1"
+
+# --- Track G CNN leg (2026-07-19; ALL env-gated -- unset = bit-identical legacy path) ---
+# C2_EXTRA_ARMS appends gate arms to the partition's arm list; C2_FLIP_RATE pins the
+# per-client label-flip rate for the Track G dose ladder (audit-picked {0.15,0.35,0.70};
+# None = the legacy FedCorr U(TAU,1) draw); C2GATE = the shared gate defaults (spec
+# §4.3 -- per-cell tuning forbidden, ablation cells only).  Gate arms persist per-round
+# {round, client, raw, cum, weight} rows to phi_rounds.parquet (the C2 gap: OnlineScorer
+# state was never persisted).
+EXTRA_ARMS = [a for a in os.environ.get("C2_EXTRA_ARMS", "").split(",") if a]
+FLIP_RATE = os.environ.get("C2_FLIP_RATE")
+C2GATE = dict(burn_in=int(os.environ.get("C2_BURN_IN", "10")),
+              tau=float(os.environ.get("C2_TAU", "0.0")),
+              min_obs=int(os.environ.get("C2_MIN_OBS", "2")),
+              probation_every=int(os.environ.get("C2_PROB_EVERY", "5")),
+              decay=float(os.environ.get("C2_DECAY", "1.0")),
+              z_c=float(os.environ.get("C2_ZC", "1.5")),
+              alpha_w=float(os.environ.get("C2_ALPHA_W", "1.0")))
+_GATE_ARMS = ("flirds_gate_v1", "flirds_gate_v2", "flirds_zgate_v2",
+              "flirds_gatew_v2", "flirds_gatew_v1")
 _REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repo root
 RUN_ROOT = os.environ.get("C2_RUN_ROOT", os.path.join(_REPO, "runs", "track_c", "c2"))
 
@@ -123,7 +145,8 @@ def build():
         xs = torch.stack([train[i][0] for i in ci])
         ys = torch.tensor([train[i][1] for i in ci])
         if THREAT == "label_flip" and corrupt[c]:
-            rate = float(rng.uniform(TAU, 1.0))          # FedCorr per-client noise level
+            rate = (float(rng.uniform(TAU, 1.0))         # FedCorr per-client noise level
+                    if FLIP_RATE is None else float(FLIP_RATE))   # Track G fixed-dose point
             xs, ys = CNN_CORRUPTORS["label_flip"](xs, ys, c, rate=rate)
         loaders.append(DataLoader(TensorDataset(xs, ys), batch_size=CFG["batch"], shuffle=True))
 
@@ -148,15 +171,64 @@ def _rounds_to_target(curve, target):
     return None
 
 
-def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device):
-    """Run one intervened trajectory; return (final_acc, curve, detection_auroc)."""
+def _gate_sink(rows, acc, n):
+    """phi_rounds row sink for the Track G gate arms (mirrors track_g.make_sink):
+    one row per (round, client) for ALL n clients -- participants carry (raw,
+    weight), everyone the post-round (cum, n_obs) snapshot.  raw/cum are
+    CONTRIBUTION-oriented (helpful -> positive = -stored-phi)."""
+    def sink(r, players, raw, wmap, fallback):
+        pset = {p: i for i, p in enumerate(players)}
+        for c in range(n):
+            i = pset.get(c)
+            rows.append(dict(round=r, client=c, participated=c in pset,
+                             raw=float(raw[i]) if i is not None else float("nan"),
+                             weight=float(wmap[c]) if i is not None else float("nan"),
+                             cum=float(acc.cum[c]), n_obs=int(acc.n_obs[c]),
+                             fallback=fallback))
+    return sink
+
+
+def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows=None):
+    """Run one intervened trajectory; return (final_acc, curve, detection_auroc).
+    `rows` (Track G gate arms only): the phi_rounds sink target."""
     n, R, E, lr, frac = CFG["n"], CFG["rounds"], CFG["epochs"], CFG["lr"], CFG["frac"]
     loss_fn, pkeys = make_cnn_loss(MODEL_FN, vx, vy, device)
     sel_fn = wts_fn = None
     scorer = None
+    gate_acc = None
 
     if arm == "vanilla":
         pass
+    elif arm == "oracle_excl":                        # Track G upper bound: true corrupt out
+        sel_fn = make_fixed_excl_select_fn(n, {int(c) for c in np.where(corrupt)[0]})
+    elif arm == "random_excl":                        # Track G control: same-count random out
+        rng_x = np.random.default_rng(2000 + SEED)
+        excl = {int(c) for c in rng_x.choice(n, size=int(corrupt.sum()), replace=False)}
+        print(f"  [random_excl] excluded={sorted(excl)}", flush=True)
+        sel_fn = make_fixed_excl_select_fn(n, excl)
+    elif arm in _GATE_ARMS:                           # Track G sign/z/magnitude gates
+        g = C2GATE
+        gate_acc = SignAccumulator(n, decay=g["decay"])
+        raw = flirds_round_raw_fn(loss_fn, pkeys, n, device)
+        sink = _gate_sink(rows, gate_acc, n) if rows is not None else None
+        if arm == "flirds_gate_v1":
+            wts_fn = make_signgate_weights_fn(gate_acc, raw, nums, tau=g["tau"], sink=sink)
+        elif arm == "flirds_gatew_v1":                # per-round-raw magnitude (CNN ablation)
+            wts_fn = make_rawweight_weights_fn(gate_acc, raw, nums, tau=g["tau"],
+                                               alpha=g["alpha_w"], sink=sink)
+        elif arm == "flirds_zgate_v2":
+            sel_fn = make_zgate_select_fn(gate_acc, g["burn_in"], c=g["z_c"],
+                                          min_obs=g["min_obs"],
+                                          probation_every=g["probation_every"])
+            wts_fn = make_zgate_weights_fn(gate_acc, raw, nums, c=g["z_c"], sink=sink)
+        else:                                         # flirds_gate_v2 | flirds_gatew_v2
+            sel_fn = make_signgate_select_fn(gate_acc, g["burn_in"], tau=g["tau"],
+                                             min_obs=g["min_obs"],
+                                             probation_every=g["probation_every"])
+            wts_fn = (make_gatedweight_weights_fn(gate_acc, raw, nums, tau=g["tau"],
+                                                  alpha=g["alpha_w"], sink=sink)
+                      if arm == "flirds_gatew_v2" else
+                      make_signgate_weights_fn(gate_acc, raw, nums, tau=g["tau"], sink=sink))
     elif arm.startswith("flirds_"):
         scorer = OnlineScorer(n, beta=0.5)
         raw = flirds_round_raw_fn(loss_fn, pkeys, n, device)
@@ -193,14 +265,18 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device):
         auroc = float(roc_auc_score(corrupt, -scorer.s))   # corrupt should score LOW -> -s high
     elif arm == "sfedavg" and corrupt.sum() and corrupt.sum() < n:
         auroc = float(roc_auc_score(corrupt, -sf.phi))
+    elif gate_acc is not None and corrupt.sum() and corrupt.sum() < n:
+        auroc = float(roc_auc_score(corrupt, -gate_acc.cum))   # suspicion = -cum contribution
     return hist[-1][1], hist, auroc
 
 
 def _arms_for_partition():
+    if os.environ.get("C2_ARMS"):                        # Track G: explicit FULL arm list
+        return [a for a in os.environ["C2_ARMS"].split(",") if a]
     base = ["vanilla", "flirds_mult", "flirds_select", "shapleyfl", "fedif", "sfedavg"]
     if PARTITION == "dir1":                              # size-skew -> repl/add differ from mult
         base[2:2] = ["flirds_repl", "flirds_add"]
-    return base
+    return base + EXTRA_ARMS                             # Track G gate arms (env-gated; [] default)
 
 
 def run():
@@ -213,11 +289,16 @@ def run():
           f"{min(nums)}/{int(np.median(nums))}/{max(nums)}", flush=True)
 
     arms = {}
+    all_rows = []                                        # Track G gate arms' phi_rounds
     print(f"  {'arm':14s} {'final_acc':>9s} {'AUROC':>6s} {'->target':>8s}", flush=True)
     for arm in _arms_for_partition():
-        acc, curve, au = _run_arm(arm, loaders, corrupt, dtf, vx, vy, tl, nums, device)
+        rows = [] if arm in _GATE_ARMS else None
+        acc, curve, au = _run_arm(arm, loaders, corrupt, dtf, vx, vy, tl, nums, device,
+                                  rows=rows)
         rtt = _rounds_to_target(curve, CFG["target"])
         arms[arm] = dict(final_acc=acc, acc_curve=curve, auroc=au, rounds_to_target=rtt)
+        if rows:
+            all_rows += [dict(arm=arm, **x) for x in rows]
         print(f"  {arm:14s} {acc:9.4f} {au:6.3f} {str(rtt):>8s}", flush=True)
 
     dismissal = None
@@ -243,9 +324,14 @@ def run():
                     or f"{DATASET}_{PARTITION}_{THREAT.replace('_', '-')}_str{STRENGTH}_seed{SEED}")
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, partition=PARTITION,
                                                 threat=THREAT, strength=STRENGTH, seed=SEED, mode=MODE,
-                                                width=WIDTH),
+                                                width=WIDTH,
+                                                **({"gate": C2GATE, "flip_rate": FLIP_RATE,
+                                                    "extra_arms": EXTRA_ARMS}
+                                                   if EXTRA_ARMS else {})),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             rl.save_metrics(metrics)
+            if all_rows:                                 # Track G per-round phi record
+                rl.save_phi(all_rows, fname="phi_rounds.parquet")
             print(f"[persist] {rl.dir}", flush=True)
         except Exception as e:
             print(f"[persist] FAILED ({e!r})", flush=True)

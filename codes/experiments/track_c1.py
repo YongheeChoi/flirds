@@ -97,6 +97,9 @@ KFRAC = float(os.environ.get("C1_KFRAC", "1"))           # signal-size probe lev
 RIPPLE = os.environ.get("C1_RIPPLE", "1") == "1"         # 0 = skip Ripple (probe cells; cost)
 REMOVAL = os.environ.get("C1_REMOVAL", "0") == "1"       # Exp A3: removal-retrain curves (extra retrains)
 REMOVAL_METHODS = [m for m in os.environ.get("C1_REMOVAL_METHODS", "").split(",") if m]  # [] = all minus Ripple
+V3 = os.environ.get("C1_V3", "0") == "1"                 # Track G V3: keep-only-cum>0 one-shot retrain
+V3_METHODS = [m for m in os.environ.get("C1_V3_METHODS", "Flirds,(b)oracle").split(",") if m]
+V3_ZC = float(os.environ.get("C1_V3_ZC", "1.5"))         # z-variant threshold (shared gate default)
 MODEL_FN = partial({"mnist": LeNet5, "cifar10": FedSVCNN}[DATASET], width=WIDTH)
 LADDER_STEP = 0.05                                       # pair p -> 5p% (GTG ladder)
 
@@ -348,7 +351,7 @@ def run_seed(seed, device="cuda"):
 
     # ---- Exp A3: removal-retrain curves (gated; extra retrains) ----
     removal = {}
-    if REMOVAL:
+    if REMOVAL or V3:                                  # shared retrain_eval (V3 reuses A3's ruler)
         eval_model = MODEL_FN().to(device)             # one eval model reused across retrains
 
         def retrain_eval(kept):
@@ -360,6 +363,7 @@ def run_seed(seed, device="cuda"):
                 vl = float(loss_fn({k: final[k] for k in pkeys}, {}))
             return vl, evaluate(eval_model, final, test_loader, device)
 
+    if REMOVAL:
         rc, rca, nrt, mrt = removal_retrain_curves(methods, retrain_eval, n, device,
                                                    sel=REMOVAL_METHODS or None)
         print(f"[removal] {nrt} distinct retrains, {mrt:.1f}s/retrain", flush=True)
@@ -367,6 +371,43 @@ def run_seed(seed, device="cuda"):
                        removal_orient="val_loss (lower=better); phi good->low",
                        removal_acc_orient="test_acc (higher=better); phi good->low",
                        removal_retrain_s=mrt)
+
+    # ---- Track G V3 (gated): keep-only-positive-cumulative one-shot retrain ----
+    # kept = {i: contribution(-phi) > 0} per method (+ z-variant, + size-matched
+    # random control); data-level corruption stays in the kept clients' data
+    # (deployment semantics -- exclusion is the only intervention).  Reference =
+    # this run's own full-set trajectory (same seed/config -> a full-set retrain
+    # is identical, so no extra retrain for it).
+    if V3:
+        with pt.phase("v3-retrain"):
+            by_name = {nm: vec for nm, vec, _ in methods}
+            kept_sets, cache_v3, v3 = {}, {}, {}
+            for nm in [m for m in V3_METHODS if m in by_name]:
+                cum = -np.asarray(by_name[nm], dtype=float)        # contribution orientation
+                kept_sets[f"sign_{nm}"] = [i for i in range(n) if cum[i] > 0]
+                z = ((cum - cum.mean()) / cum.std() if cum.std() > 0
+                     else np.zeros_like(cum))
+                kept_sets[f"z_{nm}"] = [i for i in range(n) if z[i] >= -V3_ZC]
+            size_ref = len(next(iter(kept_sets.values()), list(range(n))))
+            rng_v3 = np.random.default_rng(3000 + seed)
+            kept_sets["random"] = sorted(int(x) for x in rng_v3.choice(
+                n, size=max(1, size_ref), replace=False))
+            for vname, kept in kept_sets.items():
+                if not kept:                           # everyone gated out -> reported as-is
+                    v3[vname] = dict(kept=[], val_loss=None, test_acc=None)
+                    continue
+                key = tuple(sorted(kept))
+                if key not in cache_v3:
+                    cache_v3[key] = retrain_eval(key)  # cached across variants/methods
+                vl, ta = cache_v3[key]
+                v3[vname] = dict(kept=list(key), val_loss=vl, test_acc=ta)
+                print(f"[v3] {vname}: kept={list(key)} val_loss={vl:.4f} acc={ta:.4f}",
+                      flush=True)
+        with torch.no_grad():
+            full_vl = float(loss_fn({k: final_state[k] for k in pkeys}, {}))
+        removal = dict(removal, v3=v3,
+                       v3_ref=dict(full_val_loss=full_vl, full_test_acc=final_acc),
+                       v3_orient="kept = contribution(-phi) > 0; corrupt data stays in kept")
 
     metrics = dict(dataset=DATASET, scenario=SCENARIO, seed=seed, mode=MODE,
                    final_acc=final_acc, acc_curve=history, traj_time=t_traj,
