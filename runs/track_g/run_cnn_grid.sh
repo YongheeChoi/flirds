@@ -5,9 +5,13 @@
 # label_flip dose points from the Stage 0 audit (crossing span ~0.13-0.55; audit rec 4).
 # Then track_c1 C1_V3 cells (post-hoc kept-set retrain) on the ladder scenarios.
 # Sequential on one GPU:  bash runs/track_g/run_cnn_grid.sh [gpu]
+# 4-GPU sharding (cells are independent): SEEDS="0" PHASE=c2 -> one-seed c2 shard;
+#   PHASE=c1v3 -> the V3 leg only.  Defaults reproduce the sequential run.
 # After completion: python runs/track_g/make_analysis.py  -> V2w promotion verdict.
 set -u
 GPU="${1:-0}"
+SEEDS="${SEEDS:-0 1 2}"
+PHASE="${PHASE:-all}"     # all | c2 | c1v3
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 PY="${PY:-/home/korea_bupj/miniconda3/envs/flirds/bin/python}"
 LOGS="$REPO/runs/track_g/_logs"; mkdir -p "$LOGS"
@@ -27,7 +31,8 @@ c2() {  # name threat extra-envs...
     || echo "[c2] FAIL $name" | tee -a "$LOGS/_driver.log"
 }
 
-for seed in 0 1 2; do
+if [ "$PHASE" != "c1v3" ]; then
+for seed in $SEEDS; do
   for part in iid dir1; do
     c2 "cifar10_${part}_clean_g_seed${seed}"      clean      C2_PARTITION="$part" C2_SEED="$seed" C2_ARMS="$ARMS_CLEAN"
     for rate in 0.15 0.35 0.70; do
@@ -38,9 +43,11 @@ for seed in 0 1 2; do
     c2 "cifar10_${part}_free-rider_g_seed${seed}" free_rider C2_PARTITION="$part" C2_SEED="$seed" C2_ARMS="$ARMS_CORRUPT"
   done
 done
+fi
 
 # ---- V3 post-hoc (track_c1 stage: N=10 full participation, ladder scenarios) ----
-for seed in 0 1 2; do
+if [ "$PHASE" != "c2" ]; then
+for seed in $SEEDS; do
   for ds in mnist cifar10; do
     for scen in label_flip feature_noise; do
       name="${ds}_${scen}_v3_seed${seed}"
@@ -52,4 +59,5 @@ for seed in 0 1 2; do
     done
   done
 done
-echo "[grid] DONE $(date '+%F %T')" | tee -a "$LOGS/_driver.log"
+fi
+echo "[grid] DONE (gpu$GPU PHASE=$PHASE SEEDS=$SEEDS) $(date '+%F %T')" | tee -a "$LOGS/_driver.log"

@@ -1,7 +1,8 @@
 #!/bin/bash
 # Track G Phase-B smoke (spec §5-1): gpt2 silo5-mini frzero -- asserts the FR client
 # is (a) gated out of aggregation from round 0 (raw exact-0) and (b) out of the
-# cohort after burn-in except probation rounds, and that phi_rounds.parquet exists.
+# cohort after burn-in (re-admitted only via probation, screened to weight 0),
+# and that phi_rounds.parquet exists.
 # + one CNN mini cell.  GPU cost: a few minutes.
 #   bash runs/track_g/run_smoke.sh [gpu]     (from repo root)
 set -eu
@@ -27,13 +28,16 @@ df = pd.read_parquet(f"{d}/phi_rounds.parquet")            # per-round record EX
 fr = df[df.client == 1]                                    # silo5 freerider={1}
 burn, prob = 2, 3
 gated = fr[fr["round"] >= burn]
+# probation rotates over ALL excluded clients (at smoke scale clean gpt2 cums go
+# negative too), so the FR is re-admitted on SOME probation rounds, not every one.
 for _, x in gated.iterrows():
     on_probation = (x["round"] - burn) % prob == 0
-    assert bool(x.participated) == on_probation, \
-        f"round {x['round']}: FR participated={x.participated}, probation={on_probation}"
-    if on_probation:
+    assert on_probation or not bool(x.participated), \
+        f"round {x['round']}: FR in cohort outside a probation round"
+    if x.participated:
         assert x.weight == 0.0 or x.fallback, \
             "probation returnee must be screened to weight 0 (unless fallback round)"
+assert (~gated.participated).any(), "FR was never selection-excluded post-burn-in"
 assert (fr[fr.participated].raw == 0.0).all(), "frzero raw must be exact 0.0"
 m = json.load(open(f"{d}/metrics.json"))
 assert m["gate"]["recall"] == 1.0, f"gate recall {m['gate']['recall']} != 1.0"
