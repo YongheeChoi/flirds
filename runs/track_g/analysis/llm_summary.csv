@@ -1,0 +1,25 @@
+regime,threat,nr,seed,arm,final_val_loss,delta,recovery,rounds_to_target,gate,mmlu,rouge_l,kept,prediction,verdict,clean_raw_false_fire_rate,all_clean_cum_pos_from_round
+silo5,clean,1.0,0,flirds_gate_v1,2.2935588359832764,0.0,,10.0,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,0,flirds_gate_v2,2.2935590744018555,-2.384185791015625e-07,,,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,0,flirds_w,2.2886579036712646,0.004900932312011719,,8.0,,,,,,,,
+silo5,clean,1.0,0,flirds_zgate_v2,2.2935590744018555,-2.384185791015625e-07,,,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,0,lossheur_gate_v2,2.2935590744018555,-2.384185791015625e-07,,,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,0,oracleb_gate_v2,2.2935590744018555,-2.384185791015625e-07,,,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,0,v3_random,2.2935588359832764,0.0,,,,,,"[0, 1, 2, 3, 4]",,,,
+silo5,clean,1.0,0,v3_sign,2.2935588359832764,0.0,,,,,,"[0, 1, 2, 3, 4]",parity,,,
+silo5,clean,1.0,0,v3_z,2.2935588359832764,0.0,,,,,,"[0, 1, 2, 3, 4]",parity,,,
+silo5,clean,1.0,0,vanilla,2.2935588359832764,0.0,,10.0,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,,,0.0,0.0
+silo5,clean,1.0,1,flirds_gate_v1,2.3851284980773926,0.0,,10.0,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,1,flirds_gate_v2,2.3851287364959717,-2.384185791015625e-07,,,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,1,flirds_w,2.3806254863739014,0.004503011703491211,,8.0,,,,,,,,
+silo5,clean,1.0,1,flirds_zgate_v2,2.3851287364959717,-2.384185791015625e-07,,,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,1,lossheur_gate_v2,2.3851287364959717,-2.384185791015625e-07,,,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,1,oracleb_gate_v2,2.3851287364959717,-2.384185791015625e-07,,,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,vanilla parity; 0 false-exclusions (cum all positive),HIT,,
+silo5,clean,1.0,1,v3_random,2.3851284980773926,0.0,,,,,,"[0, 1, 2, 3, 4]",,,,
+silo5,clean,1.0,1,v3_sign,2.3851284980773926,0.0,,,,,,"[0, 1, 2, 3, 4]",parity,,,
+silo5,clean,1.0,1,v3_z,2.3851284980773926,0.0,,,,,,"[0, 1, 2, 3, 4]",parity,,,
+silo5,clean,1.0,1,vanilla,2.3851284980773926,0.0,,10.0,"{""precision"": null, ""recall"": null, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,,,0.0,0.0
+silo5,noisy,1.0,0,flirds_gate_v1,2.2962217330932617,0.0,0.0,10.0,"{""precision"": null, ""recall"": 0.0, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,"PARITY -- gate silent (no 0-crossing on nr<=1, audit P3)",HIT,,
+silo5,noisy,1.0,0,oracle_excl,2.2945938110351562,0.0016279220581054688,1.0,10.0,,,,,,,,
+silo5,noisy,1.0,0,random_excl,2.296260356903076,-3.8623809814453125e-05,-0.023725834797891036,,,,,,,,,
+silo5,noisy,1.0,0,vanilla,2.2962217330932617,0.0,0.0,10.0,"{""precision"": null, ""recall"": 0.0, ""n_excluded_pairs"": 0, ""false_excl_pairs"": 0, ""n_fallback_rounds"": 0}",,,,,,0.0,0.0
