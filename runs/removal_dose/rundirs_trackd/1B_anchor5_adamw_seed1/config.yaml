@@ -1,0 +1,30 @@
+scale: 1B
+model: meta-llama/Llama-3.2-1B-Instruct
+regime: anchor5
+seeds:
+- 1
+rcfg:
+  n_clients: 5
+  k_abs: 5
+  rounds: 30
+  total_train: 20000
+  val: 200
+  test: 1000
+  max_steps: 10
+  lr: 0.001
+  maxlen: 512
+mcfg:
+  batch: 16
+  val_chunk: 10
+  val_maxlen: 384
+lora:
+  r: 16
+  alpha: 32
+oracle_a: true
+fidelity: true
+methods: all
+client_opt: adamw
+mmlu:
+  limit: 0
+  batch: 16
+  shots: 0

@@ -1,0 +1,16 @@
+{
+  "phases": {
+    "client-training": {
+      "s": 1819.922,
+      "peak_gib": 0.0
+    },
+    "valuation": {
+      "s": 52074.718,
+      "peak_gib": 98.86
+    }
+  },
+  "total_s": 53894.639,
+  "gpu_hours": 14.970733,
+  "n_gpus": 1,
+  "peak_gib": 98.86
+}
