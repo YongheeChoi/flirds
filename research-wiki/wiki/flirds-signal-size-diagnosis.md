@@ -430,7 +430,7 @@ cross-seed로 실재하는 신호인지는 seed0 단일이라 미확인** — �
 CNN이 A축 probe의 완주 파트다(LLM §3.1·§3.2는 seed0 파일럿 완료, seeds 1–2 대기). **C1** = 폭 w{0.5,1,2,4}×참여
 k{2,5,10}/N=10×{iid, label-flip}×3seed = 72셀(66 신규 + (w1,k10) track_c 재사용). **C2** = 폭·참여 sweep ×
 {clean, label-flip}×3seed = 30셀(f0.2는 shapleyfl arm의 2²⁰/라운드 exact 불가로 제외 → 계획 36→30). 전체 표·
-수치 = overview [[flirds-experiment-results-overview-2026-06-25]] §3.6; 여기선 진단 판정만. (커밋 `d2e7ed6`.)
+수치 = overview [[flirds-experiment-results-overview]] §3.6; 여기선 진단 판정만. (커밋 `d2e7ed6`.)
 
 **(1) 신호 실재성 — (b)oracle 자기순위 cross-seed ρ** (full 참여 k=1.0, 폭별):
 

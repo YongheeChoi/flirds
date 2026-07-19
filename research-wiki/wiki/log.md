@@ -574,3 +574,7 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - filed into: research-wiki/survey/doc-consistency-audit-2026-07-14.md
 - touched: 루트 CLAUDE.md, [[flirds]], [[flirds-implementation-plan]], [[flirds-protocol]], [[flirds-signal-size-diagnosis]], survey 12파일 — 총 144곳 수술 정정(대조 에이전트 16+적대검증 통과분만; REFUTED 6·UNCERTAIN 5 제외)
 - note: R1=리뷰 오판정(3B +0.900은 raw 06-08 실측 노트 — 오귀속 아님, 단 rundir 미영속이라 인용불가 유지). 신규 R14–R27 — 핵심: fidelity.csv 3B 행 스테일(b1b95d0 미재생성), 1B·CNN 'β0.3 반영' 주장 canon 미확보(재실행 커밋 0건 — Yonghee 확인), (b)oracle noisy AUROC 0.660=seed0 단일값(정본 0.604±0.050, 7곳), RESULTS.md 생성자=make_report.py 오기. 커밋·push 없음(Yonghee 검토 대기).
+
+## [2026-07-19] query | 부호-게이팅(τ=0) novelty check — Track G
+- distilled into: `survey/contribution-weighted-training.md` §7 (dated addendum)
+- note: 부호-절단 선행 확정 — FedTSV(ECC'26, 누적SV max{0,·} 가중, concurrent)·UAV Sensors'24(음수SV 제외+크기비례 = V2w 동형)·FLTrust(ReLU-cos)·IRDS(음수 corpus 필터-재학습 = V3 조상)·LAI(온라인 샘플 τ=0). "부호 최초" 주장 금지; novelty = V2 참여게이팅 + per-round V1 + oracle-검증 게임값 영점 + LLM 스케일 결합. 오인용 방어: ShapleyFL=min-max 부호소거(원문)·CGSV=ε-floor(코드)·S-FedAvg=softmax-only.
