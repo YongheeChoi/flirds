@@ -1,0 +1,16 @@
+{
+  "name": "cifar10_dir1_free-rider_fedif_seed0",
+  "git_sha": "a92a2d6571719c7cdc632a71729741096be4d15a",
+  "git_dirty": true,
+  "env_hash": "8d6bdad8063a88e6",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.3"
+  }
+}
