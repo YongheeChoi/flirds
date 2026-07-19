@@ -1,8 +1,8 @@
 {
-  "name": "silo5_freerider_random",
-  "git_sha": "1c4956265e9d6c026816c02729e47b4b6f9cc41d",
+  "name": "1B_silo5_frrand",
+  "git_sha": "46fba60b35dde96244bfbebbd37c99fae0c5dd2d",
   "git_dirty": true,
-  "env_hash": "a60fac0836d4079c",
+  "env_hash": "8d6bdad8063a88e6",
   "versions": {
     "torch": "2.12.0+cu130",
     "transformers": "5.9.0",
@@ -11,6 +11,6 @@
     "accelerate": "1.13.0",
     "datasets": "4.8.5",
     "numpy": "2.4.6",
-    "python": "3.11.15"
+    "python": "3.12.3"
   }
 }
