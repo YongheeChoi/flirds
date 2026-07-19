@@ -14,8 +14,8 @@
 #   QUEUE=runs/rerun_beta03/master_queue.txt LOGDIR=runs/rerun_beta03/logs \
 #     bash runs/rerun_beta03/run_multi_driver.sh
 set -u
-PY=/home/korea_bupj/miniconda3/envs/flirds/bin/python
-PP=/NHNHOME/26msit001_A/edge_ai_lab/yonghee/flirds/codes
+PY=${PY:-/home/korea_bupj/miniconda3/envs/flirds/bin/python}
+PP=${PP:-/NHNHOME/26msit001_A/edge_ai_lab/yonghee/flirds/codes}
 QUEUE=${QUEUE:?set QUEUE}
 LOGDIR=${LOGDIR:?set LOGDIR}
 mkdir -p "$LOGDIR"
