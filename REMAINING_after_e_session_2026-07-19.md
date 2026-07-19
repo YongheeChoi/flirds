@@ -90,7 +90,11 @@ E2(Taylor 잔차 1B)는 **이전 세션에 이미 완료**(`runs/measured_2026-0
   GPU0 std50k5 flirds s1(~02:20) / GPU1 shapleyfl s1(~02:45) / GPU2 shapleyfl s2(~03:00) /
   GPU3 β0.3 1B_silo5_poison(~01:00-03:00) / GPU4 β0.3 1B_silo5_frzero(~00:30).
   → **~03:00부터 GPU 5장 전부 신규 실험용 프리** (첫 GPU는 ~00:30).
-- 보류 목록: Track G std50k5 7셀(§4 복원법) + β0.3 18셀(§3 복원법). 신규 실험 종료 후 이 순서로 재개 권장.
+- 보류 목록: Track G std50k5 7셀(§4 복원법) + β0.3 18셀(§3 복원법).
+- **[07-20 00:5x 갱신] 신규 실험 = Track H 점수원 경쟁**(스펙 `runs/track_h/README.md`; 인수 문서는 흡수 후
+  삭제 — 원문 git 54dd161). 순서 확정: legacy 4셀 완주 → **Track H Tier1 CNN(96런)→Tier2 LLM(3런)→
+  보고→Tier3 std50k5(12런; shapleyfl_gate_v2 seed0은 track_g 재사용=재실행 금지, lossheur_gate_v2는 미영속이라 실행)**
+  → 그 후 파킹분(std50k5 7셀 → β0.3 18셀) 재개. Tier3 3-seed 확장 = Yonghee 승인 게이트.
 - 07-20 새벽 완주 5셀 rundir 커밋 = track_g 3셀(닫히는 대로) + β0.3 4셀(캠페인 재개 시 일괄).
 
 ## 5. E-세션 실행물 위치 (참고)
