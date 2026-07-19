@@ -140,6 +140,7 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[threads/data-quality-vs-data-value]] — quality scoring vs. attribution; why distinct; DsDm's "similarity ≠ value" finding.
 - [[threads/noise-ood-malicious-client-separation]] — FL robustness-side prior art (FLDetector, FoolsGold, FLTrust, FedCorr, STD-DAGMM); backs Flirds' deferred-limitation recast + surviving detection benchmarks.
 - [[threads/dataset-format-uniformity]] — cross-domain format uniformity for fair FL valuation; free-form unification (FLAN/LESS/MATES), parked dataset candidates, per-domain normalization + ablation.
+- [[threads/common-limitations-and-flirds]] — 44-source 전수 대조: 공통 한계 6축(정의 파편화 → 간접 검증 → CNN/central 분리 → 단위·비용 → 공리 위반 → 신호 질문 불가)과 Flirds의 축별 판정; 초록 gap 문장의 근거 페이지.
 
 ## Raw materials inventory
 

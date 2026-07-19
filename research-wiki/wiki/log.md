@@ -578,3 +578,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 ## [2026-07-19] query | 부호-게이팅(τ=0) novelty check — Track G
 - distilled into: `survey/contribution-weighted-training.md` §7 (dated addendum)
 - note: 부호-절단 선행 확정 — FedTSV(ECC'26, 누적SV max{0,·} 가중, concurrent)·UAV Sensors'24(음수SV 제외+크기비례 = V2w 동형)·FLTrust(ReLU-cos)·IRDS(음수 corpus 필터-재학습 = V3 조상)·LAI(온라인 샘플 τ=0). "부호 최초" 주장 금지; novelty = V2 참여게이팅 + per-round V1 + oracle-검증 게임값 영점 + LLM 스케일 결합. 오인용 방어: ShapleyFL=min-max 부호소거(원문)·CGSV=ε-floor(코드)·S-FedAvg=softmax-only.
+
+## [2026-07-20] query | 선행 전수 조사 — 공통 한계 6축 vs Flirds
+- new: [[threads/common-limitations-and-flirds]]
+- touched: (읽기만) [[prior-work-taxonomy/README]], [[validation-experiments]], sources 44편
+- note: 초록 gap 문장 검증용 전수 대조 — 공통 한계 6축(정의 파편화/간접 검증/무대 분리/단위·비용/공리 위반/신호 질문 불가) 도출, 인과 뿌리=retrain 계산 불가능성. 초록 3문장과 1:1 정합 확인, 서론 §1 재작성 필요 표시.
