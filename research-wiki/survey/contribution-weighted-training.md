@@ -2,7 +2,7 @@
 type: thread
 title: 기여도-가중 training — 선행 조사 + 공백 좌표 + 신규 방법 제안
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-19
 sources: [shapleyfl, game-of-gradients-sfedavg, fedif, fedtsv, shapfed, fltrust, foolsgold, principled-federated-data-valuation, comfedsv, gtg-shapley, ripple-shapley, space-participant-amalgamation, feddqc, fedhds, data-banzhaf, mavericks-shapley-fl, dice, mates, less, dsdm, in-run-data-shapley]
 tags: [contribution-weighted-training, intervention, aggregation-weights, closed-loop, survey, proposal]
 ---
@@ -231,3 +231,38 @@ fidelity(1차)는 기왕 검증 — 이 축은 **2차 실효성**: ① 성능 = 
 - 기여도-스케일 정규화항(FedProx류) — 조사에서 확인된 완전 빈 칸(FedCorr만 품질-구동 proximal).
 
 > TODO: FedPSF-LLM 원문 확보(SD 403) 후 §2-E 갱신; arm-4 Ripple 어트리뷰션 원 논문 대조; [[sources/game-of-gradients-sfedavg]] 페이지 교정(lint).
+
+---
+
+## 7. 부호-게이팅(τ=0) novelty check — 2026-07-19 추가
+
+**질문**(Track G 설계 중, Yonghee): 기여도의 양/음 부호를 training 개입(제외/가중)에 쓴 선행이 있는가.
+**방법**: 본 페이지 §2 재활용 + 신규 웹 스윕 2회(FL측 14쿼리·원문 25건 method-수준 확인 / centralized측 12쿼리·원문 ~25건). Codex 교차검증은 세션에 MCP 부재로 생략, 자체 적대 검증으로 대체.
+
+**답: 부호-절단 연산 자체는 선행 다수 — "부호 사용 최초" 주장 불가. novelty는 결합에만 있음.**
+
+### 최근접 선행 (전부 원문 method/코드 수준 확인)
+
+| 선행 | 규칙(원문 확인) | 남는 delta |
+|---|---|---|
+| **[[sources/fedtsv\|FedTSV]]** [ECC'26, arXiv:2605.30336, 26-05 공개] | 누적 궤적-SV에 **α_i=max{0,φ_i}** 온라인 가중(Eq.13) — 부호-0 하드 절단 | utility=거리 커널(실제 val-loss 게임 아님)·**weight-zeroing만**(음수 클라도 계속 학습·업로드)·V1 변형/burn-in 없음·oracle 검증 0·MLP/ResNet-20. **concurrent(26-05)로 처리 + 정면 인용 필수** |
+| **UAV-FL 자원할당** [Xiong & Guo, Sensors 2024;24(20):6711, PMC11511571] | "negative Shapley → 당회 집계 제외 w=0, 양수는 크기 비례" = **V2w와 동형** | exact-enum SV(소규모 UAV 계층 전용)·집계 가중만(참여 게이팅 없음)·EMA ρ 필요·변형 비교/fidelity 없음. 인지도 낮아도 **인용 필수** |
+| [[sources/fltrust\|FLTrust]] [NDSS'21] | **ReLU(cos)** — 음수 방향정합을 0으로 절단(당회 집계 배제) | 점수=cosine 휴리스틱(clean 루트셋 필요), 게임 의미·누적·참여 게이팅 없음 |
+| **In-Run Data Shapley** [[sources/in-run-data-shapley\|IRDS]] [ICLR'25 Oral] | **음수-가치 corpus 필터링 후 재학습**(Pile ~16% 음수, 수렴 ~25%↑) — 명시적 τ=0 | **V3(사후 부호 제거-재학습)의 직계 조상** — 사후·중앙집중·corpus 단위. V3는 "IRDS 프로토콜의 FL-클라 번역"으로 포지셔닝(계보 연속성 서사) |
+| Zeno++ [ICML'20] | update별 γ⟨g_val,g⟩−ρ‖g‖²≥−γε 수락/기각 | ρ,ε 튜닝·비동기 worker·게임 없음 — V1의 개념적 조상 |
+| 샘플-수준 계보: L2RW [ICML'18] max(0,·) 정류 / Data Dropout ['18] 사후 부호 드랍 / UIDS [AAAI'20] π=max{0,min{1,−αφ}} / **LAI** [arXiv:2510.16007, preprint] **매 스텝 음수-influence 폐기(τ=0, 온라인)** | 전부 데이터-포인트·단일 학습자 | 온라인 τ=0의 샘플-수준 선례 존재 — granularity·게임값·FL 집계가 delta |
+
+### 오인용 방어 탄약 (원문/코드 확보)
+
+ShapleyFL = min-max(Eq.2) **부호 소거**+β-EMA(절단·제외 없음; KDD 원문 PDF 확인) · S-FedAvg = softmax 선택-only(§3 lint 재확인) · CGSV = `clamp(rs, min=1e-3)` ε-floor(공식 코드 확인 — 완전 제외 아님) · ShapFed = (1+cos)/2 재스케일(음수가 양수 가중으로 잔존) · RFFL β=1/(3N)·CFFL c_th(grid search)·FedSV-ICC'24 k-means 군집 = 전부 **튜닝 임계**(부호 아님) · Fed-Influence AAAI'21 = 하위 비율(30%) 일회성 제거(top-k류) · Data Shapley 원조의 제거는 **rank 곡선**(부호는 정성 언급) · OpenDataVal 표준 과제에 부호-임계 제거 부재.
+
+### 미발견 조합 = Track G 점유 공간
+
+① **부호 기준 참여 제외(V2)** — 선택 단계 제외(연산·통신 중단)+burn-in/probation: 어디에도 없음(제거형은 전부 튜닝 임계·군집·순위) ② **per-round 게임값 부호 당회 게이팅(V1)** ③ **oracle-검증된 실제 val-loss 게임의 φ=0(null-player)** 을 임계로 쓰는 조합(집계-측 논문 oracle fidelity 보고 0건 — §2 확인 유지) ④ V1/V2/V2w/V3 체계 비교+oracle-excl 대비 recovery+do-no-harm 사전등록 ⑤ LLM/PEFT 스케일(G5 유지) ⑥ 2차 정보 게이트(G1 유지).
+
+### 주장 수위 (논문·Track G 문서 공통)
+
+- **금지**: "부호/절단 기반 사용 최초", "max{0,·}가 파라미터-프리라서 신규".
+- **안전**: "경쟁 방법은 튜닝 임계(β=1/(3N), c_th, λσ², b, ρε) 또는 부호-소거 정규화(min-max, (1+cos)/2, ε-floor)를 요구 — 우리는 dual-oracle로 검증된 게임값의 **자연 영점(null-player 공리, FR φ=exact-0)** 이 임계이고, 그 임계로 가중(V2w)뿐 아니라 **참여 자체(V2)** 를 게이팅하며, 게이트의 작동영역(FR 발화 / net-도움 noisy 침묵)을 실측으로 규정".
+- FedTSV concurrent 명시, UAV Sensors'24 선제 인용, RLHF advantage-부호 계열(EFRame 등)은 관련연구 한 줄 구분.
+- 상세 출처 표·URL: 세션 로그 2026-07-19 (FL측/centralized측 스윕 보고 원문).
