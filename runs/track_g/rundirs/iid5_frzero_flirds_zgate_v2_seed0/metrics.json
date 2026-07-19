@@ -1,0 +1,42 @@
+{
+  "arm": "flirds_zgate_v2",
+  "regime": "iid5",
+  "threat": "frzero",
+  "seed": 0,
+  "corrupt": [
+    1
+  ],
+  "final_val_loss": 1.37648606300354,
+  "val_curve": [
+    1.4157028198242188,
+    1.4116138219833374,
+    1.4076511859893799,
+    1.4037576913833618,
+    1.3998901844024658,
+    1.3960169553756714,
+    1.3921195268630981,
+    1.3881951570510864,
+    1.3842569589614868,
+    1.3803380727767944,
+    1.37648606300354
+  ],
+  "train_s": 553.7995068429736,
+  "rounds_to_target": 9,
+  "vanilla_target": 1.3841766119003296,
+  "gate": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "n_excluded_pairs": 7,
+    "false_excl_pairs": 0,
+    "n_fallback_rounds": 0
+  },
+  "gate_cfg": {
+    "burn_in": 3,
+    "tau": 0.0,
+    "min_obs": 2,
+    "probation_every": 5,
+    "decay": 1.0,
+    "z_c": 1.5,
+    "alpha_w": 1.0
+  }
+}

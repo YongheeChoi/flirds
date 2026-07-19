@@ -1,0 +1,42 @@
+{
+  "arm": "oracleb_gate_v2",
+  "regime": "silo5",
+  "threat": "frzero",
+  "seed": 1,
+  "corrupt": [
+    1
+  ],
+  "final_val_loss": 2.3829522132873535,
+  "val_curve": [
+    2.401553153991699,
+    2.399691581726074,
+    2.3978655338287354,
+    2.396057367324829,
+    2.394252300262451,
+    2.3924379348754883,
+    2.390604019165039,
+    2.388742685317993,
+    2.3868489265441895,
+    2.384918212890625,
+    2.3829522132873535
+  ],
+  "train_s": 811.2609142960282,
+  "rounds_to_target": 9,
+  "vanilla_target": 2.3868229389190674,
+  "gate": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "n_excluded_pairs": 7,
+    "false_excl_pairs": 0,
+    "n_fallback_rounds": 0
+  },
+  "gate_cfg": {
+    "burn_in": 3,
+    "tau": 0.0,
+    "min_obs": 2,
+    "probation_every": 5,
+    "decay": 1.0,
+    "z_c": 1.5,
+    "alpha_w": 1.0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "phases": {
+    "v3-retrain": {
+      "s": 594.45,
+      "peak_gib": 0.0
+    }
+  },
+  "total_s": 594.45,
+  "gpu_hours": 0.165125,
+  "n_gpus": 1,
+  "peak_gib": 0.0
+}

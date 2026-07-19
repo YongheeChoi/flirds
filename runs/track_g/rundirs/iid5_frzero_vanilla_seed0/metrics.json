@@ -1,0 +1,42 @@
+{
+  "arm": "vanilla",
+  "regime": "iid5",
+  "threat": "frzero",
+  "seed": 0,
+  "corrupt": [
+    1
+  ],
+  "final_val_loss": 1.3841766119003296,
+  "val_curve": [
+    1.4157028198242188,
+    1.4124250411987305,
+    1.4092316627502441,
+    1.4060921669006348,
+    1.4029816389083862,
+    1.399880290031433,
+    1.396772027015686,
+    1.39364755153656,
+    1.3905035257339478,
+    1.3873426914215088,
+    1.3841766119003296
+  ],
+  "train_s": 558.1386174010113,
+  "rounds_to_target": 10,
+  "vanilla_target": 1.3841766119003296,
+  "gate": {
+    "precision": null,
+    "recall": 0.0,
+    "n_excluded_pairs": 0,
+    "false_excl_pairs": 0,
+    "n_fallback_rounds": 0
+  },
+  "gate_cfg": {
+    "burn_in": 3,
+    "tau": 0.0,
+    "min_obs": 2,
+    "probation_every": 5,
+    "decay": 1.0,
+    "z_c": 1.5,
+    "alpha_w": 1.0
+  }
+}

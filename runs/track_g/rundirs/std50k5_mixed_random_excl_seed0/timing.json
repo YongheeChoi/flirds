@@ -1,0 +1,20 @@
+{
+  "phases": {
+    "fl+online-scoring": {
+      "s": 10293.29,
+      "peak_gib": 32.163
+    },
+    "val-curve": {
+      "s": 752.13,
+      "peak_gib": 18.137
+    },
+    "downstream": {
+      "s": 241.073,
+      "peak_gib": 22.38
+    }
+  },
+  "total_s": 11286.493,
+  "gpu_hours": 3.135137,
+  "n_gpus": 1,
+  "peak_gib": 32.163
+}

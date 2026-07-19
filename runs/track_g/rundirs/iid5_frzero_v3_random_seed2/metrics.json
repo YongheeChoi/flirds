@@ -1,0 +1,26 @@
+{
+  "arm": "v3_random",
+  "regime": "iid5",
+  "threat": "frzero",
+  "seed": 2,
+  "corrupt": [
+    1
+  ],
+  "kept": [
+    0,
+    2,
+    3,
+    4
+  ],
+  "final_val_loss": 1.2832046747207642,
+  "vanilla_target": 1.2895489931106567,
+  "gate_cfg": {
+    "burn_in": 3,
+    "tau": 0.0,
+    "min_obs": 2,
+    "probation_every": 5,
+    "decay": 1.0,
+    "z_c": 1.5,
+    "alpha_w": 1.0
+  }
+}

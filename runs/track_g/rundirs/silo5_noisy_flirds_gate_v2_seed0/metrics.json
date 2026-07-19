@@ -1,0 +1,42 @@
+{
+  "arm": "flirds_gate_v2",
+  "regime": "silo5",
+  "threat": "noisy",
+  "seed": 0,
+  "corrupt": [
+    0
+  ],
+  "final_val_loss": 2.2962217330932617,
+  "val_curve": [
+    2.31321382522583,
+    2.3115103244781494,
+    2.3098325729370117,
+    2.308170795440674,
+    2.306513786315918,
+    2.3048532009124756,
+    2.303179979324341,
+    2.3014872074127197,
+    2.2997665405273438,
+    2.29801344871521,
+    2.2962217330932617
+  ],
+  "train_s": 704.4720158040291,
+  "rounds_to_target": 10,
+  "vanilla_target": 2.2962217330932617,
+  "gate": {
+    "precision": null,
+    "recall": 0.0,
+    "n_excluded_pairs": 0,
+    "false_excl_pairs": 0,
+    "n_fallback_rounds": 0
+  },
+  "gate_cfg": {
+    "burn_in": 3,
+    "tau": 0.0,
+    "min_obs": 2,
+    "probation_every": 5,
+    "decay": 1.0,
+    "z_c": 1.5,
+    "alpha_w": 1.0
+  }
+}

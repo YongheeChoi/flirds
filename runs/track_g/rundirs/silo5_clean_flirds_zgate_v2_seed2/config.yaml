@@ -1,0 +1,48 @@
+track: G
+regime: silo5
+threat: clean
+arm: flirds_zgate_v2
+seed: 2
+scale: 1B
+model: meta-llama/Llama-3.2-1B-Instruct
+rcfg:
+  n_clients: 5
+  k_abs: 5
+  train: 200
+  val: 20
+  test: 40
+  rounds: 10
+  max_steps: 10
+  lr: 0.001
+  maxlen: 768
+  warmup: 2
+  noisy:
+  - 0
+  freerider:
+  - 1
+mcfg:
+  batch: 16
+  val_chunk: 10
+  val_maxlen: 384
+lora:
+  r: 16
+  alpha: 32
+gate:
+  burn_in: 3
+  tau: 0.0
+  min_obs: 2
+  probation_every: 5
+  decay: 1.0
+  z_c: 1.5
+  alpha_w: 1.0
+corrupt:
+  noisy_ids: []
+  fr_ids: []
+  fr_mode: zero
+  corrupt: []
+noisy_rate: 1.0
+synth_data: false
+downstream: false
+orientation:
+  phi.parquet: suspicion (good->low; repo convention)
+  phi_rounds.parquet: raw/cum contribution (good->high = -phi)

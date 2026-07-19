@@ -1,0 +1,40 @@
+{
+  "arm": "lossheur_gate_v2",
+  "regime": "iid5",
+  "threat": "clean",
+  "seed": 1,
+  "corrupt": [],
+  "final_val_loss": 1.280766487121582,
+  "val_curve": [
+    1.317402958869934,
+    1.3135530948638916,
+    1.3098124265670776,
+    1.3061422109603882,
+    1.3025113344192505,
+    1.298896312713623,
+    1.295279622077942,
+    1.2916524410247803,
+    1.2880152463912964,
+    1.284379243850708,
+    1.280766487121582
+  ],
+  "train_s": 659.7770368360216,
+  "rounds_to_target": 10,
+  "vanilla_target": 1.280766487121582,
+  "gate": {
+    "precision": null,
+    "recall": null,
+    "n_excluded_pairs": 0,
+    "false_excl_pairs": 0,
+    "n_fallback_rounds": 0
+  },
+  "gate_cfg": {
+    "burn_in": 3,
+    "tau": 0.0,
+    "min_obs": 2,
+    "probation_every": 5,
+    "decay": 1.0,
+    "z_c": 1.5,
+    "alpha_w": 1.0
+  }
+}

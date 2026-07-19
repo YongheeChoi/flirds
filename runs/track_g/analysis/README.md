@@ -4,6 +4,66 @@
 
 | regime | threat | nr | seed | arm | final_val_loss | delta | recovery | mmlu | rouge_l | prediction | verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+| iid5 | clean | 1 | 0 | flirds_gate_v1 | 1.3789 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| iid5 | clean | 1 | 0 | flirds_gate_v2 | 1.3789 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| iid5 | clean | 1 | 0 | flirds_w | 1.3783 | +0.0006 |  |  |  |  |  |
+| iid5 | clean | 1 | 0 | flirds_zgate_v2 | 1.3788 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | MISS |
+| iid5 | clean | 1 | 0 | lossheur_gate_v2 | 1.3789 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| iid5 | clean | 1 | 0 | v3_random | 1.3789 | +0.0000 |  |  |  |  |  |
+| iid5 | clean | 1 | 0 | v3_sign | 1.3789 | +0.0000 |  |  |  | parity |  |
+| iid5 | clean | 1 | 0 | v3_z | 1.3789 | +0.0000 |  |  |  | parity |  |
+| iid5 | clean | 1 | 0 | vanilla | 1.3789 | +0.0000 |  |  |  |  |  |
+| iid5 | clean | 1 | 1 | flirds_gate_v1 | 1.2808 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| iid5 | clean | 1 | 1 | flirds_gate_v2 | 1.2808 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| iid5 | clean | 1 | 1 | flirds_w | 1.2802 | +0.0006 |  |  |  |  |  |
+| iid5 | clean | 1 | 1 | flirds_zgate_v2 | 1.2804 | +0.0004 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | MISS |
+| iid5 | clean | 1 | 1 | lossheur_gate_v2 | 1.2808 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| iid5 | clean | 1 | 1 | v3_random | 1.2808 | +0.0000 |  |  |  |  |  |
+| iid5 | clean | 1 | 1 | v3_sign | 1.2808 | +0.0000 |  |  |  | parity |  |
+| iid5 | clean | 1 | 1 | v3_z | 1.2804 | +0.0004 |  |  |  | parity |  |
+| iid5 | clean | 1 | 1 | vanilla | 1.2808 | +0.0000 |  |  |  |  |  |
+| iid5 | clean | 1 | 2 | flirds_gate_v1 | 1.2844 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| iid5 | clean | 1 | 2 | flirds_gate_v2 | 1.2844 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| iid5 | clean | 1 | 2 | flirds_w | 1.2839 | +0.0006 |  |  |  |  |  |
+| iid5 | clean | 1 | 2 | flirds_zgate_v2 | 1.2839 | +0.0006 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | MISS |
+| iid5 | clean | 1 | 2 | lossheur_gate_v2 | 1.2844 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| iid5 | clean | 1 | 2 | v3_random | 1.2844 | +0.0000 |  |  |  |  |  |
+| iid5 | clean | 1 | 2 | v3_sign | 1.2844 | +0.0000 |  |  |  | parity |  |
+| iid5 | clean | 1 | 2 | v3_z | 1.2840 | +0.0004 |  |  |  | parity |  |
+| iid5 | clean | 1 | 2 | vanilla | 1.2844 | +0.0000 |  |  |  |  |  |
+| iid5 | frzero | 1 | 0 | flirds_gate_v1 | 1.3773 | +0.0069 | +0.9004 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 0 | flirds_gate_v2 | 1.3765 | +0.0077 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 0 | flirds_w | 1.3772 | +0.0069 | +0.9019 |  |  |  |  |
+| iid5 | frzero | 1 | 0 | flirds_zgate_v2 | 1.3765 | +0.0077 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 0 | lossheur_gate_v2 | 1.3765 | +0.0077 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 0 | oracle_excl | 1.3765 | +0.0077 | +1.0000 |  |  |  |  |
+| iid5 | frzero | 1 | 0 | random_excl | 1.3765 | +0.0077 | +1.0000 |  |  |  |  |
+| iid5 | frzero | 1 | 0 | v3_random | 1.3860 | -0.0019 | -0.2412 |  |  |  |  |
+| iid5 | frzero | 1 | 0 | v3_sign | 1.3765 | +0.0077 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 0 | v3_z | 1.3765 | +0.0077 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 0 | vanilla | 1.3842 | +0.0000 | +0.0000 |  |  |  |  |
+| iid5 | frzero | 1 | 1 | flirds_gate_v1 | 1.2790 | +0.0069 | +0.9005 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 1 | flirds_gate_v2 | 1.2782 | +0.0077 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 1 | flirds_w | 1.2790 | +0.0069 | +0.9020 |  |  |  |  |
+| iid5 | frzero | 1 | 1 | flirds_zgate_v2 | 1.2781 | +0.0078 | +1.0159 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 1 | lossheur_gate_v2 | 1.2782 | +0.0077 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 1 | oracle_excl | 1.2782 | +0.0077 | +1.0000 |  |  |  |  |
+| iid5 | frzero | 1 | 1 | random_excl | 1.2880 | -0.0021 | -0.2697 |  |  |  |  |
+| iid5 | frzero | 1 | 1 | v3_random | 1.2881 | -0.0021 | -0.2771 |  |  |  |  |
+| iid5 | frzero | 1 | 1 | v3_sign | 1.2782 | +0.0077 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 1 | v3_z | 1.2782 | +0.0077 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 1 | vanilla | 1.2859 | +0.0000 | +0.0000 |  |  |  |  |
+| iid5 | frzero | 1 | 2 | flirds_gate_v1 | 1.2838 | +0.0057 | +0.8992 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 2 | flirds_gate_v2 | 1.2832 | +0.0063 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 2 | flirds_w | 1.2838 | +0.0057 | +0.9048 |  |  |  |  |
+| iid5 | frzero | 1 | 2 | flirds_zgate_v2 | 1.2830 | +0.0066 | +1.0372 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 2 | lossheur_gate_v2 | 1.2832 | +0.0063 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 2 | oracle_excl | 1.2832 | +0.0063 | +1.0000 |  |  |  |  |
+| iid5 | frzero | 1 | 2 | random_excl | 1.2907 | -0.0011 | -0.1747 |  |  |  |  |
+| iid5 | frzero | 1 | 2 | v3_random | 1.2832 | +0.0063 | +1.0000 |  |  |  |  |
+| iid5 | frzero | 1 | 2 | v3_sign | 1.2832 | +0.0063 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 2 | v3_z | 1.2832 | +0.0063 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| iid5 | frzero | 1 | 2 | vanilla | 1.2895 | +0.0000 | +0.0000 |  |  |  |  |
 | silo5 | clean | 1 | 0 | flirds_gate_v1 | 2.2936 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
 | silo5 | clean | 1 | 0 | flirds_gate_v2 | 2.2936 | -0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
 | silo5 | clean | 1 | 0 | flirds_w | 2.2887 | +0.0049 |  |  |  |  |  |
@@ -24,15 +84,202 @@
 | silo5 | clean | 1 | 1 | v3_sign | 2.3851 | +0.0000 |  |  |  | parity |  |
 | silo5 | clean | 1 | 1 | v3_z | 2.3851 | +0.0000 |  |  |  | parity |  |
 | silo5 | clean | 1 | 1 | vanilla | 2.3851 | +0.0000 |  |  |  |  |  |
+| silo5 | clean | 1 | 2 | flirds_gate_v1 | 2.3179 | +0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| silo5 | clean | 1 | 2 | flirds_gate_v2 | 2.3179 | -0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| silo5 | clean | 1 | 2 | flirds_w | 2.3126 | +0.0053 |  |  |  |  |  |
+| silo5 | clean | 1 | 2 | flirds_zgate_v2 | 2.3179 | -0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| silo5 | clean | 1 | 2 | lossheur_gate_v2 | 2.3179 | -0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| silo5 | clean | 1 | 2 | oracleb_gate_v2 | 2.3179 | -0.0000 |  |  |  | vanilla parity; 0 false-exclusions (cum all positive) | HIT |
+| silo5 | clean | 1 | 2 | v3_random | 2.3179 | +0.0000 |  |  |  |  |  |
+| silo5 | clean | 1 | 2 | v3_sign | 2.3179 | +0.0000 |  |  |  | parity |  |
+| silo5 | clean | 1 | 2 | v3_z | 2.3179 | +0.0000 |  |  |  | parity |  |
+| silo5 | clean | 1 | 2 | vanilla | 2.3179 | +0.0000 |  |  |  |  |  |
+| silo5 | frrand | 1 | 0 | flirds_gate_v1 | 2.2961 | +0.0027 | +0.6955 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 0 | flirds_gate_v2 | 2.2961 | +0.0027 | +0.6953 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 0 | flirds_w | 2.2936 | +0.0052 | +1.3567 |  |  |  |  |
+| silo5 | frrand | 1 | 0 | flirds_zgate_v2 | 2.2949 | +0.0038 | +1.0000 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 0 | lossheur_gate_v2 | 2.2961 | +0.0027 | +0.6955 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 0 | oracle_excl | 2.2949 | +0.0038 | +1.0000 |  |  |  |  |
+| silo5 | frrand | 1 | 0 | oracleb_gate_v2 | 2.2961 | +0.0027 | +0.6953 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 0 | random_excl | 2.2949 | +0.0038 | +1.0000 |  |  |  |  |
+| silo5 | frrand | 1 | 0 | v3_random | 2.2988 | -0.0000 | -0.0019 |  |  |  |  |
+| silo5 | frrand | 1 | 0 | v3_sign | 2.2949 | +0.0038 | +0.9999 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 0 | v3_z | 2.2949 | +0.0038 | +0.9999 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 0 | vanilla | 2.2988 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | frrand | 1 | 1 | flirds_gate_v1 | 2.3864 | +0.0011 | +0.2971 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 1 | flirds_gate_v2 | 2.3864 | +0.0011 | +0.2972 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 1 | flirds_w | 2.3826 | +0.0048 | +1.3301 |  |  |  |  |
+| silo5 | frrand | 1 | 1 | flirds_zgate_v2 | 2.3838 | +0.0036 | +1.0001 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 1 | lossheur_gate_v2 | 2.3860 | +0.0014 | +0.3966 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 1 | oracle_excl | 2.3838 | +0.0036 | +1.0000 |  |  |  |  |
+| silo5 | frrand | 1 | 1 | oracleb_gate_v2 | 2.3864 | +0.0011 | +0.2968 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 1 | random_excl | 2.3874 | +0.0001 | +0.0158 |  |  |  |  |
+| silo5 | frrand | 1 | 1 | v3_random | 2.3875 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | frrand | 1 | 1 | v3_sign | 2.3875 | +0.0000 | +0.0000 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 1 | v3_z | 2.3838 | +0.0036 | +1.0000 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 1 | vanilla | 2.3875 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | frrand | 1 | 2 | flirds_gate_v1 | 2.3217 | +0.0013 | +0.3949 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 2 | flirds_gate_v2 | 2.3217 | +0.0013 | +0.3950 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 2 | flirds_w | 2.3179 | +0.0050 | +1.5678 |  |  |  |  |
+| silo5 | frrand | 1 | 2 | flirds_zgate_v2 | 2.3229 | -0.0000 | -0.0001 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 2 | lossheur_gate_v2 | 2.3201 | +0.0028 | +0.8983 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 2 | oracle_excl | 2.3197 | +0.0032 | +1.0000 |  |  |  |  |
+| silo5 | frrand | 1 | 2 | oracleb_gate_v2 | 2.3220 | +0.0009 | +0.2956 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 2 | random_excl | 2.3225 | +0.0004 | +0.1379 |  |  |  |  |
+| silo5 | frrand | 1 | 2 | v3_random | 2.3229 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | frrand | 1 | 2 | v3_sign | 2.3229 | +0.0000 | +0.0000 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 2 | v3_z | 2.3229 | +0.0000 | +0.0000 |  |  | gain PREDICTED by §2.1 but audit AMENDS: cum sign is a ~0 coin flip -> exclusion seed-dependent |  |
+| silo5 | frrand | 1 | 2 | vanilla | 2.3229 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | frzero | 1 | 0 | flirds_gate_v1 | 2.2956 | +0.0034 | +0.8976 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 0 | flirds_gate_v2 | 2.2953 | +0.0038 | +1.0001 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 0 | flirds_w | 2.2939 | +0.0051 | +1.3628 |  |  |  |  |
+| silo5 | frzero | 1 | 0 | flirds_zgate_v2 | 2.2953 | +0.0038 | +1.0001 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 0 | lossheur_gate_v2 | 2.2953 | +0.0038 | +1.0001 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 0 | oracle_excl | 2.2953 | +0.0038 | +1.0000 |  |  |  |  |
+| silo5 | frzero | 1 | 0 | oracleb_gate_v2 | 2.2953 | +0.0038 | +1.0001 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 0 | random_excl | 2.2953 | +0.0038 | +1.0000 |  |  |  |  |
+| silo5 | frzero | 1 | 0 | v3_random | 2.2989 | +0.0001 | +0.0197 |  |  |  |  |
+| silo5 | frzero | 1 | 0 | v3_sign | 2.2953 | +0.0038 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 0 | v3_z | 2.2953 | +0.0038 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 0 | vanilla | 2.2990 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | frzero | 1 | 1 | flirds_gate_v1 | 2.3833 | +0.0035 | +0.8981 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 1 | flirds_gate_v2 | 2.3830 | +0.0039 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 1 | flirds_w | 2.3817 | +0.0051 | +1.3209 |  |  |  |  |
+| silo5 | frzero | 1 | 1 | flirds_zgate_v2 | 2.3830 | +0.0039 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 1 | lossheur_gate_v2 | 2.3830 | +0.0039 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 1 | oracle_excl | 2.3830 | +0.0039 | +1.0000 |  |  |  |  |
+| silo5 | frzero | 1 | 1 | oracleb_gate_v2 | 2.3830 | +0.0039 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 1 | random_excl | 2.3868 | +0.0001 | +0.0164 |  |  |  |  |
+| silo5 | frzero | 1 | 1 | v3_random | 2.3906 | -0.0037 | -0.9644 |  |  |  |  |
+| silo5 | frzero | 1 | 1 | v3_sign | 2.3830 | +0.0039 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 1 | v3_z | 2.3830 | +0.0039 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 1 | vanilla | 2.3868 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | frzero | 1 | 2 | flirds_gate_v1 | 2.3197 | +0.0029 | +0.8977 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 2 | flirds_gate_v2 | 2.3194 | +0.0033 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 2 | flirds_w | 2.3175 | +0.0051 | +1.5782 |  |  |  |  |
+| silo5 | frzero | 1 | 2 | flirds_zgate_v2 | 2.3226 | +0.0000 | +0.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | MISS |
+| silo5 | frzero | 1 | 2 | lossheur_gate_v2 | 2.3194 | +0.0033 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 2 | oracle_excl | 2.3194 | +0.0033 | +1.0000 |  |  |  |  |
+| silo5 | frzero | 1 | 2 | oracleb_gate_v2 | 2.3194 | +0.0033 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 2 | random_excl | 2.3222 | +0.0005 | +0.1525 |  |  |  |  |
+| silo5 | frzero | 1 | 2 | v3_random | 2.3194 | +0.0033 | +1.0000 |  |  |  |  |
+| silo5 | frzero | 1 | 2 | v3_sign | 2.3194 | +0.0033 | +1.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | HIT |
+| silo5 | frzero | 1 | 2 | v3_z | 2.3226 | +0.0000 | +0.0000 |  |  | gain (~+0.007-class val-loss; exact-0 rule) | MISS |
+| silo5 | frzero | 1 | 2 | vanilla | 2.3226 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | noisy | 0.75 | 0 | flirds_gate_v1 | 2.2960 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 0.75 | 0 | flirds_gate_v2 | 2.2960 | +0.0000 | +0.0002 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 0.75 | 0 | flirds_w | 2.2914 | +0.0047 | +3.1793 |  |  |  |  |
+| silo5 | noisy | 0.75 | 0 | flirds_zgate_v2 | 2.2960 | +0.0000 | +0.0002 |  |  | recovery candidate (cohort-relative gate) |  |
+| silo5 | noisy | 0.75 | 0 | lossheur_gate_v2 | 2.2960 | +0.0000 | +0.0002 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 0.75 | 0 | oracle_excl | 2.2946 | +0.0015 | +1.0000 |  |  |  |  |
+| silo5 | noisy | 0.75 | 0 | oracleb_gate_v2 | 2.2960 | +0.0000 | +0.0002 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 0.75 | 0 | random_excl | 2.2960 | +0.0000 | +0.0227 |  |  |  |  |
+| silo5 | noisy | 0.75 | 0 | v3_random | 2.2960 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | noisy | 0.75 | 0 | v3_sign | 2.2960 | +0.0000 | +0.0000 |  |  | parity |  |
+| silo5 | noisy | 0.75 | 0 | v3_z | 2.2960 | +0.0000 | +0.0000 |  |  | parity |  |
+| silo5 | noisy | 0.75 | 0 | vanilla | 2.2960 | +0.0000 | +0.0000 |  |  |  |  |
 | silo5 | noisy | 1 | 0 | flirds_gate_v1 | 2.2962 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 0 | flirds_gate_v2 | 2.2962 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 0 | flirds_w | 2.2915 | +0.0047 | +2.8727 |  |  |  |  |
+| silo5 | noisy | 1 | 0 | flirds_zgate_v2 | 2.2962 | +0.0000 | +0.0000 |  |  | recovery candidate (cohort-relative gate) |  |
+| silo5 | noisy | 1 | 0 | lossheur_gate_v2 | 2.2962 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
 | silo5 | noisy | 1 | 0 | oracle_excl | 2.2946 | +0.0016 | +1.0000 |  |  |  |  |
+| silo5 | noisy | 1 | 0 | oracleb_gate_v2 | 2.2962 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
 | silo5 | noisy | 1 | 0 | random_excl | 2.2963 | -0.0000 | -0.0237 |  |  |  |  |
+| silo5 | noisy | 1 | 0 | v3_random | 2.2962 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | noisy | 1 | 0 | v3_sign | 2.2962 | +0.0000 | +0.0000 |  |  | parity |  |
+| silo5 | noisy | 1 | 0 | v3_z | 2.2962 | +0.0000 | +0.0000 |  |  | parity |  |
 | silo5 | noisy | 1 | 0 | vanilla | 2.2962 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | noisy | 1 | 1 | flirds_gate_v1 | 2.3867 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 1 | flirds_gate_v2 | 2.3867 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 1 | flirds_w | 2.3821 | +0.0046 | +3.0448 |  |  |  |  |
+| silo5 | noisy | 1 | 1 | flirds_zgate_v2 | 2.3867 | +0.0000 | +0.0000 |  |  | recovery candidate (cohort-relative gate) |  |
+| silo5 | noisy | 1 | 1 | lossheur_gate_v2 | 2.3867 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 1 | oracle_excl | 2.3852 | +0.0015 | +1.0000 |  |  |  |  |
+| silo5 | noisy | 1 | 1 | oracleb_gate_v2 | 2.3867 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 1 | random_excl | 2.3852 | +0.0015 | +1.0000 |  |  |  |  |
+| silo5 | noisy | 1 | 1 | v3_random | 2.3867 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | noisy | 1 | 1 | v3_sign | 2.3867 | +0.0000 | +0.0000 |  |  | parity |  |
+| silo5 | noisy | 1 | 1 | v3_z | 2.3867 | +0.0000 | +0.0000 |  |  | parity |  |
+| silo5 | noisy | 1 | 1 | vanilla | 2.3867 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | noisy | 1 | 2 | flirds_gate_v1 | 2.3190 | +0.0000 | +0.0000 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 2 | flirds_gate_v2 | 2.3190 | +0.0000 | +0.0001 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 2 | flirds_w | 2.3145 | +0.0045 | +2.2056 |  |  |  |  |
+| silo5 | noisy | 1 | 2 | flirds_zgate_v2 | 2.3190 | +0.0000 | +0.0001 |  |  | recovery candidate (cohort-relative gate) |  |
+| silo5 | noisy | 1 | 2 | lossheur_gate_v2 | 2.3190 | +0.0000 | +0.0001 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 2 | oracle_excl | 2.3170 | +0.0020 | +1.0000 |  |  |  |  |
+| silo5 | noisy | 1 | 2 | oracleb_gate_v2 | 2.3190 | +0.0000 | +0.0001 |  |  | PARITY -- gate silent (no 0-crossing on nr<=1, audit P3) | HIT |
+| silo5 | noisy | 1 | 2 | random_excl | 2.3179 | +0.0011 | +0.5579 |  |  |  |  |
+| silo5 | noisy | 1 | 2 | v3_random | 2.3190 | +0.0000 | +0.0000 |  |  |  |  |
+| silo5 | noisy | 1 | 2 | v3_sign | 2.3190 | +0.0000 | +0.0000 |  |  | parity |  |
+| silo5 | noisy | 1 | 2 | v3_z | 2.3190 | +0.0000 | +0.0000 |  |  | parity |  |
+| silo5 | noisy | 1 | 2 | vanilla | 2.3190 | +0.0000 | +0.0000 |  |  |  |  |
+| std50k5 | mixed | 1 | 0 | oracle_excl | 1.2864 |  |  | 0.4718 | 0.2771 |  |  |
 
 ## [2] convergence (rounds-to-target = first round entering-loss <= the cell's vanilla final loss)
 
 | regime | threat | nr | seed | arm | rounds_to_target |
 |---|---|---|---|---|---|
+| iid5 | clean | 1 | 0 | flirds_gate_v1 | 10.0000 |
+| iid5 | clean | 1 | 0 | flirds_gate_v2 | 10.0000 |
+| iid5 | clean | 1 | 0 | flirds_w | 10.0000 |
+| iid5 | clean | 1 | 0 | flirds_zgate_v2 | 10.0000 |
+| iid5 | clean | 1 | 0 | lossheur_gate_v2 | 10.0000 |
+| iid5 | clean | 1 | 0 | v3_random |  |
+| iid5 | clean | 1 | 0 | v3_sign |  |
+| iid5 | clean | 1 | 0 | v3_z |  |
+| iid5 | clean | 1 | 0 | vanilla | 10.0000 |
+| iid5 | clean | 1 | 1 | flirds_gate_v1 | 10.0000 |
+| iid5 | clean | 1 | 1 | flirds_gate_v2 | 10.0000 |
+| iid5 | clean | 1 | 1 | flirds_w | 10.0000 |
+| iid5 | clean | 1 | 1 | flirds_zgate_v2 | 10.0000 |
+| iid5 | clean | 1 | 1 | lossheur_gate_v2 | 10.0000 |
+| iid5 | clean | 1 | 1 | v3_random |  |
+| iid5 | clean | 1 | 1 | v3_sign |  |
+| iid5 | clean | 1 | 1 | v3_z |  |
+| iid5 | clean | 1 | 1 | vanilla | 10.0000 |
+| iid5 | clean | 1 | 2 | flirds_gate_v1 | 10.0000 |
+| iid5 | clean | 1 | 2 | flirds_gate_v2 | 10.0000 |
+| iid5 | clean | 1 | 2 | flirds_w | 10.0000 |
+| iid5 | clean | 1 | 2 | flirds_zgate_v2 | 10.0000 |
+| iid5 | clean | 1 | 2 | lossheur_gate_v2 | 10.0000 |
+| iid5 | clean | 1 | 2 | v3_random |  |
+| iid5 | clean | 1 | 2 | v3_sign |  |
+| iid5 | clean | 1 | 2 | v3_z |  |
+| iid5 | clean | 1 | 2 | vanilla | 10.0000 |
+| iid5 | frzero | 1 | 0 | flirds_gate_v1 | 9.0000 |
+| iid5 | frzero | 1 | 0 | flirds_gate_v2 | 9.0000 |
+| iid5 | frzero | 1 | 0 | flirds_w | 9.0000 |
+| iid5 | frzero | 1 | 0 | flirds_zgate_v2 | 9.0000 |
+| iid5 | frzero | 1 | 0 | lossheur_gate_v2 | 9.0000 |
+| iid5 | frzero | 1 | 0 | oracle_excl | 9.0000 |
+| iid5 | frzero | 1 | 0 | random_excl | 9.0000 |
+| iid5 | frzero | 1 | 0 | v3_random |  |
+| iid5 | frzero | 1 | 0 | v3_sign |  |
+| iid5 | frzero | 1 | 0 | v3_z |  |
+| iid5 | frzero | 1 | 0 | vanilla | 10.0000 |
+| iid5 | frzero | 1 | 1 | flirds_gate_v1 | 9.0000 |
+| iid5 | frzero | 1 | 1 | flirds_gate_v2 | 9.0000 |
+| iid5 | frzero | 1 | 1 | flirds_w | 9.0000 |
+| iid5 | frzero | 1 | 1 | flirds_zgate_v2 | 8.0000 |
+| iid5 | frzero | 1 | 1 | lossheur_gate_v2 | 9.0000 |
+| iid5 | frzero | 1 | 1 | oracle_excl | 9.0000 |
+| iid5 | frzero | 1 | 1 | random_excl |  |
+| iid5 | frzero | 1 | 1 | v3_random |  |
+| iid5 | frzero | 1 | 1 | v3_sign |  |
+| iid5 | frzero | 1 | 1 | v3_z |  |
+| iid5 | frzero | 1 | 1 | vanilla | 10.0000 |
+| iid5 | frzero | 1 | 2 | flirds_gate_v1 | 9.0000 |
+| iid5 | frzero | 1 | 2 | flirds_gate_v2 | 9.0000 |
+| iid5 | frzero | 1 | 2 | flirds_w | 9.0000 |
+| iid5 | frzero | 1 | 2 | flirds_zgate_v2 | 8.0000 |
+| iid5 | frzero | 1 | 2 | lossheur_gate_v2 | 9.0000 |
+| iid5 | frzero | 1 | 2 | oracle_excl | 9.0000 |
+| iid5 | frzero | 1 | 2 | random_excl |  |
+| iid5 | frzero | 1 | 2 | v3_random |  |
+| iid5 | frzero | 1 | 2 | v3_sign |  |
+| iid5 | frzero | 1 | 2 | v3_z |  |
+| iid5 | frzero | 1 | 2 | vanilla | 10.0000 |
 | silo5 | clean | 1 | 0 | flirds_gate_v1 | 10.0000 |
 | silo5 | clean | 1 | 0 | flirds_gate_v2 |  |
 | silo5 | clean | 1 | 0 | flirds_w | 8.0000 |
@@ -53,15 +300,172 @@
 | silo5 | clean | 1 | 1 | v3_sign |  |
 | silo5 | clean | 1 | 1 | v3_z |  |
 | silo5 | clean | 1 | 1 | vanilla | 10.0000 |
+| silo5 | clean | 1 | 2 | flirds_gate_v1 | 10.0000 |
+| silo5 | clean | 1 | 2 | flirds_gate_v2 |  |
+| silo5 | clean | 1 | 2 | flirds_w | 8.0000 |
+| silo5 | clean | 1 | 2 | flirds_zgate_v2 |  |
+| silo5 | clean | 1 | 2 | lossheur_gate_v2 |  |
+| silo5 | clean | 1 | 2 | oracleb_gate_v2 |  |
+| silo5 | clean | 1 | 2 | v3_random |  |
+| silo5 | clean | 1 | 2 | v3_sign |  |
+| silo5 | clean | 1 | 2 | v3_z |  |
+| silo5 | clean | 1 | 2 | vanilla | 10.0000 |
+| silo5 | frrand | 1 | 0 | flirds_gate_v1 | 9.0000 |
+| silo5 | frrand | 1 | 0 | flirds_gate_v2 | 9.0000 |
+| silo5 | frrand | 1 | 0 | flirds_w | 8.0000 |
+| silo5 | frrand | 1 | 0 | flirds_zgate_v2 | 9.0000 |
+| silo5 | frrand | 1 | 0 | lossheur_gate_v2 | 9.0000 |
+| silo5 | frrand | 1 | 0 | oracle_excl | 9.0000 |
+| silo5 | frrand | 1 | 0 | oracleb_gate_v2 | 9.0000 |
+| silo5 | frrand | 1 | 0 | random_excl | 9.0000 |
+| silo5 | frrand | 1 | 0 | v3_random |  |
+| silo5 | frrand | 1 | 0 | v3_sign |  |
+| silo5 | frrand | 1 | 0 | v3_z |  |
+| silo5 | frrand | 1 | 0 | vanilla | 10.0000 |
+| silo5 | frrand | 1 | 1 | flirds_gate_v1 | 10.0000 |
+| silo5 | frrand | 1 | 1 | flirds_gate_v2 | 10.0000 |
+| silo5 | frrand | 1 | 1 | flirds_w | 8.0000 |
+| silo5 | frrand | 1 | 1 | flirds_zgate_v2 | 9.0000 |
+| silo5 | frrand | 1 | 1 | lossheur_gate_v2 | 10.0000 |
+| silo5 | frrand | 1 | 1 | oracle_excl | 9.0000 |
+| silo5 | frrand | 1 | 1 | oracleb_gate_v2 | 10.0000 |
+| silo5 | frrand | 1 | 1 | random_excl | 10.0000 |
+| silo5 | frrand | 1 | 1 | v3_random |  |
+| silo5 | frrand | 1 | 1 | v3_sign |  |
+| silo5 | frrand | 1 | 1 | v3_z |  |
+| silo5 | frrand | 1 | 1 | vanilla | 10.0000 |
+| silo5 | frrand | 1 | 2 | flirds_gate_v1 | 10.0000 |
+| silo5 | frrand | 1 | 2 | flirds_gate_v2 | 10.0000 |
+| silo5 | frrand | 1 | 2 | flirds_w | 7.0000 |
+| silo5 | frrand | 1 | 2 | flirds_zgate_v2 |  |
+| silo5 | frrand | 1 | 2 | lossheur_gate_v2 | 9.0000 |
+| silo5 | frrand | 1 | 2 | oracle_excl | 9.0000 |
+| silo5 | frrand | 1 | 2 | oracleb_gate_v2 | 10.0000 |
+| silo5 | frrand | 1 | 2 | random_excl | 10.0000 |
+| silo5 | frrand | 1 | 2 | v3_random |  |
+| silo5 | frrand | 1 | 2 | v3_sign |  |
+| silo5 | frrand | 1 | 2 | v3_z |  |
+| silo5 | frrand | 1 | 2 | vanilla | 10.0000 |
+| silo5 | frzero | 1 | 0 | flirds_gate_v1 | 9.0000 |
+| silo5 | frzero | 1 | 0 | flirds_gate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 0 | flirds_w | 8.0000 |
+| silo5 | frzero | 1 | 0 | flirds_zgate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 0 | lossheur_gate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 0 | oracle_excl | 9.0000 |
+| silo5 | frzero | 1 | 0 | oracleb_gate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 0 | random_excl | 9.0000 |
+| silo5 | frzero | 1 | 0 | v3_random |  |
+| silo5 | frzero | 1 | 0 | v3_sign |  |
+| silo5 | frzero | 1 | 0 | v3_z |  |
+| silo5 | frzero | 1 | 0 | vanilla | 10.0000 |
+| silo5 | frzero | 1 | 1 | flirds_gate_v1 | 9.0000 |
+| silo5 | frzero | 1 | 1 | flirds_gate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 1 | flirds_w | 8.0000 |
+| silo5 | frzero | 1 | 1 | flirds_zgate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 1 | lossheur_gate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 1 | oracle_excl | 9.0000 |
+| silo5 | frzero | 1 | 1 | oracleb_gate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 1 | random_excl | 10.0000 |
+| silo5 | frzero | 1 | 1 | v3_random |  |
+| silo5 | frzero | 1 | 1 | v3_sign |  |
+| silo5 | frzero | 1 | 1 | v3_z |  |
+| silo5 | frzero | 1 | 1 | vanilla | 10.0000 |
+| silo5 | frzero | 1 | 2 | flirds_gate_v1 | 9.0000 |
+| silo5 | frzero | 1 | 2 | flirds_gate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 2 | flirds_w | 7.0000 |
+| silo5 | frzero | 1 | 2 | flirds_zgate_v2 | 10.0000 |
+| silo5 | frzero | 1 | 2 | lossheur_gate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 2 | oracle_excl | 9.0000 |
+| silo5 | frzero | 1 | 2 | oracleb_gate_v2 | 9.0000 |
+| silo5 | frzero | 1 | 2 | random_excl | 10.0000 |
+| silo5 | frzero | 1 | 2 | v3_random |  |
+| silo5 | frzero | 1 | 2 | v3_sign |  |
+| silo5 | frzero | 1 | 2 | v3_z |  |
+| silo5 | frzero | 1 | 2 | vanilla | 10.0000 |
+| silo5 | noisy | 0.75 | 0 | flirds_gate_v1 | 10.0000 |
+| silo5 | noisy | 0.75 | 0 | flirds_gate_v2 | 10.0000 |
+| silo5 | noisy | 0.75 | 0 | flirds_w | 8.0000 |
+| silo5 | noisy | 0.75 | 0 | flirds_zgate_v2 | 10.0000 |
+| silo5 | noisy | 0.75 | 0 | lossheur_gate_v2 | 10.0000 |
+| silo5 | noisy | 0.75 | 0 | oracle_excl | 10.0000 |
+| silo5 | noisy | 0.75 | 0 | oracleb_gate_v2 | 10.0000 |
+| silo5 | noisy | 0.75 | 0 | random_excl | 10.0000 |
+| silo5 | noisy | 0.75 | 0 | v3_random |  |
+| silo5 | noisy | 0.75 | 0 | v3_sign |  |
+| silo5 | noisy | 0.75 | 0 | v3_z |  |
+| silo5 | noisy | 0.75 | 0 | vanilla | 10.0000 |
 | silo5 | noisy | 1 | 0 | flirds_gate_v1 | 10.0000 |
+| silo5 | noisy | 1 | 0 | flirds_gate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 0 | flirds_w | 8.0000 |
+| silo5 | noisy | 1 | 0 | flirds_zgate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 0 | lossheur_gate_v2 | 10.0000 |
 | silo5 | noisy | 1 | 0 | oracle_excl | 10.0000 |
+| silo5 | noisy | 1 | 0 | oracleb_gate_v2 | 10.0000 |
 | silo5 | noisy | 1 | 0 | random_excl |  |
+| silo5 | noisy | 1 | 0 | v3_random |  |
+| silo5 | noisy | 1 | 0 | v3_sign |  |
+| silo5 | noisy | 1 | 0 | v3_z |  |
 | silo5 | noisy | 1 | 0 | vanilla | 10.0000 |
+| silo5 | noisy | 1 | 1 | flirds_gate_v1 | 10.0000 |
+| silo5 | noisy | 1 | 1 | flirds_gate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 1 | flirds_w | 8.0000 |
+| silo5 | noisy | 1 | 1 | flirds_zgate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 1 | lossheur_gate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 1 | oracle_excl | 10.0000 |
+| silo5 | noisy | 1 | 1 | oracleb_gate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 1 | random_excl | 10.0000 |
+| silo5 | noisy | 1 | 1 | v3_random |  |
+| silo5 | noisy | 1 | 1 | v3_sign |  |
+| silo5 | noisy | 1 | 1 | v3_z |  |
+| silo5 | noisy | 1 | 1 | vanilla | 10.0000 |
+| silo5 | noisy | 1 | 2 | flirds_gate_v1 | 10.0000 |
+| silo5 | noisy | 1 | 2 | flirds_gate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 2 | flirds_w | 8.0000 |
+| silo5 | noisy | 1 | 2 | flirds_zgate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 2 | lossheur_gate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 2 | oracle_excl | 9.0000 |
+| silo5 | noisy | 1 | 2 | oracleb_gate_v2 | 10.0000 |
+| silo5 | noisy | 1 | 2 | random_excl | 10.0000 |
+| silo5 | noisy | 1 | 2 | v3_random |  |
+| silo5 | noisy | 1 | 2 | v3_sign |  |
+| silo5 | noisy | 1 | 2 | v3_z |  |
+| silo5 | noisy | 1 | 2 | vanilla | 10.0000 |
+| std50k5 | mixed | 1 | 0 | oracle_excl |  |
 
 ## [3] gate accuracy (per-round excluded set vs corrupt; micro P/R) + vanilla-observer per-round false-fire
 
 | regime | threat | nr | seed | arm | precision | recall | n_excluded_pairs | false_excl_pairs | n_fallback_rounds |
 |---|---|---|---|---|---|---|---|---|---|
+| iid5 | clean | 1 | 0 | flirds_gate_v1 |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 0 | flirds_gate_v2 |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 0 | flirds_zgate_v2 | 0.0000 |  | 2 | 2 | 0 |
+| iid5 | clean | 1 | 0 | lossheur_gate_v2 |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 0 | vanilla |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 1 | flirds_gate_v1 |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 1 | flirds_gate_v2 |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 1 | flirds_zgate_v2 | 0.0000 |  | 6 | 6 | 0 |
+| iid5 | clean | 1 | 1 | lossheur_gate_v2 |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 1 | vanilla |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 2 | flirds_gate_v1 |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 2 | flirds_gate_v2 |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 2 | flirds_zgate_v2 | 0.0000 |  | 12 | 12 | 0 |
+| iid5 | clean | 1 | 2 | lossheur_gate_v2 |  |  | 0 | 0 | 0 |
+| iid5 | clean | 1 | 2 | vanilla |  |  | 0 | 0 | 0 |
+| iid5 | frzero | 1 | 0 | flirds_gate_v1 | 1.0000 | 1.0000 | 10 | 0 | 0 |
+| iid5 | frzero | 1 | 0 | flirds_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| iid5 | frzero | 1 | 0 | flirds_zgate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| iid5 | frzero | 1 | 0 | lossheur_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| iid5 | frzero | 1 | 0 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| iid5 | frzero | 1 | 1 | flirds_gate_v1 | 1.0000 | 1.0000 | 10 | 0 | 0 |
+| iid5 | frzero | 1 | 1 | flirds_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| iid5 | frzero | 1 | 1 | flirds_zgate_v2 | 0.5833 | 1.0000 | 12 | 5 | 0 |
+| iid5 | frzero | 1 | 1 | lossheur_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| iid5 | frzero | 1 | 1 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| iid5 | frzero | 1 | 2 | flirds_gate_v1 | 1.0000 | 1.0000 | 10 | 0 | 0 |
+| iid5 | frzero | 1 | 2 | flirds_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| iid5 | frzero | 1 | 2 | flirds_zgate_v2 | 0.5833 | 1.0000 | 12 | 5 | 0 |
+| iid5 | frzero | 1 | 2 | lossheur_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| iid5 | frzero | 1 | 2 | vanilla |  | 0.0000 | 0 | 0 | 0 |
 | silo5 | clean | 1 | 0 | flirds_gate_v1 |  |  | 0 | 0 | 0 |
 | silo5 | clean | 1 | 0 | flirds_gate_v2 |  |  | 0 | 0 | 0 |
 | silo5 | clean | 1 | 0 | flirds_zgate_v2 |  |  | 0 | 0 | 0 |
@@ -74,16 +478,96 @@
 | silo5 | clean | 1 | 1 | lossheur_gate_v2 |  |  | 0 | 0 | 0 |
 | silo5 | clean | 1 | 1 | oracleb_gate_v2 |  |  | 0 | 0 | 0 |
 | silo5 | clean | 1 | 1 | vanilla |  |  | 0 | 0 | 0 |
+| silo5 | clean | 1 | 2 | flirds_gate_v1 |  |  | 0 | 0 | 0 |
+| silo5 | clean | 1 | 2 | flirds_gate_v2 |  |  | 0 | 0 | 0 |
+| silo5 | clean | 1 | 2 | flirds_zgate_v2 |  |  | 0 | 0 | 0 |
+| silo5 | clean | 1 | 2 | lossheur_gate_v2 |  |  | 0 | 0 | 0 |
+| silo5 | clean | 1 | 2 | oracleb_gate_v2 |  |  | 0 | 0 | 0 |
+| silo5 | clean | 1 | 2 | vanilla |  |  | 0 | 0 | 0 |
+| silo5 | frrand | 1 | 0 | flirds_gate_v1 | 1.0000 | 0.8000 | 8 | 0 | 0 |
+| silo5 | frrand | 1 | 0 | flirds_gate_v2 | 1.0000 | 0.8571 | 6 | 0 | 0 |
+| silo5 | frrand | 1 | 0 | flirds_zgate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frrand | 1 | 0 | lossheur_gate_v2 | 1.0000 | 0.8571 | 6 | 0 | 0 |
+| silo5 | frrand | 1 | 0 | oracleb_gate_v2 | 1.0000 | 0.7143 | 5 | 0 | 0 |
+| silo5 | frrand | 1 | 0 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | frrand | 1 | 1 | flirds_gate_v1 | 1.0000 | 0.3000 | 3 | 0 | 0 |
+| silo5 | frrand | 1 | 1 | flirds_gate_v2 | 1.0000 | 0.4286 | 3 | 0 | 0 |
+| silo5 | frrand | 1 | 1 | flirds_zgate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frrand | 1 | 1 | lossheur_gate_v2 | 1.0000 | 0.4286 | 3 | 0 | 0 |
+| silo5 | frrand | 1 | 1 | oracleb_gate_v2 | 1.0000 | 0.2857 | 2 | 0 | 0 |
+| silo5 | frrand | 1 | 1 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | frrand | 1 | 2 | flirds_gate_v1 | 1.0000 | 0.4000 | 4 | 0 | 0 |
+| silo5 | frrand | 1 | 2 | flirds_gate_v2 | 1.0000 | 0.2857 | 2 | 0 | 0 |
+| silo5 | frrand | 1 | 2 | flirds_zgate_v2 | 1.0000 | 0.1429 | 1 | 0 | 0 |
+| silo5 | frrand | 1 | 2 | lossheur_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frrand | 1 | 2 | oracleb_gate_v2 | 1.0000 | 0.1429 | 1 | 0 | 0 |
+| silo5 | frrand | 1 | 2 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | frzero | 1 | 0 | flirds_gate_v1 | 1.0000 | 1.0000 | 10 | 0 | 0 |
+| silo5 | frzero | 1 | 0 | flirds_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 0 | flirds_zgate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 0 | lossheur_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 0 | oracleb_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 0 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | frzero | 1 | 1 | flirds_gate_v1 | 1.0000 | 1.0000 | 10 | 0 | 0 |
+| silo5 | frzero | 1 | 1 | flirds_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 1 | flirds_zgate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 1 | lossheur_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 1 | oracleb_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 1 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | frzero | 1 | 2 | flirds_gate_v1 | 1.0000 | 1.0000 | 10 | 0 | 0 |
+| silo5 | frzero | 1 | 2 | flirds_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 2 | flirds_zgate_v2 | 1.0000 | 0.1429 | 1 | 0 | 0 |
+| silo5 | frzero | 1 | 2 | lossheur_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 2 | oracleb_gate_v2 | 1.0000 | 1.0000 | 7 | 0 | 0 |
+| silo5 | frzero | 1 | 2 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 0.75 | 0 | flirds_gate_v1 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 0.75 | 0 | flirds_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 0.75 | 0 | flirds_zgate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 0.75 | 0 | lossheur_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 0.75 | 0 | oracleb_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 0.75 | 0 | vanilla |  | 0.0000 | 0 | 0 | 0 |
 | silo5 | noisy | 1 | 0 | flirds_gate_v1 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 0 | flirds_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 0 | flirds_zgate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 0 | lossheur_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 0 | oracleb_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
 | silo5 | noisy | 1 | 0 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 1 | flirds_gate_v1 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 1 | flirds_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 1 | flirds_zgate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 1 | lossheur_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 1 | oracleb_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 1 | vanilla |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 2 | flirds_gate_v1 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 2 | flirds_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 2 | flirds_zgate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 2 | lossheur_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 2 | oracleb_gate_v2 |  | 0.0000 | 0 | 0 | 0 |
+| silo5 | noisy | 1 | 2 | vanilla |  | 0.0000 | 0 | 0 | 0 |
 
 vanilla observer (per-round raw, the project's first per-round phi record):
 
 | regime | threat | nr | seed | clean_raw_false_fire_rate | all_clean_cum_pos_from_round |
 |---|---|---|---|---|---|
+| iid5 | clean | 1 | 0 | 0.0000 | 0.0000 |
+| iid5 | clean | 1 | 1 | 0.0000 | 0.0000 |
+| iid5 | clean | 1 | 2 | 0.0000 | 0.0000 |
+| iid5 | frzero | 1 | 0 | 0.0000 | 0.0000 |
+| iid5 | frzero | 1 | 1 | 0.0000 | 0.0000 |
+| iid5 | frzero | 1 | 2 | 0.0000 | 0.0000 |
 | silo5 | clean | 1 | 0 | 0.0000 | 0.0000 |
 | silo5 | clean | 1 | 1 | 0.0000 | 0.0000 |
+| silo5 | clean | 1 | 2 | 0.0000 | 0.0000 |
+| silo5 | frrand | 1 | 0 | 0.0000 | 0.0000 |
+| silo5 | frrand | 1 | 1 | 0.0000 | 0.0000 |
+| silo5 | frrand | 1 | 2 | 0.0000 | 0.0000 |
+| silo5 | frzero | 1 | 0 | 0.0000 | 0.0000 |
+| silo5 | frzero | 1 | 1 | 0.0000 | 0.0000 |
+| silo5 | frzero | 1 | 2 | 0.0000 | 0.0000 |
+| silo5 | noisy | 0.75 | 0 | 0.0000 | 0.0000 |
 | silo5 | noisy | 1 | 0 | 0.0000 | 0.0000 |
+| silo5 | noisy | 1 | 1 | 0.0000 | 0.0000 |
+| silo5 | noisy | 1 | 2 | 0.0000 | 0.0000 |
 
 ## CNN (track_c2 gate cells)
 

@@ -1,0 +1,42 @@
+{
+  "arm": "vanilla",
+  "regime": "silo5",
+  "threat": "noisy",
+  "seed": 2,
+  "corrupt": [
+    0
+  ],
+  "final_val_loss": 2.319026470184326,
+  "val_curve": [
+    2.3350276947021484,
+    2.3334133625030518,
+    2.3318254947662354,
+    2.330253839492798,
+    2.328688859939575,
+    2.3271219730377197,
+    2.3255457878112793,
+    2.3239526748657227,
+    2.322338581085205,
+    2.32069730758667,
+    2.319026470184326
+  ],
+  "train_s": 685.6530611719936,
+  "rounds_to_target": 10,
+  "vanilla_target": 2.319026470184326,
+  "gate": {
+    "precision": null,
+    "recall": 0.0,
+    "n_excluded_pairs": 0,
+    "false_excl_pairs": 0,
+    "n_fallback_rounds": 0
+  },
+  "gate_cfg": {
+    "burn_in": 3,
+    "tau": 0.0,
+    "min_obs": 2,
+    "probation_every": 5,
+    "decay": 1.0,
+    "z_c": 1.5,
+    "alpha_w": 1.0
+  }
+}
