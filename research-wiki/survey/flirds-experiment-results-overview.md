@@ -26,7 +26,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > - Signal-size probe(§3.6): LLM A축 `runs/probe_signal/rundirs/1B_*` · `runs/probe_signal/noise_probe/*` · CNN A축 `runs/probe_signal/cnn_c{1,2}/pc*` · B축 매트릭스 `runs/phase2_matrix/rundirs/1B_{iid5,silo5}_*` (+ track_c/track_d/silo5 기준점 재사용); 배경 [[flirds-signal-size-diagnosis]]
 > - Removal-dose(§3.7): `runs/removal_dose/rundirs*/` (LLM A2·B·A1·D=AdamW 3-seed + CNN A3 `rundirs_cnn/`)
 > - 계측(§3.5.3): `runs/measured_2026-07/{taylor,e3_cost_smoke,timing_device100,microbench,acct}/`
-> - φ-부호 감사(§3.8): `runs/track_g/audit/` (전 rundir 파생 재분석)
+> - φ-부호 감사(§3.8): `runs/track_g/audit/` (전 rundir 파생 재분석) · φ-게이팅 Phase B(§3.2.3–4): `runs/track_g/rundirs/`(LLM 214; ⚠ `rundirs_llm/`은 빈 폴더) + `rundirs_cnn/`(36) + `rundirs_cnn_v3/`(12) · 정본 `runs/track_g/analysis/{llm_summary.csv,cnn_summary.csv}`
 >
 > **수치 재생성 경로** (rundir만으로 재실행 가능, GPU 불필요):
 > - `python runs/track_d/make_fidelity.py` → `runs/track_d/fidelity.csv` 재생성 (1B/3B/7B × std20/anchor5)
@@ -34,7 +34,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > - CNN `RESULTS.txt`는 Track C의 결과 정리 스크립트가 rundir에서 재생성.
 >
 > 자매 문서(중복 X, 링크만): baseline 수치가 각 방법 원 논문과 얼마나 맞는지는
-> [[baseline-original-paper-verification-2026-06-22]]. 선행연구 지형 분류는 [[prior-work-taxonomy/README]].
+> [[baseline-original-paper-verification]]. 선행연구 지형 분류는 [[prior-work-taxonomy/README]].
 
 ---
 
@@ -83,7 +83,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | 11    | Robustness · 1B cross-device N=100 α=0.5 **Anchor cell** (`.../1B_device100-a0.5_*_anchor`) | Llama-3.2-1B · N=100 · 10/100       | client | in-run (+recon/IF/ComFedSV/탐지기4)          | **Fidelity·Detection**·Cost             | approx vs exact(b)-perround | **(b) per-round**                    | 3            | ●                       |
 | 12    | Robustness · 1B cross-device N=100 poison (`.../1B_device100-a{0,0.5}_poison`)              | Llama-3.2-1B · N=100 · 10/100       | client | in-run (+IF/ComFedSV/탐지기4)                | **Detection**·Fidelity                  | approx vs Flirds-proxy      | Flirds proxy                         | 3            | ●                       |
 | 13    | Robustness · 3B cross-silo N=5 (`phase2_matrix/3B_silo5_*`)                                 | Llama-3.2-3B · N=5 · full           | client | in-run (+IF/탐지기4)                         | Fidelity·Detection                      | approx vs exact(b)          | (b) 2⁵ in-run                        | **1**        | ◐                       |
-| 14    | Foundational · 1B 첫 clean run (`phase1/...full-lr*`)                                        | Llama-3.2-1B · N=5 · full           | client | in-run                                    | Detection·Perf(selection)               | approx                      | 주입 라벨(oracle 없음)                     | 3×2lr        | ● (부록)                  |
+| 14    | Foundational · 1B 첫 clean run (`phase1/...full-lr*`)                                        | Llama-3.2-1B · N=5 · full           | client | in-run                                    | Detection·Perf(selection)               | approx                      | 주입 라벨(oracle 없음)                     | 3×2lr        | ● (부록 §4.1 + selection §3.2.5) |
 | 15    | Foundational · 1B LR sweep (`phase1/...sweep-lr*`)                                          | Llama-3.2-1B · N=5 · full           | client | in-run                                    | Detection·Perf(selection)               | approx vs exact(b)          | (b) 2⁵ in-run                        | 1×4lr        | ● (부록)                  |
 | 16    | Signal-size probe C1 (`probe_signal/cnn_c1`)                                                | 소형 CNN · N=10 · 2·5·10/10           | client | in-run (+recon/IF/Banzhaf)                | **Fidelity** (폭·참여 sweep)               | approx vs exact(b)          | (b) 2¹⁰/per-round in-run             | 3            | ● (§3.6.2)              |
 | 17    | Signal-size probe C2 (`probe_signal/cnn_c2`)                                                | 소형 CNN · N=100 · 5·10/100           | client | in-run intervention arms (+sfedavg)       | **Perf·Detection·Conv** (폭·참여 sweep)    | – (개입 arm)                  | corrupt 마스크                          | 3            | ● (§3.6.3)              |
@@ -94,7 +94,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | 22    | Robustness frdelta E7 (`phase2_matrix/rundirs_2026-07/1B_silo5_frdelta`)                    | Llama-3.2-1B · N=5 · full           | client | in-run (+Fed-LOO/탐지기4)                    | **Detection** (delta-FR 한계)            | approx vs exact(b)          | (b) 2⁵ in-run                        | 3            | ● (§3.4.5)              |
 | 23    | Taylor 물리잔차 E2 (`measured_2026-07/taylor`)                                                  | Llama-3.2-1B · N=5 · full           | client | – (계측)                                   | **검증(명제 P3)**                          | –                           | exact ΔL per-coalition               | 3            | ● (§3.1.7)              |
 | 24    | φ-부호 감사 Stage 0 (`track_g/audit`, derived)                                                 | 기존 전 rundir 309개                    | client | – (재분석)                                   | **Track G 예측 확정/수정**                   | –                           | rundir φ 부호                          | –            | ● (§3.8)                |
-| 25    | φ 부호-게이팅 Phase B (`track_g/rundirs_llm`+`rundirs_cnn`)                                    | 1B N=5 full (silo5·iid5) + 소형 CNN N=100 | client | in-run 게이트 arms (sign/z/V2w/V3)          | **Perf(온라인 배제)·게이트 P/R**              | – (개입 arm)                  | oracle_excl 상한 + corrupt 마스크        | 3 (일부 seed0) | ● (§3.8.1–2; V2w 불승격) |
+| 25    | φ 부호-게이팅 Phase B (`track_g/rundirs`+`rundirs_cnn(+_v3)`)                                  | 1B N=5 full (silo5·iid5) + 소형 CNN N=100 | client | in-run 게이트 arms (sign/z/V2w/V3)          | **Perf(온라인 배제)·게이트 P/R**              | – (개입 arm)                  | oracle_excl 상한 + corrupt 마스크        | 3 (일부 seed0) | ● (§3.2.3–4; V2w 불승격) |
 | —     | **이하 계획 행 (⬚=미실행; 완료된 행은 status ●/◐·§ 참조)**                                                                        |                                     |        |                                           |                                         |                             |                                      |              |                         |
 | P1    | LLM N=10 (a)/(b) oracle                                                                     | LLM · N=10                          | client | retrain+in-run                            | Fidelity(고-power)                       | exact                       | (a)/(b) 2¹⁰                          | (b)=1        | ◐ (b) seed0 완료=행21·§3.1.6; (a) 2¹⁰·seeds1-2 ⬚(셀당 ~33h, Yonghee 07-18 결정) |
 | P2    | LLM 3B anchor **(a) retrain oracle**                                                        | Llama-3.2-3B · N=5                  | client | retrain                                   | Fidelity(dual oracle)                   | exact                       | (a) 2⁵ retrain                       | ⬚            | ⬚                       |
@@ -105,6 +105,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | P7    | Removal/selection curve (`removal_dose/*_removal_*`+`rundirs_cnn`)                          | 1B silo5 N=5 + track_d anchor5 + CNN N=10(A3) | client | in-run+(a)retrain                         | **Fidelity(게임-무관 downstream; C-1/C-4)** | – (removal 재학습)             | (a) 재학습 val-loss                     | 3            | ● §3.7.1–2·§3.7.5 (07-17 완주) |
 | P8    | Dose-response (`removal_dose/*_dose_*`)                                                     | 1B silo5 N=5                        | client | in-run(+탐지기)                              | **Fidelity(φ vs 오염강도; C-3)**            | approx vs (b)               | (b) 2⁵                               | 3            | ● §3.7.3 (3-seed 확정)       |
 | P9    | AdamW-fidelity (`removal_dose/*_adamw`)                                                     | 1B anchor5 N=5                      | client | in-run                                    | **Fidelity(external-validity; C-5)**    | approx vs (a)&(b)           | (a)/(b) 2⁵                           | 3            | ● §3.7.4 (3-seed 확정 07-18) |
+| P10   | **Track H 점수원 경쟁** (`track_h`, 설계만)                                                       | CNN N=100 dir1 + 1B std50k5·silo5 noisy | client | in-run **전 점수원 8종** × 정책 4(sign±가중/mult/z) × 시점 2(online/retrain) | **Perf(경쟁: 어느 φ 정의가 학습을 잘 만드나)**   | – (개입 arm)                  | oracle_excl 상한 + corrupt 마스크        | ⬚            | ⬚ 구현 완료(코드 커밋; 테스트 green) — 실행 대기 `runs/track_h/HANDOFF_GPU_SERVER.md` |
 | Exp C | (b) target self-stability (derived)                                                         | 기존 track_d/phase2 rundir            | client | – (재분석)                                   | **Stability(C-2)**                      | –                           | (b) φ xseed                          | 3            | ● §3.1.5 (재실행 0, 로컬 완료) |
 
 > **"검증 목적" 용어 정의** (각 §3 섹션이 본문; E1–E7 매핑은 §4.4):
@@ -139,8 +140,8 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 **2차-① 성능/집계 — 오염 무대에서만 승**
 - 승: CNN C2 grad_noise acc 0.499→0.609(dir1 repl 0.621)·label_flip 0.583→0.626(§3.2.2); removal에서 순위→acc 분리 인과 확인(cifar10 +0.045 = (b) 동급, 순위 낮은 방법은 분리 ≈0; §3.7.5); clean은 기대대로 do-no-harm parity(§3.2.1).
 - 약세: clean-IID 이득은 원리적 부재(효과 < 표본 SE); grad_noise 일부 칸 shapleyfl(0.645) 우위; **removal poison에서 Flirds top-1 제거 실패(ASR 1.0 유지)** vs coalition·loss-heur 전부 무력화(§3.7.2) — ρ 0.93이어도 top-1이 틀리는 사례.
-- **승(신규, Track G)**: 온라인 부호-게이팅 — **frzero 자동배제 recovery 1.000**(LLM silo5·iid5 3-seed, 오배제 0 = φ=0 공리의 배포형 활용)·clean 게이트 무발화(max|Δ|=0.00056)·CNN grad-noise 회수 0.86–0.94(§3.8.1–2).
-- **약세(신규, Track G)**: noisy는 sign-게이트 작동영역 없음(누적 φ 양수, 예측 적중 — 회수는 탐지+selection 몫)·frrand는 부호 코인플립으로 seed-의존·**CNN clean에서 게이트 오발화 → V2w 승격 불가**(§3.8.2).
+- **승(신규, Track G)**: 온라인 부호-게이팅 — **frzero 자동배제 recovery 1.000**(LLM silo5·iid5 3-seed, 오배제 0 = φ=0 공리의 배포형 활용)·clean 게이트 무발화(max|Δ|=0.00056)·CNN grad-noise 회수 0.86–0.94(§3.2.3–4).
+- **약세(신규, Track G)**: noisy는 sign-게이트 작동영역 없음(누적 φ 양수, 예측 적중 — 회수는 탐지+selection 몫)·frrand는 부호 코인플립으로 seed-의존·**CNN clean에서 게이트 오발화 → V2w 승격 불가**(§3.2.4).
 
 **2차-② 수렴 — 조건부 승**
 - 7B std20 184.7→153.0 라운드(~17%↓; §3.3.1) · CNN grad_noise 27.2→13.7(repl 6.3; §3.3.2) · C2 probe label-flip은 vanilla 전 칸 target 미달 vs flirds_mult 도달(§3.6.3). 1B·anchor5는 미미(신호 부재 귀결); label_flip r2t 역전 칸 존재(최종 acc는 우위).
@@ -475,6 +476,23 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 ## 3.2 Selection → downstream performance / Aggregation quality (2차 ①)
 
+> **이 절의 목적** = 측정한 기여도 φ로 학습 자체를 더 잘 만들 수 있음을 보여 **계산된 기여도가 실효적으로 유의미함**을 증명한다 — 기여도 기반 개입(soft 가중 · softmax 선택 · sign-게이팅 · 부분집합 재학습)이 오염 무대에선 성능을 회복시키고, clean 무대에선 해치지 않아야(do-no-harm) 한다. **2026-07-19 재구성**: 이 목적에 부합하는 실험 전부를 본 절로 통합 — 구 §3.8 Phase B(게이팅) → §3.2.3–4, 구 §4.1 phase1 selection arms → §3.2.5. 사후 제거-재학습(removal) 증거 = §3.7.1/§3.7.5, 수렴 속도 = §3.3(자매 증거, 링크만). 종합 판정·최고 세팅 = **§3.2.6**.
+>
+> **4축 커버리지 매트릭스** — ① LLM/CNN ② IID/non-IID ③ 계산 시점(**retrain** = 전체 학습 후 φ로 부분집합 선택 → init부터 재학습 / **per-update** = 라운드마다 누적 φ로 온라인 결정) ④ 선택 규칙(**top-k** / **양수-only** = cum φ>0 게이트):
+
+| 정책 (③×④) | LLM · IID | LLM · non-IID | CNN · IID | CNN · non-IID |
+|---|---|---|---|---|
+| retrain × top-k | — | ● phase1 K=3/5 (§3.2.5) | — | — |
+| retrain × 양수-only (V3) | ● iid5 (§3.2.3) | ● silo5 (§3.2.3) | ◐ 오염 시나리오만(파티션-skew V3 없음) (§3.2.4) | — |
+| per-update × soft top-k (softmax 선택) | ● std20 `flirds_sel` (§3.2.1) | — | ● C2 `flirds_select` iid (§3.2.2) | ● C2 dir1·shard (§3.2.2) |
+| per-update × 양수-only (sign-게이트) | ● iid5 · ◐ std50k5 seed0 (§3.2.3) | ● silo5 (§3.2.3) | ● iid (§3.2.4) | ● dir1 (§3.2.4) |
+
+> 매트릭스 주: **하드 top-k per-update arm은 전 무대 설계상 부재** — per-update 선택은 softmax 샘플링(확률적 soft top-k) 아니면 parameter-free sign-게이트뿐이며, top-k 상한은 `oracle_excl`이 대역(`runs/track_g/README.md` §7). soft **가중** arm(flirds_w/mult/repl/add 등 — 선택이 아니라 집계 가중)은 §3.2.1–2에 함께 수록.
+>
+> **왜 baseline-set이 fidelity(§3.1, 9~11종)보다 작은가** — ① **비용 구조가 다름**: fidelity는 방법 전부가 *같은 학습 궤적 하나*를 사후 채점(값싼 후처리)하지만, 개입 arm은 가중/선택이 궤적 자체를 바꾸므로 **arm 1개 = FL 학습 전체 1회** → 비용이 arm 수 × 셀 × seed에 선형(track_g LLM만 이미 214 rundir). ② **공정성(자기 논문 방식) 원칙**: 개입 레시피가 원 논문에 정의된 방법만 arm화 — ShapleyFL(교체 가중)·FedIF(교체 가중)·S-FedAvg(선택)·Ripple(additive, CNN). ③ **Track G는 baseline 동물원이 아니라 통제 설계**: 같은 V2 게이트 정책에 *점수원만* 교체(flirds / loss-heur / (b)oracle=정책 천장 / ShapleyFL=붕괴-무대 대조) + oracle_excl·random_excl 상·하한 — GTG/FedSV 게이트는 noisy 발화가 coalition-renorm 값-오차의 부산물이라 당시 의도 제외(`track_g/README.md`, audit 권고2).
+>
+> **[07-19 Yonghee 판정 — 위 공백 자체가 채워야 할 결함]**: fidelity는 우리가 정의한 게임((b))의 자기-일치라 타 정의 방법의 심판이 될 수 없음 — "다른 baseline들이 계산한 기여도로 **똑같은 실험**을 했을 때 우리가 더 잘한다"를 보여야 기여도 정의의 실효 우열이 증명됨(다운스트림 = 게임-무관 중립 심판). sign-게이트 경쟁도 **불공정이 아님**: 0의 의미론(zero-semantics)은 기여도 품질의 일부이므로, 0을 다르게 정의한 방법의 오발화는 그 방법의 실측 감점(②·③의 제외 근거를 경쟁 실험에선 승격). → **Track H 점수원 경쟁 설계 = §2 P10, `runs/track_h/README.md`** (점수원 8종 × 정책 4종[sign±크기가중·mult·z] × 시점 2종[online/retrain] × 차이-무대[CNN dir1·std50k5·silo5 noisy]; 예측표 사전 등록·티어별 승인 게이트). 기존 부분 증거: retrain 사분면 경쟁은 removal(§3.7.1/§3.7.5)이 이미 전 11종 커버(CNN서 Flirds 승리·poison서 정직 패배), 온라인 사분면은 track_g 점수원 3종뿐(frzero 동률·frrand는 loss-heur 우위 = 미결).
+
 ### 3.2.1 LLM standard intervention arms (`track_d`) — clean-IID do-no-harm parity
 
 **(a) 세팅**: §3.1.1과 동일 궤적. arms = 같은 vanilla 로그에서 파생한 온라인 개입 6종.
@@ -558,6 +576,131 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 **(c) baseline-set 노트**: 포함 8 arm. **flirds_repl/flirds_add 제외@iid·shard** = size-skew(dir1)에서만 MULT와 갈리므로 dir1 전용 ─ *적용규칙: 참여형태/적용성*. valuation fidelity baseline(GTG/FedSV exact 등)은 C2엔 없음(C2는 개입-성능 무대; fidelity는 C1).
 
 > **확장**: 이 C2를 **폭 w×참여 f로 sweep**한 신호크기 probe = **§3.6.3**(clean은 폭·참여 무관 parity, label-flip 개입 이득 ~0.09도 폭 무관).
+
+---
+
+### 3.2.3 LLM φ-게이팅 + V3 재학습 (Track G Phase B; `track_g/rundirs`, 214 rundir, 2026-07-19)
+
+> 구 §3.8.1에서 이동(2026-07-19 재구성; 전제가 된 Stage 0 부호 감사 = §3.8). ⚠ **경로 정정**: LLM rundir는 `runs/track_g/rundirs/`(214개)이며 `rundirs_llm/`은 빈 폴더(2026-07-19 실측).
+
+**세팅**: silo5 {clean, noisy(nr1.0), frrand, frzero}×3-seed + iid5 {clean, frzero}×3-seed + silo5 noisy-nr0.75 seed0 + std50k5-mixed seed0(부분) — 전 셀 arms + per-round `phi_rounds.parquet`(프로젝트 최초 per-round φ 영속). arm = sign-게이트 2종(V1/V2; V2=burn-in·probation 포함; **per-update × 양수-only**), z-게이트(cohort-상대), lossheur/oracleb 게이트 대조, soft 가중 `flirds_w`, `oracle_excl`/`random_excl` 상·하한, **V3**(vanilla 완주 후 게이트 판정 kept로 init부터 재학습 = **retrain × 양수-only**: sign/z/random). recovery = (vanilla−arm)/(vanilla−oracle_excl). 분석 정본 = `track_g/analysis/{README.md,llm_summary.csv}`(rundir-only 재생성; 스팟 대조 3셀 rundir 일치 확인 07-19).
+
+**(b) 결과 — final val-loss ↓, arm×셀, 3-seed mean±std** (llm_summary.csv 재집계 2026-07-19; silo5 noisy-nr0.75는 seed0뿐이라 생략, std50k5-mixed는 파일럿이라 생략 — 아래 비용 불릿)
+
+| arm | iid5 clean | iid5 frzero | silo5 clean | silo5 noisy nr1.0 | silo5 frrand | silo5 frzero |
+|---|---|---|---|---|---|---|
+| vanilla | 1.3147±.0556 | 1.3199±.0557 | 2.3322±.0474 | 2.3340±.0471 | 2.3364±.0459 | 2.3362±.0454 |
+| oracle_excl (상한) | – | 1.3126±.0554 | – | 2.3323±.0472 | 2.3328±.0459 | 2.3325±.0453 |
+| random_excl (통제) | – | 1.3184±.0503 | – | 2.3331±.0464 | 2.3349±.0475 | 2.3347±.0470 |
+| **flirds_gate_v2** | 1.3147±.0556 | **1.3126±.0554** | 2.3322±.0474 | 2.3340±.0471 | 2.3347±.0465 | **2.3325±.0453** |
+| flirds_gate_v1 | 1.3147±.0556 | 1.3134±.0554 | 2.3322±.0474 | 2.3340±.0471 | 2.3347±.0465 | 2.3329±.0453 |
+| flirds_zgate_v2 | 1.3144±.0559 | 1.3125±.0555 | 2.3322±.0474 | 2.3340±.0471 | 2.3339±.0454 | 2.3336±.0449 |
+| flirds_w (soft 가중) | 1.3141±.0556 | 1.3133±.0554 | 2.3273±.0477 | 2.3294±.0471 | 2.3314±.0460 | 2.3310±.0454 |
+| lossheur_gate_v2 | 1.3147±.0556 | 1.3126±.0554 | 2.3322±.0474 | 2.3340±.0471 | 2.3341±.0466 | 2.3325±.0453 |
+| oracleb_gate_v2 (silo5만) | – | – | 2.3322±.0474 | 2.3340±.0471 | 2.3348±.0465 | 2.3325±.0453 |
+| v3_sign (retrain) | 1.3147±.0556 | 1.3126±.0554 | 2.3322±.0474 | 2.3340±.0471 | 2.3351±.0475 | 2.3325±.0453 |
+| v3_z (retrain) | 1.3144±.0558 | 1.3126±.0554 | 2.3322±.0474 | 2.3340±.0471 | 2.3339±.0454 | 2.3336±.0449 |
+| v3_random (retrain 통제) | 1.3147±.0556 | 1.3191±.0580 | 2.3322±.0474 | 2.3340±.0471 | 2.3364±.0459 | 2.3363±.0481 |
+
+> 읽기 주의: ±std는 **seed 간 손실-수준 분산**(무대 자체 변동, ~.05)이라 arm 효과(~.004)보다 큼 — arm 효과는 seed-쌍 대응 delta/recovery로 읽는다(아래 표). clean 두 열에서 게이트 arm이 vanilla와 소수 4자리 동일 = 게이트 무발화(do-no-harm)의 표 형태.
+
+**recovery = (vanilla−arm)/(vanilla−oracle_excl) ↑, 오염 셀만, 3-seed mean**
+
+| arm | iid5 frzero | silo5 frzero | silo5 frrand | silo5 noisy nr1.0 |
+|---|---|---|---|---|
+| **flirds_gate_v2** | **1.000** | **1.000** | 0.462 | 0.000(침묵) |
+| flirds_gate_v1 | 0.900 | 0.898 | 0.462 | 0.000 |
+| flirds_zgate_v2 | 1.018 | 0.667 | 0.667 | 0.000 |
+| flirds_w (soft) | 0.903 | 1.421¹ | 1.418¹ | 2.708¹ |
+| lossheur_gate_v2 | 1.000 | 1.000 | 0.663 | 0.000 |
+| oracleb_gate_v2 | – | 1.000 | 0.429 | 0.000 |
+| v3_sign (retrain) | 1.000 | 1.000 | 0.333 | 0.000 |
+| v3_z (retrain) | 1.000 | 0.667 | 0.667 | 0.000 |
+| v3_random (retrain 통제) | 0.161 | 0.018 | −0.001 | 0.000 |
+| random_excl (통제) | 0.185 | 0.390 | 0.385 | 0.511 |
+
+> ¹ recovery>1 = 분모(vanilla−oracle_excl 갭, +0.0015~0.0037)가 작아 soft 가중의 절대 이득(+0.0045~0.0052)이 상한을 넘어 보이는 것(분모 작음 주의 — 아래 noisy 불릿).
+
+- **frzero (핵심 성공)**: sign-게이트 V2·lossheur/oracleb 게이트·v3_sign 전부 **recovery 1.000 정확**(silo5 3/3·iid5 3/3 seed; oracle_excl 최종손실과 소수 4자리 동일) — bit-exact φ=0(Stage-0 판정 2)이 **온라인 자동배제로 그대로 이어짐**. per-round 게이트 정밀도/재현율 **1.0/1.0, 오배제 0쌍**. V1은 0.90(제외 시점 semantics 차), z-게이트는 1.000–1.037(iid5; oracle_excl보다 소폭 우위 셀 존재). 예외 2건 = silo5 seed2의 z-게이트·v3_z 미발화(0.0; z-임계 미달).
+- **clean (무해성)**: sign-게이트 발화 0(오배제 0쌍, iid5·silo5 전 seed), arm 27행 max Δ최종손실 = **0.00056** — do-no-harm 성립. 유일 예외 = z-게이트가 iid5 clean에서 오배제 2–12쌍(precision 0; 손실 영향은 +0.0004~0.0006 미미) → cohort-상대 게이트의 구조적 오발화 리스크.
+- **noisy (예측 적중 = 작동영역 없음)**: 전 게이트 침묵(발화 0; nr0.75·nr1.0 동일) — Stage-0 예측 수정 ①(nr≤1에서 누적 φ 0-교차 없음, 외삽 nr≈3.4) 그대로. oracle_excl 갭 자체가 +0.0015~0.0020으로 작고, soft 가중 flirds_w만 +0.0045~0.0047(recovery 2.2–3.2 — 분모 작음 주의). **noisy 대응은 게이트가 아니라 탐지(AUROC 1.0)+selection의 몫**(위계 정합).
+- **frrand (코인플립 예측 적중)**: 누적부호가 0 근방이라 sign-게이트 회수 0.30–0.70 seed-의존(recall 0.29–0.86), z-게이트 2/3 seed 1.00(seed2 recall 0.14) — Stage-0 예측 수정 ② 정합. flirds_w는 3 seed 전부 +0.0048~0.0052.
+- **비용**: silo5 셀당 1.73–2.29 GPU-h(4셀 7.77). std50k5-mixed 파일럿(seed0): gate_v2 4.55 / vanilla 4.39 / oracle_excl 3.34 / random_excl 3.14 GPU-h (arm 4/5종; shapleyfl 및 seeds1–2 미포함 — 닫힌 셀만 커밋, Yonghee 지시).
+
+**(c) baseline-set 노트**: arm은 valuation 방법 비교가 아니라 **같은 V2 게이트 정책에 점수원을 교체한 통제 실험** — flirds / **loss-heur**(경쟁 점수원) / **(b)oracle**(정책 천장, silo5만) / **ShapleyFL**(fidelity-붕괴 무대 대조, std50k5만·파일럿) + oracle_excl·random_excl 상·하한 + v3_random(재학습 통제). **제외**: GTG/FedSV/ComFedSV/Banzhaf 게이트 — 개입 정책이 원 논문에 없고, GTG/FedSV는 frzero exact-0이 아니어서(coalition-renorm, §3.8 판정 2) sign-게이트 발화가 값-오차 부산물이 됨(README 말미) ─ *적용규칙: 점수원 통제 설계*. arm당 FL 학습 전체 1회 = 비용 선형(§3.2 서두 ①).
+
+### 3.2.4 CNN 게이트 그리드 + V2w 승격 판정 (Track G Phase B; `track_g/rundirs_cnn` 36 + `rundirs_cnn_v3` 12 = 48/48셀)
+
+> 구 §3.8.2에서 이동. V3 12셀 rundir는 `rundirs_cnn_v3/`에 별도 영속(mnist·cifar10 × {label_flip, feature_noise} × 3-seed).
+
+**세팅**: cifar10 {iid, dir1}×{clean, label-flip@{0.15,0.35,0.70}, grad-noise, free-rider}×3-seed c2-게이트 36셀(**per-update × 양수-only**) + c1 V3 12셀(**retrain × 양수-only**) — 4-GPU 샤딩, 실패 0. 정본 = `analysis/cnn_summary.csv`.
+
+**(b) 결과 — dAcc(= arm − vanilla final test acc) ↑, arm×위협, 3-seed mean** (cnn_summary.csv 재집계 2026-07-19; vanilla 행만 절대 acc)
+
+**iid 파티션**
+
+| arm | clean | free-rider | grad-noise | lf0.15 | lf0.35 | lf0.70 |
+|---|---|---|---|---|---|---|
+| vanilla (절대 acc) | .6488 | .6083 | .2564 | .6277 | .5923 | .5171 |
+| oracle_excl (상한) | – | +.0273 | +.3793 | +.0033 | +.0387 | +.1138 |
+| random_excl (통제) | – | −.0097 | +.0081 | −.0259 | −.0200 | −.0148 |
+| **flirds_gate_v2** | −.0060 | +.0225 | **+.3580** | −.0049 | +.0102 | +.0796 |
+| flirds_gate_v1 | −.0073 | +.0126 | +.3232 | −.0115 | +.0242 | +.0710 |
+| flirds_zgate_v2 | −.0007 | .0000 | +.0628 | −.0024 | +.0055 | +.0244 |
+| flirds_gatew_v2 (V2w) | −.0075 | +.0234 | +.3621 | −.0140 | +.0069 | +.0860 |
+| flirds_gatew_v1 (ablation) | −.0148 | +.0166 | +.3208 | −.0075 | +.0189 | +.0892 |
+| flirds_mult (soft 가중) | −.0021 | +.0176 | +.2765 | −.0034 | +.0239 | +.0905 |
+
+**dir1 파티션 (Dirichlet α=1, non-IID)**
+
+| arm | clean | free-rider | grad-noise | lf0.15 | lf0.35 | lf0.70 |
+|---|---|---|---|---|---|---|
+| vanilla (절대 acc) | .6389 | .5879 | .2436 | .6172 | .5849 | .5247 |
+| oracle_excl (상한) | – | +.0324 | +.3767 | +.0064 | +.0387 | +.0990 |
+| random_excl (통제) | – | −.0041 | +.0154 | −.0249 | −.0250 | −.0228 |
+| **flirds_gate_v2** | −.0074 | +.0269 | **+.3232** | −.0182 | −.0126 | +.0465 |
+| flirds_gate_v1 | −.0032 | +.0227 | +.3025 | −.0012 | +.0120 | +.0573 |
+| flirds_zgate_v2 | −.0048 | −.0039 | +.0982 | −.0024 | +.0032 | +.0092 |
+| flirds_gatew_v2 (V2w) | −.0201 | +.0177 | +.3438 | −.0240 | −.0028 | +.0563 |
+| flirds_gatew_v1 (ablation) | −.0191 | +.0234 | +.2744 | −.0146 | +.0068 | +.0233 |
+| flirds_mult (soft 가중) | +.0037 | +.0100 | +.1927 | −.0001 | +.0154 | +.0623 |
+
+> 읽기: **grad-noise = 게이트 최대 성공**(V2 +.32~.36 = oracle 상한 +.377~.379의 회수 0.86–0.94; vanilla 절대 acc .24→.58~.61) · **free-rider 부분 회수** 0.81–0.84 · **label-flip dose-의존**(0.15는 개입 여지 ~0, 0.70서 회수 0.44–0.90) · **clean 열 = CNN 오발화**(V2 −.006~−.007, V2w −.008~−.020; LLM §3.2.3의 무발화와 대비 — V2w 불승격 사유).
+
+- **V2w 승격 판정 = DO NOT PROMOTE** (spec §5-2 자동판정): clean parity 6셀 중 5셀 위반(dAcc −0.010~−0.030, 기준 |d|<0.006) + corrupt 6그룹 중 2그룹 V2w<V2(dir1 FR −0.0092, iid lf −0.0020) → **CNN-only 정직 보고, LLM ARMS에 V2w 미추가·백필 없음**.
+- **V3(c1, 12셀)**: sign-kept 집합이 Flirds와 (b)oracle 판정 **전 셀 동일**(feature-noise·label-flip 대부분 kept=전원 — 누적 양수; z-kept가 일부 클라 제외 시 소폭 개선 사례 존재).
+
+**(c) baseline-set 노트**: CNN 게이트 그리드도 §3.2.3과 같은 **점수원-통제 설계**(Flirds 점수 하나에 게이트 정책 5종 + oracle/random 상·하한) — valuation baseline 게이트(GTG/FedSV 등)는 동일 사유로 제외(§3.2 서두 ②③). soft 개입 arm 8종 전 비교(shapleyfl/fedif/sfedavg 포함)는 **§3.2.2 C2가 담당**(같은 무대) — 이 그리드는 C2 위에 게이트 arm만 추가한 것. cifar10만(fmnist·shard 파티션 없음 — C2엔 있음).
+
+### 3.2.5 Foundational top-k selection→재학습 (`phase1` full runs) — retrain × top-k 유일 칸
+
+**세팅**: §4.1의 full run(1B silo5 N=5 non-IID, noisy+free-rider 주입, lr∈{1e-3,3e-3}×3-seed)과 동일 궤적. 전체 학습 후 φ 계산 → **하위-φ 2명 드롭, K=3 keep으로 init부터 재학습**. arm = full(전원) / flirds_topk / random_k. 본 문서 유일의 **retrain×top-k** 칸(§3.2 매트릭스).
+
+**결과 — final val-loss ↓, 3-seed mean±std** (구 §4.1에서 이동):
+
+| group | full(전원) | flirds_topk | random_k |
+|---|---|---|---|
+| full lr1e-3 | 2.4064±.0234 | **2.3978±.0226** | 2.4111±.0133 |
+| full lr3e-3 | 2.3931±.0223 | **2.3926±.0219** | 2.4055±.0100 |
+
+> flirds_topk val-loss ≤ random_k(양 lr) 그리고 ≤ full(오염 드롭이 도움) → "random은 hard bar"를 넘김. flirds_keep은 매 seed 정확히 clean 3명(client 0=noisy·1=free-rider 항상 드롭; keep 상세·AUROC = §4.1). 개선 폭 자체는 작음(Δ~0.005–0.013 val-loss).
+
+**(c) baseline-set 노트**: phase1은 프로젝트 최초 foundational run이라 arm이 **3종뿐**(full=vanilla 상당 / flirds_topk / random_k 통제) — 다른 valuation 방법의 top-k arm은 설계에 없었음(당시 baseline 미구현 단계). retrain×top-k 칸을 다른 점수원으로 채우려면 신규 실험 필요(§3.2 매트릭스의 공백).
+
+**출처**: `runs/phase1/rundirs/*/metrics.json` (`arms`, `selection`).
+
+### 3.2.6 종합 판정 — 어떤 세팅이 가장 잘 됐나
+
+| 관점 | 최고 세팅 | 수치 |
+|---|---|---|
+| **최대 절대 이득** | **CNN cifar10 grad-noise × sign-게이트 V2** (per-update 양수-only; iid·dir1) | dAcc **+0.323~+0.358** = oracle_excl(+0.377~0.379)의 회수 0.86–0.94 (§3.2.4). soft 가중도 동일 위협서 최대: vanilla 0.499→flirds_mult 0.609·shapleyfl 0.645 (§3.2.2) |
+| **가장 깨끗한 완전 회수** | **LLM frzero × `flirds_gate_v2`** (silo5·iid5, 3-seed) | recovery **1.000 정확**(오배제 0쌍, oracle_excl과 최종손실 소수 4자리 동일; §3.2.3) — φ=0 null-player 공리가 그대로 배포 성능으로; parameter-free(τ=0, k 없음). retrain 대응물 `v3_sign`도 1.000 = **계산 시점 축(③)과 무관하게 성립** |
+| clean 무해성 (do-no-harm) | LLM 전 무대 | 게이트 무발화, arm 27행 max Δ최종손실 0.00056 (§3.2.3) + track_d MMLU/ROUGE parity (§3.2.1). **예외 = CNN clean 게이트 오발화**(V2w DO NOT PROMOTE, §3.2.4) |
+| retrain×top-k 유일 칸 | phase1 silo5 K=3/5 | flirds_topk 2.3978 < random_k 2.4111 (§3.2.5) — 방향 일관·폭은 작음 |
+
+**한 줄 판정**: "기여도→더 나은 학습" 증명이 가장 강한 곳 = **오염 무대의 per-update 양수-only 게이팅** — 절대 이득은 **CNN grad-noise sign-게이트(+0.32~0.36 acc)**, 완전성은 **LLM frzero gate_v2(recovery 1.000·오배제 0)**. noisy는 게이트 작동영역이 없어(누적 φ 양수) 탐지+selection 몫(§3.2.3), clean-IID는 원리적 parity(§3.2.1) — 이득의 크기는 무대의 오염 신호 크기에 비례하며, fidelity 쪽 결론(§3.6.4 "신호는 B축이 만든다")과 정합.
+
+**보조 증거(링크)**: 사후 removal-재학습 — worst-first 제거가 val-loss↓(§3.7.1)·cifar10 acc 분리 +0.039~0.045(§3.7.5) = 순위→성능 인과의 게임-무관 확인 · 수렴 속도 — 7B std20 rounds-to-target 184.7→153.0·CNN grad_noise 27.2→13.7 (§3.3).
 
 ---
 
@@ -1186,9 +1329,9 @@ track_c1 `C1_REMOVAL` 게이트(코드 커밋 `1693531`; A2 패턴 이식, 기�
 
 ---
 
-## 3.8 φ 부호-게이팅 (Track G) — Stage 0 부호 감사 + Phase B 게이팅 실효성 (2026-07-19)
+## 3.8 φ 부호 감사 (Track G Stage 0) — 게이팅 전제 확정 (2026-07-19)
 
-> Track G(φ 부호-게이팅 실효성; 스펙 `runs/track_g/README.md`)는 두 단계로 완료: **Stage 0** = 재실행 0, 기존 **309개 rundir 전수**의 φ 부호 감사(`phi_sign_audit.py` → `audit/SIGN_AUDIT.md` + `sign_table.csv` 73,288행; 부호 규약 = contribution orientation, 도움=양수)로 §2.1 예측표 확정·수정(커밋 6623fdf). **Phase B** = 게이팅 본실험 — CNN 그리드 48/48 완주(커밋 5a1d2bb) + LLM 완결 셀 214 rundir(커밋 aa1286d) → §3.8.1(LLM)·§3.8.2(CNN). 판정 요지: **frzero 온라인 자동배제 = LLM recovery 1.000 정확**(오배제 0), noisy는 sign-게이트 작동영역 없음(예측 적중), **V2w 승격 = DO NOT PROMOTE**(CNN clean parity 위반).
+> Track G(φ 부호-게이팅 실효성; 스펙 `runs/track_g/README.md`) 두 단계 중 **Stage 0**만 이 절에 남김 — **Phase B 게이팅 본실험(CNN 그리드 48/48 완주, 커밋 5a1d2bb + LLM 완결 셀 214 rundir, 커밋 aa1286d)은 selection→performance 절 §3.2.3–3.2.4로 이동**(2026-07-19 재구성: 목적='기여도 기반 개입→더 나은 학습'이므로 §3.2 소속). **Stage 0** = 재실행 0, 기존 **309개 rundir 전수**의 φ 부호 감사(`phi_sign_audit.py` → `audit/SIGN_AUDIT.md` + `sign_table.csv` 73,288행; 부호 규약 = contribution orientation, 도움=양수)로 §2.1 예측표 확정·수정(커밋 6623fdf). Phase B 판정 요지(상세 §3.2.3–4): **frzero 온라인 자동배제 = LLM recovery 1.000 정확**(오배제 0), noisy는 sign-게이트 작동영역 없음(예측 적중), **V2w 승격 = DO NOT PROMOTE**(CNN clean parity 위반).
 
 감사 판정 4건:
 1. **clean 오배제-0 전제 성립**: canonical clean 전 셀에서 전 method·전 클라 **누적 φ 양수**(예 1B anchor5 (b)oracle 30/30 min +0.0135; 예외 = ComFedSV 간헐 1클라 음수, ShapleyFL 항등 0) → **τ=0 게이트가 clean에서 아무도 제외 안 함** 확정.
@@ -1199,30 +1342,6 @@ track_c1 `C1_REMOVAL` 게이트(코드 커밋 `1693531`; A2 패턴 이식, 기�
 CNN label-flip 게이트 dose 3점 = **{0.15, 0.35, 0.70}** 확정(전 val-method의 per-client 오염율 0-교차 span ~0.13–0.55의 아래/내부/초과 각 1점).
 
 **출처**: `runs/track_g/audit/{SIGN_AUDIT.md,sign_table.csv}` · 예측표 = `runs/track_g/README.md` §2.1(감사 수정판).
-
-### 3.8.1 Phase B — LLM 게이트 실효성 (`track_g/rundirs_llm`, 214 rundir, 2026-07-19)
-
-**세팅**: silo5 {clean, noisy(nr1.0), frrand, frzero}×3-seed + iid5 {clean, frzero}×3-seed + silo5 noisy-nr0.75 seed0 + std50k5-mixed seed0(부분) — 전 셀 arms + per-round `phi_rounds.parquet`(프로젝트 최초 per-round φ 영속). arm = sign-게이트 2종(V1/V2; V2=burn-in·probation 포함), z-게이트(cohort-상대), lossheur/oracleb 게이트 대조, soft 가중 `flirds_w`, `oracle_excl`/`random_excl` 상·하한, V3(게이트 판정 kept로 처음부터 재학습: sign/z/random). recovery = (vanilla−arm)/(vanilla−oracle_excl). 분석 정본 = `track_g/analysis/{README.md,llm_summary.csv}`(rundir-only 재생성; 스팟 대조 3셀 rundir 일치 확인 07-19).
-
-- **frzero (핵심 성공)**: sign-게이트 V2·lossheur/oracleb 게이트·v3_sign 전부 **recovery 1.000 정확**(silo5 3/3·iid5 3/3 seed; oracle_excl 최종손실과 소수 4자리 동일) — bit-exact φ=0(Stage-0 판정 2)이 **온라인 자동배제로 그대로 이어짐**. per-round 게이트 정밀도/재현율 **1.0/1.0, 오배제 0쌍**. V1은 0.90(제외 시점 semantics 차), z-게이트는 1.000–1.037(iid5; oracle_excl보다 소폭 우위 셀 존재). 예외 2건 = silo5 seed2의 z-게이트·v3_z 미발화(0.0; z-임계 미달).
-- **clean (무해성)**: sign-게이트 발화 0(오배제 0쌍, iid5·silo5 전 seed), arm 27행 max|Δ최종손실| = **0.00056** — do-no-harm 성립. 유일 예외 = z-게이트가 iid5 clean에서 오배제 2–12쌍(precision 0; 손실 영향은 +0.0004~0.0006 미미) → cohort-상대 게이트의 구조적 오발화 리스크.
-- **noisy (예측 적중 = 작동영역 없음)**: 전 게이트 침묵(발화 0; nr0.75·nr1.0 동일) — Stage-0 예측 수정 ①(nr≤1에서 누적 φ 0-교차 없음, 외삽 nr≈3.4) 그대로. oracle_excl 갭 자체가 +0.0015~0.0020으로 작고, soft 가중 flirds_w만 +0.0045~0.0047(recovery 2.2–3.2 — 분모 작음 주의). **noisy 대응은 게이트가 아니라 탐지(AUROC 1.0)+selection의 몫**(위계 정합).
-- **frrand (코인플립 예측 적중)**: 누적부호가 0 근방이라 sign-게이트 회수 0.30–0.70 seed-의존(recall 0.29–0.86), z-게이트 2/3 seed 1.00(seed2 recall 0.14) — Stage-0 예측 수정 ② 정합. flirds_w는 3 seed 전부 +0.0048~0.0052.
-- **비용**: silo5 셀당 1.73–2.29 GPU-h(4셀 7.77). std50k5-mixed 파일럿(seed0): gate_v2 4.55 / vanilla 4.39 / oracle_excl 3.34 / random_excl 3.14 GPU-h (arm 4/5종; shapleyfl 및 seeds1–2 미포함 — 닫힌 셀만 커밋, Yonghee 지시).
-
-### 3.8.2 Phase B — CNN 게이트 그리드 + V2w 승격 판정 (`track_g/rundirs_cnn`, 48/48셀)
-
-**세팅**: cifar10 {iid, dir1}×{clean, label-flip@{0.15,0.35,0.70}, grad-noise, free-rider}×3-seed c2-게이트 36셀 + c1 V3 12셀(4-GPU 샤딩, 실패 0). 정본 = `analysis/cnn_summary.csv`. 그룹 평균(dAcc = arm−vanilla test 정확도):
-
-| 위협 | oracle_excl | sign V2 | V2w(가중 결합) | 비고 |
-|---|---|---|---|---|
-| grad-noise | +0.377~+0.379 | **+0.323~+0.358 (회수 0.86–0.94)** | +0.344~+0.362 | 게이트 강한 성공(AUROC ~1.0) |
-| free-rider | +0.027~+0.032 | +0.023~+0.027 (회수 0.81–0.84) | +0.018~+0.023 | LLM frzero 1.000과 달리 부분(회수 rank 기반) |
-| label-flip | +0.048~+0.052 | +0.005~+0.028 | +0.010~+0.026 | dose-의존(0.15는 개입 여지 ~0이라 recovery 평균 왜곡; 0.70서 회수 0.44–0.90) |
-| clean | (기준) | **−0.003~−0.007 (오발화)** | **−0.008~−0.030** | **LLM과 달리 CNN은 clean parity 깨짐** |
-
-- **V2w 승격 판정 = DO NOT PROMOTE** (spec §5-2 자동판정): clean parity 6셀 중 5셀 위반(dAcc −0.010~−0.030, 기준 |d|<0.006) + corrupt 6그룹 중 2그룹 V2w<V2(dir1 FR −0.0092, iid lf −0.0020) → **CNN-only 정직 보고, LLM ARMS에 V2w 미추가·백필 없음**.
-- **V3(c1, 12셀)**: sign-kept 집합이 Flirds와 (b)oracle 판정 **전 셀 동일**(feature-noise·label-flip 대부분 kept=전원 — 누적 양수; z-kept가 일부 클라 제외 시 소폭 개선 사례 존재).
 
 ---
 
@@ -1245,14 +1364,7 @@ CNN label-flip 게이트 dose 3점 = **{0.15, 0.35, 0.70}** 확정(전 val-metho
 
 > **lr 의존 반전**: full lr1e-3은 noisy 0.75/FR 1.0, lr3e-3은 noisy 1.0/FR 0.75 (AUROC가 lr에 의존). **selection**: flirds_keep이 매 seed에서 정확히 clean 클라 3개(client 0=noisy·1=free-rider 항상 드롭) → 안정적 분리.
 
-**결과 — selection arms (final val-loss ↓, 3-seed mean±std; 열=arm, 값=val-loss ↓)**
-
-| group | full(전원) | flirds_topk | random_k |
-|---|---|---|---|
-| full lr1e-3 | 2.4064±.0234 | **2.3978±.0226** | 2.4111±.0133 |
-| full lr3e-3 | 2.3931±.0223 | **2.3926±.0219** | 2.4055±.0100 |
-
-> flirds_topk val-loss ≤ random_k (양 lr) 그리고 ≤ full(오염 드롭이 도움) → "random은 hard bar"를 넘김.
+**결과 — selection arms(full/flirds_topk/random_k) = §3.2.5로 이동**(retrain×top-k 유일 칸; 2026-07-19 재구성 — AUROC·keep 표는 본 부록 유지).
 
 **출처**: `runs/phase1/rundirs/*/metrics.json` (`auroc_noisy`, `auroc_freerider`, `selection`, `arms`).
 
@@ -1279,7 +1391,7 @@ CNN label-flip 게이트 dose 3점 = **{0.15, 0.35, 0.70}** 확정(전 val-metho
 - 선행연구 6축 분류 + 마스터 표: [[prior-work-taxonomy/README]] · [[prior-work-taxonomy/taxonomy]]
 - E1–E7 검증실험 카탈로그(CNN/LLM 트랙 분리): [[prior-work-taxonomy/validation-experiments]]
 - metric·benchmark·ground-truth 출처: [[prior-work-taxonomy/metrics-and-benchmarks]]
-- baseline 수치 ↔ 원 논문 대조: [[baseline-original-paper-verification-2026-06-22]]
+- baseline 수치 ↔ 원 논문 대조: [[baseline-original-paper-verification]]
 
 ## 4.4 각주 — E1–E7 ↔ 영어 목적명 매핑
 > 본문은 영어 목적명만 사용. taxonomy의 E# 코드와의 대응: **E1**=Fidelity · **E2**=Selection→downstream performance · **E3**=Corrupt-client detection · **E4**=Fairness·reward · **E5**=Stability(replication) · **E6**=Cost·scalability · **E7**=Aggregation quality.
@@ -1313,6 +1425,6 @@ CNN label-flip 게이트 dose 3점 = **{0.15, 0.35, 0.70}** 확정(전 val-metho
 | Foundational (`phase1`) | 12 rundir (full 6 + sweep 4 + mini/smoke 2) | full 6 + sweep 4 = 10 (부록) | mini/smoke 2 = 진단용, 미수록(명시) |
 | Removal-dose (`removal_dose`) | LLM **81** rundir (A2 12 + B dose 63 + A1 3 + **D 3**) + CNN A3 18 | §3.7.1–5 전부 (A2·B·A1·**D 전부 3-seed** / A3 mnist+cifar10) | 이월 = β0.3 deferred 9셀(다음 컨테이너, §4.2-9) |
 | Cost 계측 (`measured_2026-07`) | microbench·acct·**taylor 3**·**e3_cost 2**·**timing_device100 1**·tf32_ab | §3.5.3(op-count·학습시간·E3) + §3.1.7(Taylor 잔차) + §3.5 acct figure + §3.5.1 fp32 주석 | 실험 트랙 아님(계측 캠페인) |
-| φ-부호 감사 (`track_g/audit`) | SIGN_AUDIT.md + sign_table.csv (**309 rundir 파생**, 73,288행) | §3.8 판정 4건 + dose 3점 확정 | 재분석(재실행 0); Phase B 본실험 = 다음 컨테이너 |
+| φ-부호 감사+게이팅 (`track_g`) | audit 파생(309 rundir, 73,288행) + Phase B rundir **LLM 214(`rundirs/`) + CNN 36(`rundirs_cnn/`) + V3 12(`rundirs_cnn_v3/`)** | §3.8(감사 4건+dose 3점) + §3.2.3–4(Phase B 게이팅) | Phase B 완료 07-19; std50k5 = seed0 파일럿; `rundirs_llm/` = 빈 폴더 |
 | **계획·미실행** | – | P2–P6 (수치 ⬚) | P1 ◐((b) 2¹⁰ seed0 완료, §3.1.6)·P7–P9 완료 → §2 status ● |
 

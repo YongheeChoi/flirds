@@ -237,7 +237,7 @@ eigsh는 정상 작동한다. Ripple이 비싼 이유는 포트의 stall이 아�
 
 ## 7. Yonghee 결정 필요
 
-1. **논문 본문에서 Ripple의 처리 수위**: (i) fidelity 표 완전 제외 + 관련연구 서술만, (ii) runtime 표에는 회계 각주와 함께 유지(분리 계측 후 valuation-only 환산 병기), (iii) 부록 이동. 본 문서 §5는 (ii)를 기본안으로 제안 — 배제 사유를 숨기지 않고 보여주는 쪽이 리뷰어 방어에 유리하다는 근거. 최종 수위는 결정 필요.
+1. **논문 본문에서 Ripple의 처리 수위**: (i) fidelity 표 완전 제외 + 관련연구 서술만, (ii) runtime 표에는 회계 각주와 함께 유지(분리 계측 후 valuation-only 환산 병기), (iii) 부록 이동. 본 문서 §5는 (ii)를 기본안으로 제안 — 배제 사유를 숨기지 않고 보여주는 쪽이 리뷰어 방어에 유리하다는 근거. 최종 수위는 결정 필요. **→ [2026-07-19 결정 완료: (i) 채택 — baseline 완전 제외]**(Yonghee; 코드 부재·자체 구현 부담과 실측 성능 저조까지 종합). 근거 정리·리뷰어 Q&A = 이 폴더의 `ripple-baseline-exclusion.md`.
 2. **baseline 문자열의 "Ripple ~4515s" 표기 갱신 여부**: 분리 계측 완료(§4.1, `measurements-eigsh-cpu.md`; CNN 스모크 기준 A=0.4%/B=99.4%) — 루트 CLAUDE.md·발표 자료의 해당 수치에 "자체 궤적 포함, 축소 config; 자체 궤적 오버헤드는 CNN 기준 미미(0.4%), 비용 대부분은 방법 고유 valuation" 주석 또는 valuation-only 환산치를 반영할지. (LLM 스케일 항별 분해는 계측 사본 GPU 이식 후.)
 3. (실측 결과 조건부) §3 진단에서 tol 완화만으로 CNN full 셀 Ripple 비용이 유의미하게 줄면(§2 실측: tol=1e-3이 tol=0 대비 matvec ~1/2), track_c1의 Ripple 셀 재실행 가치가 있는지 — §6-1 스위프에서 φ 순위 보존 확인 후 판단.
 

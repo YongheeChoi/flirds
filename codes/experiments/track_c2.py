@@ -53,6 +53,8 @@ from flirds.fl.intervene import (OnlineScorer, SignAccumulator, fedif_round_raw_
                                  make_zgate_weights_fn, shapleyfl_round_raw_fn)
 from flirds.fl.partition import (dirichlet_partition, iid_partition,
                                  shard_partition)
+from flirds.fl.score_providers import SOURCES as TH_SOURCES
+from flirds.fl.score_providers import provider_round_raw_fn
 from flirds.fl.server import fedavg
 from flirds.models.cnn import FedSVCNN, LeNet5
 from flirds.repro import seed_everything
@@ -85,6 +87,30 @@ C2GATE = dict(burn_in=int(os.environ.get("C2_BURN_IN", "10")),
               alpha_w=float(os.environ.get("C2_ALPHA_W", "1.0")))
 _GATE_ARMS = ("flirds_gate_v1", "flirds_gate_v2", "flirds_zgate_v2",
               "flirds_gatew_v2", "flirds_gatew_v1")
+
+# --- Track H CNN leg (runs/track_h/README.md; ALL env-gated -- unset = legacy) ---
+# Same-policy score-source competition: arms named <src>_<policy> with src in
+# score_providers.SOURCES and policy in _TH_POLICIES (P1 gate_v2 / P2 gatew_v2 /
+# P3 mult / P4 zgate_v2, + gate_v1 ablation); the legacy flirds_* arms keep their
+# original branches (bit-identical closures).  `observer` scores ALL sources on
+# one vanilla trajectory (phi_rounds gains a `method` column) = the T2 input.
+# C2_T2=1 appends the retrain leg after the arm loop: per source kept =
+# {cum > tau} -> t2_sign_<src> (plain n-weights) / t2_signw_<src> (static
+# w ~ n*max(cum,0)^alpha), kept-set-deduped, + one size-matched t2_random_k<s>
+# control per distinct kept size.  Retrains keep the threat ACTIVE (deployment
+# semantics, track_g V3 convention) via fixed exclusion on the full loader set.
+TH_T2 = os.environ.get("C2_T2", "0") == "1"
+_TH_POLICIES = ("gate_v1", "gate_v2", "zgate_v2", "gatew_v2", "mult")
+
+
+def _th_parse(arm):
+    """(src, policy) for Track H competition arms; None for every legacy arm."""
+    for pol in _TH_POLICIES:
+        if arm.endswith("_" + pol):
+            src = arm[: -len(pol) - 1]
+            if src in TH_SOURCES and arm not in _GATE_ARMS and arm != "flirds_mult":
+                return src, pol
+    return None
 _REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repo root
 RUN_ROOT = os.environ.get("C2_RUN_ROOT", os.path.join(_REPO, "runs", "track_c", "c2"))
 
@@ -188,9 +214,11 @@ def _gate_sink(rows, acc, n):
     return sink
 
 
-def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows=None):
+def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows=None,
+             observer_out=None):
     """Run one intervened trajectory; return (final_acc, curve, detection_auroc).
-    `rows` (Track G gate arms only): the phi_rounds sink target."""
+    `rows` (gate arms + observer): the phi_rounds sink target.  `observer_out`
+    (Track H): the observer arm deposits its per-source SignAccumulators there."""
     n, R, E, lr, frac = CFG["n"], CFG["rounds"], CFG["epochs"], CFG["lr"], CFG["frac"]
     loss_fn, pkeys = make_cnn_loss(MODEL_FN, vx, vy, device)
     sel_fn = wts_fn = None
@@ -199,6 +227,32 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
 
     if arm == "vanilla":
         pass
+    elif arm == "observer":                           # Track H T2 input: every source, one trajectory
+        obs_accs = {s: SignAccumulator(n) for s in TH_SOURCES}
+        obs_raws = {s: provider_round_raw_fn(s, loss_fn, pkeys, n, device, seed=SEED)
+                    for s in TH_SOURCES}
+
+        def wts_fn(r, w_r, deltas_map):               # plain n-weights = vanilla trajectory
+            players = sorted(deltas_map)
+            w = np.array([nums[p] for p in players], dtype=float)
+            w /= w.sum()
+            for s in TH_SOURCES:
+                rv = obs_raws[s](w_r, deltas_map, players)
+                obs_accs[s].update(players, rv)
+                if rows is not None:
+                    pset = {p: i for i, p in enumerate(players)}
+                    for c in range(n):
+                        i = pset.get(c)
+                        rows.append(dict(method=s, round=r, client=c,
+                                         participated=c in pset,
+                                         raw=float(rv[i]) if i is not None else float("nan"),
+                                         weight=float(w[i]) if i is not None else float("nan"),
+                                         cum=float(obs_accs[s].cum[c]),
+                                         n_obs=int(obs_accs[s].n_obs[c]), fallback=False))
+            return dict(zip(players, w))
+
+        if observer_out is not None:
+            observer_out["accs"] = obs_accs
     elif arm == "oracle_excl":                        # Track G upper bound: true corrupt out
         sel_fn = make_fixed_excl_select_fn(n, {int(c) for c in np.where(corrupt)[0]})
     elif arm == "random_excl":                        # Track G control: same-count random out
@@ -254,6 +308,32 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
         sf = SFedAvgSelector(n, MODEL_FN().to(device),
                              DataLoader(TensorDataset(vx, vy), batch_size=512), device, seed=SEED)
         sel_fn, wts_fn = sf.select_fn, sf.weights_fn
+    elif _th_parse(arm):                              # Track H: <src>_<policy> competition arm
+        src, policy = _th_parse(arm)
+        g = C2GATE
+        raw = provider_round_raw_fn(src, loss_fn, pkeys, n, device, seed=SEED)
+        if policy == "mult":                          # P3: same soft policy, source swapped
+            scorer = OnlineScorer(n, beta=0.5)        # uniform beta -- policy held fixed
+            wts_fn = make_weights_fn(scorer, raw, nums, "multiplicative")
+        else:
+            gate_acc = SignAccumulator(n, decay=g["decay"])
+            sink = _gate_sink(rows, gate_acc, n) if rows is not None else None
+            if policy == "gate_v1":
+                wts_fn = make_signgate_weights_fn(gate_acc, raw, nums, tau=g["tau"], sink=sink)
+            elif policy == "zgate_v2":                # P4: rank-only (cohort-relative)
+                sel_fn = make_zgate_select_fn(gate_acc, g["burn_in"], c=g["z_c"],
+                                              min_obs=g["min_obs"],
+                                              probation_every=g["probation_every"])
+                wts_fn = make_zgate_weights_fn(gate_acc, raw, nums, c=g["z_c"], sink=sink)
+            else:                                     # P1 gate_v2 | P2 gatew_v2
+                sel_fn = make_signgate_select_fn(gate_acc, g["burn_in"], tau=g["tau"],
+                                                 min_obs=g["min_obs"],
+                                                 probation_every=g["probation_every"])
+                wts_fn = (make_gatedweight_weights_fn(gate_acc, raw, nums, tau=g["tau"],
+                                                      alpha=g["alpha_w"], sink=sink)
+                          if policy == "gatew_v2" else
+                          make_signgate_weights_fn(gate_acc, raw, nums, tau=g["tau"],
+                                                   sink=sink))
     else:
         raise ValueError(f"unknown arm {arm!r}")
 
@@ -271,12 +351,44 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
 
 
 def _arms_for_partition():
-    if os.environ.get("C2_ARMS"):                        # Track G: explicit FULL arm list
-        return [a for a in os.environ["C2_ARMS"].split(",") if a]
-    base = ["vanilla", "flirds_mult", "flirds_select", "shapleyfl", "fedif", "sfedavg"]
-    if PARTITION == "dir1":                              # size-skew -> repl/add differ from mult
-        base[2:2] = ["flirds_repl", "flirds_add"]
-    return base + EXTRA_ARMS                             # Track G gate arms (env-gated; [] default)
+    if os.environ.get("C2_ARMS"):                        # Track G/H: explicit FULL arm list
+        arms = [a for a in os.environ["C2_ARMS"].split(",") if a]
+    else:
+        arms = ["vanilla", "flirds_mult", "flirds_select", "shapleyfl", "fedif", "sfedavg"]
+        if PARTITION == "dir1":                          # size-skew -> repl/add differ from mult
+            arms[2:2] = ["flirds_repl", "flirds_add"]
+        arms = arms + EXTRA_ARMS                         # Track G gate arms (env-gated; [] default)
+    if TH_T2 and "observer" not in arms:                 # T2 needs the observer's cums
+        arms.append("observer")
+    return arms
+
+
+# --------------------------------------------------------------------------- #
+# Track H T2 (retrain-from-scratch on the observer's cumulative scores)       #
+# --------------------------------------------------------------------------- #
+def _t2_kept(cum, tau):
+    """Kept client ids under the strict sign gate (cum > tau)."""
+    return [c for c in range(len(cum)) if cum[c] > tau]
+
+
+def _t2_cache_key(kept, wvec):
+    """Dedupe key: identical (kept set, static weight vector) -> one shared retrain."""
+    return (frozenset(kept),
+            None if wvec is None else tuple((c, round(float(wvec[c]), 12))
+                                            for c in sorted(wvec)))
+
+
+def _t2_static_weights_fn(nums, wvec):
+    """Static aggregation weights w ~ n * wvec[c] (the t2_signw arm); no positive
+    mass -> n-weights fallback (same guard as the online gates)."""
+    def wf(r, w_r, deltas_map):
+        players = sorted(deltas_map)
+        w = np.array([nums[p] * wvec.get(p, 0.0) for p in players], dtype=float)
+        if w.sum() <= 0:
+            w = np.array([nums[p] for p in players], dtype=float)
+        w /= w.sum()
+        return dict(zip(players, w))
+    return wf
 
 
 def run():
@@ -289,17 +401,64 @@ def run():
           f"{min(nums)}/{int(np.median(nums))}/{max(nums)}", flush=True)
 
     arms = {}
-    all_rows = []                                        # Track G gate arms' phi_rounds
+    all_rows = []                                        # Track G/H gate arms' phi_rounds
+    observer_out = {}                                    # Track H: observer -> T2 handoff
     print(f"  {'arm':14s} {'final_acc':>9s} {'AUROC':>6s} {'->target':>8s}", flush=True)
     for arm in _arms_for_partition():
-        rows = [] if arm in _GATE_ARMS else None
+        th = _th_parse(arm)
+        rows = ([] if (arm in _GATE_ARMS or arm == "observer"
+                       or (th and th[1] != "mult")) else None)
         acc, curve, au = _run_arm(arm, loaders, corrupt, dtf, vx, vy, tl, nums, device,
-                                  rows=rows)
+                                  rows=rows, observer_out=observer_out)
         rtt = _rounds_to_target(curve, CFG["target"])
         arms[arm] = dict(final_acc=acc, acc_curve=curve, auroc=au, rounds_to_target=rtt)
         if rows:
             all_rows += [dict(arm=arm, **x) for x in rows]
         print(f"  {arm:14s} {acc:9.4f} {au:6.3f} {str(rtt):>8s}", flush=True)
+
+    if TH_T2 and observer_out.get("accs"):               # Track H T2: retrain leg
+        n = CFG["n"]
+        cums = {s: observer_out["accs"][s].cum.copy() for s in TH_SOURCES}
+        cache = {}
+
+        def _t2_run(name, kept, wvec):
+            if not kept:
+                print(f"  {name:22s}    kept=EMPTY -> retrain skipped", flush=True)
+                arms[name] = dict(final_acc=None, kept=[], skipped="empty_kept")
+                return
+            if wvec is None and len(kept) == n:          # sign gate kept everyone
+                print(f"  {name:22s}    kept=ALL -> equals vanilla (not re-run)", flush=True)
+                arms[name] = dict(final_acc=None, kept=kept, skipped="equals_vanilla")
+                return
+            key = _t2_cache_key(kept, wvec)
+            shared = key in cache
+            if not shared:                               # deployment semantics: threat active,
+                sel = make_fixed_excl_select_fn(         # exclusion is the only intervention
+                    n, [c for c in range(n) if c not in set(kept)])
+                wf = None if wvec is None else _t2_static_weights_fn(nums, wvec)
+                _, hist = fedavg(MODEL_FN, loaders, tl, CFG["rounds"], CFG["epochs"],
+                                 CFG["lr"], sample_frac=CFG["frac"], device=device,
+                                 seed=SEED, select_fn=sel, weights_fn=wf,
+                                 delta_transform=dtf)
+                cache[key] = hist
+            hist = cache[key]
+            arms[name] = dict(final_acc=hist[-1][1], acc_curve=hist, kept=kept,
+                              dedup_shared=shared,
+                              rounds_to_target=_rounds_to_target(hist, CFG["target"]))
+            print(f"  {name:22s} {hist[-1][1]:9.4f} kept={len(kept)}"
+                  f"{' (dedup)' if shared else ''}", flush=True)
+
+        for src in TH_SOURCES:
+            kept = _t2_kept(cums[src], C2GATE["tau"])
+            _t2_run(f"t2_sign_{src}", kept, None)
+            _t2_run(f"t2_signw_{src}", kept,
+                    {c: max(float(cums[src][c]), 0.0) ** C2GATE["alpha_w"] for c in kept})
+        rng_t2 = np.random.default_rng(4000 + SEED)      # size-matched random controls
+        for size in sorted({len(_t2_kept(cums[s], C2GATE["tau"])) for s in TH_SOURCES}):
+            if 0 < size < n:
+                _t2_run(f"t2_random_k{size}",
+                        sorted(int(x) for x in rng_t2.choice(n, size=size, replace=False)),
+                        None)
 
     dismissal = None
     if DISMISSAL:                                         # FedSV Fig.4 acc-vs-removed curve
@@ -315,9 +474,13 @@ def run():
             dismissal[q] = hist[-1][1]
             print(f"  [dismiss] q={q:.1f} final_acc={hist[-1][1]:.4f}", flush=True)
 
+    th_active = TH_T2 or any(_th_parse(a) or a == "observer" for a in arms)
     metrics = dict(dataset=DATASET, partition=PARTITION, threat=THREAT, strength=STRENGTH,
                    seed=SEED, mode=MODE, corrupt=corrupt.tolist(), arms=arms,
-                   dismissal=dismissal)
+                   dismissal=dismissal,
+                   **({"observer_cum": {s: [float(v) for v in observer_out["accs"][s].cum]
+                                        for s in TH_SOURCES}}
+                      if observer_out.get("accs") else {}))
     if PERSIST:
         try:
             name = (os.environ.get("C2_RUN_NAME")                        # probe cells override (width/frac in name)
@@ -327,7 +490,10 @@ def run():
                                                 width=WIDTH,
                                                 **({"gate": C2GATE, "flip_rate": FLIP_RATE,
                                                     "extra_arms": EXTRA_ARMS}
-                                                   if EXTRA_ARMS else {})),
+                                                   if (EXTRA_ARMS or th_active) else {}),
+                                                **({"track_h": {"t2": TH_T2,
+                                                                "sources": list(TH_SOURCES)}}
+                                                   if th_active else {})),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             rl.save_metrics(metrics)
             if all_rows:                                 # Track G per-round phi record

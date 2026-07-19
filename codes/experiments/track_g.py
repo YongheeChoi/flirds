@@ -71,6 +71,8 @@ from flirds.fl.intervene import (OnlineScorer, SignAccumulator, flirds_round_raw
                                  make_weights_fn, make_zgate_select_fn,
                                  make_zgate_weights_fn, _zscores)
 from flirds.fl.llm_server import run_llm_fedavg_logs
+from flirds.fl.score_providers import (comfedsv_round_raw_fn, fedsv_round_raw_fn,
+                                       gtg_round_raw_fn)
 from flirds.oracle.exact_sv_llm import _final_lora_state
 from flirds.oracle.in_run_sv import in_run_shapley_perround
 from flirds.repro import seed_everything
@@ -388,7 +390,18 @@ def build_arm(arm, model, loss_fn, pkeys, lc, nums, device, corrupt, seed, rows)
                   "oracleb": lambda: _guard(model, oracleb_round_raw_fn(
                       loss_fn, pkeys, n, device)),
                   "shapleyfl": lambda: _guard(model, shapleyfl_gate_raw_fn(
-                      loss_fn, pkeys, device))}
+                      loss_fn, pkeys, device)),
+                  # Track H score-source competition (runs/track_h/README.md §1;
+                  # same gate policy, source swapped -- comfedsv is the per-round
+                  # surrogate, see fl.score_providers docstring):
+                  "flirds1st": lambda: _guard(model, flirds_round_raw_fn(
+                      loss_fn, pkeys, n, device, second_order=False, loss_chunks=lc)),
+                  "gtg": lambda: _guard(model, gtg_round_raw_fn(
+                      loss_fn, pkeys, device, seed=seed)),
+                  "fedsv": lambda: _guard(model, fedsv_round_raw_fn(
+                      loss_fn, pkeys, device, seed=seed)),
+                  "comfedsv": lambda: _guard(model, comfedsv_round_raw_fn(
+                      loss_fn, pkeys, device, seed=seed))}
     provider = arm.split("_")[0]
     if provider not in raw_by_arm:
         raise ValueError(f"unknown arm {arm!r}")
