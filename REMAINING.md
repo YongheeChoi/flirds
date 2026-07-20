@@ -20,25 +20,30 @@
 > (overview §3.2.3–4 반영분 유지). LLM 참여축 성능 주장은 R4(gsm50k5·EM)가 승계.
 > **CNN 축은 폐기 대상 아님**(심판이 원래 test-acc; Tier1 96런·track_g CNN 그리드 전부 유효) — 1.2 참조.
 
-### 1.1 Track H R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (**착수됨 07-20 밤**)
+### 1.1 Track H R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (**보류 07-20 심야**)
 
-pre-flight ① GSM8K 캐시 ② 스모크 2종(tiny-gpt2 합성·gpt2 마이크로) **완료·green**(서버 실측).
-본런 4셀(clean/noisy/frzero/gnoise; observer+통제+flirds P1-T1+T2, seed0) **큐 진입** —
-β0.3와 셀 경계 2/2 분배로 진행. 스펙·예측(H-8~11)=`runs/track_h/README.md` §1.6.
+> **보류(Yonghee 07-20 심야)**: "Track H·G는 일단 보류 — 새로운 방법 구상 중."
+> pre-flight(GSM8K 캐시·스모크 2종 green)까지 완료된 상태에서 본런 4셀을 큐에서 회수
+> (**셀 미시작 = 무손실**; 재개 = 큐 `#HOLD` 주석 해제만). 아래 절차는 재개 시 그대로 유효.
+
+본런 4셀(clean/noisy/frzero/gnoise; observer+통제+flirds P1-T1+T2, seed0).
+스펙·예측(H-8~11)=`runs/track_h/README.md` §1.6.
 - 종료 후: `python runs/track_h/make_analysis.py`(gsm8k_em·delta_em·recovery_em) →
   **acc 갭 보고**(vanilla↔oracle_excl EM — answer-swap·gnoise서 수 pt 이상=무대 성립) +
   **R-플래토 확인**(R≤100 수렴 시 Tier B/C는 R=100) → GPU-h 보고 → H-8~11 대조 → rundir 커밋.
 - **Tier B(+7점수원 P1, 전 8종 관찰자 재실행, ~300–350 GPU-h) = Yonghee 승인 게이트.**
 - 금지: 게이트 하이퍼·GN_GAMMA(=1.0) 셀별 튜닝, poison, P2/P3/P4 arm(P1만).
 
-### 1.2 Track H CNN 확장 — R1 잔여 경쟁 (스코프 Yonghee 확인 중; ~30–45 GPU-h 추정)
+### 1.2 Track H CNN 확장 — R1 잔여 경쟁 (**보류 07-20 심야**; ~30–45 GPU-h 추정)
 
-Tier1 완주분(96런 = P1-T1×비Flirds 7종 + 관찰자, ×4셀×3seed)에 대해 티어표(§4) 전체
-스코프의 잔여 = **T1×{P2,P3,P4}×S7(252런) + T2×P2×S8(dedupe 실효↓)**. CNN은 심판이
-test-acc라 accuracy-전환과 정합 — 유지·실행 결정(07-20 밤).
-- **선행 블로커**: 새 컨테이너에서 track_c2 행(hang; 데이터 단계 130-thread 슬립) —
-  진단·수정 진행 중(`$BATCH/runlogs/cnn_hang_probe.log`).
-- 정확 arm 스코프(P2–P4 전부 vs 부분, T2×P2 포함 여부, iid 파티션(구 Tier4) 여부) = Yonghee 답변 대기.
+> **보류(1.1과 동일 사유)** — 단 CNN 결과·rundir는 전부 유효 보존(폐기 아님), 새 방법
+> 확정 후 스코프(P2–P4 범위·T2×P2·iid 파티션) 재논의.
+
+후보 잔여 = Tier1 완주분(96런 = P1-T1×비Flirds 7종 + 관찰자) 대비 티어표(§4)의
+**T1×{P2,P3,P4}×S7(252런) + T2×P2×S8(dedupe 실효↓)**.
+- ~~선행 블로커: track_c2 행(hang)~~ → **원인 확정·수정(07-20 심야)**: 코드 무결 —
+  cs.toronto.edu CIFAR-10 다운로드 스트림이 ~20MiB서 stall(부분 tar 잔존→매 실행 재시도).
+  faulthandler 스택으로 확정(`$BATCH/runlogs/cnn_hang_probe.log`), 데이터 파일 복구로 해결.
 
 ### 1.3 β0.3 재실행 잔여 18셀 (device100 14 + 3B silo5 4) — **진행 중**(07-20 22:34~, 4-GPU 드라이버)
 ```bash
@@ -79,5 +84,5 @@ E5 seed1·2(2¹⁰, 33h/셀) · lr·steps intervention 2차검증 · 1B·CNN β-
 ## 3. Yonghee 결정 대기
 
 - **push**: 로컬 커밋 다수 — push 여부/시점.
-- **R4 Tier B 진입**(1.1 Tier A 보고 후) · **CNN 확장 스코프**(1.2: P2–P4 범위·T2×P2·iid 파티션 여부).
+- **Track H·G 재개 여부** — 새 방법 구상(07-20 심야) 확정 후: R4 Tier A 재개(1.1)·CNN 확장 스코프(1.2).
 - E5 N=10 3-seed 여부(1.5).
