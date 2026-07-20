@@ -90,6 +90,8 @@ C2_DATASET=fmnist C2_MODE=smoke C2_THREAT=free_rider C2_SEED=0 C2_BURN_IN=1 \
   C2_T2=1 C2_T2_P5=1 C2_T2_LEGACY=0 C2_RUN_ROOT=/tmp/p5smoke C2_PERSIST=1 \
   PYTHONPATH=. PYTHONUTF8=1 $PY experiments/track_c2.py
 # 확인: t2_csign_*/t2_pw_* 라인 + dedupe + TRACK-C2 RUN OK
+# + flirds_cgate/flirds_pweight AUROC=1.000 (0.500이면 arm이 vanilla로 새는
+#   dispatch 버그 — 07-21 scale 스모크가 잡아 수정한 클래스; 재발 시 중단·보고)
 ```
 
 ## 6. 실행 (sbatch 2개 — 동시 제출 가능, 독립)

@@ -112,6 +112,12 @@ TH_T2_P5 = os.environ.get("C2_T2_P5", "0") == "1"
 TH_T2_LEGACY = os.environ.get("C2_T2_LEGACY", "1") == "1"
 _TH_POLICIES = ("gate_v1", "gate_v2", "zgate_v2", "gatew_v2", "mult",
                 "cgate", "pweight")                     # P5-hard / P5-soft (2026-07-21)
+# C2_OBS_SRCS restricts which sources the observer arm scores (default: all 8 =
+# bit-identical legacy).  REQUIRED at full participation (scale leg, C2_FRAC=1.0):
+# the coalition providers cost O(2^k)..O(k^2) evals per round -- shapleyfl's exact
+# 2^k alone never terminates at k=100 (runs/track_h/scale/RUN_SCALE.md).
+OBS_SRCS = tuple(s for s in os.environ.get("C2_OBS_SRCS",
+                                           ",".join(TH_SOURCES)).split(",") if s)
 
 
 def _th_parse(arm):
@@ -238,16 +244,16 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
 
     if arm == "vanilla":
         pass
-    elif arm == "observer":                           # Track H T2 input: every source, one trajectory
-        obs_accs = {s: SignAccumulator(n) for s in TH_SOURCES}
+    elif arm == "observer":                           # Track H T2 input: OBS_SRCS (default: every source), one trajectory
+        obs_accs = {s: SignAccumulator(n) for s in OBS_SRCS}
         obs_raws = {s: provider_round_raw_fn(s, loss_fn, pkeys, n, device, seed=SEED)
-                    for s in TH_SOURCES}
+                    for s in OBS_SRCS}
 
         def wts_fn(r, w_r, deltas_map):               # plain n-weights = vanilla trajectory
             players = sorted(deltas_map)
             w = np.array([nums[p] for p in players], dtype=float)
             w /= w.sum()
-            for s in TH_SOURCES:
+            for s in OBS_SRCS:
                 rv = obs_raws[s](w_r, deltas_map, players)
                 obs_accs[s].update(players, rv)
                 if rows is not None:
@@ -294,32 +300,12 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
                                                   alpha=g["alpha_w"], sink=sink)
                       if arm == "flirds_gatew_v2" else
                       make_signgate_weights_fn(gate_acc, raw, nums, tau=g["tau"], sink=sink))
-    elif arm.startswith("flirds_"):
-        scorer = OnlineScorer(n, beta=0.5)
-        raw = flirds_round_raw_fn(loss_fn, pkeys, n, device)
-        if arm == "flirds_mult":
-            wts_fn = make_weights_fn(scorer, raw, nums, "multiplicative")
-        elif arm == "flirds_repl":
-            wts_fn = make_weights_fn(scorer, raw, nums, "replacement")
-        elif arm == "flirds_add":
-            wts_fn = make_weights_fn(scorer, raw, nums, "additive", lam=0.5)
-        elif arm == "flirds_select":
-            wts_fn = make_scoreonly_weights_fn(scorer, raw, nums)
-            sel_fn = make_softmax_select_fn(scorer)
-    elif arm == "shapleyfl":
-        scorer = OnlineScorer(n, beta=0.3)            # the ShapleyFL paper value (Def 4.3)
-        wts_fn = make_weights_fn(scorer, shapleyfl_round_raw_fn(MODEL_FN().to(device),
-                                 DataLoader(TensorDataset(vx, vy), batch_size=512), device),
-                                 nums, "replacement")
-    elif arm == "fedif":
-        scorer = OnlineScorer(n, beta=0.7)               # 1 - gamma(0.3)
-        wts_fn = make_weights_fn(scorer, fedif_round_raw_fn(loss_fn, pkeys, device),
-                                 nums, "replacement")
-    elif arm == "sfedavg":
-        sf = SFedAvgSelector(n, MODEL_FN().to(device),
-                             DataLoader(TensorDataset(vx, vy), batch_size=512), device, seed=SEED)
-        sel_fn, wts_fn = sf.select_fn, sf.weights_fn
     elif _th_parse(arm):                              # Track H: <src>_<policy> competition arm
+        # MUST precede the startswith("flirds_") legacy branch: flirds_cgate /
+        # flirds_pweight would otherwise be silently swallowed into a vanilla
+        # trajectory there (no sub-case matches -> no wts_fn; caught 2026-07-21
+        # by the scale smoke's AUROC check).  _th_parse rejects flirds_mult and
+        # the _GATE_ARMS names, so every legacy arm still takes its old branch.
         src, policy = _th_parse(arm)
         g = C2GATE
         raw = provider_round_raw_fn(src, loss_fn, pkeys, n, device, seed=SEED)
@@ -354,6 +340,31 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
                           if policy == "gatew_v2" else
                           make_signgate_weights_fn(gate_acc, raw, nums, tau=g["tau"],
                                                    sink=sink))
+    elif arm.startswith("flirds_"):
+        scorer = OnlineScorer(n, beta=0.5)
+        raw = flirds_round_raw_fn(loss_fn, pkeys, n, device)
+        if arm == "flirds_mult":
+            wts_fn = make_weights_fn(scorer, raw, nums, "multiplicative")
+        elif arm == "flirds_repl":
+            wts_fn = make_weights_fn(scorer, raw, nums, "replacement")
+        elif arm == "flirds_add":
+            wts_fn = make_weights_fn(scorer, raw, nums, "additive", lam=0.5)
+        elif arm == "flirds_select":
+            wts_fn = make_scoreonly_weights_fn(scorer, raw, nums)
+            sel_fn = make_softmax_select_fn(scorer)
+    elif arm == "shapleyfl":
+        scorer = OnlineScorer(n, beta=0.3)            # the ShapleyFL paper value (Def 4.3)
+        wts_fn = make_weights_fn(scorer, shapleyfl_round_raw_fn(MODEL_FN().to(device),
+                                 DataLoader(TensorDataset(vx, vy), batch_size=512), device),
+                                 nums, "replacement")
+    elif arm == "fedif":
+        scorer = OnlineScorer(n, beta=0.7)               # 1 - gamma(0.3)
+        wts_fn = make_weights_fn(scorer, fedif_round_raw_fn(loss_fn, pkeys, device),
+                                 nums, "replacement")
+    elif arm == "sfedavg":
+        sf = SFedAvgSelector(n, MODEL_FN().to(device),
+                             DataLoader(TensorDataset(vx, vy), batch_size=512), device, seed=SEED)
+        sel_fn, wts_fn = sf.select_fn, sf.weights_fn
     else:
         raise ValueError(f"unknown arm {arm!r}")
 
@@ -463,7 +474,7 @@ def run():
 
     if TH_T2 and observer_out.get("accs"):               # Track H T2: retrain leg
         n = CFG["n"]
-        cums = {s: observer_out["accs"][s].cum.copy() for s in TH_SOURCES}
+        cums = {s: observer_out["accs"][s].cum.copy() for s in observer_out["accs"]}
         cache = {}
 
         def _t2_run(name, kept, wvec):
@@ -495,14 +506,14 @@ def run():
 
         ctrl_sizes = set()
         if TH_T2_LEGACY:
-            for src in TH_SOURCES:
+            for src in cums:
                 kept = _t2_kept(cums[src], C2GATE["tau"])
                 _t2_run(f"t2_sign_{src}", kept, None)
                 _t2_run(f"t2_signw_{src}", kept,
                         {c: max(float(cums[src][c]), 0.0) ** C2GATE["alpha_w"] for c in kept})
                 ctrl_sizes.add(len(kept))
         if TH_T2_P5:                                     # P5 retrain variants (2026-07-21)
-            for src in TH_SOURCES:
+            for src in cums:
                 a = observer_out["accs"][src]
                 kept_c = _t2_kept_ucb(a, C2GATE["conf_z"], C2GATE["min_obs"])
                 _t2_run(f"t2_csign_{src}", kept_c, None)
@@ -535,7 +546,7 @@ def run():
                    seed=SEED, mode=MODE, corrupt=corrupt.tolist(), arms=arms,
                    dismissal=dismissal,
                    **({"observer_cum": {s: [float(v) for v in observer_out["accs"][s].cum]
-                                        for s in TH_SOURCES}}
+                                        for s in observer_out["accs"]}}
                       if observer_out.get("accs") else {}))
     if PERSIST:
         try:
@@ -550,7 +561,8 @@ def run():
                                                 **({"track_h": {"t2": TH_T2,
                                                                 "t2_p5": TH_T2_P5,
                                                                 "t2_legacy": TH_T2_LEGACY,
-                                                                "sources": list(TH_SOURCES)}}
+                                                                "sources": list(TH_SOURCES),
+                                                                "obs_srcs": list(OBS_SRCS)}}
                                                    if th_active else {})),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             rl.save_metrics(metrics)
