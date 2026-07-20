@@ -5,10 +5,14 @@
 
 ## 1. 실험 (GPU; 새 컨테이너) — 권장 순서대로
 
-- **환경(컨테이너 공통)**: `PY=/NHNHOME/WORKSPACE/26msit001_A/flirds_batch/venv/bin/python`,
-  `HOME=/NHNHOME/WORKSPACE/26msit001_A/flirds_batch/home`(~/data=CNN 데이터),
-  `HF_HOME=/NHNHOME/WORKSPACE/26msit001_A/flirds_batch/hf_home HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1`,
-  `codes/`에서 `PYTHONPATH=.`. GPU 수 확인(직전 컨테이너=B200 5장).
+- **환경(컨테이너 공통; 2026-07-20 새 컨테이너에 재구축)**:
+  `BATCH=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds_batch` 기준
+  `PY=$BATCH/venv/bin/python`, `HOME=$BATCH/home`(~/data=CNN 데이터),
+  `HF_HOME=$BATCH/hf_home HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1`, `codes/`에서 `PYTHONPATH=.`.
+  현 컨테이너=B200 4장(0–3). venv는 기존 rundir meta.json과 **동일 버전 고정**(torch 2.12.0+cu130,
+  transformers 5.9.0, trl 1.5.1, peft 0.19.1, accelerate 1.13.0, datasets 4.8.5, numpy 2.4.6).
+  meta-llama gated 재취득 불가(토큰 무) → 해시 교차검증된 공개 미러로 캐시 재구성 —
+  검증 체인·근거는 `$BATCH/PROVENANCE.md`.
 
 ### 1.1 Track H Tier 3 — std50k5 mixed seed0 12런 (~40–60 GPU-h)
 ```bash
