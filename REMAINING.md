@@ -25,6 +25,31 @@ flirds P1-T1+T2, 심판 = GSM8K test 1,119 exact-match. 스펙·예측(H-8~11) =
 - **Tier B(+7점수원 P1, 전 8종 관찰자 재실행, ~300–350 GPU-h) = Yonghee 승인 게이트.**
 - 금지: 게이트 하이퍼·GN_GAMMA(=1.0) 셀별 튜닝, poison, P2/P3/P4 arm(P1만).
 
+#### 1.1-P5 — R4에 P5 정책 leg 추가 (Yonghee 07-21: "R4도 동일 적용"; **Tier A 종료 후 실행**)
+
+배선 완료(07-21 로컬 커밋: track_g.py에 `<src>_cgate`[P5-hard 신뢰게이트]/
+`<src>_pweight`[P5-soft Φ(t)-가중] arm + `T2_P5=1` → `t2_csign_*`/`t2_pw_*` 재학습 +
+`T2_LEGACY=0` = Tier A의 t2_sign 중복 재실행 스킵; 테스트 10 + tiny-gpt2 R4형 스모크
+green). **스펙·공정성 조항(z=1.645 고정, 학습-중 관측 통계만·사전 정보 금지)·예측 =
+`runs/track_h/p5/RUN_P5.md` §2–4** — 위반 금지, MISS 그대로 보고.
+
+Tier A 4셀 완주 확인 후, 셀당 2 프로세스 (env 베이스는 Tier A와 동일):
+```bash
+# ① online P5 arm 2종 (arm별 기본 명명 -> gsm50k5_<t>_flirds_cgate_seed0 등; RUN_NAME 설정 금지)
+REGIME=gsm50k5 THREAT=<t> SEED=0 ARMS=flirds_cgate,flirds_pweight \
+  RUNDIR_ROOT=<repo>/runs/track_h/rundirs_llm CUDA_VISIBLE_DEVICES=<g> $PY -u experiments/track_g.py
+# ② T2 P5 재학습 (observer 재실행은 결정론적 동일값 덮어쓰기 = 무해; RUN_NAME 설정 금지)
+REGIME=gsm50k5 THREAT=<t> SEED=0 ARMS=observer T2=1 T2_P5=1 T2_LEGACY=0 \
+  RUNDIR_ROOT=<repo>/runs/track_h/rundirs_llm CUDA_VISIBLE_DEVICES=<g> $PY -u experiments/track_g.py
+```
+- `<t>` ∈ {clean, noisy, gnoise, frzero} — 4셀 × 2프로세스 = 8런. 비용 ≈ 셀당
+  (online 2 + observer 1 + 재학습 dedupe 후 소량) × R=200 — **Tier A 실측 GPU-h로
+  산정해 착수 전 보고**(Tier A 셀당 실측의 대략 2~3배/셀 예상).
+- 종료 후: `python runs/track_h/make_analysis.py` → **P1 vs P5h vs P5s EM 표**(vanilla/
+  oracle_excl 앵커 포함) + RUN_P5.md §4 HP-1~6 대조 → rundir+analysis 커밋.
+- CNN 쪽 P5 본실험은 **별도 Slurm 서버** 담당(이 컨테이너 아님) — `runs/track_h/p5/`
+  sbatch 2종, 실행 정본 = RUN_P5.md.
+
 ### 1.2 β0.3 재실행 잔여 18셀 (device100 14 + 3B silo5 4) — R4 뒤 큐 자동 재개
 
 현행 드라이버 큐에 등재되어 있음(R4 다음 순번). 드라이버 유실 시 수동 재개:

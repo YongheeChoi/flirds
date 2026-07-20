@@ -232,18 +232,35 @@ class SignAccumulator:
     -> plain sum; <1.0 -> EMA-style discounted sum), n_obs[p] += 1; non-participants
     carry forward untouched.  NO min-max, NO clipping -- cum keeps the game's
     absolute zero point (phi=0 == null player), which is what the tau=0 gate reads.
+
+    `sum2` (P5, 2026-07-21) tracks the raw second moment so the confidence gates
+    can read each client's OWN online noise (mean/sd via `stats()`) -- computed
+    purely from what this run observes during training (no prior information).
+    Legacy consumers (cum/n_obs) are bit-unchanged.
     """
 
     def __init__(self, n_clients, decay=1.0):
         self.cum = np.zeros(n_clients)
+        self.sum2 = np.zeros(n_clients)
         self.n_obs = np.zeros(n_clients, dtype=int)
         self.decay = decay
 
     def update(self, players, raw):
         for i, p in enumerate(players):
             self.cum[p] = self.decay * self.cum[p] + float(raw[i])
+            self.sum2[p] += float(raw[i]) ** 2
             self.n_obs[p] += 1
         return self.cum
+
+    def stats(self):
+        """(mean, sd, n_obs) per client from the observed stream (sd: ddof=1;
+        n<2 -> 0).  Valid for decay=1.0 (plain-sum) accumulators -- the only
+        setting the P5 gates use."""
+        n = np.maximum(self.n_obs, 1)
+        mean = self.cum / n
+        var = np.maximum(self.sum2 / n - mean ** 2, 0.0) * (n / np.maximum(n - 1, 1))
+        var[self.n_obs < 2] = 0.0
+        return mean, np.sqrt(var), self.n_obs
 
 
 def _zscores(v):
@@ -440,6 +457,98 @@ def make_observer_weights_fn(acc, raw_fn, nums, sink=None):
         wmap = dict(zip(players, w))
         if sink is not None:
             sink(r, players, raw, wmap, False)
+        return wmap
+    return weights_fn
+
+
+# --------------------------------------------------------------------------- #
+# P5 -- confidence-aware sign policies (2026-07-21, Yonghee).  ADDITIVE ONLY.  #
+#                                                                             #
+# Motivation (track_h observer replay, overview §3.2.6 진단): the strict sign  #
+# gate charges borderline VARIANCE (a zero-mean client's cum is a random walk #
+# that sits <= 0 half the time) exactly like confident harm.  P5 decides on   #
+# the client's own online evidence instead:                                   #
+#   t_i = cum_i / (sd_i * sqrt(n_i))      (all from THIS run's stream only)   #
+#   hard (cgate) : exclude iff cum + z*sd*sqrt(n) <= 0  (UCB <= 0), z=1.645   #
+#   soft (pweight): weight_i ~ n_i * Phi(t_i)  ("P(contribution > 0)")        #
+# FAIRNESS CLAUSE: z is a universal constant (one-sided 95%), identical for   #
+# every score source and every cell; sd/n/cum come only from what the run     #
+# observes during training -- no calibration runs, no oracle masks, no        #
+# cross-run information.  Absolute zero is kept (t is centered at phi=0, not  #
+# cohort-relative): a deterministic exact-0 stream (sd=0, cum=0) has UCB=0    #
+# -> excluded / weight 0, so the frzero semantics survive unchanged.          #
+# --------------------------------------------------------------------------- #
+from math import erf as _erf
+
+
+def _phi_cdf(t):
+    """Standard normal CDF; +/-inf-safe."""
+    if t == float("inf"):
+        return 1.0
+    if t == float("-inf"):
+        return 0.0
+    return 0.5 * (1.0 + _erf(t / np.sqrt(2.0)))
+
+
+def _conf_keep(acc, z, min_obs):
+    """Keep mask under the confidence gate: keep unless the client's sum UCB
+    (cum + z*sd*sqrt(n)) is <= 0.  Under-observed (n < min_obs) or sd-undefined
+    clients are kept -- no evidence, no exclusion (the no-prior-info default).
+    sd == 0 degenerates to the strict sign rule (UCB == cum), so an exact-0
+    free-rider is excluded deterministically."""
+    _, sd, n = acc.stats()
+    keep = np.ones(len(acc.cum), dtype=bool)
+    for c in range(len(acc.cum)):
+        if n[c] < max(min_obs, 2):
+            continue                                   # keep: not enough evidence
+        keep[c] = (acc.cum[c] + z * sd[c] * np.sqrt(n[c])) > 0.0
+    return keep
+
+
+def make_confgate_select_fn(acc, burn_in, z=1.645, min_obs=2, probation_every=5):
+    """P5-hard participation gate: exclude only clients whose cumulative
+    contribution is SIGNIFICANTLY <= 0 at level z (one-sided; UCB rule above).
+    Same burn-in / min_obs / probation machinery as the V2 gates.  NOTE the
+    paired weights_fn is the plain observer (score + n-weights, NO same-round
+    raw screen): P5 forbids acting on single-round noise by definition."""
+    return _gate_select_fn(acc, burn_in, lambda a: _conf_keep(a, z, min_obs),
+                           min_obs, probation_every)
+
+
+def make_probweight_weights_fn(acc, raw_fn, nums, burn_in=10, min_obs=2, sink=None):
+    """P5-soft: score the round, fold into `acc`, then weight the participants
+    w_i ~ n_i * Phi(t_i) -- each client's data weight scaled by the probability
+    (normal approx, own online stream) that its true mean contribution is
+    positive.  Direction-symmetric by construction: confident-positive -> full
+    n-weight, confident-negative -> ~0, no evidence (t=0) -> exactly half.
+    Conventions: r < burn_in or n_obs < min_obs -> neutral factor 1 (FedAvg
+    default -- no deviation without evidence); sd == 0 -> deterministic stream,
+    factor 1 if cum > 0 else 0 (exact-0 excluded);  all-zero mass -> n-weight
+    fallback + flag (same guard as the other weight fns)."""
+    def weights_fn(r, w_r, deltas_map):
+        players = sorted(deltas_map)
+        raw = raw_fn(w_r, deltas_map, players)
+        acc.update(players, raw)
+        _, sd, n = acc.stats()
+        fac = np.ones(len(players))
+        if r >= burn_in:
+            for i, p in enumerate(players):
+                if n[p] < max(min_obs, 2):
+                    continue                            # neutral: no evidence yet
+                if sd[p] <= 0.0:
+                    fac[i] = 1.0 if acc.cum[p] > 0 else 0.0
+                else:
+                    fac[i] = _phi_cdf(acc.cum[p] / (sd[p] * np.sqrt(n[p])))
+        w = np.array([nums[p] * fac[i] for i, p in enumerate(players)], dtype=float)
+        fallback = bool(w.sum() <= 0)
+        if fallback:
+            print(f"[probweight] r={r}: zero total mass -> vanilla-weight fallback",
+                  flush=True)
+            w = np.array([nums[p] for p in players], dtype=float)
+        w /= w.sum()
+        wmap = dict(zip(players, w))
+        if sink is not None:
+            sink(r, players, raw, wmap, fallback)
         return wmap
     return weights_fn
 

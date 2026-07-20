@@ -43,10 +43,14 @@ from flirds.backends.cnn import make_cnn_loss
 from flirds.baselines.sfedavg import SFedAvgSelector
 from flirds.data.cnn import _STATS, get_dataset, get_labels
 from flirds.data.corruptors import CNN_CORRUPTORS
-from flirds.fl.intervene import (OnlineScorer, SignAccumulator, fedif_round_raw_fn,
-                                 flirds_round_raw_fn, make_delta_transform,
-                                 make_dismissal_weights_fn, make_fixed_excl_select_fn,
-                                 make_gatedweight_weights_fn, make_rawweight_weights_fn,
+from flirds.fl.intervene import (OnlineScorer, SignAccumulator, _conf_keep,
+                                 _phi_cdf, fedif_round_raw_fn,
+                                 flirds_round_raw_fn, make_confgate_select_fn,
+                                 make_delta_transform, make_dismissal_weights_fn,
+                                 make_fixed_excl_select_fn,
+                                 make_gatedweight_weights_fn,
+                                 make_observer_weights_fn, make_probweight_weights_fn,
+                                 make_rawweight_weights_fn,
                                  make_scoreonly_weights_fn, make_signgate_select_fn,
                                  make_signgate_weights_fn, make_softmax_select_fn,
                                  make_weights_fn, make_zgate_select_fn,
@@ -84,7 +88,8 @@ C2GATE = dict(burn_in=int(os.environ.get("C2_BURN_IN", "10")),
               probation_every=int(os.environ.get("C2_PROB_EVERY", "5")),
               decay=float(os.environ.get("C2_DECAY", "1.0")),
               z_c=float(os.environ.get("C2_ZC", "1.5")),
-              alpha_w=float(os.environ.get("C2_ALPHA_W", "1.0")))
+              alpha_w=float(os.environ.get("C2_ALPHA_W", "1.0")),
+              conf_z=float(os.environ.get("C2_CONF_Z", "1.645")))  # P5: one-sided 95%, universal
 _GATE_ARMS = ("flirds_gate_v1", "flirds_gate_v2", "flirds_zgate_v2",
               "flirds_gatew_v2", "flirds_gatew_v1")
 
@@ -100,7 +105,13 @@ _GATE_ARMS = ("flirds_gate_v1", "flirds_gate_v2", "flirds_zgate_v2",
 # control per distinct kept size.  Retrains keep the threat ACTIVE (deployment
 # semantics, track_g V3 convention) via fixed exclusion on the full loader set.
 TH_T2 = os.environ.get("C2_T2", "0") == "1"
-_TH_POLICIES = ("gate_v1", "gate_v2", "zgate_v2", "gatew_v2", "mult")
+# P5 (2026-07-21): C2_T2_P5=1 adds the confidence-policy retrain arms
+# (t2_csign_<src> = UCB-kept retrain / t2_pw_<src> = static Phi(t)-weight retrain);
+# C2_T2_LEGACY=0 skips the already-run t2_sign/t2_signw emission (results on disk).
+TH_T2_P5 = os.environ.get("C2_T2_P5", "0") == "1"
+TH_T2_LEGACY = os.environ.get("C2_T2_LEGACY", "1") == "1"
+_TH_POLICIES = ("gate_v1", "gate_v2", "zgate_v2", "gatew_v2", "mult",
+                "cgate", "pweight")                     # P5-hard / P5-soft (2026-07-21)
 
 
 def _th_parse(arm):
@@ -320,6 +331,15 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
             sink = _gate_sink(rows, gate_acc, n) if rows is not None else None
             if policy == "gate_v1":
                 wts_fn = make_signgate_weights_fn(gate_acc, raw, nums, tau=g["tau"], sink=sink)
+            elif policy == "cgate":                   # P5-hard: confidence sign gate
+                sel_fn = make_confgate_select_fn(gate_acc, g["burn_in"], z=g["conf_z"],
+                                                 min_obs=g["min_obs"],
+                                                 probation_every=g["probation_every"])
+                wts_fn = make_observer_weights_fn(gate_acc, raw, nums, sink=sink)
+            elif policy == "pweight":                 # P5-soft: w ~ n * Phi(t)
+                wts_fn = make_probweight_weights_fn(gate_acc, raw, nums,
+                                                    burn_in=g["burn_in"],
+                                                    min_obs=g["min_obs"], sink=sink)
             elif policy == "zgate_v2":                # P4: rank-only (cohort-relative)
                 sel_fn = make_zgate_select_fn(gate_acc, g["burn_in"], c=g["z_c"],
                                               min_obs=g["min_obs"],
@@ -369,6 +389,31 @@ def _arms_for_partition():
 def _t2_kept(cum, tau):
     """Kept client ids under the strict sign gate (cum > tau)."""
     return [c for c in range(len(cum)) if cum[c] > tau]
+
+
+def _t2_kept_ucb(acc, z, min_obs):
+    """Kept ids under the P5 confidence gate (final observer stats): see
+    intervene._conf_keep -- keep unless cum + z*sd*sqrt(n) <= 0."""
+    keep = _conf_keep(acc, z, min_obs)
+    return [c for c in range(len(acc.cum)) if keep[c]]
+
+
+def _t2_pw_wvec(acc, min_obs):
+    """P5-soft static weight factors {client: Phi(t)} from the observer's final
+    stream stats; deterministic streams degenerate to 1[cum > 0] (exact-0 -> 0,
+    dropped from the dict = excluded); under-observed -> neutral 1."""
+    _, sd, n = acc.stats()
+    out = {}
+    for c in range(len(acc.cum)):
+        if n[c] < max(min_obs, 2):
+            f = 1.0
+        elif sd[c] <= 0.0:
+            f = 1.0 if acc.cum[c] > 0 else 0.0
+        else:
+            f = _phi_cdf(acc.cum[c] / (sd[c] * np.sqrt(n[c])))
+        if f > 0.0:
+            out[c] = f
+    return out
 
 
 def _t2_cache_key(kept, wvec):
@@ -448,13 +493,24 @@ def run():
             print(f"  {name:22s} {hist[-1][1]:9.4f} kept={len(kept)}"
                   f"{' (dedup)' if shared else ''}", flush=True)
 
-        for src in TH_SOURCES:
-            kept = _t2_kept(cums[src], C2GATE["tau"])
-            _t2_run(f"t2_sign_{src}", kept, None)
-            _t2_run(f"t2_signw_{src}", kept,
-                    {c: max(float(cums[src][c]), 0.0) ** C2GATE["alpha_w"] for c in kept})
+        ctrl_sizes = set()
+        if TH_T2_LEGACY:
+            for src in TH_SOURCES:
+                kept = _t2_kept(cums[src], C2GATE["tau"])
+                _t2_run(f"t2_sign_{src}", kept, None)
+                _t2_run(f"t2_signw_{src}", kept,
+                        {c: max(float(cums[src][c]), 0.0) ** C2GATE["alpha_w"] for c in kept})
+                ctrl_sizes.add(len(kept))
+        if TH_T2_P5:                                     # P5 retrain variants (2026-07-21)
+            for src in TH_SOURCES:
+                a = observer_out["accs"][src]
+                kept_c = _t2_kept_ucb(a, C2GATE["conf_z"], C2GATE["min_obs"])
+                _t2_run(f"t2_csign_{src}", kept_c, None)
+                ctrl_sizes.add(len(kept_c))
+                wvec = _t2_pw_wvec(a, C2GATE["min_obs"])
+                _t2_run(f"t2_pw_{src}", sorted(wvec), wvec)
         rng_t2 = np.random.default_rng(4000 + SEED)      # size-matched random controls
-        for size in sorted({len(_t2_kept(cums[s], C2GATE["tau"])) for s in TH_SOURCES}):
+        for size in sorted(ctrl_sizes):
             if 0 < size < n:
                 _t2_run(f"t2_random_k{size}",
                         sorted(int(x) for x in rng_t2.choice(n, size=size, replace=False)),
@@ -492,6 +548,8 @@ def run():
                                                     "extra_arms": EXTRA_ARMS}
                                                    if (EXTRA_ARMS or th_active) else {}),
                                                 **({"track_h": {"t2": TH_T2,
+                                                                "t2_p5": TH_T2_P5,
+                                                                "t2_legacy": TH_T2_LEGACY,
                                                                 "sources": list(TH_SOURCES)}}
                                                    if th_active else {})),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

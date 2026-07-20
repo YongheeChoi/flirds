@@ -75,10 +75,12 @@ from flirds.baselines.ripple import _flat
 from flirds.data.llm import build, build_alpaca_iid, build_gsm8k_iid, build_val_batches
 from flirds.eval.generate import generate_completions, score_records
 from flirds.eval.mmlu import mmlu_accuracy
-from flirds.fl.intervene import (OnlineScorer, SignAccumulator, fedif_round_raw_fn,
-                                 flirds_round_raw_fn,
-                                 lossheur_round_raw_fn, make_fixed_excl_select_fn,
+from flirds.fl.intervene import (OnlineScorer, SignAccumulator, _conf_keep,
+                                 _phi_cdf, fedif_round_raw_fn, flirds_round_raw_fn,
+                                 lossheur_round_raw_fn, make_confgate_select_fn,
+                                 make_fixed_excl_select_fn,
                                  make_gatedweight_weights_fn, make_observer_weights_fn,
+                                 make_probweight_weights_fn,
                                  make_signgate_select_fn, make_signgate_weights_fn,
                                  make_weights_fn, make_zgate_select_fn,
                                  make_zgate_weights_fn, _zscores)
@@ -140,7 +142,8 @@ GATE = dict(burn_in=int(os.environ.get("BURN_IN", "3" if SILO_LIKE else "10")),
             probation_every=int(os.environ.get("PROBATION_EVERY", "5")),
             decay=float(os.environ.get("DECAY", "1.0")),
             z_c=float(os.environ.get("ZC", "1.5")),
-            alpha_w=float(os.environ.get("ALPHA_W", "1.0")))
+            alpha_w=float(os.environ.get("ALPHA_W", "1.0")),
+            conf_z=float(os.environ.get("CONF_Z", "1.645")))  # P5: one-sided 95%, universal
 
 DOWNSTREAM = os.environ.get("DOWNSTREAM",
                             "1" if REGIME in ("std50k5", "gsm50k5") else "0") == "1"
@@ -148,6 +151,8 @@ MMLU_LIMIT = int(os.environ.get("MMLU_LIMIT", "0"))
 MMLU_BATCH = int(os.environ.get("MMLU_BATCH", "16"))
 V3 = os.environ.get("V3", "0") == "1"
 T2 = os.environ.get("T2", "0") == "1"                 # R4 observer->retrain block
+T2_P5 = os.environ.get("T2_P5", "0") == "1"           # + P5 retrains (t2_csign/t2_pw)
+T2_LEGACY = os.environ.get("T2_LEGACY", "1") == "1"   # 0 = skip t2_sign_* (already on disk)
 SYNTH = os.environ.get("SYNTH_DATA", "0") == "1"
 
 _CODES = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -487,6 +492,14 @@ def build_arm(arm, model, loss_fn, pkeys, lc, nums, device, corrupt, seed, rows)
                                         min_obs=g["min_obs"],
                                         probation_every=g["probation_every"]),
                 make_signgate_weights_fn(acc, raw, nums, tau=g["tau"], sink=sink), acc)
+    if arm.endswith("_cgate"):                         # P5-hard: confidence sign gate
+        return (make_confgate_select_fn(acc, g["burn_in"], z=g["conf_z"],
+                                        min_obs=g["min_obs"],
+                                        probation_every=g["probation_every"]),
+                make_observer_weights_fn(acc, raw, nums, sink=sink), acc)
+    if arm.endswith("_pweight"):                       # P5-soft: w ~ n * Phi(t)
+        return None, make_probweight_weights_fn(acc, raw, nums, burn_in=g["burn_in"],
+                                                min_obs=g["min_obs"], sink=sink), acc
     raise ValueError(f"unknown arm {arm!r}")
 
 
@@ -544,7 +557,7 @@ def persist(arm, seed, metrics, rows, acc, timing, corrupt_cfg):
                                                           else v) for k, v in RCFG.items()},
               "mcfg": MCFG, "lora": {"r": LORA_R, "alpha": LORA_ALPHA},
               "gate": GATE, "corrupt": corrupt_cfg, "noisy_rate": NOISY_RATE,
-              "synth_data": SYNTH, "downstream": DOWNSTREAM, "t2": T2,
+              "synth_data": SYNTH, "downstream": DOWNSTREAM, "t2": T2, "t2_p5": T2_P5,
               "orientation": {"phi.parquet": "suspicion (good->low; repo convention)",
                               "phi_rounds.parquet": "raw/cum contribution (good->high = -phi)"}}
     try:
@@ -581,7 +594,7 @@ def main():
     print(f"=== Track G | {SCALE} {REGIME} {THREAT} | N={n} K={RCFG['k_abs']}/round "
           f"R={RCFG['rounds']} lr={RCFG['lr']} | corrupt={sorted(corrupt)} fr_mode={fr_mode} "
           f"nr={NOISY_RATE:g} | gate={GATE} | arms={arms} | seeds={seeds} "
-          f"| downstream={DOWNSTREAM} V3={V3} T2={T2} ===", flush=True)
+          f"| downstream={DOWNSTREAM} V3={V3} T2={T2} T2_P5={T2_P5} ===", flush=True)
 
     tok, model, init, pkeys = _load(device)
     for seed in seeds:
@@ -653,20 +666,45 @@ def main():
                 torch.cuda.empty_cache()
 
         if T2 and obs_accs is not None:                # R4 retrain block (spec §1.6):
-            # per-source kept = final cum > tau; dedupe identical kept-sets; matched
-            # random control at the PRIMARY source's kept size; kept=all == vanilla
-            # by construction -> copy the observer's numbers (skipped marker).
+            # per-source kept = final cum > tau; dedupe identical (kept, weights);
+            # matched random control at the PRIMARY source's kept size; kept=all
+            # (unweighted) == vanilla by construction -> copy the observer's numbers.
+            # T2_P5=1 adds t2_csign_<src> (UCB kept, intervene._conf_keep) and
+            # t2_pw_<src> (static w ~ n * Phi(t) retrain) -- same fairness clause:
+            # stats come only from the observer's own training-observed stream.
             prim = next(iter(obs_accs))
             t2_kept = {s: [i for i in range(n) if a.cum[i] > GATE["tau"]]
                        for s, a in obs_accs.items()}
-            variants = {f"t2_sign_{s}": kept for s, kept in t2_kept.items()}
-            k_prim = len(t2_kept[prim])
-            if 0 < k_prim < n:
-                rng = np.random.default_rng(4000 + seed)
-                variants[f"t2_random_k{k_prim}"] = sorted(int(x) for x in rng.choice(
-                    n, size=k_prim, replace=False))
+            variants = ({f"t2_sign_{s}": kept for s, kept in t2_kept.items()}
+                        if T2_LEGACY else {})
+            wvecs = {}                                 # name -> {client: weight factor}
+            ctrl_sizes = {len(t2_kept[prim])} if T2_LEGACY else set()
+            if T2_P5:
+                for s, a in obs_accs.items():
+                    keep_c = _conf_keep(a, GATE["conf_z"], GATE["min_obs"])
+                    variants[f"t2_csign_{s}"] = [i for i in range(n) if keep_c[i]]
+                    _, sd_s, nob = a.stats()
+                    wv = {}
+                    for c in range(n):
+                        if nob[c] < max(GATE["min_obs"], 2):
+                            f = 1.0
+                        elif sd_s[c] <= 0.0:
+                            f = 1.0 if a.cum[c] > 0 else 0.0
+                        else:
+                            f = _phi_cdf(a.cum[c] / (sd_s[c] * np.sqrt(nob[c])))
+                        if f > 0.0:
+                            wv[c] = f
+                    variants[f"t2_pw_{s}"] = sorted(wv)
+                    wvecs[f"t2_pw_{s}"] = wv
+                ctrl_sizes.add(len(variants[f"t2_csign_{prim}"]))
+            rng = np.random.default_rng(4000 + seed)
+            for k_sz in sorted(ctrl_sizes):
+                if 0 < k_sz < n:
+                    variants[f"t2_random_k{k_sz}"] = sorted(int(x) for x in rng.choice(
+                        n, size=k_sz, replace=False))
             cache = {}
             for vname, kept in variants.items():
+                wvec = wvecs.get(vname)
                 base_m = dict(arm=vname, regime=REGIME, threat=THREAT, seed=seed,
                               corrupt=sorted(corrupt), kept=sorted(kept),
                               vanilla_target=target, gate_cfg=GATE)
@@ -677,7 +715,7 @@ def main():
                                               skipped="empty_kept"),
                             [], None, None, corrupt_cfg)
                     continue
-                if len(kept) == n:                     # == vanilla trajectory exactly
+                if len(kept) == n and wvec is None:    # == vanilla trajectory exactly
                     m = dict(base_m, final_val_loss=obs_metrics["final_val_loss"],
                              downstream=obs_metrics.get("downstream"),
                              skipped="equals_vanilla")
@@ -685,7 +723,9 @@ def main():
                           flush=True)
                     persist(vname, seed, m, [], None, None, corrupt_cfg)
                     continue
-                key = frozenset(kept)
+                key = (frozenset(kept),
+                       None if wvec is None else tuple((c, round(float(wvec[c]), 12))
+                                                       for c in sorted(wvec)))
                 pt = PhaseTimer(device, n_gpus=int(os.environ.get("N_GPUS", "1")))
                 if key not in cache:
                     # deployment semantics (V3 precedent): threat stays ACTIVE on
@@ -693,8 +733,22 @@ def main():
                     ks = sorted(kept)
                     kept_fr = frozenset(i for i, c in enumerate(ks) if c in fr_ids)
                     kept_gn = frozenset(i for i, c in enumerate(ks) if c in gn_ids)
+                    wf = None
+                    if wvec is not None:               # static Phi-weight aggregation
+                        fac = {i: float(wvec[c]) for i, c in enumerate(ks)}
+
+                        def wf(r, w_r, deltas_map, _fac=fac):
+                            players = sorted(deltas_map)
+                            w = np.array([deltas_map[p][1] * _fac.get(p, 0.0)
+                                          for p in players], dtype=float)
+                            if w.sum() <= 0:
+                                w = np.array([deltas_map[p][1] for p in players],
+                                             dtype=float)
+                            w /= w.sum()
+                            return dict(zip(players, w))
                     logs_k, t_k = _timed(lambda: _fl(
                         model, tok, [clients[c] for c in ks], init, seed,
+                        weights_fn=wf,
                         free_riders=kept_fr, fr_mode=fr_mode, fr_scale=fr_scale,
                         noise_adders=kept_gn), device)
                     curve_k, final_k = _val_curve(logs_k, model, loss_fn, pkeys, device)

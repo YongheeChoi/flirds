@@ -46,16 +46,18 @@ OUT = ROOT / "analysis"
 SOURCES = ("flirds", "flirds1st", "lossheur", "gtg", "fedsv", "comfedsv",
            "shapleyfl", "fedif", "oracleb")
 POLICY_SUFFIX = {"gate_v1": "P1v1", "gate_v2": "P1", "gatew_v2": "P2",
-                 "mult": "P3", "zgate_v2": "P4", "w": "P3"}
+                 "mult": "P3", "zgate_v2": "P4", "w": "P3",
+                 "cgate": "P5h", "pweight": "P5s"}     # P5 confidence policies (07-21)
 CLEAN_BAND_CNN = 0.006            # C2 clean-parity band (track_g spec §5-2, reused)
 CLEAN_BAND_LLM = 0.002
 
 
 def parse_arm(arm):
     """arm -> (source, policy, timing) or None for controls/observer."""
-    m = re.fullmatch(r"t2_(sign|signw)_(\w+)", arm)
+    m = re.fullmatch(r"t2_(sign|signw|csign|pw)_(\w+)", arm)
     if m:
-        return m.group(2), ("P1" if m.group(1) == "sign" else "P2"), "retrain"
+        pol = {"sign": "P1", "signw": "P2", "csign": "P5h", "pw": "P5s"}[m.group(1)]
+        return m.group(2), pol, "retrain"
     if arm in ("v3_sign", "v3_z"):                     # track_g reuse: flirds-scored V3
         return "flirds", ("P1" if arm == "v3_sign" else "P4"), "retrain"
     for suf, pol in POLICY_SUFFIX.items():
