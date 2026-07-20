@@ -1,0 +1,330 @@
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage[submission]{aaai2027}  % DO NOT CHANGE THIS
+% The serif, sans-serif, and monospaced fonts are loaded automatically by
+% aaai2027.sty (newtxtext, helvet, courier). DO NOT add \usepackage{times},
+% \usepackage{helvet}, \usepackage{courier}, or any other font package.
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+%
+% These are recommended to typeset algorithms but not required. See the subsubsection on algorithms. Remove them if you don't have algorithms in your paper.
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+%
+% These are recommended to typeset listings but not required. See the subsubsection on listing. Remove this block if you don't have listings in your paper.
+\usepackage{newfloat}
+\usepackage{listings}
+\DeclareCaptionStyle{ruled}{labelfont=normalfont,labelsep=colon,strut=off} % DO NOT CHANGE THIS
+\lstset{%
+	basicstyle={\footnotesize\ttfamily},% footnotesize acceptable for monospace
+	numbers=left,numberstyle=\footnotesize,xleftmargin=2em,% show line numbers, remove this entire line if you don't want the numbers.
+	aboveskip=0pt,belowskip=0pt,%
+	showstringspaces=false,tabsize=2,breaklines=true}
+\floatstyle{ruled}
+\newfloat{listing}{tb}{lst}{}
+\floatname{listing}{Listing}
+
+%
+% Recommended for better-looking tables
+\usepackage{booktabs}
+
+%
+% Keep the \pdfinfo as shown here. There's no need
+% for you to add the /Title and /Author tags.
+\pdfinfo{
+/TemplateVersion (2027.1)
+}
+
+% DISALLOWED PACKAGES
+% \usepackage{authblk} -- This package is specifically forbidden
+% \usepackage{balance} -- This package is specifically forbidden
+% \usepackage{CJK} -- This package is specifically forbidden
+% \usepackage{float} -- This package is specifically forbidden
+% \usepackage{flushend} -- This package is specifically forbidden
+% \usepackage{fullpage} -- This package is specifically forbidden
+% \usepackage{geometry} -- This package is specifically forbidden
+% \usepackage{hyperref} -- This package is specifically forbidden
+% \usepackage{navigator} -- This package is specifically forbidden
+% (or any other package that embeds links such as navigator or hyperref)
+% \usepackage{indentfirst} -- This package is specifically forbidden
+% \usepackage{layout} -- This package is specifically forbidden
+% \usepackage{multicol} -- This package is specifically forbidden
+% \usepackage{nameref} -- This package is specifically forbidden
+% \usepackage{savetrees} -- This package is specifically forbidden
+% \usepackage{setspace} -- This package is specifically forbidden
+% \usepackage{stfloats} -- This package is specifically forbidden
+% \usepackage{tabu} -- This package is specifically forbidden
+% \usepackage{titlesec} -- This package is specifically forbidden
+% \usepackage{tocbibind} -- This package is specifically forbidden
+% \usepackage{ulem} -- This package is specifically forbidden
+% \usepackage{wrapfig} -- This package is specifically forbidden
+% DISALLOWED COMMANDS
+% \nocopyright -- Your paper will not be published if you use this command
+% \addtolength -- This command may not be used
+% \balance -- This command may not be used
+% \baselinestretch -- Your paper will not be published if you use this command
+% \clearpage -- No page breaks of any kind may be used for the final version of your paper
+% \columnsep -- This command may not be used
+% \newpage -- No page breaks of any kind may be used for the final version of your paper
+% \pagebreak -- No page breaks of any kind may be used for the final version of your paper
+% \pagestyle -- This command may not be used
+% \tiny -- This is not an acceptable font size.
+% \vspace{- -- No negative value may be used in proximity of a caption, figure, table, section, subsection, subsubsection, or reference
+% \vskip{- -- No negative value may be used to alter spacing above or below a caption, figure, table, section, subsection, subsubsection, or reference
+
+\setcounter{secnumdepth}{2} % 0에서 2로 변경(kit 허용): paper-ko.md의 §x.y 상호참조 스타일에 맞춰 섹션 번호 표시
+
+% The file aaai2027.sty is the style file for AAAI Press
+% proceedings, working notes, and technical reports.
+%
+
+% Title
+% Your title must be in mixed case, not sentence case (AAAI 규정).
+% [작업 제목] paper-ko.md 제목의 영문판. "Exact-Oracle Fidelity"는 dual-oracle 표현 정리(retrain
+% 특성화 강등, §6.2) 이후 개명 검토가 보류 중 — 확정되면 여기와 paper-ko.md를 함께 갱신할 것.
+\title{Measure First: Exact-Oracle Fidelity of Client-Level Data Valuation in Federated LLM Fine-Tuning}
+\author{
+    % 익명 제출 지침: 저자는 "Anonymous Submission" 단독, 소속은 비워 둔다.
+    Anonymous Submission
+}
+\affiliations{
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Data valuation quantifies how much of a trained model's performance is
+attributable to each data provider, and the Shapley value, which satisfies the
+axioms of fair allocation, is its standard tool. This question becomes most
+pressing in federated learning, where reward allocation, data markets,
+and quality control all demand per-client contribution scores. Yet, constrained
+by the conditions FL imposes, existing federated Shapley methods share two
+limitations: exact computation of their target, the per-round
+Shapley value, is exponential in the number of participants, so in practice
+they resort to random-sampling and truncation approximations; and in the
+process, each method redefines its own surrogate contribution measure, whose
+deviation from the original Shapley value has been verified neither by
+rigorous bounds nor against exact ground truths.
+We propose \textbf{Flirds}, a client-level contribution valuation method that
+answers these two limitations in turn. Flirds extends the closed-form
+computation of In-Run Data Shapley to the
+round structure of FL, computing per-round Shapley contributions from nothing
+but the updates the server already receives, with no coalition re-evaluation.
+The target per-round Shapley value is explicitly defined and hence satisfies
+the axioms of fair allocation. Flirds approximates this target, but its sole
+error, the Taylor truncation, is rigorously bounded; and it reproduces the
+rankings of the ground truth obtained by computing the same target via
+exhaustive enumeration without approximation essentially
+perfectly at every scale of our 1B--7B LLM fine-tuning experiments (Spearman
+$\rho \ge 0.999$). Going
+further, in removal, selection, and detection experiments we assess whether the
+measured contributions are genuinely valuable.
+\end{abstract}
+
+% Uncomment the following to link to your code, datasets, an extended version or similar.
+% You must keep this block between (not within) the abstract and the main body of the paper.
+% Make sure that you do not de-anonymize yourself with these links.
+% \begin{links}
+%     \link{Code}{https://aaai.org/example/code}
+%     \link{Datasets}{https://aaai.org/example/datasets}
+%     \link{Extended version}{https://aaai.org/example/extended-version}
+% \end{links}
+
+%% ==================================================================
+%% 본문 이관 규칙: paper-ko.md에서 단락이 확정될 때마다 아래 대응 섹션의
+%% 주석을 풀고 영문으로 옮긴다. 섹션 구조는 paper-ko.md와 1:1 대응.
+%% ==================================================================
+
+\section{Introduction}
+% ← paper-ko.md §1 서론 (확정판 반영). 상호참조(Section 3.1 등)는 해당 섹션 이관 후 \label/\ref로 전환.
+
+\textbf{Data valuation, and federated learning.}
+The quality of a modern machine-learning model is determined by its data. Data
+valuation, which quantifies how much of a model's performance is owed to whose
+data, has accordingly grown into a research axis of its own, and the
+\textbf{Shapley value} from cooperative game theory has become its standard
+tool: it is the unique allocation that satisfies the axioms characterizing
+fair division (efficiency, symmetry, null player). The stage where this
+question is most pressing is \textbf{federated learning (FL)}: contributors
+are separated into clients from the outset; the server jointly trains a single
+model without ever seeing their data; and the incentive structures that keep
+clients participating, such as reward allocation, data markets, free-rider
+prevention, and quality control and debugging, all hinge on the number that
+says who contributed how much.
+
+\textbf{Conditions of real FL settings.}
+In deployed FL, contribution valuation must operate under the following
+conditions:
+\begin{itemize}
+    \item \textbf{Information}: (1) The server cannot inspect any client's raw
+    data individually: all it sees are the clients' model updates. (2) The
+    validation data that anchors fair evaluation is held only by the server:
+    clients' self-reports cannot serve as the standard.
+    \item \textbf{Operation}: (3) Contributions must be computed online, every
+    round: with clients participating intermittently (the cohort changes from
+    round to round) and training continuing indefinitely, post-hoc batch
+    evaluation is useless for settlement and operations. (4) Subset retraining
+    is unaffordable, and valuation may impose neither additional communication
+    rounds nor additional client-side computation. (5) The unit of valuation
+    is the client, because clients are the subjects of reward and
+    accountability.
+    \item \textbf{Scale and statistics}: (6) Today's FL extends to PEFT (LoRA)
+    fine-tuning of LLMs, so the cost of valuation must keep pace with model
+    scale. (7) Data across clients are in general assumed to be non-IID.
+\end{itemize}
+
+\textbf{Why not retrain-based Shapley values.}
+The classical ground truth of data valuation is the retrain-based Shapley
+value: the Shapley value of the utility obtained by retraining from scratch on
+each subset of clients (Section~3.1). In FL, however, a different set of
+clients participates intermittently in every round, and a fair contribution
+assessment is required each time. In such an environment, this definition,
+which presupposes subset retraining, is practically incomputable. Existing
+federated Shapley studies have therefore mostly shifted the evaluation target
+to the round level: compute the per-round Shapley value defined on the updates
+the server receives in each round, and accumulate it across rounds. This paper
+targets the same round-level value; it is what Section~3 will define as the
+\textbf{exact in-run Shapley}.
+
+\textbf{Two remaining limitations: bypassed exponential computation, and
+unverified surrogate definitions.}
+This round-level lineage (FedSV, GTG-Shapley, ComFedSV, ShapleyFL, among
+others) is mostly designed to operate within the conditions above. Two
+limitations remain, however. The first is \textbf{computation}: computing the
+targeted per-round Shapley value exactly requires reconstructing a model for
+every client coalition in every round and re-evaluating it on validation data,
+so the cost grows exponentially in the number of participants per round; in
+practice this has been bypassed with random-sampling and truncation
+approximations, and the entire lineage has remained at the scale of small-CNN
+validation. The second is \textbf{the unverified surrogate definitions that
+this bypass produced}: in the course of avoiding the cost, each method came to
+target a different surrogate utility, some explicitly abandon the Shapley
+axioms, and how far these surrogate values deviate from the original Shapley
+value has been verified neither by rigorous bounds nor against exact ground
+truths. The validity of the measured contributions has mostly been confirmed
+only indirectly, through downstream evidence such as detection, convergence,
+or final accuracy, and the cases that do score the estimates against exact
+ground truths are limited to small synthetic settings or approximate
+references. Reports that approximate FL-Shapley rewards swing by tens of
+percent under a mere change of the server-side aggregation strategy are the
+practical face of this state of affairs. On the opposite side, LLM-scale data
+valuation (IRDS, DataInf, LESS, among others) has advanced rapidly, but these
+methods are all centralized and sample-level, with direct access to the data,
+which the FL constraints described above rule out.
+
+Our approach targets exactly these two limitations. Extending the closed-form
+Shapley computation that In-Run Data Shapley (Data Shapley in One Training
+Run) proposed for centralized training to the round structure of federated
+learning resolves both problems at once: coalition re-evaluation disappears
+entirely, so the sampling and truncation used to bypass the exponential
+computation are never needed in the first place (computation); and since both
+the target and the approximation are explicit, the error can be rigorously
+characterized, and the ground truth can be computed directly to score the
+estimator (definition and verification).
+
+\textbf{Proposed method.}
+We propose \textbf{Flirds} (Federated Learning In-Run Data Shapley), a
+client-level contribution valuation method that extends In-Run Data Shapley to
+federated learning. The starting point is the observation that FedAvg-style
+training already delivers to the server the ingredients that valuation needs:
+every round, the server receives the participating clients' model updates and
+aggregates them by a weighted average. Flirds views this per-round aggregation
+as a cooperative game, asking how much the validation loss would have dropped
+had only the updates of a subset of clients been applied, and computes the
+exact Shapley value of this game in a closed form obtained by approximating
+the validation loss with its first- plus second-order Taylor expansion.
+Flirds, too, is thus an estimator that computes an approximation rather than
+the ground truth itself. It differs from prior approximations, in which
+sampling variance and unverified surrogate definitions pile on top of each
+other, in that its approximation has a single source, the Taylor truncation,
+and its error is bounded deterministically without any sampling (Section~4).
+As a result, the heavy computation required per round is fixed at a single
+Hessian-vector product over the validation set, and the additional cost per
+participant is one inner product: no retraining, no per-subset model
+reconstruction and re-evaluation, and no extra communication or client-side
+computation. Since the inner product scales only with the dimension of the
+parameter space in which the updates live, the same formula applies unchanged
+from small networks trained in full to LLM fine-tuning that exchanges only
+PEFT (LoRA) adapters.
+
+\textbf{Verification.}
+Prior studies have confirmed the validity of contribution scores mostly
+through downstream effects: whether contribution-based selection helps
+convergence or performance, or whether low-contribution clients turn out to be
+corrupted. We split verification into two layers. In the \textbf{estimator
+layer}, we directly compute, on the same training trajectory, the exact
+Shapley value of the game Flirds targets, namely the \textbf{exact in-run
+Shapley} computed from the in-run definition by exhaustively enumerating all
+$2^{|P_r|}$ coalitions per round without approximation, and measure whether
+the estimates reproduce it at both the ranking and the value level. This is a
+stronger criterion than the prior practice of relying on approximate
+references or indirect downstream evidence. In the \textbf{effectiveness
+layer}, we measure whether the measured contributions are values that actually
+help training. Each method's contributions are consumed to improve the
+training process, and the methods are compared by the resulting training
+outcomes: online sign-gating that automatically excludes clients with net
+contribution $\le 0$ during training, removal experiments that remove clients
+in contribution order and actually retrain to check the causal validity of the
+ranking, selection experiments that retrain with only the top-contribution
+clients, and detection of corrupted and free-riding clients. On top of this,
+we measure every method's computational cost on the same fixed trajectory. The
+empirical relationship to the classical exact retrain Shapley is reported only
+as a characterization experiment (Section~5.3).
+
+\textbf{Contributions.} The contributions of this paper are as follows.
+\begin{enumerate}
+    \item \textbf{Method.} We propose Flirds, a client-level contribution
+    estimator that extends the closed-form computation of In-Run Data Shapley
+    to the round structure of federated learning. To our knowledge, this paper
+    is the first to perform federated client-level contribution valuation at
+    LLM scale (PEFT fine-tuning).
+    \item \textbf{Verification protocol.} Estimation accuracy is scored
+    against the exact in-run Shapley computed by exhaustive enumeration, and
+    the effectiveness of the contributions is scored by actual training
+    improvement under an identical intervention policy. To our knowledge, we
+    are the first to lift scoring against exact ground truths to LLM scale.
+    \item \textbf{Mathematical justification.} We prove that the value Flirds
+    computes is the exact Shapley value of the second-order Taylor
+    approximation of the per-round aggregation game, and we bound the sole
+    error, the Taylor truncation. The fairness axioms hold, so a client that
+    contributes nothing receives exactly zero algebraically; combined with
+    round-level online settlement, these properties let the measured
+    contributions be consumed directly as a basis for real reward allocation.
+\end{enumerate}
+
+% \section{Related Work}
+%   ← §2 관련 연구
+
+% \section{Background: Data Shapley, In-Run Data Shapley, and the Federated Extension}
+%   ← §3 배경 (3.1 Data Shapley와 exact retrain Shapley / 3.2 In-Run Data Shapley / 3.3 연합 확장 + 용어 규약)
+
+% \section{Flirds: Closed-Form Estimation of Exact In-Run Shapley}
+%   ← §4 (4.1 추정기 / 4.2 이론)
+
+% \section{Experiments}
+%   ← §5 실험 (5.1 세팅·측정 프로토콜 / 5.2 추정 정확도 / 5.3 참값 대비·게임-무관 척도 / 5.4 신호 조건 / 5.5 비용 / 5.6 기여도의 가치: 부호-게이팅·selection·탐지)
+
+% \section{Discussion and Limitations}
+%   ← §6 논의와 한계
+
+% \section{Conclusion}
+%   ← §7 결론
+
+% (부록 A--F: 학회 규정에 따라 본문 뒤 technical appendix 또는 별도 제출 — paper-ko.md 부록 참조)
+
+% References — 본문에 첫 \cite가 들어올 때 주석 해제.
+% (bib 파일: ../references.bib; 서지 스타일은 kit의 aaai2027.bst)
+% \bibliography{../references}
+
+% Check whether the conference requires a reproducibility checklist to be included in the paper.
+% If so, you can uncomment the following line and ajust the path to include it.
+% \input{ReproducibilityChecklist.tex}
+
+\end{document}
