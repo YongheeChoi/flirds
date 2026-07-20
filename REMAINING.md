@@ -56,11 +56,14 @@ E5 seed1·2(2¹⁰, 33h/셀) · lr·steps intervention 2차검증 · 1B·CNN β-
 2. **표1 Fed-LOO 재집계**: `python runs/track_d/make_fidelity.py`(root `rundirs_e4_fedloo` 인자 확인).
 3. **tab:cost**(`paper/sections/results.tex`): loss-heur 170→~99s·device overhead%·E3 CNN cost·end-to-end/overhead% 2블록.
 4. **paper-ko 마커 해소**: E2·E3·E4·E5·E7·E11 🔴TODO/🟣VERIFY + §3.7.4 AdamW 갱신.
-5. **Track G 서술**: overview 신규 절 + paper-ko §6.5 (1.2 완주 후 analysis 최종본 인용; 현재 확정치 =
-   V2w 불승격·frzero 회수 1.0·noisy 게이트 침묵·clean parity max|Δ|=0.00056).
-6. **Track H 서술**: Tier1+2 확정 스토리(절대-0점 vs 상대-0점의 위협-의존 트레이드오프: CNN corrupt서
-   renorm −2.4~−3.0 붕괴 ↔ LLM noisy서 renorm 회수 1.66–1.91 + 오배제 리스크; exact-0 계열 게이트
-   회수 0.4–0.95) — Tier3 후 overview·paper 반영.
+5. **Track G 서술**: overview는 §3.2.3–4 반영됨(std50k5 진행분 07-20 로컬 포함); 잔여 = paper-ko §6.5
+   (1.2 완주 후 analysis 최종본 인용; 현재 확정치 = V2w 불승격·frzero 회수 1.0·noisy 게이트 침묵·
+   clean parity max|Δ|=0.00056).
+6. **Track H 서술**: **overview §3.2.6 반영 완료(07-20 로컬)** — ⚠ make_analysis 집계 정정 포함
+   (lf-dose join 실패·equals_vanilla 결측 → dir1 공통 9셀 재집계; 커밋 메시지의 "lossheur .849 >
+   flirds .762"/"fedif=flirds1st 1.17 T2 최고"는 정정 전 수치, 정본 = §3.2.6: P1-T1 동률 .707·
+   P1-T2 flirds .839 1위·renorm 붕괴는 FR 국한 −5.9~−6.6·GN은 renorm도 0.9+). 잔여 = paper 반영 +
+   Tier3 완주 후 §3.2.6 R2 확정 갱신.
 7. **부수분석**: 3.1 loss-heur 정본화(CSV/rundir) · oracle noisy AUROC 0.604/0.660 불일치 확정 ·
    bootstrap CI(B=1000) · momentum 열화(0.73 vs 0.81) 정본 rundir 위치.
 
