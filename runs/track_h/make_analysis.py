@@ -15,6 +15,19 @@ mean recovery over corrupt cells, per (source, policy, timing); clean cells are
 a PARITY FLAG (CNN |dAcc| >= 0.006 band / LLM |dLoss| >= 0.002), reported next
 to the score, never mixed into it.  Gate P/R and observer false-fire rates are
 DIAGNOSTIC columns only (why performance moved), never ranked.
+
+2026-07-20 aggregation fixes (per-cell CSVs unchanged in meaning; score column
+semantics corrected -- see overview 3.2.6):
+  - flip_rate falls back to the `_fr<dose>_` token in the rundir name (track_g
+    CNN configs lack the key), so track_h lf@0.7 arms merge with their track_g
+    vanilla/oracle anchors instead of dropping to recovery=NaN.
+  - T2 arms skipped as `equals_vanilla` (kept=all -> retrain==vanilla by
+    construction) count as delta=0/recovery=0 instead of vanishing from means.
+  - The competition score is restricted to the Track H stage cells so every
+    source averages the SAME cells: CNN = R1 dir1 (lf only at the 0.70 dose;
+    reuse-only iid/dose cells stay in cnn_competition.csv but not the score),
+    LLM = R3 silo5 noisy nr1.0 (+ silo5 clean as parity anchor) and R2 std50k5
+    reported as separate stage_cell rows.
 """
 from __future__ import annotations
 
@@ -75,14 +88,24 @@ def analyze_llm():
         groups.setdefault(key, {})[cfg["arm"]] = c     # track_h root wins on dup
     rows = []
     for (regime, threat, nr, seed), by_arm in sorted(groups.items()):
-        van = (by_arm.get("vanilla", {}).get("m") or {}).get("final_val_loss")
-        orc = (by_arm.get("oracle_excl", {}).get("m") or {}).get("final_val_loss")
+        van_m = ((by_arm.get("vanilla") or by_arm.get("observer") or {})  # observer ==
+                 .get("m") or {})                      # vanilla (bit-identical, R4)
+        van = van_m.get("final_val_loss")
+        van_em = (van_m.get("downstream") or {}).get("gsm8k_em")
+        orc_m = (by_arm.get("oracle_excl", {}).get("m") or {})
+        orc = orc_m.get("final_val_loss")
+        orc_em = (orc_m.get("downstream") or {}).get("gsm8k_em")
         for arm, c in sorted(by_arm.items()):
             m = c["m"]
             vl = m.get("final_val_loss")
             delta = (van - vl) if None not in (van, vl) else None
             rec = (delta / (van - orc) if None not in (delta, orc, van) and van != orc
                    else None)
+            em = (m.get("downstream") or {}).get("gsm8k_em")
+            d_em = (em - van_em) if None not in (em, van_em) else None
+            rec_em = (d_em / (orc_em - van_em)
+                      if None not in (d_em, orc_em, van_em) and orc_em != van_em
+                      else None)
             sp = parse_arm(arm)
             g = m.get("gate") or {}
             rows.append(dict(regime=regime, threat=threat, nr=nr, seed=seed, arm=arm,
@@ -90,11 +113,14 @@ def analyze_llm():
                              policy=sp[1] if sp else None,
                              timing=sp[2] if sp else None,
                              final_val_loss=vl, delta=delta, recovery=rec,
+                             gsm8k_em=em, delta_em=d_em, recovery_em=rec_em,
                              rounds_to_target=m.get("rounds_to_target"),
                              gate_precision=g.get("precision"),
                              gate_recall=g.get("recall"),
                              false_excl_pairs=g.get("false_excl_pairs"),
-                             kept=m.get("kept")))
+                             kept=(len(m["kept"]) if isinstance(m.get("kept"), list)
+                                   else m.get("kept")),
+                             skipped=m.get("skipped")))
     return pd.DataFrame(rows)
 
 
@@ -120,12 +146,23 @@ def observer_method_stats(d, corrupt):
     return out
 
 
+def _flip_rate(c):
+    """config flip_rate, falling back to the `_fr<dose>_` rundir-name token
+    (track_g CNN configs lack the key; without this the three doses collide on
+    one NaN key and track_h lf@0.7 arms lose their vanilla/oracle anchors)."""
+    fr = (c["cfg"] or {}).get("flip_rate")     # may be a str ('0.70', env passthrough)
+    if fr is None:
+        m = re.search(r"_fr([0-9.]+)_", c["cell"])
+        fr = m.group(1) if m else None
+    return None if fr is None else float(fr)
+
+
 def analyze_cnn():
     cells = {}
     for c in _load(RUNS / "track_g" / "rundirs_cnn") + _load(ROOT / "rundirs_cnn"):
         m = c["m"]
         key = (m.get("dataset"), m.get("partition"), m.get("threat"),
-               (c["cfg"] or {}).get("flip_rate"), m.get("seed"))
+               _flip_rate(c), m.get("seed"))
         cells.setdefault(key, []).append(c)            # later (track_h) roots add arms
     rows, obs_rows = [], []
     for key, cs in sorted(cells.items(), key=str):
@@ -144,6 +181,8 @@ def analyze_cnn():
                                          source=meth, **st))
         for arm, a in sorted(arms.items()):
             acc = a.get("final_acc")
+            if acc is None and a.get("skipped") == "equals_vanilla":
+                acc = van          # kept=all -> retrain == vanilla by construction
             delta = (acc - van) if None not in (acc, van) else None
             rec = (delta / (orc - van) if None not in (delta, orc, van) and orc != van
                    else None)
@@ -164,19 +203,32 @@ def analyze_cnn():
 
 # ------------------------------------------------------------------- score
 def competition_score(llm, cnn):
-    """Per (source, policy, timing): mean recovery over corrupt cells + the
-    clean parity flag (never mixed into the score -- spec §3)."""
+    """Per (source, policy, timing, stage_cell): mean recovery over corrupt
+    cells + the clean parity flag (never mixed into the score -- spec §3).
+    Restricted to the Track H stage cells so every source averages the SAME
+    cells (reuse-only iid/dose/frzero cells stay in the per-cell CSVs)."""
     rows = []
     for stage, df, clean_col, band in (("llm", llm, "delta", CLEAN_BAND_LLM),
                                        ("cnn", cnn, "delta_acc", CLEAN_BAND_CNN)):
         if df.empty:
             continue
-        d = df[df["source"].notna()]
-        for (src, pol, tim), g in d.groupby(["source", "policy", "timing"]):
+        d = df[df["source"].notna()].copy()
+        if stage == "cnn":                 # R1: dir1, lf only at the 0.70 dose
+            d = d[(d["partition"] == "dir1")
+                  & ((d["threat"] != "label_flip") | (d["flip_rate"] == 0.7))]
+            d["stage_cell"] = "dir1"
+        else:                              # R3 noisy nr1.0 (+clean parity anchor) | R2 std50k5
+            d = d[(((d["regime"] == "silo5")
+                    & d["threat"].isin(("clean", "noisy")) & (d["nr"] == 1.0))
+                   | (d["regime"] == "std50k5"))]
+            d["stage_cell"] = d["regime"]
+        for (src, pol, tim, cell), g in d.groupby(
+                ["source", "policy", "timing", "stage_cell"]):
             cor = g[g["threat"] != "clean"]
             cln = g[g["threat"] == "clean"]
             clean_delta = float(cln[clean_col].mean()) if len(cln) else None
-            rows.append(dict(stage=stage, source=src, policy=pol, timing=tim,
+            rows.append(dict(stage=stage, stage_cell=cell, source=src, policy=pol,
+                             timing=tim,
                              score_corrupt_recovery=(float(cor["recovery"].mean())
                                                      if cor["recovery"].notna().any()
                                                      else None),
@@ -186,8 +238,9 @@ def competition_score(llm, cnn):
                                               else bool(abs(clean_delta) < band))))
     sc = pd.DataFrame(rows)
     if not sc.empty:
-        sc = sc.sort_values(["stage", "policy", "timing", "score_corrupt_recovery"],
-                            ascending=[True, True, True, False])
+        sc = sc.sort_values(["stage", "stage_cell", "policy", "timing",
+                             "score_corrupt_recovery"],
+                            ascending=[True, True, True, True, False])
     return sc
 
 
