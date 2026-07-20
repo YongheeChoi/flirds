@@ -25,7 +25,8 @@
 > **정정(Yonghee 07-20 23:2x)**: "β0.3 말고 방금 가져온 실험 먼저" — R4(gsm50k5)는
 > 새 방법 라인의 실험로서 **큐 최우선 복귀**(β0.3 앞). 07-20 심야의 "Track H·G 보류"는
 > **legacy 축**(H = 점수원 경쟁 잔여·CNN 확장, G = 게이트 트랙)에만 적용되는 것으로 정정.
-> 실행: 현행 β0.3 4셀이 끝나는 셀 경계부터 R4 4셀이 GPU를 이어받음(무손실 전환).
+> 실행: Yonghee 지시(23:3x)로 **즉시 전환** — 진행 중이던 β0.3 4셀 kill(각 ~1h 소실,
+> 큐 재등록=R4 직후 재실행) → R4 4셀 23:29:56 4-GPU 동시 가동(clean/noisy/gnoise/frzero).
 
 본런 4셀(clean/noisy/frzero/gnoise; observer+통제+flirds P1-T1+T2, seed0).
 스펙·예측(H-8~11)=`runs/track_h/README.md` §1.6.
