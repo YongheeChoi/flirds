@@ -20,11 +20,12 @@
 > (overview §3.2.3–4 반영분 유지). LLM 참여축 성능 주장은 R4(gsm50k5·EM)가 승계.
 > **CNN 축은 폐기 대상 아님**(심판이 원래 test-acc; Tier1 96런·track_g CNN 그리드 전부 유효) — 1.2 참조.
 
-### 1.1 Track H R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (**보류 07-20 심야**)
+### 1.1 R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (**최우선 재개 07-20 23:2x**)
 
-> **보류(Yonghee 07-20 심야)**: "Track H·G는 일단 보류 — 새로운 방법 구상 중."
-> pre-flight(GSM8K 캐시·스모크 2종 green)까지 완료된 상태에서 본런 4셀을 큐에서 회수
-> (**셀 미시작 = 무손실**; 재개 = 큐 `#HOLD` 주석 해제만). 아래 절차는 재개 시 그대로 유효.
+> **정정(Yonghee 07-20 23:2x)**: "β0.3 말고 방금 가져온 실험 먼저" — R4(gsm50k5)는
+> 새 방법 라인의 실험로서 **큐 최우선 복귀**(β0.3 앞). 07-20 심야의 "Track H·G 보류"는
+> **legacy 축**(H = 점수원 경쟁 잔여·CNN 확장, G = 게이트 트랙)에만 적용되는 것으로 정정.
+> 실행: 현행 β0.3 4셀이 끝나는 셀 경계부터 R4 4셀이 GPU를 이어받음(무손실 전환).
 
 본런 4셀(clean/noisy/frzero/gnoise; observer+통제+flirds P1-T1+T2, seed0).
 스펙·예측(H-8~11)=`runs/track_h/README.md` §1.6.
@@ -84,5 +85,5 @@ E5 seed1·2(2¹⁰, 33h/셀) · lr·steps intervention 2차검증 · 1B·CNN β-
 ## 3. Yonghee 결정 대기
 
 - **push**: 로컬 커밋 다수 — push 여부/시점.
-- **Track H·G 재개 여부** — 새 방법 구상(07-20 심야) 확정 후: R4 Tier A 재개(1.1)·CNN 확장 스코프(1.2).
+- **legacy Track H·G 재개 여부** — 새 방법 확정 후: CNN 확장 스코프(1.2)·G 후속. (R4는 1.1로 재개됨)
 - E5 N=10 3-seed 여부(1.5).
