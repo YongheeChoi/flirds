@@ -95,6 +95,20 @@ E2(Taylor 잔차 1B)는 **이전 세션에 이미 완료**(`runs/measured_2026-0
   삭제 — 원문 git 54dd161). 순서 확정: legacy 4셀 완주 → **Track H Tier1 CNN(96런)→Tier2 LLM(3런)→
   보고→Tier3 std50k5(12런; shapleyfl_gate_v2 seed0은 track_g 재사용=재실행 금지, lossheur_gate_v2는 미영속이라 실행)**
   → 그 후 파킹분(std50k5 7셀 → β0.3 18셀) 재개. Tier3 3-seed 확장 = Yonghee 승인 게이트.
+- **[07-20 09:1x 컨테이너-컷 준비] Track H 진행: Tier1 96/96 완주·커밋(df3e8e9; exact-0 계열만 게이트 회수
+  +0.4~0.95, renorm 4종 −2.4~−3.0 붕괴+parity 위반 = H-핵심가설 확인; flirds/lossheur CNN clean_delta
+  −0.007~−0.014 기준초과 MISS 캐비앳). Tier2 3런 완주분 커밋 후 컷.**
+  **새 컨테이너 Tier3 재개 명령**(codes/에서; env는 §4와 동일 PY·PYTHONPATH=.·HOME/HF flirds_batch 오프라인 셋; GPU 분배 자유):
+  ```
+  for ARM in flirds_gatew_v2 flirds1st_gate_v2 flirds1st_gatew_v2 lossheur_gate_v2 lossheur_gatew_v2 \
+             gtg_gate_v2 gtg_gatew_v2 fedsv_gate_v2 fedsv_gatew_v2 comfedsv_gate_v2 comfedsv_gatew_v2 \
+             shapleyfl_gatew_v2; do
+    REGIME=std50k5 THREAT=mixed SEED=0 ARMS=$ARM V3=0 \
+      RUNDIR_ROOT=<repo>/runs/track_h/rundirs_llm CUDA_VISIBLE_DEVICES=<g> \
+      <venv-python> -u experiments/track_g.py   # arm당 ~3.1-9.9 GPU-h(std50k5 seed0 실측 준용)
+  done
+  # 종료 후: python runs/track_h/make_analysis.py → GPU-h 보고 → 3-seed 확장=Yonghee 승인 게이트
+  ```
 - 07-20 새벽 완주 5셀 rundir 커밋 = track_g 3셀(닫히는 대로) + β0.3 4셀(캠페인 재개 시 일괄).
 
 ## 5. E-세션 실행물 위치 (참고)

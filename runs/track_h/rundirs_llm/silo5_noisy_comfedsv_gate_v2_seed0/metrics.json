@@ -1,0 +1,42 @@
+{
+  "arm": "comfedsv_gate_v2",
+  "regime": "silo5",
+  "threat": "noisy",
+  "seed": 0,
+  "corrupt": [
+    0
+  ],
+  "final_val_loss": 2.293466329574585,
+  "val_curve": [
+    2.31321382522583,
+    2.311206817626953,
+    2.3092432022094727,
+    2.3072338104248047,
+    2.305111885070801,
+    2.303205966949463,
+    2.3012962341308594,
+    2.2993743419647217,
+    2.2974328994750977,
+    2.2954652309417725,
+    2.293466329574585
+  ],
+  "train_s": 954.7153485850431,
+  "rounds_to_target": null,
+  "vanilla_target": null,
+  "gate": {
+    "precision": 0.875,
+    "recall": 1.0,
+    "n_excluded_pairs": 8,
+    "false_excl_pairs": 1,
+    "n_fallback_rounds": 0
+  },
+  "gate_cfg": {
+    "burn_in": 3,
+    "tau": 0.0,
+    "min_obs": 2,
+    "probation_every": 5,
+    "decay": 1.0,
+    "z_c": 1.5,
+    "alpha_w": 1.0
+  }
+}

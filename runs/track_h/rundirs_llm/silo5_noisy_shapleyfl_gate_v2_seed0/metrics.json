@@ -1,0 +1,42 @@
+{
+  "arm": "shapleyfl_gate_v2",
+  "regime": "silo5",
+  "threat": "noisy",
+  "seed": 0,
+  "corrupt": [
+    0
+  ],
+  "final_val_loss": 2.293736457824707,
+  "val_curve": [
+    2.31321382522583,
+    2.311206817626953,
+    2.3092432022094727,
+    2.307309865951538,
+    2.305393695831299,
+    2.3034842014312744,
+    2.301571846008301,
+    2.299647808074951,
+    2.2977044582366943,
+    2.2957358360290527,
+    2.293736457824707
+  ],
+  "train_s": 952.9008891070262,
+  "rounds_to_target": null,
+  "vanilla_target": null,
+  "gate": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "n_excluded_pairs": 7,
+    "false_excl_pairs": 0,
+    "n_fallback_rounds": 0
+  },
+  "gate_cfg": {
+    "burn_in": 3,
+    "tau": 0.0,
+    "min_obs": 2,
+    "probation_every": 5,
+    "decay": 1.0,
+    "z_c": 1.5,
+    "alpha_w": 1.0
+  }
+}
