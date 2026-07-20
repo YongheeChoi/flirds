@@ -78,6 +78,23 @@ def choice_match(pred, ref):
     return pc is not None and pc == extract_choice(ref)
 
 
+_NUM = re.compile(r"-?\d[\d,]*(?:\.\d+)?")
+
+
+def gsm8k_answer(text):
+    """Normalized GSM8K final answer of a text (Track H R4 exact-match): the last
+    number after the final '####' (the gold convention), else the last number in
+    the whole text (generations that never emit '####').  Commas stripped and a
+    trailing '.0' dropped so '1,000' == '1000' == '1000.0'.  None if the text has
+    no number (counts as wrong)."""
+    seg = text.rsplit("####", 1)[-1]
+    nums = _NUM.findall(seg) or _NUM.findall(text)
+    if not nums:
+        return None
+    v = nums[-1].replace(",", "")
+    return v[:-2] if v.endswith(".0") else v
+
+
 # ---- SV-fidelity distance metrics (Track C1; the GTG-Shapley trio, 2109.02053
 # §5.1.3) ----  Raw-vector distances vs a ground-truth SV vector: only meaningful
 # between estimates of the SAME game in the SAME units (rank metrics — Spearman /

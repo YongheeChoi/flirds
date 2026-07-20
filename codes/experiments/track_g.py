@@ -34,16 +34,27 @@ REGIMES (env REGIME):
   iid5     alpaca IID N=5 (same shape; build_alpaca_iid with silo5-matched totals)
   std50k5  alpaca IID N=50, 5/round, R=200 (probe_signal std50k5 config) -- the
            participation-axis stage where method fidelity separates.
+  gsm50k5  GSM8K IID N=50, 5/round, R=200 (Track H R4 accuracy stage, spec
+           runs/track_h/README.md §1.6): val=200 carved from the OFFICIAL test
+           split, rest = test; downstream judge = numeric exact-match.  Adds the
+           `observer` arm (one vanilla-identical trajectory scored by OBS_SOURCES
+           simultaneously, phi_rounds gains a `method` column) and T2=1 retrains
+           (per-source cum>0 kept -> init retrain, kept-set dedupe, matched
+           random control at the primary source's kept size).
 
 THREATS (env THREAT; poison EXCLUDED by design -- 2026-07-17 decision):
   clean | noisy (answer_swap @ NOISY_RATE) | frrand | frzero |
-  mixed (std50k5-corrupt: NOISY_IDS answer-swap + FR_IDS free-riders together).
+  mixed (std50k5-corrupt: NOISY_IDS answer-swap + FR_IDS free-riders together) |
+  gnoise (gsm50k5: Gaussian on the REAL LoRA delta, sigma = GN_GAMMA * delta RMS).
 
 Run from codes/ (one process per cell = REGIME x THREAT x arm-subset x seed):
   CUDA_VISIBLE_DEVICES=0 PYTHONPATH=. REGIME=silo5 THREAT=frzero SEED=0 \
     python -u experiments/track_g.py
   # std50k5-corrupt pilot:
   ... REGIME=std50k5 THREAT=mixed SEED=0 ARMS=vanilla,oracle_excl,flirds_gate_v2 ...
+  # R4 Tier A cell (observer+controls+flirds online, T2 retrains appended):
+  ... REGIME=gsm50k5 THREAT=gnoise SEED=0 T2=1 \
+      ARMS=observer,oracle_excl,random_excl,flirds_gate_v2 ...
   # server smoke (gpt2 silo5-mini, spec §5-1):
   SMOKE_MODEL=gpt2 REGIME=silo5 THREAT=frzero TRAIN=40 VAL=10 TEST=10 ROUNDS=5 \
     MAX_STEPS=2 BURN_IN=2 SEED=0 python -u experiments/track_g.py
@@ -61,10 +72,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from flirds.backends.llm import make_llm_loss
 from flirds.baselines.ripple import _flat
-from flirds.data.llm import build, build_alpaca_iid, build_val_batches
+from flirds.data.llm import build, build_alpaca_iid, build_gsm8k_iid, build_val_batches
 from flirds.eval.generate import generate_completions, score_records
 from flirds.eval.mmlu import mmlu_accuracy
-from flirds.fl.intervene import (OnlineScorer, SignAccumulator, flirds_round_raw_fn,
+from flirds.fl.intervene import (OnlineScorer, SignAccumulator, fedif_round_raw_fn,
+                                 flirds_round_raw_fn,
                                  lossheur_round_raw_fn, make_fixed_excl_select_fn,
                                  make_gatedweight_weights_fn, make_observer_weights_fn,
                                  make_signgate_select_fn, make_signgate_weights_fn,
@@ -89,20 +101,27 @@ REGIME = os.environ.get("REGIME", "silo5")
 THREAT = os.environ.get("THREAT", "clean")
 SILO_LIKE = REGIME in ("silo5", "iid5")
 
-# regime configs: silo5/iid5 = phase2_matrix SILO verbatim; std50k5 = probe_signal std50k5.
+# regime configs: silo5/iid5 = phase2_matrix SILO verbatim; std50k5 = probe_signal
+# std50k5; gsm50k5 = std50k5 shape on GSM8K (Track H R4 -- corrupt = clients 0-19
+# = 40%, the CNN R1 MAL_FRAC mirror; same ids per threat, threats run separately).
 SILO = dict(n_clients=5, k_abs=5, train=200, val=20, test=40, rounds=10, max_steps=10,
             lr=1e-3, maxlen=768, warmup=2, noisy={0}, freerider={1})
 STD50K5 = dict(n_clients=50, k_abs=5, total_train=20000, val=200, test=1000, rounds=200,
                max_steps=10, lr=1e-3, maxlen=512, warmup=3,
                noisy={0, 1, 2, 3, 4}, freerider={5, 6, 7, 8, 9})   # mixed = both together
-RCFG = dict(SILO if SILO_LIKE else STD50K5)
+GSM50K5 = dict(n_clients=50, k_abs=5, val=200, test=0, rounds=200, max_steps=10,
+               lr=1e-3, maxlen=512, warmup=3, noisy=set(range(20)),
+               freerider=set(range(20)), gnoise=set(range(20)))    # test=0 -> all the rest
+RCFG = dict(GSM50K5 if REGIME == "gsm50k5" else SILO if SILO_LIKE else STD50K5)
 for k in ("n_clients", "k_abs", "train", "total_train", "val", "test", "rounds",
           "max_steps", "maxlen", "warmup"):
     if os.environ.get(k.upper()):
         RCFG[k] = int(os.environ[k.upper()])
 if os.environ.get("LR"):
     RCFG["lr"] = float(os.environ["LR"])
-NOISY_RATE = float(os.environ.get("NOISY_RATE", "1.0"))
+NOISY_RATE = float(os.environ.get("NOISY_RATE",
+                                  "0.7" if REGIME == "gsm50k5" else "1.0"))
+GN_GAMMA = float(os.environ.get("GN_GAMMA", "1.0"))   # R4 grad-noise dose (spec-fixed)
 
 MODEL_CFG = {"1B": dict(batch=16, val_chunk=10, val_maxlen=384),
              "3B": dict(batch=8, val_chunk=5, val_maxlen=384),
@@ -123,17 +142,21 @@ GATE = dict(burn_in=int(os.environ.get("BURN_IN", "3" if SILO_LIKE else "10")),
             z_c=float(os.environ.get("ZC", "1.5")),
             alpha_w=float(os.environ.get("ALPHA_W", "1.0")))
 
-DOWNSTREAM = os.environ.get("DOWNSTREAM", "1" if REGIME == "std50k5" else "0") == "1"
+DOWNSTREAM = os.environ.get("DOWNSTREAM",
+                            "1" if REGIME in ("std50k5", "gsm50k5") else "0") == "1"
 MMLU_LIMIT = int(os.environ.get("MMLU_LIMIT", "0"))
 MMLU_BATCH = int(os.environ.get("MMLU_BATCH", "16"))
 V3 = os.environ.get("V3", "0") == "1"
+T2 = os.environ.get("T2", "0") == "1"                 # R4 observer->retrain block
 SYNTH = os.environ.get("SYNTH_DATA", "0") == "1"
 
 _CODES = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNDIR_ROOT = os.environ.get("RUNDIR_ROOT",
                              os.path.join(os.path.dirname(_CODES), "runs", "track_g", "rundirs"))
 
-DEFAULT_ARMS = (["vanilla", "oracle_excl", "random_excl", "flirds_gate_v1",
+DEFAULT_ARMS = (["observer", "oracle_excl", "random_excl", "flirds_gate_v2"]
+                if REGIME == "gsm50k5" else               # R4 Tier A cell (T2=1 appends retrains)
+                ["vanilla", "oracle_excl", "random_excl", "flirds_gate_v1",
                  "flirds_gate_v2", "flirds_zgate_v2", "flirds_w", "lossheur_gate_v2"]
                 + (["oracleb_gate_v2"] if REGIME == "silo5" else [])
                 + (["shapleyfl_gate_v2"] if REGIME == "std50k5" else []))
@@ -151,18 +174,21 @@ def _ids(env, default):
 
 
 def threat_sets():
-    """(noisy_ids, fr_ids, fr_mode) for the cell.  CORRUPT_IDS overrides the
-    single-threat default; mixed uses NOISY_IDS + FR_IDS (std50k5-corrupt)."""
+    """(noisy_ids, fr_ids, fr_mode, gn_ids) for the cell.  CORRUPT_IDS overrides the
+    single-threat default; mixed uses NOISY_IDS + FR_IDS (std50k5-corrupt); gnoise
+    (gsm50k5) adds Gaussian to the REAL update of gn_ids (llm_server._add_gnoise)."""
     if THREAT == "clean":
-        return set(), set(), "zero"
+        return set(), set(), "zero", set()
     if THREAT == "noisy":
-        return _ids("CORRUPT_IDS", RCFG["noisy"]), set(), "zero"
+        return _ids("CORRUPT_IDS", RCFG["noisy"]), set(), "zero", set()
     if THREAT in ("frrand", "frzero"):
         return set(), _ids("CORRUPT_IDS", RCFG["freerider"]), \
-            ("random" if THREAT == "frrand" else "zero")
+            ("random" if THREAT == "frrand" else "zero"), set()
     if THREAT == "mixed":
         return (_ids("NOISY_IDS", RCFG["noisy"]), _ids("FR_IDS", RCFG["freerider"]),
-                os.environ.get("FR_MODE", "zero"))
+                os.environ.get("FR_MODE", "zero"), set())
+    if THREAT == "gnoise":
+        return set(), set(), "zero", _ids("CORRUPT_IDS", RCFG.get("gnoise", set()))
     raise ValueError(f"unknown THREAT {THREAT!r} (poison is excluded by design)")
 
 
@@ -188,8 +214,15 @@ def build_data(seed, noisy_ids):
             if c in noisy_ids:
                 recs = LLM_CORRUPTORS["answer_swap"](recs, c)
             clients.append(Dataset.from_list(recs))
-        return clients, _synth_records(RCFG["val"], f"v{seed}"), \
-            [{**r, "domain": "alpaca"} for r in _synth_records(RCFG["test"], f"t{seed}")]
+        dom = "gsm8k" if REGIME == "gsm50k5" else "alpaca"   # exercise the EM wire too
+        test = [{**r, "domain": dom,
+                 **({"answer": r["completion"].strip()} if dom == "gsm8k" else {})}
+                for r in _synth_records(RCFG["test"] or 10, f"t{seed}")]
+        return clients, _synth_records(RCFG["val"], f"v{seed}"), test
+    if REGIME == "gsm50k5":
+        return build_gsm8k_iid(RCFG["n_clients"], n_val=RCFG["val"],
+                               n_test=RCFG["test"], seed=seed, noisy=noisy_ids,
+                               noisy_rate=NOISY_RATE)
     if REGIME == "silo5":
         return build(RCFG["n_clients"], RCFG["train"], RCFG["val"], RCFG["test"],
                      seed=seed, noisy=noisy_ids, noisy_rate=NOISY_RATE)
@@ -241,7 +274,8 @@ def _timed(fn, device):
 
 
 def _fl(model, tok, clients, init, seed, select_fn=None, weights_fn=None,
-        free_riders=frozenset(), fr_mode="zero", fr_scale=1e-3, rounds=None):
+        free_riders=frozenset(), fr_mode="zero", fr_scale=1e-3, rounds=None,
+        noise_adders=frozenset()):
     model.load_state_dict(init, strict=False)
     return run_llm_fedavg_logs(model, tok, clients, rounds or RCFG["rounds"], RCFG["lr"],
                                RCFG["max_steps"], batch_size=MCFG["batch"],
@@ -249,7 +283,8 @@ def _fl(model, tok, clients, init, seed, select_fn=None, weights_fn=None,
                                sample_frac=min(1.0, RCFG["k_abs"] / len(clients)),
                                seed=seed, select_fn=select_fn, weights_fn=weights_fn,
                                free_riders=free_riders, free_rider_mode=fr_mode,
-                               free_rider_scale=fr_scale)
+                               free_rider_scale=fr_scale,
+                               noise_adders=noise_adders, noise_gamma=GN_GAMMA)
 
 
 def _benign_std(logs, free_riders=frozenset()):
@@ -294,10 +329,11 @@ def shapleyfl_gate_raw_fn(loss_fn, pkeys, device):
 # --------------------------------------------------------------------------- #
 # per-round logging sink + gate accuracy                                      #
 # --------------------------------------------------------------------------- #
-def make_sink(rows, acc, n_clients):
+def make_sink(rows, acc, n_clients, method=None):
     """Append one row per (round, client) for ALL n clients: participants carry
     (raw, weight), everyone carries the post-round (cum, n_obs) snapshot -- the
-    phi_rounds.parquet schema (contribution orientation)."""
+    phi_rounds.parquet schema (contribution orientation).  `method` tags the row
+    with its score source (observer arm: several sources share one file)."""
     def sink(r, players, raw, wmap, fallback):
         pset = {p: i for i, p in enumerate(players)}
         for c in range(n_clients):
@@ -306,7 +342,8 @@ def make_sink(rows, acc, n_clients):
                              raw=float(raw[i]) if i is not None else float("nan"),
                              weight=float(wmap[c]) if i is not None else float("nan"),
                              cum=float(acc.cum[c]), n_obs=int(acc.n_obs[c]),
-                             fallback=fallback))
+                             fallback=fallback,
+                             **({"method": method} if method else {})))
     return sink
 
 
@@ -364,26 +401,12 @@ def gate_stats(rows, corrupt, arm, n_clients):
 # --------------------------------------------------------------------------- #
 def build_arm(arm, model, loss_fn, pkeys, lc, nums, device, corrupt, seed, rows):
     """(select_fn, weights_fn, acc) for one arm; fresh state per call (per seed).
-    `rows` is the phi_rounds sink target (gate arms + vanilla observer only)."""
+    `rows` is the phi_rounds sink target (gate arms + vanilla observer only).
+    The `observer` arm returns acc = {source: SignAccumulator} (R4 multi-source)."""
     n = RCFG["n_clients"]
     g = GATE
     flirds_raw = lambda: _guard(model, flirds_round_raw_fn(loss_fn, pkeys, n, device,
                                                            loss_chunks=lc))
-    if arm == "vanilla":
-        acc = SignAccumulator(n, decay=g["decay"])
-        return None, make_observer_weights_fn(acc, flirds_raw(), nums,
-                                              sink=make_sink(rows, acc, n)), acc
-    if arm == "oracle_excl":
-        return make_fixed_excl_select_fn(n, corrupt), None, None
-    if arm == "random_excl":
-        rng = np.random.default_rng(2000 + seed)
-        rand = set(int(x) for x in rng.choice(n, size=len(corrupt), replace=False))
-        print(f"  [random_excl] excluded={sorted(rand)}", flush=True)
-        return make_fixed_excl_select_fn(n, rand), None, None
-    if arm == "flirds_w":                              # existing soft contrast (C2/D wiring)
-        sc = OnlineScorer(n, beta=0.5)
-        return None, make_weights_fn(sc, flirds_raw(), nums, "multiplicative"), None
-
     raw_by_arm = {"flirds": flirds_raw,
                   "lossheur": lambda: _guard(model, lossheur_round_raw_fn(
                       loss_fn, pkeys, n, device)),
@@ -396,12 +419,50 @@ def build_arm(arm, model, loss_fn, pkeys, lc, nums, device, corrupt, seed, rows)
                   # surrogate, see fl.score_providers docstring):
                   "flirds1st": lambda: _guard(model, flirds_round_raw_fn(
                       loss_fn, pkeys, n, device, second_order=False, loss_chunks=lc)),
+                  "fedif": lambda: _guard(model, fedif_round_raw_fn(
+                      loss_fn, pkeys, device, loss_chunks=lc)),
                   "gtg": lambda: _guard(model, gtg_round_raw_fn(
                       loss_fn, pkeys, device, seed=seed)),
                   "fedsv": lambda: _guard(model, fedsv_round_raw_fn(
                       loss_fn, pkeys, device, seed=seed)),
                   "comfedsv": lambda: _guard(model, comfedsv_round_raw_fn(
                       loss_fn, pkeys, device, seed=seed))}
+    if arm == "vanilla":
+        acc = SignAccumulator(n, decay=g["decay"])
+        return None, make_observer_weights_fn(acc, flirds_raw(), nums,
+                                              sink=make_sink(rows, acc, n)), acc
+    if arm == "observer":                              # R4: vanilla-identical trajectory,
+        # every OBS_SOURCES score attached at once (phi_rounds gains `method`;
+        # Tier A default = the estimator family, Tier B reruns with all 8).
+        srcs = [s for s in os.environ.get(
+            "OBS_SOURCES", "flirds,flirds1st,lossheur,fedif").split(",") if s]
+        accs = {s: SignAccumulator(n, decay=g["decay"]) for s in srcs}
+        fns = {s: raw_by_arm[s]() for s in srcs}
+        prim = srcs[0]
+        base = make_observer_weights_fn(accs[prim], fns[prim], nums,
+                                        sink=make_sink(rows, accs[prim], n, method=prim))
+        sinks = {s: make_sink(rows, accs[s], n, method=s) for s in srcs[1:]}
+
+        def wfn(r, w_r, deltas_map):
+            wmap = base(r, w_r, deltas_map)            # plain n-weights (vanilla-identical)
+            players = sorted(deltas_map)
+            for s in srcs[1:]:
+                raw = fns[s](w_r, deltas_map, players)
+                accs[s].update(players, raw)
+                sinks[s](r, players, raw, wmap, False)
+            return wmap
+        return None, wfn, accs
+    if arm == "oracle_excl":
+        return make_fixed_excl_select_fn(n, corrupt), None, None
+    if arm == "random_excl":
+        rng = np.random.default_rng(2000 + seed)
+        rand = set(int(x) for x in rng.choice(n, size=len(corrupt), replace=False))
+        print(f"  [random_excl] excluded={sorted(rand)}", flush=True)
+        return make_fixed_excl_select_fn(n, rand), None, None
+    if arm == "flirds_w":                              # existing soft contrast (C2/D wiring)
+        sc = OnlineScorer(n, beta=0.5)
+        return None, make_weights_fn(sc, flirds_raw(), nums, "multiplicative"), None
+
     provider = arm.split("_")[0]
     if provider not in raw_by_arm:
         raise ValueError(f"unknown arm {arm!r}")
@@ -453,6 +514,12 @@ def _rounds_to_target(curve, target):
 
 
 def _downstream(model, tok, test_records, device):
+    if REGIME == "gsm50k5":                            # R4 judge: numeric exact-match
+        gens = generate_completions(model, tok, [r["prompt"] for r in test_records],
+                                    device, max_new_tokens=256, batch_size=16,
+                                    max_prompt_len=512)
+        d = score_records(gens, test_records)["gsm8k"]
+        return {"gsm8k_em": d["exact_match"], "rouge_l": d["rouge_l"]}
     acc, _, _nq = mmlu_accuracy(model, tok, device, limit=MMLU_LIMIT, batch_size=MMLU_BATCH)
     gens = generate_completions(model, tok, [r["prompt"] for r in test_records], device,
                                 max_new_tokens=128, batch_size=16, max_prompt_len=512)
@@ -464,7 +531,8 @@ def _downstream(model, tok, test_records, device):
 # persistence                                                                 #
 # --------------------------------------------------------------------------- #
 def _cell_name(arm, seed):
-    nr = f"_nr{NOISY_RATE:g}" if NOISY_RATE != 1.0 else ""
+    nr = (f"_nr{NOISY_RATE:g}"                         # dose tag only where it applies
+          if NOISY_RATE != 1.0 and THREAT in ("noisy", "mixed") else "")
     return os.environ.get("RUN_NAME") or f"{REGIME}_{THREAT}{nr}_{arm}_seed{seed}"
 
 
@@ -476,7 +544,7 @@ def persist(arm, seed, metrics, rows, acc, timing, corrupt_cfg):
                                                           else v) for k, v in RCFG.items()},
               "mcfg": MCFG, "lora": {"r": LORA_R, "alpha": LORA_ALPHA},
               "gate": GATE, "corrupt": corrupt_cfg, "noisy_rate": NOISY_RATE,
-              "synth_data": SYNTH, "downstream": DOWNSTREAM,
+              "synth_data": SYNTH, "downstream": DOWNSTREAM, "t2": T2,
               "orientation": {"phi.parquet": "suspicion (good->low; repo convention)",
                               "phi_rounds.parquet": "raw/cum contribution (good->high = -phi)"}}
     try:
@@ -503,16 +571,17 @@ def main():
     seeds = ([int(s) for s in os.environ["SEEDS"].split(",")] if os.environ.get("SEEDS")
              else [int(os.environ.get("SEED", "0"))])   # pilot-first: default seed 0 only
     n = RCFG["n_clients"]
-    noisy_ids, fr_ids, fr_mode = threat_sets()
-    corrupt = noisy_ids | fr_ids
+    noisy_ids, fr_ids, fr_mode, gn_ids = threat_sets()
+    corrupt = noisy_ids | fr_ids | gn_ids
     arms = [a for a in ARMS if not (THREAT == "clean" and a in ("oracle_excl", "random_excl"))]
     corrupt_cfg = {"noisy_ids": sorted(noisy_ids), "fr_ids": sorted(fr_ids),
-                   "fr_mode": fr_mode, "corrupt": sorted(corrupt)}
+                   "fr_mode": fr_mode, "gn_ids": sorted(gn_ids),
+                   "gn_gamma": (GN_GAMMA if gn_ids else None), "corrupt": sorted(corrupt)}
 
     print(f"=== Track G | {SCALE} {REGIME} {THREAT} | N={n} K={RCFG['k_abs']}/round "
           f"R={RCFG['rounds']} lr={RCFG['lr']} | corrupt={sorted(corrupt)} fr_mode={fr_mode} "
           f"nr={NOISY_RATE:g} | gate={GATE} | arms={arms} | seeds={seeds} "
-          f"| downstream={DOWNSTREAM} V3={V3} ===", flush=True)
+          f"| downstream={DOWNSTREAM} V3={V3} T2={T2} ===", flush=True)
 
     tok, model, init, pkeys = _load(device)
     for seed in seeds:
@@ -533,20 +602,26 @@ def main():
 
         target = None
         vanilla_cum = None
+        obs_accs = None                                # R4: {source: SignAccumulator}
+        obs_metrics = None
         for arm in arms:
             pt = PhaseTimer(device, n_gpus=int(os.environ.get("N_GPUS", "1")))
             rows = []
             sel_fn, wts_fn, acc = build_arm(arm, model, loss_fn, pkeys, lc, nums, device,
                                             corrupt, seed, rows)
+            if arm == "observer":                      # multi-source dict; primary persists
+                obs_accs = acc
+                acc = acc[next(iter(acc))]
             with pt.phase("fl+online-scoring"):        # local train + per-round raw together
                 logs = _fl(model, tok, clients, init, seed, select_fn=sel_fn,
                            weights_fn=wts_fn, free_riders=fr_ids, fr_mode=fr_mode,
-                           fr_scale=fr_scale)          # (peak = the estimator HVP)
+                           fr_scale=fr_scale,          # (peak = the estimator HVP)
+                           noise_adders=gn_ids)
             t_fl = pt.phases["fl+online-scoring"]["s"]
             with pt.phase("val-curve"):
                 curve, final = _val_curve(logs, model, loss_fn, pkeys, device)
-            gs = gate_stats(rows, corrupt, arm, n) if rows else None
-            if arm == "vanilla":
+            gs = gate_stats(rows, corrupt, arm, n) if (rows and arm != "observer") else None
+            if arm in ("vanilla", "observer"):         # observer IS vanilla (bit-identical)
                 target = curve[-1]
                 vanilla_cum = None if acc is None else acc.cum.copy()
             metrics = dict(arm=arm, regime=REGIME, threat=THREAT, seed=seed,
@@ -555,21 +630,93 @@ def main():
                            rounds_to_target=(_rounds_to_target(curve, target)
                                              if target is not None else None),
                            vanilla_target=target, gate=gs, gate_cfg=GATE)
+            if obs_accs is not None and arm == "observer":
+                metrics["observer_cum"] = {s: [float(x) for x in a.cum]
+                                           for s, a in obs_accs.items()}
             if DOWNSTREAM:
                 model.load_state_dict(final, strict=False)
                 with pt.phase("downstream"):
                     metrics["downstream"] = _downstream(model, tok, test_records, device)
+            if arm == "observer":
+                obs_metrics = metrics
             g_line = (f" P={gs['precision']} R={gs['recall']} fx={gs['false_excl_pairs']}"
                       if gs else "")
+            ds = metrics.get("downstream") or {}
+            ds_line = "".join(f" {k}={v:.4f}" for k, v in ds.items()
+                              if isinstance(v, float))
             print(f"  [{arm:18s}] seed{seed} val_loss={curve[-1]:.4f} "
-                  f"r2t={metrics['rounds_to_target']}{g_line} ({t_fl:.0f}s)"
-                  + (f" mmlu={metrics['downstream']['mmlu']:.4f}"
-                     f" rouge={metrics['downstream']['rouge_l']:.4f}"
-                     if DOWNSTREAM else ""), flush=True)
+                  f"r2t={metrics['rounds_to_target']}{g_line} ({t_fl:.0f}s)" + ds_line,
+                  flush=True)
             persist(arm, seed, metrics, rows, acc, pt.to_timing(), corrupt_cfg)
             del logs
             if device == "cuda":
                 torch.cuda.empty_cache()
+
+        if T2 and obs_accs is not None:                # R4 retrain block (spec §1.6):
+            # per-source kept = final cum > tau; dedupe identical kept-sets; matched
+            # random control at the PRIMARY source's kept size; kept=all == vanilla
+            # by construction -> copy the observer's numbers (skipped marker).
+            prim = next(iter(obs_accs))
+            t2_kept = {s: [i for i in range(n) if a.cum[i] > GATE["tau"]]
+                       for s, a in obs_accs.items()}
+            variants = {f"t2_sign_{s}": kept for s, kept in t2_kept.items()}
+            k_prim = len(t2_kept[prim])
+            if 0 < k_prim < n:
+                rng = np.random.default_rng(4000 + seed)
+                variants[f"t2_random_k{k_prim}"] = sorted(int(x) for x in rng.choice(
+                    n, size=k_prim, replace=False))
+            cache = {}
+            for vname, kept in variants.items():
+                base_m = dict(arm=vname, regime=REGIME, threat=THREAT, seed=seed,
+                              corrupt=sorted(corrupt), kept=sorted(kept),
+                              vanilla_target=target, gate_cfg=GATE)
+                if not kept:
+                    print(f"  [{vname:18s}] seed{seed} kept=EMPTY -> retrain skipped",
+                          flush=True)
+                    persist(vname, seed, dict(base_m, final_val_loss=None,
+                                              skipped="empty_kept"),
+                            [], None, None, corrupt_cfg)
+                    continue
+                if len(kept) == n:                     # == vanilla trajectory exactly
+                    m = dict(base_m, final_val_loss=obs_metrics["final_val_loss"],
+                             downstream=obs_metrics.get("downstream"),
+                             skipped="equals_vanilla")
+                    print(f"  [{vname:18s}] seed{seed} kept=ALL -> equals_vanilla",
+                          flush=True)
+                    persist(vname, seed, m, [], None, None, corrupt_cfg)
+                    continue
+                key = frozenset(kept)
+                pt = PhaseTimer(device, n_gpus=int(os.environ.get("N_GPUS", "1")))
+                if key not in cache:
+                    # deployment semantics (V3 precedent): threat stays ACTIVE on
+                    # kept clients; fr/gn ids re-indexed to subset positions.
+                    ks = sorted(kept)
+                    kept_fr = frozenset(i for i, c in enumerate(ks) if c in fr_ids)
+                    kept_gn = frozenset(i for i, c in enumerate(ks) if c in gn_ids)
+                    logs_k, t_k = _timed(lambda: _fl(
+                        model, tok, [clients[c] for c in ks], init, seed,
+                        free_riders=kept_fr, fr_mode=fr_mode, fr_scale=fr_scale,
+                        noise_adders=kept_gn), device)
+                    curve_k, final_k = _val_curve(logs_k, model, loss_fn, pkeys, device)
+                    ds_k = None
+                    if DOWNSTREAM:
+                        model.load_state_dict(final_k, strict=False)
+                        ds_k = _downstream(model, tok, test_records, device)
+                    cache[key] = (curve_k[-1], ds_k, t_k)
+                    del logs_k
+                    if device == "cuda":
+                        torch.cuda.empty_cache()
+                    shared = False
+                else:
+                    shared = True
+                vl, ds_k, t_k = cache[key]
+                pt.record("t2-retrain", t_k)
+                m = dict(base_m, final_val_loss=vl, downstream=ds_k, dedup_shared=shared)
+                em = (ds_k or {}).get("gsm8k_em")
+                print(f"  [{vname:18s}] seed{seed} kept={len(kept)}/{n} val_loss={vl:.4f}"
+                      + (f" em={em:.4f}" if em is not None else "")
+                      + (" (shared)" if shared else ""), flush=True)
+                persist(vname, seed, m, [], None, pt.to_timing(), corrupt_cfg)
 
         if V3 and vanilla_cum is not None:
             zc = _zscores(vanilla_cum)

@@ -50,7 +50,40 @@ PY=$PY PP=<repo>/codes HOME=… HF_HOME=… HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE
 7B_std20×3(70–90h) + device100-a0.5 anchor×3(63h) + 7B_anchor5×3(35–45h) — `RESUME_AFTER_MIGRATION.md`.
 완료 후 overview 7B 열(§3.1.1·§3.5.1) 갱신.
 
-### 1.5 장기 대기 (우선순위 낮음)
+### 1.5 Track H R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (~85–110 GPU-h; 우선순위 = Yonghee 지정 대기, 1.1과 독립·병행 가능)
+
+스펙·예측(H-8~11) = `runs/track_h/README.md` §1.6. 구현·스모크 = 로컬 3090에서 07-20 완료
+(합성 tiny-gpt2 gnoise/frzero + 실 gpt2·실 GSM8K 마이크로런 green; 로더 불변식 검증
+— 50×149 균등, val 200/test 1,119 전 분할 disjoint, swap dose 정확 104/149).
+
+```bash
+# pre-flight ①: GSM8K를 오프라인 캐시에 확보 (서버 HF_DATASETS_OFFLINE=1이므로 1회 선행)
+HF_HOME=$BATCH/hf_home HF_DATASETS_OFFLINE=0 $PY -c \
+  "from datasets import load_dataset; load_dataset('openai/gsm8k','main')"
+# pre-flight ②: 스모크 (tiny-gpt2 합성 → 실 gpt2 마이크로; 둘 다 ~1분/GPU)
+SMOKE_MODEL=tiny-gpt2 SYNTH_DATA=1 REGIME=gsm50k5 THREAT=frzero N_CLIENTS=8 K_ABS=4 \
+  VAL=10 TEST=10 ROUNDS=5 MAX_STEPS=2 BURN_IN=2 CORRUPT_IDS=0,1,2 T2=1 \
+  ARMS=observer,flirds_gate_v2 PERSIST=0 $PY -u experiments/track_g.py
+SMOKE_MODEL=gpt2 REGIME=gsm50k5 THREAT=noisy N_CLIENTS=10 K_ABS=5 VAL=20 TEST=20 \
+  ROUNDS=2 MAX_STEPS=2 BURN_IN=1 CORRUPT_IDS=0,1,2,3 T2=1 \
+  ARMS=observer,flirds_gate_v2 PERSIST=0 $PY -u experiments/track_g.py
+# 본런: 셀당 1프로세스 (observer=vanilla 겸용 + 통제 + flirds P1-T1; T2=1이 관찰자
+# 누적으로 t2_sign_{flirds,flirds1st,lossheur,fedif}+매치드 random 재학습을 자동 수행)
+for THREAT in clean noisy frzero gnoise; do   # noisy=answer-swap@0.7(기본 dose)
+  REGIME=gsm50k5 THREAT=$THREAT SEED=0 T2=1 \
+    ARMS=observer,oracle_excl,random_excl,flirds_gate_v2 \
+    RUNDIR_ROOT=<repo>/runs/track_h/rundirs_llm CUDA_VISIBLE_DEVICES=<g> \
+    $PY -u experiments/track_g.py   # corrupt 셀 ~24 GPU-h(arm 4 + T2 재학습 2~5) / clean ~9–13
+done
+```
+- 종료 후: `python runs/track_h/make_analysis.py`(gsm8k_em·delta_em·recovery_em 열 자동;
+  observer=vanilla 앵커 매핑됨) → **acc 갭 보고**(vanilla↔oracle_excl EM — answer-swap·gnoise서
+  수 pt 이상이어야 경쟁 무대 성립) + **R-플래토 확인**(val-curve R≤100 수렴 시 Tier B/C는
+  R=100 = 비용 반감, 스펙 사전등록 룰) → GPU-h 보고 → H-8~11 대조(MISS 포함) → rundir 커밋.
+- **Tier B(경쟁: +7점수원 P1, 전 8종 관찰자 재실행 OBS_SOURCES=전체, ~300–350 GPU-h) = Yonghee 승인 게이트.**
+- 금지: 게이트 하이퍼·GN_GAMMA(=1.0 고정) 셀별 튜닝, poison, P2/P3/P4 arm(Yonghee 07-20: P1만).
+
+### 1.6 장기 대기 (우선순위 낮음)
 E5 seed1·2(2¹⁰, 33h/셀) · lr·steps intervention 2차검증 · 1B·CNN β-불변 canon 확인 · probe A축 seeds 1-2.
 
 ## 2. 문서·부수분석 (무GPU)
@@ -75,4 +108,5 @@ E5 seed1·2(2¹⁰, 33h/셀) · lr·steps intervention 2차검증 · 1B·CNN β-
 
 - **push**: 로컬 커밋 다수(69cb6bf~95fca5c + 이 커밋) — push 여부/시점.
 - **Track H Tier3 3-seed** (1.1 seed0 보고 후) · **Track G std50k5는 3-seed 이미 승인·잔여만**(1.2).
-- E5 N=10 3-seed 여부(1.5).
+- **Track H R4 우선순위**(1.5 Tier A를 1.1보다 먼저 돌릴지) · Tier B 진입(1.5 보고 후).
+- E5 N=10 3-seed 여부(1.6).

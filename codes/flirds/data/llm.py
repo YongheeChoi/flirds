@@ -294,6 +294,54 @@ def build_alpaca_iid(n_clients, total_train=20000, n_val=200, n_test=0, seed=0,
     return clients, val_records, test_records
 
 
+_GSM8K_ID = "openai/gsm8k"
+
+
+def _fmt_gsm8k(ex):
+    """GSM8K question -> full gold solution (reasoning + '#### n'), on the same
+    OpenFedLLM alpaca template every other stage trains with."""
+    return _ALPACA_PROMPT.format(ex["question"].strip()), " " + ex["answer"].strip()
+
+
+def build_gsm8k_iid(n_clients, n_val=200, n_test=0, seed=0, noisy=frozenset(),
+                    noisy_rate=1.0):
+    """Track H R4 loader (gsm50k5 accuracy stage; spec runs/track_h/README.md §1.6).
+
+    train = ALL official train (7,473) -> shuffle(seed) -> equal contiguous chunks
+    (149/client at N=50; remainder dropped).  val/test come from the OFFICIAL test
+    split (Yonghee 2026-07-20 rule): shuffle(seed) -> val = first `n_val`, test =
+    the next `n_test` (0 -> all the rest, 1,119) -- val and test are disjoint by
+    construction and both are disjoint from every client's train data by the
+    official split, so corrupted client data can never leak into either.
+    Test records carry domain="gsm8k" + the normalized gold number as `answer`
+    (eval.generate.score_records numeric exact-match).  `noisy` = answer-swap
+    clients (rate<1 -> answer_swap_graded; the R4 dose is 0.7)."""
+    from ..eval.metrics import gsm8k_answer
+    tr = load_dataset(_GSM8K_ID, "main", split="train").shuffle(seed=seed).to_list()
+    te = load_dataset(_GSM8K_ID, "main", split="test").shuffle(seed=seed).to_list()
+    val_records = []
+    for ex in te[:n_val]:
+        p, c = _fmt_gsm8k(ex)
+        val_records.append({"prompt": p, "completion": c})
+    test_records = []
+    for ex in (te[n_val:n_val + n_test] if n_test else te[n_val:]):
+        p, c = _fmt_gsm8k(ex)
+        test_records.append({"prompt": p, "completion": c, "domain": "gsm8k",
+                             "answer": gsm8k_answer(ex["answer"])})
+    train = []
+    for ex in tr:
+        p, c = _fmt_gsm8k(ex)
+        train.append({"prompt": p, "completion": c})
+    chunk = len(train) // n_clients
+    clients = []
+    for cid in range(n_clients):
+        cl = train[cid * chunk:(cid + 1) * chunk]
+        if cid in noisy:                               # seam 2: noisy client (answer-swap)
+            cl = _noisy(cl, cid, noisy_rate)
+        clients.append(Dataset.from_list(cl))
+    return clients, val_records, test_records
+
+
 def build_domain_iid(domain, n_clients, total_train=8000, n_val=200, n_test=1000,
                      seed=0, noisy=frozenset()):
     """Track D-opt1 loader (FedDQC Table-1 mirror): ONE of the 5 DOMAINS (FedDQC's

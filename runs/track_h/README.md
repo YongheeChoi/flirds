@@ -1,6 +1,6 @@
 # Track H — 점수원 경쟁(score-source competition): 어느 기여도 정의가 학습을 가장 잘 만드는가
 
-> 스펙: 2026-07-19 Yonghee 결정 세션. 상태 = **설계(승인 대기; 코드·실행 전)**.
+> 스펙: 2026-07-19 Yonghee 결정 세션. 상태(2026-07-20) = **Tier 1(CNN 96런)+Tier 2(LLM 12런) 완주(실패 0) — 결과·예측 대조 = overview §3.2.6(07-20 집계 정정판)**; Tier 3(std50k5 12런) 대기 = 루트 `REMAINING.md` §1.1. **R4(gsm50k5 accuracy 무대) 설계+구현 완료 07-20** = §1.6·예측 H-8~11·Tier 5 — 실행 대기(`REMAINING.md` §1.5).
 > 질문: 서로 다른 기여도 정의(방법)들이 **같은 개입 정책** 아래 경쟁할 때, 어느
 > 기여도가 다운스트림 학습을 가장 잘 만드는가.
 > 동기: fidelity(§3.1)는 "우리가 정의한 게임((b) oracle)"을 기준으로 한 자기-일치라
@@ -69,11 +69,48 @@ Flirds · Flirds-1st · loss-heur · GTG · FedSV · ComFedSV · ShapleyFL(β=0.
 | `R1` | CNN C2 cifar10 **dir1** × {grad-noise, label-flip fr0.70, free-rider, clean 통제} | 순위 스프레드 최대(fidelity 0.98↔0.30) + 최저가 |
 | `R2` | LLM std50k5 **mixed** (N=50, 5/50) | 부분참여 붕괴 무대 — ShapleyFL/ComFedSV 음수 vs Flirds +1.00 |
 | `R3` | LLM silo5 **noisy nr1.0** | **zero-semantics 판별 셀**: 감사상 GTG(~0.76)/FedSV(~0.65)만 nr∈(0,1]서 0-교차 → P1 발화 예측; Flirds/loss-heur/(b) 침묵. **판정은 성능으로**: 발화가 옳으면 final val-loss가 oracle_excl 쪽으로(+0.0015~0.0020 갭 회수), 틀리면(clean 오배제) vanilla보다 악화. 주의: 성능 갭 자체가 작은 셀 — 효과 크기 한계를 사전 명시 |
+| `R4` | LLM **gsm50k5** = GSM8K IID N=50, 5/50, R=200 × {clean, answer-swap@0.7, free-rider, grad-noise} — 오염 클라 0–19(**40%**, CNN R1 미러) | **accuracy 심판 무대**(Yonghee 07-20: LLM val-loss 효과크기 한계 → exact-match로 판정; 상세 §1.6). CNN R1과 위협·비율을 맞춰 계열-트레이드오프의 LLM 재현을 직접 검증 |
 
 - **poison 무대는 전면 제외** — Yonghee 2026-07-19 ("모든 실험에서 poison 제외").
 - 공통 통제 arm: `vanilla`(관찰자) / `oracle_excl` / `random_excl` (+T2엔 `v3_random`).
 - silo5 frzero-류는 **불포함**: 순위·0점 전 방법 일치(강한 방법 전부 exact-0)라
-  경쟁 무정보 — track_g 기존 결과가 이미 커버.
+  경쟁 무정보 — track_g 기존 결과가 이미 커버. → **정정(07-20)**: Tier 1이 free-rider가
+  바로 renorm 붕괴 판별 셀임을 실측(붕괴는 renorm의 FR 방치+clean 오배제 — '전 방법
+  일치' 전제는 estimator 계열에만 성립). LLM FR head-to-head 공백은 **R4 free-rider
+  셀**이 채움(H-9).
+
+### 1.6 R4 스펙 — gsm50k5 accuracy 무대 (2026-07-20 Yonghee 설계 세션)
+
+- **모델**: Llama-3.2-1B-**Instruct** (base 검토했으나 전 1B 스테이지 일관성 우선 — Yonghee).
+  템플릿 = OpenFedLLM-alpaca(타 스테이지 동일; chat template 미사용).
+- **데이터**: GSM8K(`openai/gsm8k` main; train 7,473 / test 1,319 — 정답 `#### n` 숫자).
+  선례: 데이터-선별 문헌의 표준 checkable 태스크(LESS·DataInf류 accuracy 판정; 우리
+  taxonomy 관찰 "federated×LLM 공통 벤치마크 부재" → 자체 무대 구성 정당).
+- **분배(Yonghee 규칙)**: val/test는 **공식 test split에서** — 셔플(seed 고정) 후
+  **val=200 카브, 잔여 1,119=test**(val⊂공식test, val∩test=∅, train과는 공식 분리).
+  train 7,473 → 셔플 → **균등 연속 청크 149개/클라 × 50**(std50k5 `build_alpaca_iid`
+  관례 그대로; 잔여 23개 버림). IID 균등 — 단일 태스크라 도메인-skew 축 없음, 오염이
+  유일 신호 축; 균등 크기라 n-가중=uniform(P1 해석 깨끗).
+- **위협**(분리 4셀; 오염 클라 0–19 고정 = 40%): clean /
+  `answer_swap_graded` rate=**0.7**(기존 코퍼터, CNN lf@0.70 미러 — 뒤섞인 풀이+오답
+  `#### n`이 붙음 = 현실적 mislabel) / free-rider **zero**(기존 seam) /
+  **grad-noise**(신규 seam: delta ← delta + N(0, (γ·RMS(delta))²) on LoRA params,
+  **γ=1.0 사전 고정** — 퇴화 시만 조정+문서화, 셀별 튜닝 금지).
+- **FL·게이트**: std50k5 verbatim — 5/50 균등 랜덤, R=200, max_steps=10, batch=16,
+  lr=1e-3, maxlen=512, warmup=3, LoRA r16/α32; gate burn_in=10·tau=0·min_obs=2·
+  probation=5. 클라당 평균 참여 20회(CNN ~12회보다 많음 → cum 안정 유리).
+- **정책 = P1만**(Yonghee 07-20: "P1 sign-게이트 online/retrain, 다른 건 안 해도 돼"):
+  T1 gate_v2 + T2(관찰자 최종 cum>0 → init 재학습; kept-set dedupe; kept=전원→vanilla
+  처리). P2/P3/P4 없음.
+- **심판**: 최종 모델의 **test 1,119 exact-match**(greedy decode, `#### 숫자` 추출,
+  fallback=마지막 숫자) — track_g `_downstream` seam 교체 배선 + val-loss 병행(연속성).
+- **arm 구성**: observer(=vanilla bit-identical; **Tier A는 estimator 4종만 채점**
+  [MC 점수원 비용 회피], Tier B서 전 8종 관찰자 재실행) / oracle_excl(0–19 제외) /
+  random_excl(랜덤 20 제외) / 점수원×P1-T1 / t2_sign_*(dedupe) / t2_random_k(Tier A는
+  flirds kept-크기만 매칭).
+- **비용**(std50k5 실측 준용: estimator arm ~4.5 GPU-h·MC arm ~9.7): Tier A ~85–110 /
+  Tier B ~300–350 / Tier C(3-seed) ≈ (A+B)×2. **R-반감 룰**: Tier A에서 vanilla·oracle
+  val-곡선이 R≤100에 플래토면 B/C는 R=100(비용 ~반감; 사전 등록된 유일한 조정).
 
 ### 1.5 중복 방지 — 기존 rundir 재사용 (재실행 금지; 2026-07-19 대조 완료)
 
@@ -112,6 +149,10 @@ Track H의 Flirds-점수원 arm과 통제 arm은 **track_g Phase B가 이미 동
 | H-5 | P2 vs P1 | 오염 무대서 P2 소폭 우위(V2w 전례 +0.34~0.36 vs V2 +0.32~0.36), clean서 P2 오발화 악화(V2w 불승격 전례) — 이 trade-off가 점수원 무관하게 재현되는지 | §3.2.4 |
 | H-6 | T1 vs T2 | 스텝-함수 위협(FR-류)은 동률(전례 v3_sign=gate_v2=1.000); 점진 위협(noisy·label-flip)은 T1 우위(학습 중 조기 배제 이득) | §3.2.3 |
 | H-7 | 종합 | **fidelity가 다운스트림을 예측한다** — 예측 실패(fidelity 높은데 경쟁 패배, 또는 역) 자체가 1급 결과 | 경쟁 실험의 존재 이유 |
+| H-8 | R4 answer-swap | estimator 계열 게이트 발화·acc 회복(swap 클라가 val-loss를 올림 → 음수 φ); renorm은 CNN lf 유사(부분 회복+오배제) | Tier 1 lf 결과·§3.8 |
+| H-9 | R4 free-rider | exact-0 계열 완전 배제(LLM frzero 전례 recovery 1.000) vs **renorm은 FR 방치+clean 오배제 = CNN FR 붕괴의 LLM 재현 여부**(§1 frzero-공백을 이 셀이 채움) | Tier 1 FR·감사 판정 2 |
+| H-10 | R4 grad-noise | 1차 estimator(flirds1st/fedif) 실명 vs Flirds(2차) 포착의 LLM 재현; 단 LoRA 소스텝 레짐이라 Taylor 정확 → CNN과 달리 **clean 오발화 없이** 잡을 것 | Tier 1 GN + Taylor 잔차(§3.1.7) |
+| H-11 | R4 clean | LLM 무발화 전례 유지(누적 φ 전원 양수 — CNN clean 오발화와 대비 = 레짐 효과 확증) | overview §3.2.3 |
 
 ## 3. 판정 지표 — **우열 기준은 학습 성능만** (탐지 아님)
 
@@ -141,16 +182,29 @@ Track H의 Flirds-점수원 arm과 통제 arm은 **track_g Phase B가 이미 동
 | **2** | R3 silo5 noisy: T1×P1 × **신규 4종만**(GTG·FedSV·ComFedSV·ShapleyFL — Flirds·loss-heur·(b)는 §1.5 재사용) | 4 | 3seed = **12** | **~24 GPU-h** |
 | **3** | R2 std50k5: seed0 파일럿 — Flirds-P2 + {Flirds-1st·loss-heur·GTG·FedSV·ComFedSV·ShapleyFL}×{P1,P2} (통제·Flirds-P1은 §1.5 재사용; **ShapleyFL-P1은 원격 track_g 진행분과 동일 — 착수 전 §1.5 교차 확인 필수, 완료 시 재사용**) | ~12–13 | **~12–13** | **~53–57 GPU-h** → 결과 보고 후 3-seed 승인 |
 | **4**(선택) | P3-retrain 확장 · (b) 천장 확장(N=5 무대만) · R1 iid 파티션 확장 | – | – | 별도 승인 |
+| **5 (R4)** | gsm50k5 accuracy 무대(§1.6): **A 파일럿**(seed0: observer-lite[estimator 4종]+통제+flirds P1/T2+matched random) → **B 경쟁**(+7점수원 P1-T1·전 8종 관찰자·T2 dedupe) → **C 3-seed** | A ~20–22런 / B ~40런 | A **~85–110 GPU-h** → 갭·R-플래토 보고 → B **~300–350**(R반감 시 ~½) → C ≈ (A+B)×2 — 서브티어마다 Yonghee 게이트 |
 
 - 실행 순서 = Tier 1 → 분석·예측 대조 → 2 → 3. Tier 1 결과가 H-1/H-5를 기각하면
-  상위 티어 설계 재검토.
+  상위 티어 설계 재검토. Tier 5(R4)는 3과 독립(병행 가능) — A의 판정 기준 =
+  vanilla↔oracle_excl **acc 갭**(answer-swap·grad-noise서 수 pt 이상이어야 경쟁 무대
+  성립; 미달 시 B 진입 전 설계 재검토).
 
 ## 5. 구현 (완료 2026-07-19) + 실행 인수인계
 
 구현 완료·커밋됨 — `codes/flirds/fl/score_providers.py`(신규) + track_g/track_c2 확장
 (additive-only; 레거시 arm 분기 무변경) + `tests/test_track_h.py`(7 green, 기존
 test_signgate 15 green 회귀) + `make_analysis.py`(재사용 rundir 검증 완료).
-**실행 절차·명령·보고 프로토콜 = `HANDOFF_GPU_SERVER.md`** (GPU 서버 세션용).
+**R4 구현(완료 2026-07-20, §1.6 스펙)**: ① `build_gsm8k_iid`(data/llm.py — 공식 test서
+val 200 카브·잔여 1,119=test; 실데이터 불변식 검증 — 균등 50×149·전 분할 disjoint·
+swap dose 정확 104/149) ② GSM8K exact-match(`eval/metrics.gsm8k_answer` + score_records
+gsm8k 분기) ③ grad-noise seam(`fl/llm_server._add_gnoise`; σ=γ·RMS(delta), zero-delta
+no-op) ④ `REGIME=gsm50k5`(track_g.py — GSM50K5 RCFG·`gnoise` 위협·**observer arm**
+[OBS_SOURCES 다중 소스 동시 채점, phi_rounds `method` 열]·**T2=1 재학습 블록**[kept-set
+dedupe·kept=전원→equals_vanilla·매치드 random]·`_downstream` EM 교체) ⑤ 테스트
+`tests/test_r4.py` 4 green(+기존 track_h 7·signgate 15 회귀 green) ⑥ 스모크(로컬 RTX
+3090: tiny-gpt2 합성 gnoise/frzero + **실 gpt2·실 GSM8K** 마이크로런 — dedupe `(shared)`·
+empty_kept·fallback·EM 배선 전부 실측 green). **실행 절차 = 루트 `REMAINING.md` §1.5.**
+**실행 절차·명령·보고 프로토콜 = 루트 `REMAINING.md` §1.1**(구 `HANDOFF_GPU_SERVER.md`는 07-20 서버 세션이 흡수 후 삭제, 커밋 `c45e5d0`).
 
 ## 6. 금지·주의
 

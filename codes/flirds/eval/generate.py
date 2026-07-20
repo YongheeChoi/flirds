@@ -17,7 +17,7 @@ from collections import defaultdict
 import torch
 import torch.nn.functional as F
 
-from .metrics import extract_choice, rouge_l
+from .metrics import extract_choice, gsm8k_answer, rouge_l
 
 
 @torch.no_grad()
@@ -98,6 +98,10 @@ def score_records(generated, records):
         if d == "math":
             gold = rec.get("answer") or extract_choice(rec["completion"])
             by_dom[d]["em"].append(1.0 if extract_choice(gen) == gold else 0.0)
+        elif d == "gsm8k":                             # Track H R4: numeric final-answer EM
+            gold = rec.get("answer") or gsm8k_answer(rec["completion"])
+            by_dom[d]["em"].append(1.0 if gold is not None
+                                   and gsm8k_answer(gen) == gold else 0.0)
     result = {}
     for d, m in by_dom.items():
         result[d] = {"rouge_l": _mean(m["rouge"]), "n": len(m["rouge"])}
