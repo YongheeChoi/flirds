@@ -45,3 +45,10 @@ runs/probe_signal/_nohup.out
 # corruption x non-IID matrix (2026-07-02): driver+README tracked; logs transient (cells -> phase2_matrix/rundirs):
 runs/matrix_cxni/_logs/
 runs/matrix_cxni/_nohup.out
+# Track G/H (2026-07): execution logs + smoke outputs are transient; rundirs*/ + analysis/ + audit/ ARE tracked:
+runs/track_g/_logs/
+runs/track_g/_logs_*.log
+runs/track_g/_smoke/
+runs/track_g/_smoke_run.log
+runs/track_h/_logs/
+runs/track_h/_logs_*.log
