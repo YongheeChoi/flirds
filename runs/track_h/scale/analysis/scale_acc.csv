@@ -11,6 +11,12 @@ cifar10_dir1_frac1.0_clean_seed2,clean,2,observer,vanilla(observer),0.65,,62.0
 cifar10_dir1_frac1.0_clean_seed2,clean,2,flirds_gate_v2,flirds P1(sign),0.639625,,66.0
 cifar10_dir1_frac1.0_clean_seed2,clean,2,flirds_cgate,flirds P5h(cgate),0.641375,,63.0
 cifar10_dir1_frac1.0_clean_seed2,clean,2,flirds_pweight,flirds P5s(pweight),0.6425,,62.0
+cifar10_dir1_frac1.0_free-rider_anch_seed0,free_rider,0,oracle_excl,oracle_excl(anchor),0.631875,,64.0
+cifar10_dir1_frac1.0_free-rider_anch_seed0,free_rider,0,random_excl,random_excl(ctrl),0.601625,,112.0
+cifar10_dir1_frac1.0_free-rider_anch_seed1,free_rider,1,oracle_excl,oracle_excl(anchor),0.636625,,66.0
+cifar10_dir1_frac1.0_free-rider_anch_seed1,free_rider,1,random_excl,random_excl(ctrl),0.598625,,118.0
+cifar10_dir1_frac1.0_free-rider_anch_seed2,free_rider,2,oracle_excl,oracle_excl(anchor),0.633125,,68.0
+cifar10_dir1_frac1.0_free-rider_anch_seed2,free_rider,2,random_excl,random_excl(ctrl),0.585625,,
 cifar10_dir1_frac1.0_free-rider_seed0,free_rider,0,observer,vanilla(observer),0.607125,,106.0
 cifar10_dir1_frac1.0_free-rider_seed0,free_rider,0,flirds_gate_v2,flirds P1(sign),0.61975,0.9166666666666666,71.0
 cifar10_dir1_frac1.0_free-rider_seed0,free_rider,0,flirds_cgate,flirds P5h(cgate),0.6255,0.5833333333333333,73.0
@@ -23,6 +29,12 @@ cifar10_dir1_frac1.0_free-rider_seed2,free_rider,2,observer,vanilla(observer),0.
 cifar10_dir1_frac1.0_free-rider_seed2,free_rider,2,flirds_gate_v2,flirds P1(sign),0.617125,0.9,70.0
 cifar10_dir1_frac1.0_free-rider_seed2,free_rider,2,flirds_cgate,flirds P5h(cgate),0.6195,0.55,73.0
 cifar10_dir1_frac1.0_free-rider_seed2,free_rider,2,flirds_pweight,flirds P5s(pweight),0.627625,0.75,72.0
+cifar10_dir1_frac1.0_grad-noise_anch_seed0,grad_noise,0,oracle_excl,oracle_excl(anchor),0.631875,,64.0
+cifar10_dir1_frac1.0_grad-noise_anch_seed0,grad_noise,0,random_excl,random_excl(ctrl),0.516375,,
+cifar10_dir1_frac1.0_grad-noise_anch_seed1,grad_noise,1,oracle_excl,oracle_excl(anchor),0.636625,,66.0
+cifar10_dir1_frac1.0_grad-noise_anch_seed1,grad_noise,1,random_excl,random_excl(ctrl),0.5235,,
+cifar10_dir1_frac1.0_grad-noise_anch_seed2,grad_noise,2,oracle_excl,oracle_excl(anchor),0.633125,,68.0
+cifar10_dir1_frac1.0_grad-noise_anch_seed2,grad_noise,2,random_excl,random_excl(ctrl),0.501,,
 cifar10_dir1_frac1.0_grad-noise_seed0,grad_noise,0,observer,vanilla(observer),0.544375,,
 cifar10_dir1_frac1.0_grad-noise_seed0,grad_noise,0,flirds_gate_v2,flirds P1(sign),0.609375,0.9841666666666666,93.0
 cifar10_dir1_frac1.0_grad-noise_seed0,grad_noise,0,flirds_cgate,flirds P5h(cgate),0.6005,0.9525000000000001,120.0
@@ -35,6 +47,12 @@ cifar10_dir1_frac1.0_grad-noise_seed2,grad_noise,2,observer,vanilla(observer),0.
 cifar10_dir1_frac1.0_grad-noise_seed2,grad_noise,2,flirds_gate_v2,flirds P1(sign),0.610875,0.9820833333333333,82.0
 cifar10_dir1_frac1.0_grad-noise_seed2,grad_noise,2,flirds_cgate,flirds P5h(cgate),0.60725,0.9587500000000001,87.0
 cifar10_dir1_frac1.0_grad-noise_seed2,grad_noise,2,flirds_pweight,flirds P5s(pweight),0.61475,0.9945833333333334,66.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_anch_seed0,label_flip,0,oracle_excl,oracle_excl(anchor),0.633875,,62.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_anch_seed0,label_flip,0,random_excl,random_excl(ctrl),0.553875,,
+cifar10_dir1_frac1.0_label-flip_fr0.70_anch_seed1,label_flip,1,oracle_excl,oracle_excl(anchor),0.63,,68.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_anch_seed1,label_flip,1,random_excl,random_excl(ctrl),0.523875,,
+cifar10_dir1_frac1.0_label-flip_fr0.70_anch_seed2,label_flip,2,oracle_excl,oracle_excl(anchor),0.626375,,68.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_anch_seed2,label_flip,2,random_excl,random_excl(ctrl),0.487,,
 cifar10_dir1_frac1.0_label-flip_fr0.70_seed0,label_flip,0,observer,vanilla(observer),0.580125,,
 cifar10_dir1_frac1.0_label-flip_fr0.70_seed0,label_flip,0,flirds_gate_v2,flirds P1(sign),0.584,0.8503572929802438,73.0
 cifar10_dir1_frac1.0_label-flip_fr0.70_seed0,label_flip,0,flirds_cgate,flirds P5h(cgate),0.605875,0.48633879781420764,70.0

@@ -856,19 +856,22 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 #### Scale 완전참여 100/100 — 2026-07-21 사전등록 확증 런 (`rundirs_cnn_scale` 12런)
 
-> **정본 = `runs/track_h/scale/RUN_SCALE.md`**. Flirds 비용 주장(valuation이 cohort 크기 k에 선형)의 무대: R1과 동일하되 **frac 0.1→1.0**(매 라운드 100/100). k=100에선 coalition 계열이 라운드당 O(2^k)~O(k²) eval이라 **baseline 개입 arm이 존재할 수 없음**(ShapleyFL exact 2^100 등 — §1 표) → 비교 대상 = **vanilla 학습만**(observer=vanilla 비트동일; oracle_excl/random_excl/T2/audit 제외 = Yonghee 07-21 결정). arm 4종 = observer / P1 gate_v2 / P5h cgate / P5s pweight(전부 flirds 점수원; `C2_OBS_SRCS=flirds`). 게이트 하이퍼 = R1/P5 동일(z=1.645).
+> **정본 = `runs/track_h/scale/RUN_SCALE.md`**. Flirds 비용 주장(valuation이 cohort 크기 k에 선형)의 무대: R1과 동일하되 **frac 0.1→1.0**(매 라운드 100/100). k=100에선 coalition 계열이 라운드당 O(2^k)~O(k²) eval이라 **baseline 개입 arm이 존재할 수 없음**(ShapleyFL exact 2^100 등 — §1 표) → 비교 대상 = **vanilla 학습만**(observer=vanilla 비트동일; oracle_excl/random_excl/T2/audit 제외 = Yonghee 07-21 결정). arm 4종 = observer / P1 gate_v2 / P5h cgate / P5s pweight(전부 flirds 점수원; `C2_OBS_SRCS=flirds`). 게이트 하이퍼 = R1/P5 동일(z=1.645). **[07-21 후속 결정(Yonghee): oracle_excl·random_excl 앵커 9셀 추가** — "남은 전원이 매 라운드 참여"라 완전참여 정신과 무충돌 판단, §8의 앵커-제외 결정 번복. RUN_SCALE.md는 사후수정 금지 조항대로 무수정; 앵커는 오염 3위협×3seed 신규 rundir `*_anch_*`(clean은 oracle_excl≡vanilla라 R1 관례대로 생략)].
 
-**절대 test acc** (3-seed mean±sd; vanilla=observer가 유일 비교선):
+**절대 test acc** (3-seed mean±sd; vanilla 바닥 ~ oracle_excl 천장):
 
 | arm | clean | label-flip@0.70 | free-rider | grad-noise | **오염-평균** |
 |---|---|---|---|---|---|
-| observer(=vanilla) | **.6527**±.003 | .5550±.022 | .6077±.004 | .5497±.005 | .5708 |
+| observer(=vanilla, 바닥) | **.6527**±.003 | .5550±.022 | .6077±.004 | .5497±.005 | .5708 |
+| oracle_excl (천장) | – | .6301±.004 | .6339±.003 | .6339±.003 | .6326 |
+| random_excl (통제) | – | .5216±.034 | .5953±.009 | .5136±.012 | .5435 |
 | flirds P1(sign) | .6440±.005 | .5862±.010 | .6223±.007 | .6102±.001 | .6062 |
 | flirds P5h(cgate) | .6485±.007 | .6008±.007 | .6216±.003 | .6037±.003 | .6087 |
 | flirds P5s(pweight) | .6462±.004 | **.6220**±.002 | **.6268**±.001 | **.6107**±.004 | **.6198** |
 
 **읽기:**
 - **완전참여는 vanilla 자체를 강하게 만든다**(GN .5497 vs frac0.1 .2436 — 오염 grad가 100클라 평균에 희석) — 그럼에도 세 정책 모두 오염 3셀 전부 vanilla 상회(+1.4~+6.7pt), 오염-평균 **P5s .6198 > P5h .6087 > P1 .6062 > vanilla .5708**. n_obs≈R 증거-풍부 레짐에서 **soft(Φ-가중)가 1위** — 오염 3셀 모두 세 정책 중 최고(HS-4 방향).
+- **앵커 대비 회수율**(recovery = (arm−vanilla)/(oracle−vanilla), 3-seed mean; 07-21 앵커 추가로 산출 가능): **P5s +0.78**(lf +0.89 / fr +0.73 / gn +0.72) > P5h +0.59 > P1 +0.56. random_excl은 전 위협 **−0.43~−0.47**(동수 랜덤 제외는 vanilla보다 해로움) — 게이트 이득이 "그냥 40명 뺀 효과"가 아님의 통제 실증. FR 천장(.6339)과 게이트(.622~.627)의 잔갭 ~0.7–1.2pt는 burn-in 10라운드의 FR 유입 비용.
 - **clean 서열도 P5 설계 의도대로**: P1 −.0087(parity band .006 밖 = 오발화) < P5h −.0042(band 내 회복) < vanilla. P5s는 −.0065로 band를 0.0005 초과(경계).
 - **게이트 행동**(`scale_gate_behavior.csv`): FR corrupt 참여율 cgate .004 ≈ P1 .005(exact-0 즉시 배제 유지 — HS-3의 FR 수렴 적중); GN·LF는 cgate가 P1보다 관대(corrupt 참여 .28/.13 vs .09/.04)한데도 acc 동급± — UCB가 배제를 늦추는 비용이 완전참여(오염 희석)에선 거의 무해. pweight는 전원 참여 + corrupt 상대가중 .00~.18로 Φ(t) 양극화 그대로.
 
@@ -882,7 +885,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 | HS-4 (P5s clean parity + 오염 회복) | 대체로 적중 | 오염 3셀 전부 세 정책 중 1위(오염-평균 .6198) 적중; clean은 −.0065로 band 0.0005 초과(경계 MISS) |
 | HS-5 (셀당 wall-clock ≈ R1의 ~10배 이내) | **적중** | 실측 56~77분/셀(4-arm) = R1 2-arm 10–16분의 ~4–6배; 전체 12셀 ≈ **12.8 GPU-h**(사전 추정 60–90의 1/5 — 파일럿 게이트로 확정 후 잔여 제출) |
 
-**출처(Scale)**: `runs/track_h/rundirs_cnn_scale/`(12런; observer `phi_rounds.parquet` = flirds 전 라운드×전 클라) · `runs/track_h/scale/analysis/{scale_acc,scale_gate_behavior}.csv` · 코드 = `experiments/track_c2.py`(`C2_OBS_SRCS`·frac=1.0 coalition 가드, `fa5fc6e`).
+**출처(Scale)**: `runs/track_h/rundirs_cnn_scale/`(12런 + 앵커 9런 `*_anch_*`; observer `phi_rounds.parquet` = flirds 전 라운드×전 클라) · `runs/track_h/scale/analysis/{scale_acc,scale_gate_behavior}.csv`(앵커 편입 재생성) · 코드 = `experiments/track_c2.py`(`C2_OBS_SRCS`·frac=1.0 coalition 가드, `fa5fc6e`) + `runs/track_h/scale/sbatch_scale_anchors.sh`.
 
 ### 3.2.7 종합 판정 — 어떤 세팅이 가장 잘 됐나
 

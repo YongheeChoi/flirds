@@ -23,8 +23,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 DEFAULT_ROOT = os.path.join(REPO, "runs", "track_h", "rundirs_cnn_scale")
 
-ARMS = {"observer": "vanilla(observer)", "flirds_gate_v2": "flirds P1(sign)",
+ARMS = {"observer": "vanilla(observer)",
+        # anchor cells (*_anch_*, 2026-07-21 follow-up decision): corrupt threats only
+        "oracle_excl": "oracle_excl(anchor)", "random_excl": "random_excl(ctrl)",
+        "flirds_gate_v2": "flirds P1(sign)",
         "flirds_cgate": "flirds P5h(cgate)", "flirds_pweight": "flirds P5s(pweight)"}
+NON_GATE_ARMS = ("observer", "oracle_excl", "random_excl")
 THREATS = ("clean", "label_flip", "free_rider", "grad_noise")
 CORRUPT_THREATS = ("label_flip", "free_rider", "grad_noise")
 
@@ -132,7 +136,7 @@ def main():
     print(f"cells: " + ", ".join(f"{t}({ns.get(t, 0)} seeds)" for t in THREATS))
 
     print_table(df, "final_acc", "absolute test acc (3-seed mean±sd)")
-    gate_arms = {a: l for a, l in ARMS.items() if a != "observer"}
+    gate_arms = {a: l for a, l in ARMS.items() if a not in NON_GATE_ARMS}
     print_table(df[df["threat"].isin(CORRUPT_THREATS)], "auroc",
                 "detection AUROC (suspicion = -cum; last-priority metric)", gate_arms)
 
