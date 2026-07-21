@@ -69,3 +69,27 @@ paper-ko §초록–§3만 근거(§4 이후 비사용, paper-ko 무수정 유�
 
 - **R4 gsm50k5 스펙 정합**: 현 스펙(N=50, 5/50)이 "클라이언트 소규모 참여 세팅 안 함"과 어떻게 정합되는지(스펙 유지? Tier B에서 개정?) — placement plan §5에 경고로 표기.
 - std50k5 **fidelity** probe(§4.2 부분참여 우위 +1.000)의 유지 판단이 맞는지 — "소규모 참여 세팅 지양"이 fidelity 축까지 포함하면 §4.2(b2)·E3의 부분참여 서사도 축소 필요.
+
+---
+
+## 추가 지시 (같은 세션 3차; Yonghee 원문 요지)
+
+> "CNN 실험 중에 3.2.6에서 보여주는 수치보다 3.2.2나 3.2.4에서 보여주는 수치가 더 좋아보이는데
+> 이건 무슨 차이지? 그리고 3.2.4 표도 상대적 수치 말고 그냥 절대적인 accuracy로 변경해줘.
+> 그리고 top-k selection도 안쓸거야."
+
+### 답변 요지 (수치 차이의 정체 — 모순 아님)
+
+1. **§3.2.4 ↔ §3.2.6**: 같은 무대·**같은 rundir**(§3.2.6 R1의 flirds/vanilla/oracle/random = §3.2.4 재사용) — dir1 flirds_gate_v2 절대값(.6315/.6148/.5668/.5712)이 §3.2.6 P1-online flirds 행과 소수 4자리까지 동일함을 파일로 확인. 차이는 **표기**(구 §3.2.4 = vanilla-대비 dAcc라 "+.3232"가 절대 ".5668"보다 커 *보였던* 것) + §3.2.4엔 더 쉬운 iid 파티션 포함.
+2. **§3.2.2 ↔ §3.2.6**: §3.2.2는 threat-그룹 **pool**(cifar10+fmnist·iid/dir1/shard·강도 변형 str0.05 포함)이라 절대 수준이 높아 보임(clean .686~.734, GN .609~.645) — §3.2.6은 최난도 단일 조합(cifar10·dir1·strmain·lf@0.70)만. 같은 셀로 좁히면 정합(셀별 = RESULTS.txt).
+
+### 반영 내역
+
+1. **§3.2.4 절대 acc 전환**: `cnn_summary.csv` per-seed `final_acc`에서 직접 재집계(anaconda python; flip_rate 열이 NaN이라 cell명에서 dose 파싱) — iid/dir1 × 9 arm × 6 위협 절대값 표로 교체, oracle/random도 절대값. 읽기 문단 절대값 기준 재서술 + "§3.2.6과 rundir 동일" 각주. V2w 판정 불릿은 기준이 delta 정의라 유지(문구 명시).
+2. **§3.2.2에 pool-구성 주의 1줄 추가**(세 절 수준 차이의 원인 명문화).
+3. **phase1 retrain×top-k selection = 미사용**(3차 결정): §3.2.5 스텁화(제외 표기; rundir 존속), §3.2 매트릭스 칸 ○ 미사용, §5.1 최고 세팅 표 행 삭제, §6.1·마스터표 행13·§2.1 매핑·§8 커버리지 갱신. **softmax-선택 arm(flirds_sel/flirds_select·sfedavg)은 top-k가 아니므로 유지**(세션 해석 — 확인 대상). placement plan: E6에서 ④ top-k 제거 + "§1의 'selection' 열거는 게이팅/softmax-선택이 커버, §1 문구 조정 권고" + §4 미배치 추가.
+4. 메모리 `paper-threat-stage-scope` 4항(top-k 미사용·절대 acc 표기 기본) 추가.
+
+### 추가 보류 (3차)
+
+- **softmax-선택 arm 유지 여부**: "top-k selection 안 씀"을 phase1 retrain×top-k로 해석 — §3.2.1 `flirds_sel`·§3.2.2 `flirds_select`/`sfedavg`(확률적 soft 선택)까지 제외 의도였으면 추가 정리 필요.

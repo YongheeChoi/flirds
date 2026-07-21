@@ -55,7 +55,7 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 | E3 | 기여 신호의 존재 조건 + 오염·비IID·부분참여 fidelity | B축 2×2(오염×비IID) cross-seed ρ · (b) self-stability 요지(IID-clean 불안정 vs non-IID 안정) · silo5/device100 오염 무대 Spearman · std50k5 부분참여(uniform-subset 계열 붕괴 vs Flirds 1.000) | §3.1.5(b1) · §5.4(요지) · §3.1.4/§3.3.1–2(Sp 열) · §4.2(b2) | "왜 IID-clean에서 전원 만점인가"의 선제 답(정직-검증 기조) — fidelity 주장의 해석 조건을 규정해야 L2 주장이 리뷰에 버팀; 부분참여는 FL 조건 ③(간헐 참여)에서의 차별화 | silo5 값은 β0.3 재실행판(ce0b454) 정본 — 3B silo5 4셀 재실행(REMAINING §1.2) 후 3B 값 재확인 |
 | E4 | Retrain oracle 특성화 + 게임-무관 척도 | (a)vs(b) 0.933(1B anchor5) + 전 방법 vs (a) · CNN 듀얼 오라클(vs (a) 0.35 전 방법 공통 = 두 게임 괴리) · removal-curve 요약(worst-first 인과) | §3.1.1 (a)행·vs(a) 표 · §3.1.2(b1) · §4.4.1–2(요약) | §1 명시 "retrain 관계는 특성화 실험으로만 보고"; removal은 §1이 열거한 실효성 실험이자 게임-무관 공통 자 — 본문 요약+appendix 상세 분할 | P2/P3((a) 3B/7B retrain) ⬚ — 채우면 표 확장; 미완이면 1B 한정 명기 |
 | E5 | 비용: 평가 단위와 참여자 수 | op-count 축(하드웨어 독립) + 전 무대 runtime 표 + (b) 지수 비용의 N=10 실측(160×) + "cohort 작으면 (b)가 더 쌈" 정직 보고 | §3.4.1 · §3.4.2 · §3.4.3 · §3.1.3(b2) | L1 해소·기여 1("HVP 1회 고정, 내적 하나")의 실증; FL 조건 ④(재학습·추가연산 불가) | loss-heur 3B/7B 재측정·β deferred 9셀(7B runtime) 대기 — pre-fix 값 caveat 유지 |
-| E6 | 기여도의 가치: 부호-게이팅·경쟁·selection·탐지 | ① frzero 온라인 자동배제 recovery 1.000(오배제 0)+clean 무발화 = null-player 공리의 배포 실증 ② 점수원 경쟁(같은 정책·8종): exact-0 계열 생존 vs renorm free-rider 붕괴, zero-semantics 트레이드오프 — **LLM 축 심판은 R4 GSM8K(확정 무대)** ③ CNN C2 오염 회복 ④ top-k selection(phase1) ⑤ 탐지: noisy/FR 1.0 vs 전용 탐지기, frdelta 정직 한계 | §3.2.3–4 · §3.2.6 · §3.2.2 · §3.2.5 · §3.3.1–5(+§3.3.4) | §1 실효성 층의 명시 열거(부호-게이팅·removal·selection·탐지) + 기여 3(정확 0 → 온라인 정산) + §2 "각자가 설계된 위협에서" 탐지기 비교; "다른 정의로 똑같은 실험" 경쟁이 기여도 정의의 실효 우열 증명. §3.2.1의 MMLU/ROUGE parity는 심판 변별력 한계 판단(07-22)에 따라 본문 축이 아니라 appendix 후보(do-no-harm 보조) | **R4 gsm50k5 Tier A 실행 중** — LLM selection 본문 축이 R4 결과에 직접 의존(그 전 LLM 서술은 R3 silo5-noisy 한정; R2 std50k5는 미사용) |
+| E6 | 기여도의 가치: 부호-게이팅·경쟁·탐지 | ① frzero 온라인 자동배제 recovery 1.000(오배제 0)+clean 무발화 = null-player 공리의 배포 실증 ② 점수원 경쟁(같은 정책·8종): exact-0 계열 생존 vs renorm free-rider 붕괴, zero-semantics 트레이드오프 — **LLM 축 심판은 R4 GSM8K(확정 무대)** ③ CNN C2 오염 회복 ④ 탐지: noisy/FR 1.0 vs 전용 탐지기, frdelta 정직 한계 | §3.2.3–4 · §3.2.6 · §3.2.2 · §3.3.1–5(+§3.3.4) | §1 실효성 층의 명시 열거 + 기여 3(정확 0 → 온라인 정산) + §2 "각자가 설계된 위협에서" 탐지기 비교; "다른 정의로 똑같은 실험" 경쟁이 기여도 정의의 실효 우열 증명. §1이 열거한 "selection"은 top-k 재학습 대신 **게이팅(온라인 참여-배제 = selection의 배포형)과 softmax-선택 arm(C2)이 커버**(phase1 top-k는 미사용 07-22 — §1 문구도 이에 맞춰 조정 권고). §3.2.1의 MMLU/ROUGE parity는 심판 변별력 한계 판단(07-22)에 따라 본문 축이 아니라 appendix 후보(do-no-harm 보조) | **R4 gsm50k5 Tier A 실행 중** — LLM selection 본문 축이 R4 결과에 직접 의존(그 전 LLM 서술은 R3 silo5-noisy 한정; R2 std50k5는 미사용) |
 
 > 순서 논리: 프로토콜(E1) → 1차 주장(E2) → 그 주장의 해석 조건(E3) → 별도 참값과의 관계(E4) →
 > 비용(E5) → 실효성(E6). 프로젝트 위계(1차 fidelity → 2차 성능 → 탐지)와 §1 검증 2겹(추정기 층
@@ -96,6 +96,9 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 - **std50k5 selection 계열**(Track H Tier 3·R2·track_g std50k5-mixed 파일럿): 미사용(overview
   §3.2 서두 ③) — LLM selection 무대는 R4 gsm8k로 대체. ⚠ std50k5의 *fidelity* 결과(§4.2
   부분참여 probe, E3 소속)는 별개 축이라 유지.
+- **phase1 retrain×top-k selection**: 미사용(2026-07-22; overview §3.2.5 제외 표기) — phase1의
+  탐지 AUROC(§6.1)만 존속. §1 서론의 "selection 실험" 열거 문구는 게이팅/softmax-선택 기준으로
+  조정 권고.
 - **alpaca/MMLU/ROUGE 심판의 LLM selection 표**(§3.2.1): 성능 차이 변별력 부족 판단(07-22) —
   본문 축 아님, do-no-harm 보조로 appendix 후보.
 - **Fairness·reward(P6)**: 전용 실험 미설계 — §6(논의·한계)에서 향후 과제로만.
@@ -115,7 +118,7 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 
 ## 6. 매핑 요약 (overview 신 구조 → 논문)
 
-- **본문**: §3.1.1·§3.1.3(→E2) / §3.1.5·§5.4요지·§3.1.4·§4.2(b2)(→E3) / §3.1.1(a)·§3.1.2·§4.4요약(→E4) / §3.4(→E5) / §3.2 전부·§3.3(→E6) / §3.1.1(a)세팅류(→E1)
+- **본문**: §3.1.1·§3.1.3(→E2) / §3.1.5·§5.4요지·§3.1.4·§4.2(b2)(→E3) / §3.1.1(a)·§3.1.2·§4.4요약(→E4) / §3.4(→E5) / §3.2(§3.2.5 제외)·§3.3(→E6) / §3.1.1(a)세팅류(→E1)
 - **ablation**: §4.1·§4.8.1·§4.7·§4.2–4.3·§4.5
 - **appendix**: §4.4–4.5 상세·§5.4·§5.5·§5.3·§3.3.3–5·§3.2.3–4/§3.2.6/§4.8 상세·§4.8.2–3·§6.2(9·13)
 - **비게재**: §6.3

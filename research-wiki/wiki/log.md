@@ -593,3 +593,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 2차 절)
 - touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · memory `paper-threat-stage-scope`
 - note: Yonghee 2차 결정 — ① poison 위협축 논문 비게재(전 표·서술 제거; 위협 스코프 = noise류·FR류·label-flip류, caveat 8; 마스터표 행 12 삭제·§3.3.2(b4)·removal poison·dose pf 등) ② Tier 3/R2/track_g std50k5 selection 계열 미사용(fidelity probe §4.2는 유지) ③ LLM selection 심판 = GSM8K 확정(alpaca/MMLU/ROUGE 변별력 부족)·소규모 참여 세팅 지양. 보류: R4 현 스펙(5/50)과 ③의 정합 확인.
+
+## [2026-07-22] note | §3.2.4 절대 acc 전환 + top-k selection 미사용 + 절간 수치차 해명
+- raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 3차 절)
+- touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · memory `paper-threat-stage-scope`
+- note: §3.2.4를 cnn_summary.csv 재집계 절대 acc 표로 교체(dir1 flirds행 = §3.2.6과 rundir 동일 확인 — 구 dAcc 표기가 커 보였던 착시)·§3.2.2에 pool-구성 주의 추가(fmnist/shard/약강도 혼합이 절대 수준을 올림). phase1 retrain×top-k = 미사용(§3.2.5 스텁; softmax-선택 arm은 유지 — 해석 확인 대상).
