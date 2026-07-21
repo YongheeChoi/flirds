@@ -603,3 +603,7 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 4차 절)
 - touched: `survey/flirds-experiment-results-overview.md` (§3.2.7 신설 등) · [[paper-experiment-placement-plan]] §5
 - note: R4 GSM8K Tier A seed0 착지(4c40e30) — noisy(answer-swap@.7) 무대 성립 +3.6pt·T2 점수원 우열 flirds .3584 1위(동일예산 무작위 +4.7pt)·frzero 회수 1.000(H-9 적중)·clean T1 −1.0pt 오발화(H-11 MISS)·gnoise 구정의 폐기→GN_ABS γ*=5 gn_full 재실험 중(560a2fd). §3.3.2 α=0.1 열 = 재실행판(c05a951; Fed-LOO 행 신설·잔여 16셀). 수치 전부 rundir·CSV 직접 집계.
+
+## [2026-07-22] note | flirds-signal-size-diagnosis 페이지 삭제(Yonghee) — 인바운드 링크 정리
+- touched: `wiki/index.md`(목록 제거) · `survey/flirds-experiment-results-overview.md`(4곳 → §5.3/§4.2 포인터+삭제 주석) · `survey/irds-fl-math-rigor-2026-07/irds-fl-math-rigor.md`(인용 출처에 삭제 주석)
+- note: Yonghee가 불필요 판단으로 위키 진단 문서 삭제(워킹트리; 커밋은 Yonghee 몫). 결론은 overview §5.3(종합 판정)·§4.2–4.3(A축 상세)에 이미 흡수돼 있어 정보 손실 없음 — 원문은 git 이력. runs/{matrix_cxni,probe_signal}/README.md의 계획-포인터 2곳은 runs/ read-only 원칙으로 미수정(git-이력 참조로 유효).

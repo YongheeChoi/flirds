@@ -788,7 +788,7 @@ $\lvert u_r(P_r)-\sum_ku_r(\{k\})-\sum_{i<j}q_{ij}\rvert\le(1+K_r)\frac{M_3^r}6\
 $H$-준직교($a_i^\top Ha_j\approx0$, $i\ne j$), 또는 (ii) delta 방향의 곡률 자체가 작음
 ($\lVert Ha_k\rVert$ 작음), 그리고 (iii) 3차 잔차 무시 가능. **실측**: 현행 무대의 가산 갭
 $v(N)-\sum v(\{i\})$은 $\sum\phi$의 $\le$0.9% — 1B anchor +0.6~0.8%, 3B +0.1~0.3%, 7B $-$0.9%,
-std20 0.0~0.5% (`research-wiki/wiki/flirds-signal-size-diagnosis.md` §1.5, 175–177행 — **인용만,
+std20 0.0~0.5% (`research-wiki/wiki/flirds-signal-size-diagnosis.md` §1.5, 175–177행 — 문서는 2026-07-22 삭제, git 이력에서 조회; **인용만,
 재계산하지 않음**). 이 **작은 가산 갭**이 함의하는 것은 정확히 (A) **같은 게임의 서로 다른 semivalue**
 (Shapley/Banzhaf/…)가 같은 순위로 붕괴한다는 것이다(§1.5→§1.6 판정과 정합). 그러나 이는 (B) **고정가중
 게임과 재정규화 게임(서로 다른 두 게임)**이 같은 순위를 준다는 것과 **다른 진술**이다: 위 등$n$·가산

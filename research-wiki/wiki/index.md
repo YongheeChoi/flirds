@@ -20,7 +20,6 @@ A catalog of every page in the wiki. Updated on every ingest. See [[overview]] f
 - [[flirds]] — Flirds (Federated Learning + In-Run Data Shapley) project state: locked design decisions, resolved questions, experiment plan
 - [[flirds-protocol]] — implementation & reporting protocol (precision, seeds, statistical reporting, oracle separation, sanity gates, run logging, Phase 0)
 - [[flirds-implementation-plan]] — **session handoff document**: start here when beginning an implementation session. 4-phase task ordering (Phase 0 CNN reproduction → Phase 1 Flirds at 1B → Phase 2 full baseline + 3B/7B → Phase 3 matrix execution); 9 still-open implementation decisions with options + criteria + recommendations; pre-implementation checklist; pointer table
-- [[flirds-signal-size-diagnosis]] — 신호 크기 진단(2026-07-02): "val-loss 변화가 너무 작다" 가설 판정(fp32 병목 아님 · MMLU 학습 0 · 주 병목 = IID-clean에 클라 간 진짜 신호 부재) + rank/참여 probe 계획·결과
 
 ## Sources (44)
 

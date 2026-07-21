@@ -30,7 +30,7 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 > - CNN: `runs/track_c/fidelity.csv`(파생) · `runs/track_c/RESULTS.txt` · `runs/track_c/{c1,c2,c1_oracle}/*/{config,metrics}.json`
 > - Robustness: `runs/phase2_matrix/analysis/00_overview/master_metrics.csv`(파생; `make_analysis.py` 재생성) · `runs/phase2_matrix/rundirs/*/{config.yaml,meta.json}` — ⚠ 1B_silo5 오염 셀(ce0b454, 2026-07-20)과 **device100 a0.1 noisy·frrand 2셀(c05a951, 2026-07-22)은 β0.3 재실행판이 canonical**(재실행 전 값은 git 이력) · frdelta `runs/phase2_matrix/rundirs_2026-07/1B_silo5_frdelta/*`
 > - Foundational: `runs/phase1/rundirs/*/{config.yaml,metrics.json}`
-> - Signal-size probe(§4.2–4.3): LLM A축 `runs/probe_signal/rundirs/1B_*` · `runs/probe_signal/noise_probe/*` · CNN A축 `runs/probe_signal/cnn_c{1,2}/pc*` · B축 매트릭스(§3.1.5) `runs/phase2_matrix/rundirs/1B_{iid5,silo5}_*`(드라이버=`runs/matrix_cxni/`) — 배경 [[flirds-signal-size-diagnosis]]
+> - Signal-size probe(§4.2–4.3): LLM A축 `runs/probe_signal/rundirs/1B_*` · `runs/probe_signal/noise_probe/*` · CNN A축 `runs/probe_signal/cnn_c{1,2}/pc*` · B축 매트릭스(§3.1.5) `runs/phase2_matrix/rundirs/1B_{iid5,silo5}_*`(드라이버=`runs/matrix_cxni/`) — 배경 진단·판정 = §5.3(구 위키 진단 문서는 2026-07-22 Yonghee 삭제 — git 이력)
 > - Removal-dose(§4.4–4.6): `runs/removal_dose/rundirs*/` (LLM A2·B·A1·D=AdamW 3-seed + CNN A3 `rundirs_cnn/`)
 > - 계측(§3.4.1·§6.3): `runs/measured_2026-07/{taylor,e3_cost_smoke,timing_device100,microbench,acct,loss_heur_acct,tf32_ab}/`
 > - φ-부호 감사(§5.2): `runs/track_g/audit/` (전 rundir 파생 재분석) · φ-게이팅 Phase B(§3.2.3–4): `runs/track_g/rundirs/`(LLM 218; ⚠ `rundirs_llm/` 폴더는 존재하지 않음) + `rundirs_cnn/`(36) + `rundirs_cnn_v3/`(12) · 정본 `runs/track_g/analysis/{llm_summary.csv,cnn_summary.csv}`
@@ -1043,7 +1043,7 @@ phase1의 retrain×top-k(하위-φ 2명 드롭, K=3/5 keep 재학습; arm = full
 
 ## 4.2 A축 lever probe — LLM (rank·참여·lr·steps·noise; `probe_signal`)
 
-> 배경·가설: [[flirds-signal-size-diagnosis]]. 질문 = "IID-clean에서 fidelity·개입 효과가 약한 것이 **학습 강도(A축: 모델 용량·라운드당 참여 수·lr·steps)** 부족 때문인가, 아니면 **클라 간 진짜 차이(B축: 오염·비IID)** 부재 때문인가." B축(§3.1.5)과 분리해 A축 lever만 바꾼다. **판정 요약 = §5.3** (A축 lever는 어느 것도 cross-seed 실재 신호를 못 만든다 — 신호는 B축이 만든다).
+> 배경·가설(구 위키 진단 문서 — 07-22 삭제, 요지는 §5.3·원문 git 이력): 질문 = "IID-clean에서 fidelity·개입 효과가 약한 것이 **학습 강도(A축: 모델 용량·라운드당 참여 수·lr·steps)** 부족 때문인가, 아니면 **클라 간 진짜 차이(B축: 오염·비IID)** 부재 때문인가." B축(§3.1.5)과 분리해 A축 lever만 바꾼다. **판정 요약 = §5.3** (A축 lever는 어느 것도 cross-seed 실재 신호를 못 만든다 — 신호는 B축이 만든다).
 
 **(a) 세팅**: Llama-3.2-1B, plain SGD mom=0, maxlen 512, val=200, batch 16, LoRA α=2r, fp32. truth=(b) in-run oracle; 방법 스위트 = §3.1.1과 동형. seed: 파일럿 seed0 → **lr격자(st10 열)·std50k5(r16)·noise(r16) 3-seed 확정**(std50k5 seeds 1-2는 Flirds·Flirds-1st만 채점하는 경량 스위트); rank probe·st20/30·r32/64는 seed0 유지. lever 3무대 + noise:
 - **rank probe** (anchor5): N=5 전원, R=30, 10 steps, lr=1e-3, **LoRA r∈{16,32,64}**(r16 = `track_d/1B_anchor5_seed0` 재사용) = 용량 lever @ full 참여(A축 순수).
@@ -1467,7 +1467,7 @@ CNN label-flip 게이트 dose 3점 = **{0.15, 0.35, 0.70}** 확정(전 val-metho
 
 ## 5.3 신호크기 진단 종합 판정 (A축 §4.2–4.3 · B축 §3.1.5)
 
-신호크기 진단([[flirds-signal-size-diagnosis]])의 결론 — **Yonghee 원가설("val-loss 변화량이 작아 fidelity 저하")은 반쪽만 맞다.**
+신호크기 진단의 결론(구 위키 진단 문서는 07-22 삭제 — 결론은 본 절과 §4.2–4.3에 수록, 원문 git 이력) — **Yonghee 원가설("val-loss 변화량이 작아 fidelity 저하")은 반쪽만 맞다.**
 - **A축(신호 크기 lever)**: LLM(rank·참여·lr·steps §4.2)·CNN(폭·참여 §4.3) 어느 것도 IID-clean에서 **cross-seed 실재 신호를 못 만든다**(핵심 축 3-seed 확정 — lr를 키워도 xseed ρ≈0). **lr의 φ-크기 효과도 3-seed에선 공통 shift(~1.3×)만 남고 클라 간 분리는 seed 분산에 묻힌다**(seed0 "~3×"는 비재현; §4.2 (b3)). 그 외 lever(rank·참여·폭)는 φ 크기조차 거의 안 바꾼다. fidelity(Flirds vs (b))는 A축 전반 1.000 유지 = **Taylor tradeoff 없음**(HVP가 rank·lr↑에 강건). 참여는 별도 역할 — 짧은 지평에서 φ 랭킹을 흐리고 **방법 구별을 만든다**(LLM std50k5·CNN partial 모두 Flirds 우위, uniform-subset 계열 붕괴; 1차항은 클라당 참여 횟수가 적으면 붕괴, 2차항이 방어 §4.1).
 - **B축(신호 실재성)**: **클라 간 실제 차이가 신호를 만든다**. **non-IID clean cross-seed ρ 0.87**(오염 0, 도메인 분리만)이 결정타 — IID clean 0.13과 대비(N=50 저참여 IID도 +0.06 ≈ 0, §4.2 (b2)). 오염축·비IID축이 각각 독립적으로 fidelity·탐지 신호를 만들며, 탐지는 배경 이질성에 따라 갈린다(FedDQC는 IID서 유리).
 - **결론**: 어느 lever도 cross-seed 실재 신호를 못 만들고, 신호는 B축(비IID·오염)이 만든다. A축 잔여 = lr·steps intervention 분석(원가설 2차; 데이터는 기존 rundir에 있음, 재실행 불필요 — 루트 REMAINING §1.4)뿐.
@@ -1495,7 +1495,7 @@ CNN label-flip 게이트 dose 3점 = **{0.15, 0.35, 0.70}** 확정(전 val-metho
 > **판정**: **IID-clean 무대의 (b) target 은 seed-불안정**(track_d 1B −0.37~−0.11 = 리뷰 노트값 정확 재현·정본화) → 그 위의 per-seed **+1.000 fidelity 는 *불안정한 GT* 를 좇는 것**(C-2). **비-IID(silo5)선 (b) 가 안정**(+0.87~+0.93) → 거기의 +1.000 은 의미 있음. §3.1.5 B축과 정합 — Exp C 는 그 **(b)-target 버전을 전 스케일·전 무대로 정본화**. **7B 는 IID서도 +0.733** → 스케일이 클수록 (b) 안정성↑(추가 조사감). ⚠ silo5 frzero·noisy 행은 β0.3 재실행판(ce0b454) 기준 +0.933(frzero 재실행 전 rundir는 +1.000).
 > **프로토콜 격상**(리뷰 §4/§5.1): `make_fidelity.py` 가 fidelity 표 아래 이 xseed ρ 열을 함께 출력 → *fidelity 는 항상 target 안정성과 병기*. 3B_silo5 는 seed0 뿐(1-seed → nan, 표 제외).
 
-**출처**: `runs/track_d/target_stability.csv` · `runs/phase2_matrix/target_stability.csv` (gitignore=파생; 재생성: `python runs/track_d/make_target_stability.py [rundirs_root] [out.csv]`). 배경 = [[flirds-signal-size-diagnosis]] §3.5.
+**출처**: `runs/track_d/target_stability.csv` · `runs/phase2_matrix/target_stability.csv` (gitignore=파생; 재생성: `python runs/track_d/make_target_stability.py [rundirs_root] [out.csv]`). 배경 = 구 신호크기 진단 문서 §3.5(07-22 삭제 — git 이력).
 
 ## 5.5 Taylor 물리잔차 실측 (E2, `measured_2026-07/taylor`) — 명제 P3 검증 **[보류: 논문 appendix 후보 — Yonghee 확인]**
 
