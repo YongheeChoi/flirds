@@ -44,7 +44,7 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 - Banzhaf·Ripple 비교군 제외(overview §6.2-12) — 논문 전 표에서도 제외.
 - 수렴(rounds-to-target) 축 스코프 제외(overview §5.6) — 전용 절 없음.
 - **poison(clean-preserving backdoor) 위협축 제외**(overview §6.2-8) — 논문 위협 스코프 = noise류·free-rider류(zero/random/delta)·label-flip류만.
-- **LLM selection→성능 실험의 심판 = GSM8K(exact-match)로 확정** — alpaca val-loss·MMLU·ROUGE는 성능 차이 변별력 부족 판단; **클라이언트 소규모 참여 세팅은 이 축에서 진행하지 않음**; std50k5(alpaca 부분참여) selection 계열(Track H Tier 3·R2·track_g 파일럿) = 미사용(overview §3.2 서두 ③).
+- **LLM selection→성능 실험의 심판 = GSM8K(exact-match)로 확정** — alpaca val-loss·MMLU·ROUGE는 성능 차이 변별력 부족 판단; **소규모 cohort(silo5류, N=5급) selection 세팅은 이 축에서 진행하지 않음**(07-22 후속 확인: '소규모'는 cohort 규모 지칭 — **R4 N=50·5/50은 해당 없음, 사용 확정**); std50k5(alpaca 부분참여) selection 계열(Track H Tier 3·R2·track_g 파일럿) = 미사용(overview §3.2 서두 ③; std50k5 *fidelity* probe는 유지 확정 — 지양은 selection 축 한정).
 
 ## 1. 본문 실험 절 구성안 (순서 포함)
 
@@ -94,8 +94,8 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 - **poison 위협축**: 논문 비게재(overview §6.2-8) — 관련 실험(silo5/device100/3B poison 셀·
   removal poison ASR·dose pf ladder) 전부 미배치. 데이터는 rundir 존속.
 - **std50k5 selection 계열**(Track H Tier 3·R2·track_g std50k5-mixed 파일럿): 미사용(overview
-  §3.2 서두 ③) — LLM selection 무대는 R4 gsm8k로 대체. ⚠ std50k5의 *fidelity* 결과(§4.2
-  부분참여 probe, E3 소속)는 별개 축이라 유지.
+  §3.2 서두 ③) — LLM selection 무대는 R4 gsm8k로 대체. std50k5의 *fidelity* 결과(§4.2
+  부분참여 probe, E3 소속)는 별개 축이라 **유지 확정**(07-22 후속 — 지양은 selection 축 한정).
 - **phase1 retrain×top-k selection**: 미사용(2026-07-22; overview §3.2.5 제외 표기) — phase1의
   탐지 AUROC(§6.1)만 존속. §1 서론의 "selection 실험" 열거 문구는 게이팅/softmax-선택 기준으로
   조정 권고.
@@ -109,10 +109,10 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 
 | 실험 | 상태(2026-07-22) | 걸리는 배치 |
 |---|---|---|
-| R4 gsm50k5 Tier A(seed0) | **완주·착지**(4c40e30, 07-22 — overview **§3.2.7**): noisy(answer-swap) 무대 성립 +3.6pt·T2 점수원 우열 flirds .3584 1위(+4.7pt vs 동일예산 무작위)·frzero 회수 1.000·clean T1 −1.0pt 오발화. **gnoise는 구정의 폐기 → 신정의(GN_ABS γ*=5) `gn_full` 서버 재실험 중** + P5-leg 큐(REMAINING §1.0–1.1). Tier B(전 8종)=승인 게이트·Tier C=3-seed | E6-② LLM selection 본문 축 — **seed0 방향은 확보**(그 전 LLM 서술은 R3 noisy 한정), 본문 확정 수치는 Tier C(3-seed) 대기. ⚠ R4 현 스펙은 N=50·5/50 부분참여 — "클라이언트 소규모 참여 세팅 지양"(07-22) 결정과의 정합(스펙 유지/개정)은 Yonghee 확인 필요 |
+| R4 gsm50k5 Tier A(seed0) | **완주·착지**(4c40e30, 07-22 — overview **§3.2.7**): noisy(answer-swap) 무대 성립 +3.6pt·T2 점수원 우열 flirds .3584 1위(+4.7pt vs 동일예산 무작위)·frzero 회수 1.000·clean T1 −1.0pt 오발화. **gnoise는 구정의 폐기 → 신정의(GN_ABS γ*=5) `gn_full` 서버 재실험 중** + P5-leg 큐(REMAINING §1.0–1.1). Tier B(전 8종)=승인 게이트·Tier C=3-seed | E6-② LLM selection 본문 축 — **seed0 방향은 확보**(그 전 LLM 서술은 R3 noisy 한정), 본문 확정 수치는 Tier C(3-seed) 대기. 스펙-정합 해소(07-22 후속): '소규모 참여 지양'은 silo5류 cohort 지칭 — **R4 사용 확정, 스펙 유지** |
 | β0.3 잔여 18셀 + deferred 9셀 | 큐 대기(REMAINING §1.2–1.3) | E1 절대값 표기·E5 7B runtime·E3 3B silo5·appendix 전표 |
 | P2/P3 (a) retrain 3B/7B | ⬚ | E4 (a)-특성화의 스케일 확장(미완이면 1B 한정 명기) |
-| P1 (a) 2¹⁰·E5 seeds1-2 | ⬚(장기 대기, REMAINING §1.4) | E2 확장 각주 |
+| P1 (a) 2¹⁰·E5 seeds1-2 | **미진행 확정**(Yonghee 07-22 — 시간 제약) | E2는 E5 seed0(1-seed caveat)로 확정 서술 — 확장 각주 없음 |
 | 재현성 P0/P1 재실행 | 계획 수립(루트 `RERUN_AFTER_REPRO_FIX_2026-07-21.md`) | 전 절의 절대값 재현성 문구(appendix 재현성 조항) |
 | lr·steps intervention 분석 | 데이터 있음·분석 대기(REMAINING §1.4) | ablation A축 보강(선택) |
 

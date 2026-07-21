@@ -607,3 +607,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 ## [2026-07-22] note | flirds-signal-size-diagnosis 페이지 삭제(Yonghee) — 인바운드 링크 정리
 - touched: `wiki/index.md`(목록 제거) · `survey/flirds-experiment-results-overview.md`(4곳 → §5.3/§4.2 포인터+삭제 주석) · `survey/irds-fl-math-rigor-2026-07/irds-fl-math-rigor.md`(인용 출처에 삭제 주석)
 - note: Yonghee가 불필요 판단으로 위키 진단 문서 삭제(워킹트리; 커밋은 Yonghee 몫). 결론은 overview §5.3(종합 판정)·§4.2–4.3(A축 상세)에 이미 흡수돼 있어 정보 손실 없음 — 원문은 git 이력. runs/{matrix_cxni,probe_signal}/README.md의 계획-포인터 2곳은 runs/ read-only 원칙으로 미수정(git-이력 참조로 유효).
+
+## [2026-07-22] note | 보류 8건 일괄 결정 반영 — R4 스펙 확정·A3/E5 확장 안 함·fidelity probe/softmax arm 유지
+- raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 5차 절)
+- touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · 루트 `REMAINING.md` §1.4/§3 · memory `paper-threat-stage-scope`
+- note: '소규모 참여 지양'=silo5류 cohort 지칭 확정(R4 N=50·5/50 사용 확정, ⚠ 전부 해소) · A3 label/quantity_skew 확장 폐기 · E5 N=10 oracle 확장 미진행(시간 제약) · std50k5 fidelity probe·softmax-선택 arm 유지 확정. 잔존 보류 = Exp C/Taylor appendix 배치(차후)·R4 Tier B 진입 승인.

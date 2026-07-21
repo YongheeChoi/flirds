@@ -124,3 +124,24 @@ paper-ko §초록–§3만 근거(§4 이후 비사용, paper-ko 무수정 유�
 
 - R4 스펙(N=50·5/50) vs 소규모-참여-지양 정합 — Yonghee 확인 대기(§3.2.7 caveat ③).
 - Tier B(전 8종, ~300–350 GPU-h) 진입 = Yonghee 승인 게이트(REMAINING §3).
+
+---
+
+## 추가 지시 (같은 세션 5차; Yonghee 원문 요지 — 보류 8건 일괄 답변)
+
+> 1. (Exp C·Taylor appendix) "차후 생각해볼게, 일단 그렇게 남겨놔." 2. (A3 label/quantity_skew) "추가 안 할거야."
+> 3. (R4 스펙 정합) "R4는 쓸거야. 아까 그건 silo5 같은 범위를 말한거였어." 4. (std50k5 fidelity probe) "남겨놔야해.
+> 아까 그건 selection 축 한정이었어." 5. (softmax-선택 arm) "수치가 잘 나오니까 남겨놓자." 6. "여기까지 커밋해주면
+> 내가 푸시할게." 7. (R4 Tier B) "응 알겠어. 이거 말고도 지금 seed 실험 추가 돌릴거 있나?" 8. (E5 N=10 seeds)
+> "10개 oracle은 돌릴 시간이 없어." (+ 위키 flirds-signal-size-diagnosis 삭제 = 본인 의도 확인)
+
+### 결정 반영
+
+- **해소 5건**: ② A3 옵션 폐기(overview §4.4.2 잔여 없음) ③ '소규모 참여 지양' = **silo5류 소규모 cohort 지칭**으로 확정 — R4(N=50·5/50) 사용 확정(§3.2 서두 ②·§3.2.7 caveat ③·plan §0/§5 ⚠ 제거) ④ std50k5 fidelity probe 유지 확정(지양은 selection 축 한정) ⑤ softmax-선택 arm 유지 확정 ⑧ E5 확장(seeds1·2·(a) 2¹⁰) 미진행 확정(마스터 P1·§3.1.3·§8·plan §5·REMAINING §1.4/§3).
+- **존속 2건**: ① Exp C(§5.4)·Taylor(§5.5) appendix 배치 = 보류 표기 유지 ⑦ R4 Tier B 진입 = "응 알겠어"를 승인으로 간주하지 않음 — 게이트 유지(REMAINING §3).
+- **링크 정리**(위키 진단 문서 삭제 확인 후): overview 4곳·wiki index·math-rigor 주석 = 커밋 2601229. 삭제 자체(D)와 flirds-protocol.md EOL 터치는 Yonghee 변경분이라 미스테이징.
+- 메모리 `paper-threat-stage-scope` 갱신(항목 3~5 확정·신규 항목 5).
+
+### 질문 답변(7) — 남은 seed-추가 실험 인벤토리
+
+① probe A축 seeds 1-2(rank r32/64·st20/30 — 현 seed0; lr격자·noise·std50k5-r16은 이미 3-seed) = ablation 보강(선택) ② 3B silo5 robustness seeds 1-2(마스터 P5; 현 1-seed caveat 1 — β0.3 재실행 잔여 4셀은 seed0 재실행이라 별개) ③ R4 Tier C 3-seed(Tier B 뒤; 논문 E6-② 확정치에 직결). E5 seeds = 이번에 제외. lr·steps intervention 2차검증은 seed 추가가 아니라 기존 데이터 재분석(무GPU).

@@ -130,7 +130,8 @@ PY=$PY PP=<repo>/codes HOME=… HF_HOME=… HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE
 완료 후 overview 7B 열(§3.1.1·§3.5.1) 갱신.
 
 ### 1.4 장기 대기 (우선순위 낮음)
-E5 seed1·2(2¹⁰, 33h/셀) · lr·steps intervention 2차검증 · 1B·CNN β-불변 canon 확인 · probe A축 seeds 1-2.
+lr·steps intervention 2차검증 · 1B·CNN β-불변 canon 확인 · probe A축 seeds 1-2.
+(E5 N=10 oracle 확장(seeds1·2·(a) 2¹⁰) = 미진행 확정, Yonghee 07-22 — 시간 제약.)
 
 ## 2. 문서·부수분석 (무GPU)
 
@@ -150,6 +151,5 @@ E5 seed1·2(2¹⁰, 33h/셀) · lr·steps intervention 2차검증 · 1B·CNN β-
 
 ## 3. Yonghee 결정 대기
 
-- **push**: 로컬 커밋 다수 — push 여부/시점.
-- **R4 Tier B 진입**(1.1 seed0 보고 후).
-- E5 N=10 3-seed 여부(1.4).
+- **push**: 로컬 커밋 다수 — push 여부/시점(07-22: Yonghee가 직접 push 예정).
+- **R4 Tier B 진입**(1.1 seed0 보고 완료 — overview §3.2.7; 승인 대기).
