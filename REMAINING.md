@@ -14,23 +14,38 @@
   meta-llama gated 재취득 불가(유효 토큰 무) → 해시 교차검증된 공개 미러로 캐시 재구성 —
   검증 체인·근거는 `$BATCH/PROVENANCE.md`.
 
-### 1.0 컨테이너 교체 (Yonghee 07-21: Tier A 완주 후 1회 교체) — 교체 후 재개 절차
+### 1.0 다음 세션 재개 절차 (컨테이너 재생성 07-22 02:2x; **새 컨테이너도 48h 제약**)
 
-07-21 16:58 드레인 적용: 현행 큐 잔여 β 줄 `#SWAPHOLD` → 새 디스패치 없음(드라이버는 전 셀
-종료 시 `MULTI-DRIVER DONE` 후 자연 종료). β a0.1_frzero·a0.01_noisy = Yonghee 결정으로
-17:10 kill·**다음 세션 이관**(postswap 큐 활성 등재; 이번 세션 완주 대상 = Tier A noisy +
-β a0.1_frrand 뿐). **교체 후 재개 3단계**:
+직전 컨테이너 마감 상태: Tier A 4/4 완주·커밋(4c40e30) + β 2셀(a0.1 noisy·frrand) 완주,
+시스템 전체 유휴로 교체 = 진행분 손실 0. gnoise는 **신정의(GN_ABS 공통고정σ, γ*=5)로 재실험
+확정** — 구정의(γ1.0 상대) rundir 7개 폐기, `gsm50k5_gnoise_oracle_excl_seed0`만 보존
+(oracle은 오염클라 전원배제라 γ·모드 무관 = 신무대 oracle로 재사용).
 
-1. ~~frrand 확인~~ **확정 완료**: a0.1_frrand done[ok] 17:33 — `#IFKILLED` 주석 그대로 둠.
-   Tier A noisy도 완주·커밋됨(4c40e30, 01:31 MULTI-DRIVER DONE). 교체 시점(07-22 02:20)
-   시스템 전체 유휴 = 진행분 손실 0(abs-probe 3개는 판정 후 의도적 중단).
-2. venv 확인: `$BATCH/venv/bin/python -c "import torch;print(torch.cuda.is_available())"`
-   (깨졌으면 `$BATCH/tools/` 재구축 스크립트 + PROVENANCE.md).
-3. `bash $BATCH/tools/launch_driver.sh` — QUEUE는 이미 `queue_postswap.txt`로 전환됨
-   (순서: **P5 8런**[noisy→clean→frzero→gnoise] → β0.3 잔여 16셀[이관 2 포함]).
-   구 큐 `queue_2026-07-20.txt`는 소진·역사 기록 — **재사용 금지**(완료 줄 미주석→재실행 사고).
+**재개(컨테이너 생성 직후 즉시 — 48h 예산이 빠듯함):**
 
-### 1.1 R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (**실행 중** 2026-07-20 23:29~, 4-GPU)
+1. venv 확인: `$BATCH/venv/bin/python -c "import torch;print(torch.cuda.is_available())"`
+   (깨졌으면 `$BATCH/tools/` 재구축 스크립트 + PROVENANCE.md; BATCH=…/flirds_batch).
+2. `bash $BATCH/tools/launch_driver.sh` → `tail -f $BATCH/runlogs/_driver.log`로 4-GPU
+   디스패치 확인. QUEUE = `queue_postswap.txt`(완비): **gn_full(신정의 gnoise, ~29h 최장
+   셀) → P5-soft 6런(p5s_*; online=pweight, t2=T2_CSIGN=0) → β0.3 16셀**(이관 2 포함,
+   3B silo5 4셀 맨 뒤). 구 큐 `queue_2026-07-20.txt` 재사용 금지(완료 줄 미주석).
+3. **gn_full 체크포인트(의무)**: 시작 ~5h 시점 observer 영속 → vanilla@γ5 EM을 밴드
+   **0.29~0.34**(oracle 0.3735 − 3~8pt)와 대조. 이탈 시 셀 킬 → GN_GAMMA 조정(미달↑/붕괴↓)
+   → gn_full만 재기동(뒤 큐는 계속 돎).
+
+**48h 검산(07-22 02시 산정)**: gn_full ~29 + P5-soft ~51(online 9.9 + t2 41: pw 가중이
+소스별로 달라 dedupe 불가 전제) + β0.3 ~83(device100 10×4.2 + poison 2×4.5 + 3B 4×8)
+= **~163 GPU-h → 4-GPU wall ~43–45h = 48h 내 가능(마진 3–5h)**. 전제 = 즉시 기동·무사고.
+**spill 규칙**: 초과 위험 시 **3B silo5 4셀(~32 GPU-h, 큐 맨 뒤)을 다음 컨테이너로 이월**
+(캠페인상 독립; 자르면 wall ~35h로 여유). gn_full 재도스 발생 시(+5h) 3B 이월을 조기 결정.
+
+**실험 완료 후 후처리(순서대로)**: ①P5-soft 완료 시 `make_analysis` → P1 vs P5s EM 표
+(vanilla/oracle 앵커) + RUN_P5.md §4 HP 대조(LLM 몫: HP-3·5·6 재판정, hard-측 HP-1·2·4는
+N/A) → rundir+분석 커밋 ②gn_full 완료 시 H-10 재판정(신무대) ③β 완주 시 rundir 커밋 +
+overview §3.4 phase2 ShapleyFL 행 갱신 ④push는 Yonghee 결정 대기.
+
+### 1.1 R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (**완주 07-22 01:31, 커밋 4c40e30**;
+gnoise만 구정의 폐기→§1.0 신정의 재실험)
 
 4셀 = {clean, noisy(answer-swap@0.7), gnoise(γ=1.0), frzero} × seed0 — observer+통제+
 flirds P1-T1+T2, 심판 = GSM8K test 1,119 exact-match. 스펙·예측(H-8~11) =
