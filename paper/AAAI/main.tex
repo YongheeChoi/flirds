@@ -39,7 +39,7 @@
 \usepackage{amsthm}
 \theoremstyle{definition} % upright body: our propositions are prose-heavy
 \newtheorem{proposition}{Proposition}
-\newtheorem{remark}{Remark}
+\newtheorem*{remark}{Remark} % 한글판 "비고"와 같이 무번호
 
 % Notation macros (keep in sync with paper-ko.md).
 \newcommand{\lval}{\ell_{\mathrm{val}}} % mean loss on the server-held validation set
@@ -608,8 +608,9 @@ the formal treatment of coordinate dependence is in Appendix~A.10).
 
 % (부록 A--F: 학회 규정에 따라 본문 뒤 technical appendix 또는 별도 제출 — paper-ko.md 부록 참조)
 
-% References (bib 파일: ../references.bib; \bibliographystyle은 aaai2027.sty가 내부 설정)
-\bibliography{../references}
+% References (bib 파일: 같은 폴더 references.bib — Overleaf는 프로젝트 루트 밖(../)을
+% 읽지 못하므로 main.tex 옆에 둔다; \bibliographystyle은 aaai2027.sty가 내부 설정)
+\bibliography{references}
 
 % Check whether the conference requires a reproducibility checklist to be included in the paper.
 % If so, you can uncomment the following line and ajust the path to include it.
