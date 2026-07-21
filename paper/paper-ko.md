@@ -133,179 +133,107 @@ in-run 정의를 근사 없이 라운드당 $2^{|P_r|}$ 전수 열거로 계산�
 
 ## 2. 관련 연구
 
-**연합학습에서의 Shapley 기반 기여도 평가.** 연합 Shapley 값의 계보는 FedSV에서 시작한다.
-FedSV는 클라이언트 기여도를 라운드 단위의 Shapley 값으로 분해할 수 있음을 보이고, 그 값을
-클라이언트 순열을 무작위로 뽑아 한계 기여를 반복 평가하는 permutation Monte Carlo 표본
-추출로 추정한다. GTG-Shapley는 같은 값을 더 빠르게 얻기 위해, 저장된 클라이언트
-업데이트로 부분집합의 모델을 재구성(sub-model reconstruction)한 뒤 유도-절단(guided
-truncation) Monte Carlo를 적용한다. ComFedSV는 부분 참여 때문에 관측되지 않는 조합이 생기는
-문제를 utility 행렬의 low-rank 완성으로 보완하며 exact 공정성 대신 $\epsilon$-완화 공정성을
-보장하고, ShapleyFL은 라운드별 대체(surrogate) Shapley 값(스스로 multi-round joint
-Shapley가 아님을 명시한다)을 min–max 정규화와 라운드 간 지수이동평균(EMA)으로 가공해
-강건한 재가중에 사용하며, 이후의 FedIF·FedTSV·ShapFed·S-FedAvg 계열은 기여도 신호를 집계
-가중치로 소비하는 강건-집계 방법으로 이동하면서 Shapley 공리를 명시적으로 포기하거나(FedIF)
-정확도 검증을 생략한다. 이 계보에서 두 가지를 관찰한다. 첫째, **같은 이름 아래 서로 다른
-값이 추정되고 있다**: 부분집합 재정규화 게임, 완성-보간된 손실 행렬, 검증 업데이트와의
-기하적 정렬, 정규화-가공된 surrogate는 전부 다른 utility이고, 이 차이는 실측된다(§4 명제 4;
-예컨대 재정규화 게임은 zero-update 무임승차자에게 양의 값을 지급한다). 둘째, **검증은
-대부분 간접적이다**: 이 계열은 모두 소형 CNN 규모에서 검증되었고 타당성은 주로 다운스트림
-결과(강건성·수렴·탐지)로 확인되었으며, 추정값 자체를 exact 참값 대비로 잰 경우도 있으나
-소형 스케일에 국한된다: SPACE는 $2^n$번의 재학습으로 얻은 Shapley 참값과의 Pearson 상관을
-$N \le 10$의 CNN 분류 무대에서 보고하고(분류 전용 프로토타입 평가라 생성 태스크로는
-이식되지 않는다), ShapFed는 소규모 synthetic 추종, DU-Shapley는 스칼라-utility 세팅의 점근
-보장에 그치며, oracle 부재를 명시한 경우도 있다(FedTSV). Data Banzhaf는 학습의 확률성 아래에서
-semivalue가 얼마나 안정적인가라는, 본 논문의 안정성 분석과 맞닿은 문제의식을 제공한다.
+**연합학습에서의 Shapley 기반 기여도 평가.** 연합 Shapley 값의 계보는 클라이언트 기여도를
+라운드 단위의 Shapley 값으로 분해하고 permutation Monte Carlo 표본 추출로 추정하는
+FedSV에서 시작한다. 이후의 흐름은 지수적 비용을 낮추는 근사의 연쇄다. GTG-Shapley는
+부분집합 모델 재구성과 유도-절단 Monte Carlo를, ComFedSV는 부분 참여로 관측되지 않는
+조합을 메우는 utility 행렬의 low-rank 완성을, ShapleyFL은 정규화와 이동평균으로 가공한
+라운드별 대체(surrogate) 값을 쓰고, 이후의 FedIF·FedTSV·ShapFed·S-FedAvg 계열은 Shapley
+공리를 완화하거나 포기한 채 기여도 신호를 강건-집계 가중치로 소비하는 쪽으로 이동한다. 이
+계보에서 두 가지를 관찰한다. 첫째, 비용을 낮추는 과정에서 같은 이름 아래 서로 다른
+값(재정규화 게임, 보간된 손실 행렬, 가공된 surrogate)이 추정되고 있고, 이 차이는
+실측된다(§4 명제 4). 둘째, 검증은 대부분 소형 CNN 규모의 다운스트림 결과로 간접
+확인되었고, 추정값을 exact 참값 대비로 직접 잰 경우도 SPACE의 $2^n$-재학습 비교($N \le
+10$의 CNN 분류)처럼 소형 스케일에 국한된다. 이 두 관찰이 §1에서 말한 두 한계다.
 
 **In-run(단일 런) 기여도 평가.** In-Run Data Shapley(IRDS)는 재학습 없이, 실제로 일어난
-(중앙집중) 학습 런 하나에서 per-sample Shapley 값을 계산한다. SGD step마다 손실을 1차/2차
-Taylor 전개하면 Shapley 값이 닫힌 식으로 나온다는 관찰이 핵심이며, 본 논문이 연합학습으로
-확장하는 것이 바로 이 계산이다. 같은 저자들의 Data Value Embedding은 이 궤적-특이적
-(trajectory-specific) 관점을 더 확장한다.
-연합학습에서 서버가 정당하게 볼 수 있는 가장 세밀한 산출물이 클라이언트 업데이트라는 점을
-생각하면, 클라이언트 단위는 추가적인 클라이언트-측 계산이나 통신 없이 in-run 기여도 평가를
-배포할 수 있는 granularity다. 연합학습 쪽에서 이 방향의 인접 선행으로, FedIF는 1차 TracIn
-방식의 점수를 클라이언트 업데이트에
-적용해 강건 집계에 사용하고(CNN 전용; Hessian 계산을 연합에서 비현실적이라 보고 기각하는데,
-우리는 forward HVP로 이 전제가 성립하지 않음을 보인다), FedTSV는 궤적-정렬 utility로 적응적
-가중을 수행한다. 둘 다 1차 전용이라 곡률(상호작용) 항이 없다.
-Flirds가 점유하는 교차점, 곧 클라이언트-수준 Shapley·true Hessian의 HVP 상호작용 항을
-포함한 1차+2차 폐형·추가 통신 없음·LLM(LoRA) 규모·exact 참값 대비 정확도 검증의 조합은 이들
-어느 것과도 겹치지 않는다. 약 40개의 기여도 평가·귀속 방법을 정리한 우리의 taxonomy(부록
-D)에서, "연합 × LLM × 클라이언트-수준 기여도 평가" 조합은 기여도 평가가 아닌 인접
-문제들(데이터 품질 관리 FedDQC, 데이터 선별 FedHDS, 모델 마켓)만이 차지하고 있다.
+중앙집중 학습 런 하나에서 per-sample Shapley 값을 닫힌 식으로 계산한다. 본 논문이
+연합학습으로 확장하는 것이 바로 이 계산이며, §3에서 따로 설명한다. 연합 쪽 인접 선행인
+FedIF와 FedTSV는 1차 정보만으로 클라이언트 업데이트를 점수화해 곡률(상호작용) 항이 없고,
+특히 FedIF는 Hessian 계산이 연합에서 비현실적이라는 전제로 1차에 머무는데 우리는 forward
+HVP로 이 전제가 성립하지 않음을 보인다. 클라이언트-수준 Shapley를 1차+2차 폐형으로, 추가
+통신 없이, LLM 규모에서, exact 참값 대비로 검증하는 조합은 이들 어느 것과도 겹치지 않는다.
+약 40개 방법의 상세 비교는 부록 D의 taxonomy로 미루며, 그 안에서 "연합 × LLM ×
+클라이언트-수준 기여도 평가" 조합을 채우는 선행 기여도 평가 방법은 없다.
 
 **중앙집중 LLM-규모 attribution.** LLM 규모까지 확장된 데이터 귀속·선별(influence function
-계열, LESS, MATES, DsDm 등)은 전부 중앙집중 세팅이며, 전부 샘플 단위다. 모든 학습 예제의
+계열, LESS, MATES, DsDm 등)은 전부 중앙집중 세팅이고 전부 샘플 단위다. 모든 학습 예제의
 gradient를 만져야 하므로 비용이 학습 데이터 수에 비례하고, 연합학습에서는 그 계산이
-클라이언트–서버 신뢰 경계의 반대편에 있다. 검증 기준도 규모를 따라 물러난다: exact
-참값(LOO-재학습) 대비 채점은 소규모에서만 이루어지고, LLM 규모에서는 LDS·PBRF·선별 성능 같은
-근사 대리 지표가 그 자리를 대신한다. 그 위에서조차 influence function이 깊은 모델에서
-참값과 어긋나고, LoRA에서는 Hessian 역행렬 항이 사실상 gradient 내적으로 퇴화한다는 보고가
-이어져 왔다. Flirds는 이 병목 경로를 아예 사용하지 않는다: forward HVP $H\Delta w$만
-계산하며 $H^{-1}$은 등장하지 않고, 평가 단위가 클라이언트라 비용이 학습 데이터 수와도
-무관하다. 검증셋을 기준점으로 삼아 LoRA gradient 유사도로 학습 데이터를 선별하는 LESS는
-중앙집중 세팅에서 우리와 가장 가까운 유사물이며, in-run 값 특유의 궤적-특이성은 물려받아
-명시한다(§4 명제 5). MATES와 DsDm은 1B 규모에서 influence 기반 데이터 선별이 유의미하다는
-정황을 제공한다.
+클라이언트–서버 신뢰 경계의 반대편에 있다. 검증 기준도 규모를 따라 물러나서, LLM
+규모에서는 exact 참값(LOO-재학습) 대비 채점 대신 근사 대리 지표가 그 자리를 대신한다.
+Flirds는 이 병목 경로를 쓰지 않는다. 평가 단위가 클라이언트라 비용이 학습 데이터 수와
+무관하고, forward HVP만 계산하므로 influence function의 $H^{-1}$은 등장하지 않는다.
 
-**탐지·강건 집계 baseline.** 기여도 점수는 오염 클라이언트 탐지기와 자주 혼동되지만 두
-역할은 다르다. 탐지·강건 집계 계열은 이진 제거(keep/discard)나 신뢰 가중치를 산출할 뿐 부호
-있는 연속 기여도와 분배 공리를 다루지 않으며, 공통적으로 non-IID에서 "오염되어 다른"
-클라이언트와 "유익하게 다른" 클라이언트의 분리에 취약하다(예: FLDetector의 보장은 IID
-가정에서만 성립한다). 즉 기여도 평가의 대체재가 아니다. 우리는 두 축을 분리하고, 전용
-탐지기(FLDetector, FLTrust, STD-DAGMM, FedDQC)와는 각 탐지기가 설계된 위협에서 비교한다.
-결과를 미리 말하면, cross-device 규모의 noisy 탐지에서는 데이터-품질 전용 탐지기가 모든
-loss 기반 기여도 점수를, exact in-run Shapley 자신까지 포함해 전부 앞선다(§5.6). 우리는
-이것을 추정기의 결함이 아니라 검증-손실 게임 자체의 내재적 성질로 읽는다: 기여도 평가는
-탐지기가 아니며, 그 역도 성립한다.
+**탐지·강건 집계 baseline.** 탐지·강건 집계 계열은 이진 제거(keep/discard)나 신뢰 가중치를
+산출할 뿐 부호 있는 연속 기여도와 분배 공리를 다루지 않으므로, 기여도 평가의 대체재가
+아니다. 우리는 두 축을 분리하고, 전용 탐지기(FLDetector, FLTrust, STD-DAGMM, FedDQC)와는
+각 탐지기가 설계된 위협에서 비교한다(§5.6).
 
 **변동성과 참값에 대한 비판.** 근사 FL-Shapley 보상이 집계 프로토콜의 사소한 변화에도 크게
-출렁인다는 보고가 있고, FL-Shapley가 희귀 분포를 가진 클라이언트("maverick")를
-과소평가한다는 지적도 있다. 두 비판 모두 우리의 설계 선택을 동기화한다: 실현된 궤적을
-고정하고 그 위에서 exact in-run Shapley를 계산하며, 이질성에 따른 효과는 고쳤다고 주장하는 대신 측정해서
-특성화한다. 특히 변동성 보고는 exact 참조 기준이 없어 "방법의 분산"과 "세팅에 신호가
-없음"을 구분할 수 없었는데, 우리는 exact in-run Shapley의 seed 간 자기-일치도로 이 둘을 분해한다(§5.4).
+출렁인다는 보고, 희귀 분포 클라이언트("maverick")가 과소평가된다는 지적, 학습의 확률성
+아래에서 semivalue가 얼마나 안정적인가를 물은 Data Banzhaf는 모두 참값 없는 근사를 얼마나
+믿을 수 있는가라는 문제의식을 공유한다. 우리의 설계는 이에 답한다. 실현된 궤적을 고정하고
+그 위에서 exact in-run Shapley를 계산하며, 이질성의 효과는 고쳤다고 주장하는 대신 측정해서
+특성화하고, 변동성은 exact 참값의 seed 간 자기-일치도로 "방법의 분산"과 "세팅에 신호
+없음"으로 분해한다(§5.4).
 
 ---
 
 ## 3. 배경: Data Shapley, In-Run Data Shapley, 그리고 연합 확장
 
-**연합 파인튜닝 세팅.** $N$개의 클라이언트가 각각 크기 $n_k$의 instruction-tuning 데이터셋
-$D_1, \dots, D_N$을 보유한다. 학습은 FedAvg로 진행된다: 라운드 $r = 1, \dots, R$마다 참여
-클라이언트 집합(cohort) $P_r \subseteq [N]$이 서버가 배포한 현재 모델 $w^r$에서 각자 로컬
-학습을 수행하고, 모델 업데이트 $\Delta w_k^r$을 서버로 보낸다. LLM 실험에서 이 업데이트는
-LoRA adapter 파라미터이고, 로컬 학습은 momentum 없는 plain SGD다(이 선택의 이유는 §5.1). 서버는
-받은 업데이트를 데이터 크기에 비례하는 **고정 참여자 가중치**로 집계한다:
+**세팅과 표기.** $N$개의 클라이언트가 각각 크기 $n_k$의 instruction-tuning 데이터셋을
+보유하고, 학습은 FedAvg로 진행된다: 라운드 $r$마다 참여 집합 $P_r \subseteq [N]$이 현재
+모델 $w^r$에서 로컬 학습을 수행해 업데이트 $\Delta w_k^r$을 보내고, 서버는 데이터 크기에
+비례하는 **고정 참여자 가중치** $p_k^r = n_k / \sum_{j \in P_r} n_j$로
+집계한다($w^{r+1} = w^r + \sum_{k \in P_r} p_k^r \Delta w_k^r$). 서버는 검증셋을 보유하며
+임의의 모델 $w$에 대해 검증 손실 $\ell(w)$을 평가할 수 있다. 기여도 값은 클수록 유익하도록
+제시한다(검증 손실을 낮추는 클라이언트가 양수).
 
-$$w^{r+1} = w^r + \sum_{k \in P_r} p_k^r\, \Delta w_k^r,
-\qquad p_k^r = \frac{n_k}{\sum_{j \in P_r} n_j}.$$
+### 3.1 Data Shapley와 exact retrain Shapley
 
-서버는 검증셋 $\mathcal{D}_{\mathrm{val}}$을 보유하며, 임의의 모델 $w$에 대해 검증 손실
-$\ell(w) := \ell(w; \mathcal{D}_{\mathrm{val}})$을 평가할 수 있다.
+Data Shapley는 데이터 제공자 부분집합에 utility(그 부분집합만으로 학습한 모델의 검증 성능)를
+부여해 협력 게임으로 보고, 기여도를 그 게임의 **Shapley 값**으로 정의한다. Shapley 값이
+표준인 이유는 공정한 분배의 네 공리(efficiency, symmetry, null player, linearity)를 동시에
+만족하는 유일한 분배이기 때문이다(Shapley 1953; Ghorbani & Zou 2019). 이를 연합학습에
+그대로 옮기면, 부분집합 $S$에 대해 "$S$의 클라이언트만 참여시켜 같은 프로토콜로 처음부터
+다시 학습했을 때의 최종 검증 손실"을 utility로 정의하고 그 Shapley 값 $\phi^{\mathrm{re}}$를
+$2^N$개 부분집합 전부의 재학습으로 근사 없이 계산한다. 이를 **exact retrain Shapley**라
+부른다. 커뮤니티가 참값(ground truth)으로 삼는 방법-중립적 기준이며, 묻는 질문은
+counterfactual("만약 $S$만 참여했다면 어땠을까")이다.
 
-**부호 규약.** 논문 전체에서 기여도 값은 클수록 유익하도록 제시한다: 검증 손실을 낮추는
-업데이트를 보낸 클라이언트가 양의 값을 받는다. (구현 내부의 부호 규약은 이것의 음수이며,
-표시 단계에서 일괄 반전한다.)
+### 3.2 In-Run Data Shapley
 
-### 3.1 Data Shapley와 exact retrain Shapley: 고전적 참값 (ground truth)
+**In-Run Data Shapley(IRDS)**(Wang et al., 2024)는 중앙집중 학습에서 $2^N$번의 재학습이라는
+대가를 없애는 관점 전환이다: 가상의 재학습들 대신 실제로 일어난 학습 런 하나를 고정하고, 매
+gradient step을 "참여 샘플 부분집합 $S$의 gradient만 반영했을 때 검증 손실이 얼마나
+줄었는가"를 utility로 하는 작은 협력 게임으로 보아, step별 Shapley 값을 학습 전체에
+합산한다. 재학습 없이 per-sample 값이 나오고, Shapley 공리는 step 게임 수준에서 그대로
+계승된다. 특히 efficiency는 telescoping에 의해 "값의 합 = 그 런이 실제 달성한 검증 손실
+감소"가 된다. retrain 정의와는 묻는 질문(counterfactual 대 realized 귀속), 계산($2^N$번의
+재학습 대 관측 하나), 그리고 값이 궤적-특이적(trajectory-specific)이라는 점이 다르다. 두
+정의는 상보적이며, 실증적 관계는 §5.3에서 측정한다.
 
-데이터 기여도 평가의 고전적 틀은 Data Shapley다: 데이터 제공자들의 부분집합에
-utility(예컨대 그 부분집합만으로 학습한 모델의 최종 검증 성능)를 부여해 하나의 협력 게임으로 보고,
-각 제공자의 기여도를 그 게임의 **Shapley 값**으로 정의한다. Shapley 값이 표준이 된 이유는
-공정한 분배를 특징짓는 네 가지 공리, 곧 **efficiency**(전체 성과를 남김없이 분배한다),
-**symmetry**(똑같이 기여하면 똑같이 받는다), **null player**(아무것도 기여하지 않은
-참여자는 0을 받는다), **linearity**(게임의 합에 대해 값도 합산된다)를 동시에 만족하는
-유일한 분배이기 때문이다. 공리의 형식적 서술과 유일성 증명은 고전 문헌과 Data Shapley
-논문으로 미룬다(Shapley 1953; Ghorbani & Zou 2019).
+### 3.3 우리의 확장: 연합 게임과 exact in-run Shapley
 
-이 정의를 연합학습에 그대로 옮기면 다음이 된다. 클라이언트 부분집합 $S \subseteq [N]$에 대해
-utility $\mathcal{U}^{\mathrm{re}}(S)$를 "$S$의 클라이언트만 참여시켜, 같은 프로토콜과 같은
-seed로 FL 학습 전체를 처음부터 다시 수행했을 때의 최종 검증 손실"로 정의하고, 그 Shapley 값
-$\phi^{\mathrm{re}}$를 모든 $2^N$개의 부분집합을 실제로 재학습하여 근사 없이 계산한다. 본
-논문에서는 이를 **exact retrain Shapley**라 부르며, 커뮤니티가 참값(ground truth)으로 삼는
-방법-중립적 기준이다. 이 값이 답하는 질문은 counterfactual이다: "만약 $S$만 참여했다면
-결과가 어땠을까."
-
-### 3.2 In-Run Data Shapley: 정의, 성질, retrain과의 차이
-
-retrain 정의의 대가는 명백하다: $2^N$번의 재학습이다. **In-Run Data Shapley(IRDS)**(Wang et
-al., 2024)는 중앙집중 학습에 대해 이 대가를 없애는 관점의 전환을 제안했다. 가상의 재학습들을
-상상하는 대신, **실제로 일어난 학습 런 하나를 고정하고 그 안에서 기여를 분해**하는 것이다.
-구체적으로 IRDS는 학습의 매 gradient step을 하나의 작은 협력 게임으로 본다: 그 step에 참여한
-샘플들의 부분집합 $S$에 대해 "S의 gradient만 반영했을 때 검증 손실이 얼마나 줄었는가"를
-utility로 정의하고, 이 step 게임의 Shapley 값을 계산해 학습 전체에 걸쳐 합산한다. 재학습은
-전혀 필요 없고, 값은 per-sample로 나온다.
-
-이렇게 정의된 값은 Shapley 공리를 step 게임 수준에서 그대로 물려받는다. 특히
-**efficiency**는 다음 형태가 된다: step별 전원-참여 utility를 학습 전체에 걸쳐 더하면 중간
-항이 연쇄적으로 소거되어(telescoping), 값들의 합이 그 런이 실제로 달성한 검증 손실 감소와
-정확히 일치한다. 즉 실현된 진전이 남김없이 분배된다. **null player**는 "기여가 없는
-참여자는 정확히 0을 받는다"가 되고, symmetry와 linearity도 마찬가지로 성립한다. 각 성질의
-형식적 서술과 증명은 IRDS 논문을 참조하라.
-
-retrain Shapley와의 차이는 세 겹이다. 첫째, **묻는 질문이 다르다**. retrain은
-counterfactual, 곧 "S만 있었다면 어땠을까"라는 존재하지 않는 여러 가상의 학습에 대한
-질문이고, in-run은 realized, 곧 "실제 이 학습의 진전을 누가 만들었는가"라는 실현된 단일
-궤적의 귀속이다. 둘째, **계산이 다르다**. retrain은 $2^N$번의 학습을 요구하지만, in-run은 이미
-일어난 학습 하나의 관측만 요구한다. 셋째, in-run 값은 **궤적-특이적(trajectory-specific)**
-이다: 같은 데이터라도 seed가 다른 런에서는 다른 값이 나올 수 있다. 이 성질이 언제 문제가
-되고 언제 오히려 올바른 성질인지는 §5.4에서 실측으로 다룬다. 두 정의는 상보적이며 어느 쪽도
-틀린 정의가 아니다. 둘의 실증적 관계는 §5.3에서 측정한다.
-
-### 3.3 왜 연합학습에 in-run 관점이 필요한가, 그리고 우리의 확장
-
-연합학습은 retrain 정의가 가장 감당 불가능한 환경이다. 클라이언트 조합별 재학습은 비용
-문제이기 이전에 운영 문제다: 클라이언트들은 간헐적으로만 참여하고, 학습은 한 번으로 끝나지
-않고 계속 이어지며, 수십~수백의 기관·기기를 $2^N$번 다시 소집하는 것은 비현실적이다. 반면
-FL의 라운드 구조는 IRDS의 step 구조와 자연스럽게 대응한다: 서버는 매 라운드 참여
-클라이언트들의 업데이트를 받아 집계하므로, IRDS의 "step의 per-sample gradient" 자리에
-"라운드의 per-client 업데이트"를 넣으면 게임이 그대로 이식된다. 게다가 그 재료는 서버가
-표준 프로토콜에서 어차피 수신하는 것들뿐이다.
-
-우리의 확장은 다음과 같다. 실현된 궤적 $\{w^r, \{\Delta w_k^r\}_{k \in P_r}\}_{r=1}^R$을
-고정한다. 이후 모든 방법이 이 동일한 학습 로그를 공유한다는 뜻에서 이를 **고정 궤적(fixed
-trajectory)** 이라 부른다. 각 라운드에 coalition utility를 정의한다:
+연합학습은 retrain 정의가 가장 감당 불가능한 환경이지만(§1), FL의 라운드 구조는 IRDS의
+step 구조와 정확히 대응한다: "step의 per-sample gradient" 자리에 "라운드의 per-client
+업데이트"를 넣으면 게임이 그대로 이식되고, 재료는 서버가 표준 프로토콜에서 어차피 수신하는
+것뿐이다. 실현된 궤적 $\{w^r, \{\Delta w_k^r\}_{k \in P_r}\}_{r=1}^R$을 고정하고(**고정
+궤적**; 이후 모든 방법이 이 동일한 학습 로그를 공유한다), 라운드별 coalition utility를
 
 $$u_r(S) \;=\; \ell(w^r) \;-\; \ell\Big(w^r + \textstyle\sum_{k \in S} p_k^r\, \Delta w_k^r\Big),
-\qquad S \subseteq P_r,$$
+\qquad S \subseteq P_r$$
 
-즉 라운드 $r$에서 부분집합 $S$의 업데이트만을, 런 자신이 사용한 것과 **같은 고정 가중치**
-$p_k^r$로 반영했을 때 검증 손실이 얼마나 줄었는가이다. 가중치를 $S$ 안에서 재정규화하지
-않는다는 점이 중요한데, §4에서 이 선택이 취향의 문제가 아니라 폐형 계산과 null-player 성질을
-위해 강제되는 것임을 보인다. **exact in-run Shapley** $\phi^{\mathrm{in}}$은 각 라운드
-게임의 Shapley 값을, 라운드당 $2^{|P_r|}$개의 부분집합을 전부 열거하여 근사 없이 계산한 뒤
-라운드에 걸쳐 합한 값이다:
+로 정의한다. 가중치는 런 자신이 사용한 **고정 가중치** $p_k^r$ 그대로이며 $S$ 안에서
+재정규화하지 않는다. §4에서 이 선택이 취향이 아니라 폐형 계산과 null-player 성질을 위해
+강제됨을 보인다. **exact in-run Shapley** $\phi^{\mathrm{in}}$은 각 라운드 게임의 Shapley
+값을 라운드당 $2^{|P_r|}$개 부분집합 전수 열거로 근사 없이 계산해 합한 값이다:
+$\phi_k^{\mathrm{in}} = \sum_{r: k \in P_r} \mathrm{Sh}_k(u_r)$. IRDS의 efficiency가 그대로
+성립한다: $\sum_r u_r(P_r) = \ell(w^0) - \ell(w^R)$ (telescoping).
 
-$$\phi_k^{\mathrm{in}} \;=\; \sum_{r\,:\,k \in P_r} \mathrm{Sh}_k\big(u_r\big).$$
-
-IRDS의 efficiency가 그대로 성립한다: $\sum_r u_r(P_r) = \ell(w^0) - \ell(w^R)$
-(telescoping). 즉 exact in-run Shapley는 런이 실제 달성한 개선을 클라이언트들에게 남김없이
-분배한다.
-
-**용어 규약.** 이하 참값(oracle)은 이 둘뿐이다: 방금 정의한 **exact in-run
-Shapley**(라운드별 전수 열거로 계산)와 §3.1의 **exact retrain Shapley**(부분집합별 전수
-재학습으로 계산). 혼동을 피하기 위해 두 참값은 항상 전체 이름으로 지칭하며, 수식어 없는
-"exact"는 쓰지 않는다.
+**용어 규약.** 이하 참값(oracle)은 방금 정의한 **exact in-run Shapley**(라운드별 전수
+열거)와 §3.1의 **exact retrain Shapley**(부분집합별 전수 재학습) 둘뿐이며, 항상 전체 이름으로
+지칭하고 수식어 없는 "exact"는 쓰지 않는다.
 
 ---
 
@@ -314,11 +242,10 @@ Shapley**(라운드별 전수 열거로 계산)와 §3.1의 **exact retrain Shap
 ### 4.1 추정기
 
 exact in-run Shapley는 근사가 없지만 라운드당 $2^{|P_r|}$번의 검증 평가를 요구한다. Flirds의
-출발점은, 라운드 utility를 현재 모델 $w^r$ 주변에서 2차까지 Taylor 전개하면 그 근사 게임의
-Shapley 값이 닫힌 식으로 나온다는 것이다(명제 2). 검증 손실의 gradient를
-$g_r := \nabla \ell(w^r)$, Hessian을 $H_r := \nabla^2 \ell(w^r)$ (Gauss–Newton 근사가 아닌
-true Hessian), 클라이언트 $k$의 업데이트를 $\delta_k := \Delta w_k^r$, 그 라운드의 가중 집계
-업데이트를 $\Delta W_r := \sum_{j \in P_r} p_j^r\, \delta_j$라 하면:
+출발점은, 라운드 utility를 $w^r$ 주변에서 2차까지 Taylor 전개하면 그 근사 게임의 Shapley
+값이 닫힌 식으로 나온다는 것이다(명제 2). $g_r := \nabla \ell(w^r)$,
+$H_r := \nabla^2 \ell(w^r)$(Gauss–Newton 근사가 아닌 true Hessian),
+$\delta_k := \Delta w_k^r$, $\Delta W_r := \sum_{j \in P_r} p_j^r\, \delta_j$라 하면:
 
 $$\hat\phi_k^{(r)}
 \;=\;
@@ -327,158 +254,119 @@ $$\hat\phi_k^{(r)}
 \qquad
 \hat\phi_k = \sum_{r\,:\,k\in P_r} \hat\phi_k^{(r)}.$$
 
-첫 항은 클라이언트 $k$의 업데이트가 검증 손실의 하강 방향과 얼마나 정렬되어 있는지를 잰다.
-둘째 항은 **클라이언트-상호작용 항**으로, $k$의 업데이트가 다른 참여자들의 집계 업데이트와
-검증 손실의 곡률을 통해 어떻게 합성되는지를 잰다. 계산 비용을 보면, 한 라운드에 필요한 것은
-Hessian-vector product(HVP) $H_r \Delta W_r$ **한 번**과 참여자당 내적
-$\langle \delta_k, H_r \Delta W_r \rangle$ 하나가 전부다. Hessian을 명시적으로 만들거나
-역행렬하지 않고 forward-mode 자동미분으로 HVP만 계산하므로, 비용은 부분집합 수
-$2^{|P_r|}$과 무관하고 LoRA 차원에서 매우 저렴하다. 2차 항을 제거한 변형을 **Flirds
-(first-order)** 라 부르며, 상호작용 항이 언제 제값을 하는지 확인하는 ablation으로 사용한다.
+첫 항은 $k$의 업데이트가 검증 손실의 하강 방향과 정렬된 정도를, 둘째 항인
+**클라이언트-상호작용 항**은 $k$의 업데이트가 다른 참여자들의 집계 업데이트와 곡률을 통해
+합성되는 정도를 잰다. 라운드당 필요한 것은 forward-mode 자동미분으로 계산하는
+Hessian-vector product(HVP) $H_r \Delta W_r$ **한 번**과 참여자당 내적 하나가 전부다.
+Hessian을 만들거나 역행렬하지 않으며, 비용은 부분집합 수 $2^{|P_r|}$과 무관하다. 2차 항을
+제거한 변형을 **Flirds (first-order)** 라 부르고 상호작용 항의 ablation으로 사용한다.
 
 ### 4.2 이론: 추정기와 exact in-run Shapley는 같은 게임을 계산한다
 
-이 절의 결과가 말하는 것은 한 문장으로 요약된다: Flirds는 어떤 임의의 점수가 아니라 §3.2에서
-정의한 바로 그 게임의 Shapley 값을 계산하며, exact in-run Shapley와의 유일한 차이는 Taylor
-절단뿐이다. 형식적 서술과 증명, 정확한 가정, 반례는 부록 A에 있다; 아래는 논문-수준 요약이다.
+이 절의 요지는 한 문장이다: Flirds는 임의의 점수가 아니라 §3.3에서 정의한 바로 그 게임의
+Shapley 값을 계산하며, exact in-run Shapley와의 유일한 차이는 Taylor 절단뿐이다. 형식적
+서술·증명·가정·반례·수치 검증은 부록 A에 있다.
 
-**명제 1 (라운드별 분해).** 고정 궤적 위에서 전체 게임 $\sum_r u_r$은 라운드별로 null-player
-성질을 만족하며, 그 Shapley 값은 라운드별 $|P_r|$-인 게임의 Shapley 값의 합으로 정확히
-분해된다. 이 분해는 수치적으로도 확인된다: 라운드별 열거의 합과 직접 $2^N$ 열거가 GPT-2
-스모크 테스트에서 $3.9\times 10^{-7}$(fp32 forward 계산의 노이즈 바닥)까지 일치하고,
-결정론적으로 통제한 별도의 CNN 측정에서는 $3\times 10^{-16}$까지 일치한다.
+**명제 1 (라운드별 분해).** 고정 궤적 위에서 전체 게임 $\sum_r u_r$의 Shapley 값은 라운드별
+$|P_r|$-인 게임의 Shapley 값의 합으로 정확히 분해된다(비참여 라운드의 기여 0은 정의가
+아니라 정리다). 라운드별 열거의 합과 직접 $2^N$ 열거는 GPT-2 스모크에서
+$3.9\times 10^{-7}$(fp32 forward 노이즈 바닥), 결정론 통제 CNN 측정에서
+$3\times 10^{-16}$까지 일치한다(부록 A.11).
 
 **명제 2 (폐형; free-rider 0; efficiency).** 라운드 utility의 2차 Taylor 근사 게임에 대해
-exact Shapley 값은 §4.1의 식과 정확히 같다. 이 폐형은 우리 구현과 $5.8\times 10^{-12}$,
-근사 게임을 $2^N$ 전수 열거로 푼 Shapley 값과 $7.6\times 10^{-12}$까지 일치한다. 두 가지
-따름 성질이 있다: $\delta_k = 0$인 클라이언트(zero-update free-rider)는 식에서 대수적으로
-정확히 $\hat\phi_k = 0$을 받고, 값들의 합은 근사 게임의 전체 utility와 일치한다(efficiency).
+exact Shapley 값은 §4.1의 식과 정확히 같다(구현·$2^N$ 전수 열거와의 일치 $10^{-12}$ 수준;
+부록 A.11). 따름 성질 둘: $\delta_k = 0$인 zero-update free-rider는 대수적으로 **정확히**
+$\hat\phi_k = 0$을 받고, 값의 합은 근사 게임의 전체 utility와 일치한다(efficiency).
 
-**명제 3 (Taylor 잔차).** 근사의 대가는 절단 오차다. 라운드당 utility 오차는 2차 근사에서
-$|u_r(S) - \hat u_r(S)| \le \frac{M_3}{6}\|\Delta_S\|^3$, 1차 근사에서
-$\frac{M_2}{2}\|\Delta_S\|^2$로 bound되며(둘 다 utility 수준; Shapley-수준 bound는 부록 A의
-상수로 전파), 라운드 수 $R$에 선형으로 누적된다. 상수 $M_2, M_3$는 supremum bound이지 추정할
-수 있는 양이 아니므로, 우리는 잔차를 실측으로도 잰다. 1B 실측($N{=}5$, $R{=}10$,
-3-seed)에서 라운드별 utility 잔차는 1차 근사가 평균 $\sim 2\times 10^{-6}$, 2차 근사가 평균
-$\sim 6\times 10^{-7}$로, coalition utility 자체($10^{-3}$–$10^{-2}$)보다 $10^3$–$10^4$배
-작고, 2차가 1차보다 약 4배 작다. 1차 잔차의 log–log 스케일링 기울기는 $1.8$–$2.7$로 이론
-예측(2차, 즉 기울기 2)과 정합하며, 2차 잔차는 fp32 수치 해상도 수준($\sim 10^{-7}$)까지
-내려가 있어 기울기의 하한만 관측된다.
+**명제 3 (Taylor 잔차).** 근사의 대가는 절단 오차다. 라운드당 utility 오차는 2차에서
+$\frac{M_3}{6}\|\Delta_S\|^3$, 1차에서 $\frac{M_2}{2}\|\Delta_S\|^2$로 bound되고 라운드 수에
+선형 누적된다. 상수 $M_2, M_3$는 추정 가능한 양이 아니므로 잔차를 실측으로 보완한다: 1B
+실측($N{=}5$, 3-seed)에서 라운드별 잔차는 1차 평균 $\sim 2\times 10^{-6}$, 2차 평균
+$\sim 6\times 10^{-7}$로 coalition utility($10^{-3}$–$10^{-2}$)보다 $10^3$–$10^4$배 작고,
+1차 잔차의 스케일링 기울기 $1.8$–$2.7$은 이론 예측(기울기 2)과 정합한다(2차 잔차는 fp32
+해상도 수준이라 하한만 관측).
 
-**명제 4 (고정 가중 대 부분집합 재정규화).** exact in-run Shapley와 Flirds는 런이 실제 사용한
-고정 가중치 $p_k^r$을 그대로 쓴다. 반면 여러 baseline(GTG-Shapley, FedSV)은 부분집합 $S$를
-평가할 때 가중치를 $S$ 안에서 재정규화한다($p_k^S = n_k / \sum_{j\in S} n_j$). 이것은 사소한
-구현 차이가 아니라 **다른 협력 게임**이다(우리 재구현에서 이 재정규화 의미론을 확인했다; 부록
-E). 클라이언트 크기가 모두 같고, 전원이 참여하며, utility가 1차 수준이라면 두 게임의 순위는
-일치한다. 그러나 그 조건을 벗어나면 증명 가능하게 갈라진다: 클라이언트 크기 비 $3{:}1$, 부분
-참여, 그리고 2차 곡률 증폭(마지막은 등크기·전원참여에서도) 각각에서 순위가 뒤집히는 명시적
-반례를 부록 A에 제시한다. 고정 가중치는 폐형 계산을 위해서도 강제된다: 재정규화된 utility는
-라운드를 HVP 한 번으로 접는 합-형태 구조를 깬다.
+**명제 4 (고정 가중 대 부분집합 재정규화, 그리고 비교의 공정성).** 여러
+baseline(GTG-Shapley, FedSV)은 부분집합 평가 시 가중치를 $S$ 안에서 재정규화하는데, 이는
+구현 차이가 아니라 **다른 협력 게임**이다. 등크기·전원 참여·1차 수준에서는 두 게임의 순위가
+일치하지만, 클라이언트 크기 비 $3{:}1$, 부분 참여, 2차 곡률 증폭 각각에서 순위가 뒤집히는
+명시적 반례가 있다(부록 A). 고정 가중치는 폐형 계산을 위해서도 강제된다: 재정규화는 라운드를
+HVP 한 번으로 접는 합-형태 구조를 깬다. 따라서 **서로 다른 게임을 겨냥하는 방법들을 한
+게임의 exact Shapley 값으로 채점하는 것은 공정하지 않다**. 우리는 그런 방법들을 exact
+in-run Shapley 대비 정확도 비교(§5.2)에서 제외하고, 게임-무관 척도(removal·탐지)와
+방법-중립 참값(exact retrain Shapley), 비용에서 비교한다. 게임 정의들 자체를 exact retrain
+Shapley로 심판하는 game-adjudication 실험은 future work다(§6).
 
-**Remark (비교의 공정성).** 명제 4가 함의하는 바는, 클라이언트 크기가 다르거나 참여가
-부분적이거나 2차 곡률이 무시할 수 없는 곳에서는, **서로 다른 게임을 겨냥하는 방법들을 한
-게임의 exact Shapley 값으로 채점하는 것이 공정하지 않다**는 것이다. 그래서 우리는 다른 게임을
-목표로 하는 방법들을 exact in-run Shapley 대비 정확도 비교(§5.2)에서 제외하고, 게임 정의와
-무관한 척도(removal, 탐지)와 방법-중립 참값(exact retrain Shapley), 그리고 비용에서
-비교한다. 각 baseline을 그 자신의 게임 대비로 채점하고 exact retrain Shapley로 게임 정의들을
-심판하는 game-adjudication 실험은 future work로 남긴다(§6). 이 게임 차이는
-장식이 아니라 실측되는 차이다: 부분집합-재정규화 의미론에서는 zero-update free-rider가 양의
-raw 값을 받고($N{=}5$ cross-silo 셀, 3-seed 평균 GTG $0.0037$, FedSV $0.0047$), 고정 가중
-게임에서는 정확히 $0$을 받는다(명제 2). 우리는 이를 추정 오차가 아니라 게임 수준의 공리적
-성질로 다룬다.
-
-**명제 5 (적용 범위: 경로 의존, granularity, LoRA 좌표).** exact in-run Shapley는 실현된
-궤적의 함수다. 따라서 궤적-특이적(trajectory-specific) 값에 대한 공리화가 아직 미해결이라는
-IRDS의 한계를 물려받으며, 이를 명시한다. exact retrain Shapley와의 관계는 이론이 아니라 실증
-질문이고, 그렇게 보고한다(§5.3). 게임은 FL 프로토콜이 서버에 노출하는 단위인
-**클라이언트** granularity에서 정의된다. per-sample에서 per-client로의 형식적 연결은 mean-loss·단일
-로컬 스텝의 경우에 성립하며(부록 A), token-mean을 쓰는 LLM 손실에는 그대로 이전되지 않는다는
-caveat을 함께 명시한다. 모든 서술은 LoRA-factor 좌표에서 성립하고, full-weight 공간에 대한
-주장은 하지 않는다.
+**명제 5 (적용 범위).** exact in-run Shapley는 실현된 궤적의 함수이므로, 궤적-특이적 값의
+공리화 미해결이라는 IRDS의 한계를 물려받는다(exact retrain Shapley와의 관계는 이론이 아니라
+실증 질문이고 §5.3에서 그렇게 보고한다). 게임은 FL 프로토콜이 서버에 노출하는 단위인
+**클라이언트** granularity에서 정의되며, per-sample에서 per-client로의 형식적 연결은
+mean-loss·단일 로컬 스텝에서 성립하고(부록 A) token-mean LLM 손실에는 그대로 이전되지
+않는다. 모든 서술은 LoRA-factor 좌표에서 성립하고 full-weight 공간에 대한 주장은 하지
+않는다.
 
 ---
 
 ## 5. 실험
 
-이 절은 실험 세팅과 측정 프로토콜(§5.1)을 먼저 소개한 뒤, 결과를 신호 구조가 단순한
-세팅부터 복잡한 세팅의 순서로 제시한다: 모든 방법이 맞히는 포화 세팅에서 시작해, 방법이
-갈리는 부분 참여 세팅(§5.2), exact retrain Shapley 및 게임-무관 척도(removal·dose)와의
-비교(§5.3), 기여 신호가 존재하는 조건의 지도(§5.4), 비용(§5.5) 순이다. 마지막 §5.6은 질문
-위계의 두 번째 층위인 "측정한 기여도가 실제로 가치 있는 값인가"를 검증하며, 기여도를 배포
-루프에서 직접 소비하는 부호-게이팅 개입을 메인 실험으로 삼는다.
+이 절은 세팅과 측정 프로토콜(§5.1)을 소개한 뒤, 추정 정확도를 신호 구조가 단순한 세팅부터
+복잡한 세팅 순으로 제시하고(§5.2), 참값(exact retrain Shapley)·게임-무관 척도 대비
+검증(§5.3), 기여 신호가 존재하는 조건의 지도(§5.4), 비용(§5.5)을 거쳐, 질문 위계의 두 번째
+층위인 "측정한 기여도가 실제로 가치 있는 값인가"를 부호-게이팅을 메인 실험으로
+검증한다(§5.6).
 
 ### 5.1 실험 세팅과 측정 프로토콜
 
-**실험 세팅.** 세팅은 클라이언트 간 실제 차이(신호)를 담고 있는 정도가 서로 다르도록
-골랐다. §5.4에서 보듯 세팅의 구조가 기여도 평가의 측정 가능성 자체를 결정하기 때문이다. $N{=}5$
-세팅이 둘 있는데 하나는 IID이고 하나는 non-IID이므로 혼동하지 않도록 주의한다.
+**세팅.** 클라이언트 간 실제 차이(신호)를 담는 정도가 서로 다르도록 골랐다. §5.4에서 보듯
+세팅의 구조가 측정 가능성 자체를 결정하기 때문이다. $N{=}5$ 세팅이 IID와 non-IID로 둘
+있음에 주의한다.
 
-- **N=5 full-participation IID**: 클라이언트 5개가 매 라운드 전원 참여한다($R{=}30$).
-  데이터는 IID로 나눈 Alpaca-GPT4이고, 레시피는 OpenFedLLM의 표준 설정을 그대로 따른다.
-  exact retrain Shapley를 3-seed로 계산할 수 있는 유일한 세팅이며, 본 논문의 모든 retrain
-  참값은 여기서 측정했다.
-- **N=20 partial-participation IID**: 클라이언트 20개 중 매 라운드 2개가 참여한다($R{=}200$;
-  같은 IID 레시피). 문헌의 표준적인 연합 instruction-tuning 구성이다.
-- **N=50 partial participation**: 클라이언트 50개 중 매 라운드 5개가 참여한다. 더 낮은 참여
-  비율에서의 추정 정확도를 확인하기 위한 세팅이다.
-- **N=5 cross-silo non-IID**: 클라이언트마다 서로 다른 도메인 하나씩(의료 플래시카드, 법률
-  QA, 금융 QA, 수리 추론, 일반 지시문)을 배정한 5-도메인 구성이다($R{=}10$; 검증셋은 서버
-  측에서 도메인-층화로 구성). 오염 위협 실험은 여기와 cross-device에서 수행하며, 위협은
-  noisy(answer-swap)와 free-rider(zero-update/random-update)를 주입한다.
-- **N=100 cross-device**: 클라이언트 100개를 Dirichlet 분포($\alpha \in \{0, 0.01, 0.1,
-  0.5, 5\}$)로 나누고 매 라운드 10개가 참여한다($\alpha{=}0$은 클라이언트당 단일 도메인이
-  되는 one-hot 극단 파티션).
-- **CNN 대조 실험**: MNIST/CIFAR-10에서 $N{=}10$ 전원 참여로 구성한다. 두 exact 참값을 모두
-  $2^{10}$ 전수 계산으로 값싸게 얻을 수 있어 통계적 검정력이 높은 검증 트랙이며, 개입 실험을
-  위한 $N{=}100$ 구성도 둔다.
+- **N=5 full-participation IID**($R{=}30$): IID로 나눈 Alpaca-GPT4, OpenFedLLM 표준 레시피.
+  exact retrain Shapley를 3-seed로 계산할 수 있는 유일한 세팅이며 모든 retrain 참값은
+  여기서 측정했다.
+- **N=20 partial-participation IID**(2/round, $R{=}200$): 문헌 표준의 연합
+  instruction-tuning 구성.
+- **N=50 partial participation**(5/round): 더 낮은 참여 비율의 probe.
+- **N=5 cross-silo non-IID**($R{=}10$): 클라이언트마다 다른 도메인 하나씩(의료·법률·금융·수리
+  추론·일반 지시문); 검증셋은 서버 측 도메인-층화. 오염 위협(noisy answer-swap,
+  zero/random-update free-rider)은 여기와 cross-device에서 주입한다.
+- **N=100 cross-device**(10/round): Dirichlet $\alpha \in \{0, 0.01, 0.1, 0.5, 5\}$
+  파티션($\alpha{=}0$은 클라이언트당 단일 도메인 one-hot 극단).
+- **CNN 대조 실험**: MNIST/CIFAR-10, $N{=}10$ 전원 참여. 두 exact 참값을 모두 $2^{10}$ 전수
+  계산으로 값싸게 얻는 고검정력 검증 트랙이며, 개입 실험용 $N{=}100$ 구성도 둔다.
 
 LLM 모델은 Llama-3.2-1B/3B-Instruct와 Llama-2-7B이고, LoRA는 $r{=}16$, $\alpha{=}32$다.
 
-**측정 규율.** 한 셀 안에서 모든 방법은 **같은 고정 궤적**, 곧 동일한 학습 로그와
-동일한 손실 함수 구현을 소비한다. utility 평가·HVP·내적은 전부 fp32로 계산한다.
-로컬 학습은 momentum 없는 plain SGD다. Taylor 전개와 클라이언트 업데이트의 대응이
-정의되는 레짐이기 때문이다(§6). attention 구현은 eager 모드를 쓴다. forward-mode
-HVP가 fused attention 커널과 호환되지 않기 때문이다. seed는 헤드라인 트랙 전부에서 셀당
-3개다(LLM standard/full-participation, 1B robustness, CNN; 참여·학습률·noise probe 포함). 예외는 LLM $N{=}10$ 전수-열거 셀 하나로, $2^{10}$ 전수 열거가 seed당 32.7
-GPU-시간이라 seed 0 단독이며 인용하는 곳마다 그렇게 명시한다. 셀마다
-run 디렉토리에 설정, git SHA, 실행 환경, 클라이언트별 $\phi$, 방법별 wall-clock을 영속화한다.
-이 규율이 부과하는 제약(상수 학습률, 서버 momentum 없음, LoRA-좌표 평가)은 §6에서 정직하게
-범위를 정한다.
+**측정 규율.** 한 셀 안의 모든 방법은 같은 고정 궤적과 같은 손실 구현을 소비한다. utility
+평가·HVP·내적은 전부 fp32, 로컬 학습은 momentum 없는 plain SGD(Taylor 전개와 업데이트의
+대응이 정의되는 레짐; §6), attention은 eager 모드다(forward HVP가 fused 커널과 비호환).
+seed는 헤드라인 트랙 전부 셀당 3개이며, 유일한 예외인 LLM $N{=}10$ 전수-열거 셀($2^{10}$
+열거가 seed당 32.7 GPU-시간)은 seed 0 단독임을 인용처마다 명시한다. 셀마다 설정·git
+SHA·환경·클라이언트별 $\phi$·방법별 wall-clock을 run 디렉토리로 영속화한다.
 
-**평가 지표.** 추정값의 정확도는 순위와 값의 두 수준에서 채점한다: 순위는 rank
-correlation(Spearman $\rho$, Kendall $\tau$)으로, 값 수준은 Pearson 상관으로 잰다. 값
-수준이 따로 필요한 이유는 근사-가법적인 세팅에서 순위 지표가 포화해 버리기 때문이다(§5.2).
-보조적으로 거리 지표 3종(cosine, Euclidean, 최대 절대 차)을 함께 보고한다. 모든 헤드라인
-수치는 seed 3개의 평균이며 ±는 seed 간 모표준편차다(순위 상관이 $1.000$으로 포화하는 셀은
-분산이 0이라 구간 표기가 퇴화하므로 따로 CI를 표기하지 않는다). 아울러
-모든 정확도 표에는 exact in-run Shapley **자신**의 cross-seed 자기-일치도(**target
-self-stability**)를 병기한다. 정확도 수치는 기준값이 안정적인 만큼만 의미가 있기 때문이며,
-이 안정성이 무엇을 말해 주는지는 §5.4에서 다룬다.
+**평가 지표.** 순위는 rank correlation(Spearman $\rho$, Kendall $\tau$), 값 수준은 Pearson
+상관으로 잰다. 값 수준이 따로 필요한 이유는 근사-가법 세팅에서 순위 지표가 포화하기
+때문이다(§5.2). 헤드라인 수치는 3-seed 평균이고 ±는 seed 간 모표준편차다. 모든 정확도 표에
+exact in-run Shapley **자신**의 cross-seed 자기-일치도(**target self-stability**)를
+병기한다. 정확도는 기준값이 안정적인 만큼만 의미가 있기 때문이다(§5.4).
 
-**비교 방법 (기여도 평가 9종 + 탐지 4종).** 기여도 평가 baseline은 Flirds, Flirds
-(first-order), GTG-Shapley, FedSV, ComFedSV, ShapleyFL, individual-utility baseline(각
-클라이언트 단독의 utility $u(\{k\})$를 그대로 점수로 쓰는 방법으로, 게임이 얼마나 가법적인지
-보는 additivity probe를 겸한다), Fed-LOO(전체 연합에서 한 클라이언트를 빼는 leave-one-out;
-구현은 brute force 대비 최대 차이 $0.0$으로 검증), FedIF다. 탐지 baseline은 FLDetector, FLTrust, STD-DAGMM,
-FedDQC이고, 각자의 홈 위협에서 비교한다. ShapleyFL은 원 논문 값 $\beta{=}0.3$을 쓴다(1B/3B
-standard·CNN 트랙). 7B 셀은 $\beta$ 통일 재실행이 완료되지 않아 ShapleyFL 값을 보고하지
-않고(각주로 사유만 명시), robustness 셀의 ShapleyFL은 $\beta{=}0.5$로 실행된 값임을 해당
-위치에 명시한다. **비교의 공정성 원칙**(§4 명제 4의 Remark):
-다른 게임을 목표로 하는 방법들(GTG-Shapley, FedSV, ShapleyFL, ComFedSV, FedIF)은 exact
-in-run Shapley 대비 정확도 표(§5.2)에서 제외한다. 우리 게임의 exact Shapley 값을 잣대로 삼는 것이
-그들에게 공정하지 않기 때문이다. 이들과는 게임 정의와 무관한 척도(removal §5.3, 탐지 §5.6),
-방법-중립 참값인 exact retrain Shapley 대비(§5.3), 그리고 비용(§5.5)에서 비교한다.
+**비교 방법 (기여도 평가 9종 + 탐지 4종).** 기여도 평가는 Flirds, Flirds (first-order),
+GTG-Shapley, FedSV, ComFedSV, ShapleyFL, individual-utility baseline(단독 utility
+$u(\{k\})$를 그대로 점수로 쓰며 가법성 진단 probe를 겸한다), Fed-LOO(brute force 대비 최대
+차이 $0.0$으로 검증), FedIF다. 탐지는 FLDetector, FLTrust, STD-DAGMM, FedDQC이고 각자의 홈
+위협에서 비교한다. ShapleyFL은 원 논문 값 $\beta{=}0.3$을 쓰되, 7B 셀은 $\beta$ 통일
+재실행이 완료되지 않아 값을 보고하지 않고 robustness 셀은 $\beta{=}0.5$임을 해당 위치에
+명시한다. 비교의 공정성 원칙(명제 4)에 따라, 다른 게임을 목표로 하는 방법들(GTG-Shapley,
+FedSV, ShapleyFL, ComFedSV, FedIF)은 §5.2의 exact in-run Shapley 대비 정확도 표에서
+제외하고 게임-무관 척도(removal §5.3, 탐지 §5.6)·exact retrain Shapley 대비(§5.3)·
+비용(§5.5)에서 비교한다.
 
 ### 5.2 Exact in-run Shapley 대비 추정 정확도
 
 **표 1**은 LLM 트랙에서 기여도 추정값이 exact in-run Shapley의 순위를 얼마나 재현하는지를
-보여준다(Spearman $\rho$, 3-seed 평균; 1에 가까울수록 좋다). 왼쪽 열은 $N{=}5$ 전원 참여
-세팅, 오른쪽 열은 $N{=}20$ 부분 참여 세팅이다. 비교군은 **같은 게임을 겨냥하는 방법들**로
-한정한다: 다른 게임을 목표로 하는 방법들(GTG-Shapley, FedSV, ShapleyFL, ComFedSV, FedIF)을
-이 게임의 exact Shapley 값으로 채점하는 것은 공정하지 않기 때문이며(§4 명제 4의 Remark), 이들과의
-비교는 게임-무관 척도(§5.3, §5.6)와 비용(§5.5)에서 수행한다. *셀 값의 범위는 1B/3B/7B 세
-스케일에 걸친 것이며, 스케일별 전체 표는 부록 C에 있다. Fed-LOO는 1B 경량 재실행(3-seed)에서
-측정했다.*
+보여준다(Spearman $\rho$, 3-seed 평균). 비교군은 같은 게임을 겨냥하는 방법들로
+한정한다(명제 4). *셀 값의 범위는 1B/3B/7B 세 스케일에 걸친 것이며 스케일별 전체 표는 부록
+C에 있다. Fed-LOO는 1B 경량 재실행(3-seed)이다.*
 
 | 방법 | N=5 full (IID) | N=20 (2/round, IID) |
 |---|---|---|
@@ -487,170 +375,126 @@ in-run Shapley 대비 정확도 표(§5.2)에서 제외한다. 우리 게임의 
 | Individual utility | $1.000$ (전 스케일) | $0.999$–$1.000$ |
 | Fed-LOO | $1.000$ (1B, 3-seed) | $1.000$ (1B, 3-seed) |
 
-**포화 세팅, 그리고 포화가 헤드라인이 아니라 발견인 이유.** $N{=}5$ 전원 참여의 오염 없는
-세팅에서는 Flirds, Flirds (first-order), individual-utility baseline이 모두 exact in-run
-Shapley를 정확히 재현한다($\rho = 1.000$; 표 1 왼쪽). 우리는 이것을 추정기 품질의 증거로만
-읽지 않는다. 이 세팅에서는 기저 게임 자체가 근사-가법적이어서(실측된 비가법성이 utility의
-$0.9\%$ 이하다; 전 스케일) 어떤 합리적인 지표를 쓰든 순위가 같아진다. 상호작용을 전혀 보지
-않는 individual-utility baseline이 exact in-run Shapley와 일치한다는 사실이 바로 이 가법성의 가장 깨끗한
-진단이다(additivity probe). 그래서 포화 세팅의 결과는 방법의 성질이 아니라 세팅의 성질로
-보고한다. 참고로 $N{=}5$에서는 우연히 완벽한 순위가 나올 확률이 seed당 $1/120$이나 되므로,
-통계적 무게는 $N{=}10$이 진다: CNN 트랙($2^{10}$ 전수, 3-seed)과 함께 LLM에서도 $N{=}10$
-전원 참여의 exact in-run Shapley를 $2^{10}$ 전수 열거로 계산했고(seed 0), 거기서도 같은-게임
-방법 전원(Flirds, first-order, individual utility, Fed-LOO)이 순위 상관 $1.000$을 유지했다.
-우연히 나올 확률이 $1/3{,}628{,}800$인 순위다.
+**포화 세팅: 헤드라인이 아니라 발견.** $N{=}5$ 전원 참여의 오염 없는 세팅에서는 세 방법
+모두 exact in-run Shapley를 정확히 재현한다($\rho = 1.000$; 표 1 왼쪽). 우리는 이를 추정기
+품질의 증거로만 읽지 않는다. 이 세팅은 게임 자체가 근사-가법적이어서(실측 비가법성이
+utility의 $0.9\%$ 이하; 전 스케일) 어떤 합리적 지표든 순위가 같아지며, 상호작용을 전혀 보지
+않는 individual utility의 일치가 바로 이 가법성의 가장 깨끗한 진단이다(additivity probe).
+그래서 포화 결과는 방법의 성질이 아니라 세팅의 성질로 보고한다. 통계적 무게는 $N{=}10$이
+진다: CNN 트랙($2^{10}$ 전수, 3-seed)과 LLM $N{=}10$ 전수 열거(seed 0)에서도 같은-게임 방법
+전원이 순위 상관 $1.000$을 유지했다. 우연히 나올 확률이 $1/3{,}628{,}800$인 순위다.
 
-**부분 참여, 그리고 2차 항이 제값을 하는 곳.** 부분 참여 세팅에서도 Flirds는 정확도를
-유지한다: N=20(라운드당 2 참여)에서 $0.999$–$1.000$(표 1 오른쪽), 부분 참여를 더 벼리게 만든
-N=50(라운드당 5 참여) probe에서도 Flirds와 Flirds (first-order) 모두 $+1.00$이다(3-seed).
-기제를 들여다보면 중요한 것은 참여
-비율이 아니라 **클라이언트당 참여 횟수**다. 참여 횟수가 매우 적은 CNN 트랙에서는 1차 근사
-자체가 흔들리고(label-flip 시나리오, 라운드당 20% 참여에서 Flirds (first-order) $+0.305$),
-2차 항을 가진 Flirds는 버틴다($+0.891$; 둘 다 폭 4종 × 3-seed 풀 평균). 상호작용 항이 제값을
-하는 지점이다.
+**부분 참여, 그리고 2차 항이 제값을 하는 곳.** 부분 참여에서도 Flirds는 정확도를 유지한다:
+N=20에서 $0.999$–$1.000$(표 1 오른쪽), 더 벼린 N=50 probe에서도 $+1.00$(3-seed). 중요한
+것은 참여 비율이 아니라 **클라이언트당 참여 횟수**다. 참여 횟수가 매우 적은 CNN 트랙에서는
+1차 근사가 흔들리고(label-flip, 라운드당 20% 참여에서 Flirds (first-order) $+0.305$), 2차
+항을 가진 Flirds는 버틴다($+0.891$; 폭 4종 × 3-seed 풀 평균). 상호작용 항이 제값을 하는
+지점이다.
 
-**오염·non-IID 무대에서도 정확도는 유지된다.** 표 1의 IID 무대만이 아니다. 오염 클라이언트를
-주입한 무대 전부에서 Flirds는 exact in-run Shapley를 그대로 재현한다: $N{=}5$ cross-silo
-non-IID의 noisy·free-rider(zero/random) 셀 전부에서 순위 상관 $1.000$(1B 3-seed; 3B seed 0),
-오염축과 분포축을 분리한 매트릭스의 8개 셀(IID/non-IID $\times$
-clean/noisy/fr-random/fr-zero) 전부에서 $1.000$(3-seed), $N{=}100$ cross-device의 위협
-셀에서도 $\ge 0.9999$다. 즉 **추정 정확도는 배경 분포와 오염 유무에 무관하다**. 무대에 따라
-갈리는 것은 추정이 아니라 §5.4에서 다루는 신호의 존재 여부다.
+**오염·non-IID 무대에서도 유지된다.** 오염 클라이언트를 주입한 무대 전부에서 Flirds는 exact
+in-run Shapley를 그대로 재현한다: cross-silo non-IID의 noisy·free-rider 셀 전부와
+오염축×분포축 매트릭스 8셀에서 $1.000$(3-seed), cross-device 위협 셀에서 $\ge 0.9999$. 즉
+**추정 정확도는 배경 분포와 오염 유무에 무관하다**. 무대에 따라 갈리는 것은 추정이 아니라
+신호의 존재 여부다(§5.4).
 
-**CNN 대조 실험 ($N{=}10$, 두 exact 참값 모두 $2^{10}$ 전수 계산).** 10개 시나리오 × 3 seed를
-합쳐 보면 exact in-run Shapley 대비 Flirds의 순위 상관은 $0.919\pm.134$이고, Flirds
-(first-order) $0.832$, individual utility $0.860$이다. seed를 바꿔가며 잰 안정성에서도
-구조가 보인다: exact in-run Shapley 자신의 cross-seed 자기-일치도가 $0.518$인데 Flirds는
-$0.547$이다. 즉 **추정기는 기준값의 내재적 불안정성 위에 자기 분산을 더하지 않는다.** 반면
-Monte Carlo 표본 추출에 의존하는 방법들은 (자기 점수의 seed 간 재현성이라는, 게임과 무관한
-잣대에서) 표본 분산이 더해져 $0.124$–$0.311$로 떨어진다.
+**CNN 대조 실험 ($N{=}10$, 3-seed).** 10개 시나리오를 합치면 exact in-run Shapley 대비
+Flirds의 순위 상관은 $0.919\pm.134$, Flirds (first-order) $0.832$, individual utility
+$0.860$이다. 안정성 구조도 보인다: exact in-run Shapley 자신의 cross-seed 자기-일치도가
+$0.518$인데 Flirds는 $0.547$이다. 즉 **추정기는 기준값의 내재적 불안정성 위에 자기 분산을
+더하지 않는다.** 반면 Monte Carlo 표본 추출 방법들은 표본 분산이 더해져 자기-재현성이
+$0.124$–$0.311$로 떨어진다.
 
-**값 수준의 정확도, 그리고 공리 준수.** 순위 상관이 전부가 아니다. 정산처럼 기여도의 **값**
-자체를 소비하는 용도가 있기 때문이다. 표준 세팅들에서 Flirds는 exact in-run Shapley와 값
-수준에서도 일치한다: Pearson $1.000$, cosine 거리 $10^{-4}$ 미만(1B/3B/7B 전반). efficiency
-항등식 $\sum_k \hat\phi_k = \ell(w^0) - \ell(w^R)$도 게이트 테스트에서 오차 0으로 성립한다.
-마지막으로, 공리
-준수는 상관계수가 가르지 못하는 것을 가른다: 아무 업데이트도 보내지 않은 free-rider에게
-Flirds는 **정확히** $\hat\phi = 0$을 준다(명제 2; exact in-run Shapley와 individual-utility
-baseline도 마찬가지다). 반면 부분집합-재정규화 게임을 쓰는 방법들은 같은 free-rider에게 양의
-raw 값을 지급한다(3-seed 평균 GTG $0.0037$, FedSV $0.0047$). §4 명제 4가 말한 게임 차이의
-실무적 얼굴이다.
+**값 수준의 정확도, 그리고 공리 준수.** 정산처럼 기여도의 **값** 자체를 소비하는 용도를
+위해 값 수준도 잰다: 표준 세팅에서 Pearson $1.000$, cosine 거리 $10^{-4}$ 미만(1B/3B/7B
+전반)이고, efficiency 항등식 $\sum_k \hat\phi_k = \ell(w^0) - \ell(w^R)$은 게이트 테스트에서
+오차 0이다. 공리 준수는 상관계수가 가르지 못하는 것을 가른다: 아무 업데이트도 보내지 않은
+free-rider에게 Flirds는 **정확히** $\hat\phi = 0$을 주지만(명제 2), 부분집합-재정규화 게임
+방법들은 양의 raw 값을 지급한다(3-seed 평균 GTG $0.0037$, FedSV $0.0047$). 명제 4가 말한
+게임 차이의 실무적 얼굴이다.
 
 ### 5.3 참값 대비 검증: exact retrain Shapley, 그리고 게임-무관 척도
 
-exact retrain Shapley를 3-seed로 계산할 수 있었던 1B N=5 full-participation 세팅에서, 두
-exact 참값의 순위 상관은 $\rho(\phi^{\mathrm{re}}, \phi^{\mathrm{in}}) = 0.933 \pm 0.047$이다
-(seed별 $0.90/1.00/0.90$). 이 seed별 값은 2026-07 재실행에서 그대로 재현되어 정본화되었고,
-같은 재실행에서 Flirds는 세 seed 모두 exact in-run Shapley와 $\rho = +1.00$이었다.
-exact in-run Shapley를 정확히 맞추는 방법들은
-retrain 참값에 대해서도 같은 $0.933$을 물려받고(천장 효과), FedSV는 $0.733$, FedIF는
-$0.133$에 그친다. 한편 CNN 트랙에서는 두 exact 참값이 **갈라진다**(10개 시나리오 집계에서
-모든 방법이 retrain 참값 대비 $0.45$ 이하). 이 발산의 1차 후보 원인은 retrain 참값
-**자신의 재학습 노이즈 바닥**이다: exact retrain Shapley의 cross-seed 자기-일치도를
-시나리오별로 재면 대부분의 셀에서 $-0.28$–$+0.68$에 머무는 반면, 두 참값이 모두
-자기-안정적인 유일한 셀(MNIST label-flip: retrain $+0.97$, in-run $+0.97$)에서는 두 참값이
-$0.96$으로 일치한다. 즉 참값끼리의 불일치는 대체로 retrain 순위가 seed조차 재현하지 못하는
-만큼이다. 다만 이것이 전부는 아니다: CIFAR-10 label-skew처럼 retrain 참값이 비교적
-자기-안정적($+0.68$)인데도 in-run 계열과 어긋나는 셀이 남아, 경로-의존·가중
-재정규화·counterfactual 궤적이라는 진짜 게임 차이도 후보로 남는다. 우리는 이를 얼버무리지
-않고 열린 특성화 질문으로 보고한다.
+exact retrain Shapley를 3-seed로 계산할 수 있었던 1B N=5 full-participation 세팅에서 두
+exact 참값의 순위 상관은 $\rho(\phi^{\mathrm{re}}, \phi^{\mathrm{in}}) = 0.933 \pm
+0.047$이다(seed별 $0.90/1.00/0.90$; 2026-07 재실행에서 재현·정본화). exact in-run Shapley를
+정확히 맞추는 방법들은 retrain 참값 대비로도 같은 $0.933$을 물려받고(천장 효과), FedSV는
+$0.733$, FedIF는 $0.133$에 그친다. 한편 CNN 트랙에서는 두 참값이 **갈라진다**(10개 시나리오
+집계에서 모든 방법이 retrain 대비 $0.45$ 이하). 1차 후보 원인은 retrain 참값 **자신의
+재학습 노이즈 바닥**이다: exact retrain Shapley의 cross-seed 자기-일치도는 대부분의 셀에서
+$-0.28$–$+0.68$에 머물고, 두 참값이 모두 자기-안정적인 유일한 셀(MNIST label-flip, 양쪽
+$+0.97$)에서는 둘이 $0.96$으로 일치한다. 다만 retrain이 비교적 자기-안정적($+0.68$)인데도
+어긋나는 셀(CIFAR-10 label-skew)이 남아, 경로-의존·가중 재정규화·counterfactual 궤적이라는
+진짜 게임 차이도 후보로 남는다. 열린 특성화 질문으로 보고한다.
 
-**정직한 범위 설정.** 위의 일치는 많은 게임 정의가 어차피 일치하는 레짐(근사-가법,
-등크기, 전원 참여)에서 얻은 것이다(명제 4). 따라서 이 수치는 계산 파이프라인 전체가 옳게
-작동함을 인증하는 것이지, 어느 게임 정의가 옳은 과녁인지를 인증하는 것이 아니다. 판별력 있는
-시험은 게임 정의들이 갈라지는 조건에서 이루어져야 한다: 클라이언트 크기가 다르고, non-IID이며,
-두 게임 정의를 모두 근사 없이 계산하고, exact retrain Shapley를 방법-중립 심판으로 세우는
-것이다. 이 게임-심판(game-adjudication) 실험은 future work로 남긴다(§6).
+**정직한 범위 설정.** 위의 일치는 많은 게임 정의가 어차피 일치하는 레짐(근사-가법, 등크기,
+전원 참여)에서 얻은 것이다(명제 4). 계산 파이프라인의 인증이지 게임 정의의 인증이 아니며,
+판별력 있는 시험(게임들이 갈라지는 조건에서 exact retrain Shapley를 방법-중립 심판으로
+세우는 game-adjudication)은 future work다(§6).
 
-**게임-무관 검증 ①: removal-curve (LLM).** 게임 정의에 전혀 의존하지 않는 세 번째 잣대로
-removal-curve를 측정했다. 각 방법이 매긴 기여도 순서대로 클라이언트를 하나씩 제거하고, 남은
-클라이언트만으로 FL 학습을 실제로 다시 수행하여 검증 손실을 잰다. 순위가 인과적으로 옳다면
-최저-기여 클라이언트부터 제거할 때(worst-first) 성능이 개선되고, 최고-기여부터 제거할
-때(best-first) 악화되어야 한다. N=5 cross-silo non-IID의 오염 세팅(3-seed)에서 Flirds의
-순위는 정확히 그렇게 행동했다: worst-first 제거는 검증 손실을 개선하고(noisy $+0.0076$,
-random-update free-rider $+0.0071$, zero-update free-rider $+0.0067$), best-first 제거는
-악화시킨다($-0.0084$/$-0.0015$/$-0.0016$).
-removal-curve는 정의상 제거 **순서**에만 의존한다. 같은-게임 방법 전원, 곧 Flirds·Flirds
-(first-order)·individual utility·Fed-LOO는 **9개 셀(3 위협 × 3 seed) 전부에서** exact
-in-run Shapley와 제거 순서가 완전히 일치해 곡선까지 동일했고, GTG-Shapley(8/9)·
-ShapleyFL(7/9)·FedSV(6/9)도 대부분 같은 곡선으로 수렴하며 이탈은 clean 클라이언트 간 중간
-순서 차이(곡선 차 $\le 0.002$) 수준이다. 즉 Flirds는 전수-열거·coalition 계열과 같은
-인과-removal 품질을 약 5배 낮은 비용으로(이 세팅 기준; §5.5) 제공한다. 유일한 질적 예외는
-FedIF였다: 순위 오류가 zero-update free-rider의 worst-first 곡선을 눈에 띄게 얕게 만든다.
+**게임-무관 검증 ①: removal-curve (LLM).** 각 방법의 기여도 순서대로 클라이언트를 하나씩
+제거하고 남은 클라이언트만으로 실제 재학습해 검증 손실을 잰다. 순위가 인과적으로 옳다면
+worst-first 제거는 성능을 개선하고 best-first 제거는 악화시켜야 한다. N=5 cross-silo 오염
+세팅(3-seed)에서 Flirds의 순위는 정확히 그렇게 행동한다: worst-first는 손실을
+개선하고(noisy $+0.0076$, random-update $+0.0071$, zero-update $+0.0067$), best-first는
+악화시킨다($-0.0084$/$-0.0015$/$-0.0016$). 같은-게임 방법 전원은 **9개 셀(3 위협 × 3 seed)
+전부에서** exact in-run Shapley와 제거 순서가 완전히 일치해 곡선까지 동일했고,
+GTG-Shapley(8/9)·ShapleyFL(7/9)·FedSV(6/9)도 대부분 같은 곡선으로 수렴한다(이탈은 clean
+클라이언트 간 중간 순서, 곡선 차 $\le 0.002$). 유일한 질적 예외는 FedIF로, 순위 오류가
+zero-update free-rider의 worst-first 곡선을 눈에 띄게 얕게 만든다.
 
-**게임-무관 검증 ②: CNN removal-curve와 accuracy 축.** 같은 실험을, 방법 간 순위가 실제로
-갈리는 CNN 스테이지(MNIST·CIFAR-10, 각 3 시나리오 × 3-seed)에서 반복하면 removal 척도가
-방법을 변별하기 시작하고, test 정확도라는 **accuracy 축**의 인과 검증이 가능해진다(LLM
-세팅의 removal 지표는 생성 모델이라 검증 손실뿐이다). 오염 시나리오에서 Flirds의
-worst-first와 best-first 곡선은 정확도에서 뚜렷이 분리된다: label-flip에서 MNIST
-$+0.0035$·CIFAR-10 $+0.045$, feature-noise에서 CIFAR-10 $+0.039$이며, 세 경우 모두 exact
-in-run Shapley의 분리 폭($+0.0034$/$+0.045$/$+0.039$)과 일치한다. 순위가 부정확한
-방법일수록 분리가 얕아지고(예: feature-noise에서 FedSV의 순위 상관은 $+0.13$까지 떨어진다),
-오염이 없는 IID 대조군에서는 두 데이터셋 모두 분리가 예상대로 사라진다($\approx 0$).
-흥미롭게도 LLM 세팅에서 유일하게 낙오했던 FedIF가 CNN에서는 가장 큰
-분리를 보였다. removal 척도 자체의 스테이지 의존성도 하나의 관찰 결과다.
+**게임-무관 검증 ②: CNN removal-curve와 accuracy 축.** 방법 간 순위가 실제로 갈리는 CNN
+스테이지에서 반복하면 removal이 방법을 변별하기 시작하고, test 정확도 축의 인과 검증이
+가능해진다(LLM은 생성 모델이라 검증 손실뿐). 오염 시나리오에서 Flirds의
+worst/best-first 분리는 뚜렷하고(label-flip MNIST $+0.0035$·CIFAR-10 $+0.045$,
+feature-noise CIFAR-10 $+0.039$) 세 경우 모두 exact in-run Shapley의 분리 폭과 일치한다.
+순위가 부정확할수록 분리가 얕아지고(feature-noise에서 FedSV는 $+0.13$), clean IID
+대조군에서는 분리가 예상대로 사라진다($\approx 0$). LLM에서 유일하게 낙오했던 FedIF가
+CNN에서 가장 큰 분리를 보인 것은 removal 척도 자체의 스테이지 의존성을 보여 주는 관찰이다.
 
-**게임-무관 검증 ③: dose–response.** 실험자가 직접 통제한 오염 강도는 게임과 무관한 또
-하나의 참조축이다. 오염의 비율과 크기를 바꿔 가며 Flirds의 오염-클라이언트 탐지 AUROC를
-재면(3-seed): noisy 오염은 비율 $0.25$ 이상에서 AUROC $1.00\pm.00$으로 올라서는 뚜렷한
-문턱을 보이고(비율 $0.1$ 이하에서는 $0.75$), free-rider는 업데이트 크기 배율
-$0.25$–$4.0$배 전 구간에서 $1.00\pm.00$으로 크기와 무관하게 잡힌다. 오염이 전혀 없는 대조 셀의 AUROC는 $0.83\pm.12$였는데, 이는 $N{=}5$의 거친
-AUROC에서 "무신호 기준선"이 0.5가 아님을 보여 주는 계측 참조점으로 함께 보고한다.
+**게임-무관 검증 ③: dose–response.** 실험자가 직접 통제한 오염 강도도 게임-무관 참조축이다.
+Flirds의 탐지 AUROC(3-seed)는 noisy에서 비율 $0.25$ 이상 $1.00\pm.00$으로 올라서는 문턱을
+보이고(비율 $0.1$ 이하 $0.75$), free-rider에서는 업데이트 크기 배율 $0.25$–$4.0$배 전 구간
+$1.00\pm.00$으로 크기와 무관하다. 오염 없는 대조 셀의 $0.83\pm.12$는 $N{=}5$ 거친 AUROC의
+무신호 기준선이 0.5가 아님을 보여 주는 계측 참조점이다.
 
 ### 5.4 기여 신호는 어떤 조건에서 존재하는가
 
-참값을 직접 계산하면, 간접 검증으로는 물을 수 없는 질문을 물을 수 있다: **이 세팅에
-클라이언트 순위 신호가 애초에 존재하는가?** 우리는 exact in-run Shapley 자신의 cross-seed
-자기-일치도, 곧 seed를 바꿔 같은 세팅을 다시 학습했을 때 클라이언트 순위가 재현되는 정도로
-답한다.
-
-**표 2**는 그 자기-일치도를 세팅별로 보여준다($\rho$, 1B, 3 seeds; 1에 가까울수록 순위가
-seed 간에 재현되고, 0 근처면 순위가 사실상 추첨이다).
+참값을 직접 계산하면 간접 검증으로는 물을 수 없는 질문을 물을 수 있다: **이 세팅에
+클라이언트 순위 신호가 애초에 존재하는가?** exact in-run Shapley 자신의 cross-seed
+자기-일치도, 곧 seed를 바꿔 다시 학습했을 때 순위가 재현되는 정도로 답한다. **표 2**가
+세팅별 결과다($\rho$, 1B, 3 seeds; 0 근처면 순위가 사실상 추첨이다).
 
 | 세팅 | clean | noisy | free-rider |
 |---|---|---|---|
 | IID | $+0.13$ | $+0.60$ | $+0.70$ |
 | non-IID | $+0.87$ | $+0.93$ | $+1.00$ |
 
-세 가지 귀결이 따른다. **첫째**, 오염 없는 IID 세팅에서는 exact in-run Shapley 자신의 순위조차 seed 간에
-재현되지 않는다. 1B의 표준 세팅들에서 자기-일치도는 $-0.37$에서 $-0.11$ 사이였고, 스케일을
-바꿔도 양방향으로 불안정하다($-0.37$ ~ $+0.73$; 양의 극단인 7B N=5 full 세팅이 명시된
-예외다). 이런 세팅에서 "순위 상관
-$1.000$"이 뜻하는 것은 추정기가 그 런의 실현된 무작위성까지 충실히 재현한다는 것이다.
-실현된 런의 **정산**에는 정확히 올바른 행동이지만, 동시에 어떤 방법도 다운스트림 효용을 보일
-수 없는 세팅이라는 뜻이기도 하다. **둘째**, 신호를 만드는 것은 클라이언트 간 실제 차이다.
-오염이 전혀 없어도 도메인 이질성만으로 자기-일치도가 $+0.87$까지 올라간다. 반면 학습 강도는
-신호를 만들지 못한다: 학습률을 키우면 $\phi$의 공통 크기는 커지지만(전 seed 재현되는 것은
-평균 $|\phi|$의 $\sim$1.3배 이동뿐이고, 클라이언트 간 산포 변화는 seed 분산에 묻힌다)
-cross-seed 신호는 여전히 생기지 않는다(3-seed). **셋째**, 오염 없는 IID 세팅에서는 기여도를 이용한 어떤 개입도 "아무것도 바꾸지 않는
-것(do no harm)"이 올바른 답이 된다. 참값 자체에 안정된 순위가 없으므로, 어떤 방법도
-(exact in-run Shapley를 포함해) 이 세팅에서 다운스트림 이득을 보일 수 없다. 우리의 기여도 기반
-selection 실험 역시 거기서는 vanilla와 구별되지 않았고, 이를 실패가 아니라 설계대로의
-sanity check로 보고한다.
+세 가지 귀결이 따른다. **첫째**, 오염 없는 IID 세팅에서는 참값 자신의 순위조차 seed 간에
+재현되지 않는다(1B 표준 세팅들에서 $-0.37$–$-0.11$; 스케일을 바꿔도 불안정하고 양의 극단인
+7B N=5 full이 명시된 예외다). 이런 세팅의 "순위 상관 $1.000$"은 추정기가 그 런의 실현된
+무작위성까지 충실히 재현한다는 뜻이다. 실현된 런의 **정산**에는 정확히 올바른 행동이지만,
+어떤 방법도 다운스트림 효용을 보일 수 없는 세팅이라는 뜻이기도 하다. **둘째**, 신호를
+만드는 것은 클라이언트 간 실제 차이다. 오염이 전혀 없어도 도메인 이질성만으로 $+0.87$까지
+올라간다. 반면 학습 강도는 신호를 만들지 못한다: 학습률을 키우면 $\phi$의 공통 크기만
+커지고 cross-seed 신호는 생기지 않는다(3-seed; 부록 F). **셋째**, 오염 없는 IID 세팅에서는
+기여도 기반의 어떤 개입도 "아무것도 바꾸지 않는 것(do no harm)"이 올바른 답이다. 우리의
+selection 실험도 거기서는 vanilla와 구별되지 않았고, 이를 실패가 아니라 설계대로의 sanity
+check로 보고한다.
 
-**노이즈 원인의 분리.** 위의 cross-seed 불안정성은 세팅의 성질, 곧 데이터 파티션과 학습
-궤적의 무작위성이지, 검증셋 표본 추출의 노이즈가 아니다. 고정된 런 안에서 검증셋을 bootstrap으로
-재표집해도 $\phi$ 순위는 본질적으로 유지된다: 재표집 자기-상관 $0.93$–$0.99$(3-seed, LoRA
-rank 16; rank 64는 seed 0에서 $0.92$), 검증셋 반분할 $0.90$–$1.00$이다. 클라이언트 간 $\phi$
-산포 자체가 클라이언트별 bootstrap 표준오차의 $1.1$–$2.3$배에 불과한데도 그렇다.
-정리하면, 오염 없는
-IID 세팅의 기여도 평가는 **정밀하지만 세팅-제한적**이다: 추정기는 검증 노이즈를 뚫고 실현된
-런의 순서를 분해해 내며, 런을 바꿨을 때 재현되지 않는 것은 그 순서 자체다.
+**노이즈 원인의 분리.** 이 불안정성은 세팅의 성질(데이터 파티션·학습 궤적의 무작위성)이지
+검증셋 표본 추출의 노이즈가 아니다. 고정된 런 안에서 검증셋을 bootstrap 재표집해도 $\phi$
+순위는 유지된다: 재표집 자기-상관 $0.93$–$0.99$, 검증셋 반분할 $0.90$–$1.00$(상세는 부록
+F). 정리하면 오염 없는 IID의 기여도 평가는 **정밀하지만 세팅-제한적**이다: 추정기는 검증
+노이즈를 뚫고 실현된 런의 순서를 분해해 내며, 런을 바꿨을 때 재현되지 않는 것은 그 순서
+자체다.
 
 ### 5.5 비용: 평가 단위(granularity), 그리고 참여자 수
 
-in-run 기여도 평가의 비용은 서로 독립적인 두 축이 결정한다. 하나는 **평가 단위**다: 샘플
-단위로 값을 매기는가, 클라이언트 단위로 매기는가. 다른 하나는, 클라이언트-수준 방법들
-사이에서, 라운드마다 **클라이언트 조합(coalition)을 어떻게 처리하는가**다. 두 축 모두
-실측했다.
-
-**표 3**은 같은 고정 궤적 위에서 잰 방법별 기여도 계산의 wall-clock이다(초; 1B fp32, B200
-GPU; 3-seed 평균, 가능한 곳은 ±std; 낮을수록 좋다). Flirds는 라운드당 검증-규모 계산이 HVP
-한 번으로 고정되고 coalition 방법들은 라운드당 $O(2^{|P_r|})$번의 검증 평가가 필요하므로,
-우위는 참여자 수에 조건부이며 아주 작은
-참여 수에서는 역전된다. individual-utility 런타임은 회계 버그($\approx$1.7×) 교정 후
-재측정값이다(N=5 non-IID seed별 $96.6/100.1/100.2$초, 정본
-`runs/measured_2026-07/loss_heur_acct/`; N=5 full은 재실행 rundir 실측).
+비용은 서로 독립적인 두 축이 결정한다: **평가 단위**(샘플 대 클라이언트)와,
+클라이언트-수준 방법들 사이에서 라운드마다 **coalition을 어떻게 처리하는가**다. **표 3**은
+같은 고정 궤적 위에서 잰 방법별 기여도 계산의 wall-clock이다(초; 1B fp32, B200 GPU; 3-seed
+평균, 가능한 곳은 ±std). individual-utility 런타임은 회계 버그($\approx$1.7×) 교정 후
+재측정값이다.
 
 | | N=5 non-IID ($R{=}10$) | N=5 full ($R{=}30$) | N=100 (10/round) |
 |---|---|---|---|
@@ -664,173 +508,140 @@ GPU; 3-seed 평균, 가능한 곳은 ±std; 낮을수록 좋다). Flirds는 라�
 | Exact in-run Shapley (전수 열거) | ~530 | $3{,}528\pm83$ | $24{,}975\pm911$ |
 | Exact retrain Shapley (재학습) | — | $30{,}817\pm244$ | — |
 
-**Coalition 축.** 라운드당 10개가 참여하는 N=100 cross-device 세팅에서 Flirds는 라운드별
-exact in-run Shapley의 순위를 그대로 재현하면서($\rho = 1.000$, $\alpha{=}0.5$) $157$초가 걸렸고,
-전수 열거는 약 $25{,}000$초가 걸렸다. 약 **160배** 차이다. 같은 구조가 전원 참여에서도
-재현된다: $N{=}10$ 전원 참여($2^{10}$)에서 전수 열거는 $117{,}649$초(32.7시간), Flirds는
-$733$초로 역시 약 160배다(seed 0). 반대로 라운드당
-2개만 참여하는 N=20 세팅에서는 관계가 **역전된다**: 전수 열거가 라운드당 $2^2 = 4$번의 평가라 HVP보다
-싸다($2{,}917$초 vs $4{,}697$초; Flirds (first-order)는 $1{,}531$초로 여전히 가장 싸다).
-그래서 비용 주장은 조건부로 서술한다: Flirds의 우위는 정확히 전수 열거가 불가능해지는 곳,
-곧 참여자가 많은 라운드에서 결정적이며, 그곳이 애초에 추정을 필요로 하는 레짐이다.
+**Coalition 축.** Flirds는 라운드당 검증-규모 계산이 HVP 한 번으로 고정되고 coalition
+방법들은 $O(2^{|P_r|})$번의 검증 평가가 필요하므로, 우위는 라운드 참여자 수에 조건부다.
+N=100 cross-device(10/round)에서 Flirds는 라운드별 exact in-run Shapley의 순위를 그대로
+재현하면서($\rho = 1.000$, $\alpha{=}0.5$) $157$초, 전수 열거는 약 $25{,}000$초로 약
+**160배** 차이다. $N{=}10$ 전원 참여($2^{10}$)에서도 $117{,}649$초 대 $733$초로 같은
+160배다(seed 0). 반대로 라운드당 2개만 참여하는 N=20에서는 전수 열거가 라운드당 4번의
+평가라 HVP보다 싸서 관계가 **역전된다**($2{,}917$초 vs $4{,}697$초; first-order는
+$1{,}531$초로 여전히 최저). 그래서 비용 주장은 조건부로 서술한다: Flirds의 우위는 정확히
+전수 열거가 불가능해지는 참여자 많은 라운드에서 결정적이며, 그곳이 애초에 추정을 필요로
+하는 레짐이다.
 
 **Granularity 축.** 평가 단위가 비용의 **차수**를 결정한다. 샘플-수준 점수는 모든 학습
-예제의 per-sample 양을 만져야 하므로 비용이 학습 데이터 수 $N$에 비례한다. $O(N)$, 즉 학습
-자체와 같은 차수다. 클라이언트-수준 Flirds는 학습 데이터를 전혀 만지지 않으므로 $N$과
-무관하다. 라운드당 비용은 검증셋 위의 HVP 1회와 $|P_r|$개의 내적뿐이다. 실측도 이
-차수 차이를 반영한다: CNN 대조 실험에서 학습 런 자체가 $78$–$96$초인데, Flirds의 기여도
-계산은 셀별 $0.5$–$15$초(1차는 $0.08$–$0.45$초)다.
-LLM에서도 같은 그림이다: $N{=}100$ 셀에서 학습
-$2{,}249$초 대비 Flirds $157$초(약 7%), $N{=}10$ 셀에서 학습 $3{,}847$초 대비
-$733$초(약 19%). 이 차수 비대칭은 구현의 문제가
-아니라 구조적이다: 클라이언트-수준
-점수는 서버가 이미 보유한 $|P_r|$개의 업데이트만 소비하지만, 샘플-수준 점수는 모든 학습
-예제를 만져야 하고, 연합학습에서는 그 계산이 클라이언트–서버 신뢰 경계의 반대편에 있기까지
-하다. 요컨대 클라이언트 granularity는 샘플 granularity의 열화판이 아니라, **연합학습에서
-in-run 기여도 평가가 배포될 수 있는 단위**다. 동의한 클라이언트가 자기 데이터 안에서 수행하는
-per-sample 세분화는 이와 직교하는 future work다(§6).
+예제의 per-sample 양을 만져야 하므로 학습 자체와 같은 $O(N)$이고, 클라이언트-수준 Flirds는
+학습 데이터를 전혀 만지지 않으므로 $N$과 무관하다(라운드당 검증셋 HVP 1회 + $|P_r|$개
+내적). 실측도 이 차수를 반영한다: LLM $N{=}100$ 셀에서 학습 $2{,}249$초 대비 Flirds
+$157$초(약 7%), CNN에서 학습 $78$–$96$초 대비 $0.5$–$15$초다. 이 비대칭은 구조적이다:
+클라이언트-수준 점수는 서버가 이미 보유한 $|P_r|$개 업데이트만 소비하지만, 샘플-수준 점수는
+연합학습에서 클라이언트–서버 신뢰 경계 반대편에 있는 계산을 요구한다. 요컨대 클라이언트
+granularity는 샘플 granularity의 열화판이 아니라 **연합학습에서 in-run 기여도 평가가 배포될
+수 있는 단위**이며, 동의한 클라이언트가 자기 데이터 안에서 수행하는 per-sample 세분화는
+직교하는 future work다(§6).
 
 ### 5.6 기여도의 가치: 부호-게이팅, selection, 탐지
 
 질문 위계의 두 번째 층위로, 이 절은 측정된 기여도가 신호가 존재하는 곳에서(§5.4) 실제로
 가치 있는 값인지를 검증한다. 메인 실험은 기여도를 배포 루프에서 직접 소비하는
-**부호-게이팅**이다: 게임의 공리적 보장(명제 2의 free-rider exact-0)이 실제 배제 결정으로
-이어지는지를, 학습 도중의 온라인 게이트와 사후 배제-재학습(retrain) 기준의 대조로 잰다.
-selection과 기여도-가중 집계는 부호가 아니라 순위 전체를 소비하는 더 일반적인 개입이고,
-탐지는 위계의 마지막 질문이다.
+**부호-게이팅**이다. selection과 기여도-가중 집계는 순위 전체를 소비하는 더 일반적인
+개입이고, 탐지는 위계의 마지막 질문이다.
 
 **부호-게이팅 (LLM; 온라인 게이트와 배제-재학습).** 학습 도중 기여도가 낮은 클라이언트를
-자동 배제하는 온라인 게이트를 실측했다($N{=}5$ cross-silo non-IID·IID 두 무대, 3-seed).
-비교 기준은 오염 클라이언트를 알고 배제한 뒤 처음부터 재학습하는 **oracle-배제
-재학습**(retrain)이다. **라운드 게이트**(그 라운드의 raw $\phi \le 0$인 업데이트만 해당
-라운드 집계에서 제외; 라운드마다 독립 판정)는 zero-update free-rider 셀에서 oracle-배제
-성능의 $0.90$을 회수했고, **누적 게이트**(누적 $\phi \le 0$이면 참여를 잠시 제외하되
-5라운드마다 복귀시켜 재평가)는 **정확히 $1.000$을 회수**했다. 즉 oracle-배제 재학습과 최종
-손실이 동일하며, free-rider의 $\hat\phi = 0$ 보장(명제 2)이 온라인 자동 배제로 그대로
-이어진다. 오배제는 0건이고, 오염 없는 셀에서는 두 게이트 모두 한 번도 발화하지 않았다(전
-클라이언트의 누적 기여가 양수; do-no-harm). 스코프는 명확하다: 부호-게이트는 순기여가 0
-이하인 클라이언트만 배제하는 도구이며, 기여가 양수이되 낮은 noisy 클라이언트에는 발화하지
-않는다. 그쪽은 순위를 소비하는 selection(아래)과 탐지의 몫이다.
+자동 배제하는 온라인 게이트를, 오염 클라이언트를 알고 배제한 뒤 처음부터 재학습하는
+**oracle-배제 재학습** 기준과 대조했다($N{=}5$ cross-silo non-IID·IID 두 무대, 3-seed).
+**라운드 게이트**(그 라운드의 raw $\phi \le 0$인 업데이트만 해당 라운드 집계에서 제외)는
+zero-update free-rider 셀에서 oracle-배제 성능의 $0.90$을 회수했고, **누적 게이트**(누적
+$\phi \le 0$이면 참여 제외, 5라운드마다 복귀 재평가)는 **정확히 $1.000$을 회수**했다. 즉
+oracle-배제 재학습과 최종 손실이 동일하며, free-rider의 $\hat\phi = 0$ 보장(명제 2)이
+온라인 자동 배제로 그대로 이어진다. 오배제는 0건이고, 오염 없는 셀에서는 두 게이트 모두 한
+번도 발화하지 않았다(do-no-harm). 스코프는 명확하다: 부호-게이트는 순기여 0 이하만 배제하는
+도구이며, 기여가 양수이되 낮은 noisy 클라이언트는 selection(아래)과 탐지의 몫이다.
 
-**Selection(선택 후 재학습).** 각 방법이 매긴 기여도로 상위-$k$ 클라이언트를 선택하고,
-선택된 클라이언트만 참여시켜 처음부터 재학습한 성능을 무작위 선택 및 전체-클라이언트 학습과
-비교한다. 신호가 실재하는 세팅에서 기여도 선택은 실제로 유효하다: 오염을 주입한 소형
-세팅($N{=}5$, 3-seed)에서 Flirds의 선택은 매 seed에서 오염 없는 클라이언트 집합을 정확히
-복원했고, 최종 검증 손실에서 무작위 선택과 전체-클라이언트 학습을 동률 이상으로 이겼다(두
-학습률 $\{10^{-3}, 3{\times}10^{-3}\}$ 모두). 같은 결론이 §5.3의 removal-curve(기여도
-순서대로 클라이언트를 제외해 가며 재학습하는, selection의 일반형)에서 3-seed로 재확인된다:
-기여도 하위 클라이언트부터 제외하면 성능이 개선되고, 상위 클라이언트부터 제외하면 악화된다.
-반대로 오염 없는 IID 세팅에서는 selection이 이득을 만들지 못하는데(§5.4), 이는 신호 부재의
-논리적 귀결이며 설계대로의 결과다.
+**Selection(선택 후 재학습).** 기여도 상위-$k$ 클라이언트만 참여시켜 처음부터 재학습한
+성능을 무작위 선택·전체-클라이언트 학습과 비교한다. 오염을 주입한 소형 세팅($N{=}5$,
+3-seed)에서 Flirds의 선택은 매 seed 오염 없는 집합을 정확히 복원했고, 최종 검증 손실에서
+동률 이상으로 이겼다(두 학습률 모두). §5.3의 removal-curve(selection의 일반형)가 같은
+결론을 재확인한다. 오염 없는 IID에서는 selection이 이득을 만들지 못하는데(§5.4), 신호
+부재의 논리적 귀결이며 설계대로의 결과다.
 
-**기여도-가중 집계 (CNN).** CNN cross-device 무대($N{=}100$, 라운드당 10% 참여,
-3-seed)에서는 측정된 기여도를 라운드별 **집계 가중치**로 직접 소비하는 개입을 실측했다.
-오염이 실재하는 무대에서 이득은 뚜렷하다: label-flip에서 최종 test 정확도가 vanilla 대비 약
-$+0.09$ 개선되고(모델 폭을 $0.5$–$4$배로 바꿔도 이득은 $+0.087$–$+0.092$로 일정하다),
-gradient-noise 오염에서는 $0.499 \to 0.609$로 $+0.11$ 개선된다. 반대로 오염 없는 clean
-대조군에서는 같은 개입이 아무것도 바꾸지 않는다($|\Delta\mathrm{acc}| < 0.006$, seed 노이즈
-이내). §5.4의 do-no-harm 예측이 개입 축에서도 그대로 성립한다.
+**기여도-가중 집계 (CNN).** CNN cross-device($N{=}100$, 10% 참여, 3-seed)에서 기여도를
+라운드별 **집계 가중치**로 소비하는 개입은 오염 무대에서 뚜렷한 이득을 낸다: label-flip
+최종 test 정확도 vanilla 대비 약 $+0.09$(모델 폭 $0.5$–$4$배에서 $+0.087$–$+0.092$로 일정),
+gradient-noise $0.499 \to 0.609$($+0.11$). 오염 없는 clean 대조군에서는 아무것도 바꾸지
+않는다($|\Delta\mathrm{acc}| < 0.006$). §5.4의 do-no-harm 예측이 개입 축에서도 성립한다.
 
-**탐지.** 탐지는 위계의 마지막 질문이고, 답은 위협과 데이터 배경에 따라 다르다. 그래서
-위협별로, exact in-run Shapley 자신의 상한까지 명시해 보고한다. $N{=}5$ cross-silo non-IID에서 기여도
-점수는 **기여도 측정치이면서 동시에** 전용 탐지기 수준의 탐지력을 보인다: Flirds는
-noisy·free-rider 클라이언트를 AUROC $1.000$(3 seeds)으로 분리하는데, 전용 탐지기들은 각자
-홈 그라운드에 구멍이 있다(FLDetector는 noisy에서 $0.750$, FedDQC는 free-rider에서 $0.750$,
-STD-DAGMM은 $0.250$–$0.417$). 배경을 IID와 non-IID로 바꿔 가며
-비교하면 기여도 신호의 강건성이 드러난다: Flirds의 noisy/free-rider 탐지는 배경과 무관하게
-$1.00$이고(FLTrust도 그렇다), 데이터-품질 탐지기 FedDQC는 noisy에서 IID $1.00$이 non-IID
-$0.92$로 침식되며 cross-device 규모의 free-rider에서는 완전히 실패한다($0.14$–$0.57$;
-기여도-기반 점수는 $1.000$, FLDetector는 약 $0.51$–$0.62$). 정직한 반대면도 있다:
-cross-device 규모의 noisy에서는 FedDQC가 AUROC $1.0$으로 지배하고, **모든** loss 기반 점수는
-$0.60$–$0.76$에 머문다. **exact in-run Shapley 자신도 $0.604 \pm 0.041$이다**. 우리는 이를
-내재적 한계로 읽는다: 깨끗한 검증 손실로 정의된 게임은 오염 탐지기가 아니며, 탐지는 기여도
-평가의 부산물로서 그에 맞게 평가되어야 한다. 그리고 그 부산물이 가장 강한 곳은 정확히 공리가
-작동하는 곳이다: free-rider에 대해서는 zero-update/random-update의 경우 $\hat\phi = 0$이
-정확히 성립한다(명제 2). 이 성질의 경계도 스트레스 케이스로 실측했다: 직전 라운드의 글로벌
-업데이트를 재활용해 보내는 **delta 방식 free-rider**는 기여도로 잡히지 않는다(AUROC 3-seed
-평균 $0.33$, seed별 $0.25/0.25/0.5$). 그런데 exact in-run Shapley 자신도 **매 seed 정확히
-같은 값**이다. 재활용된
-업데이트가 실제로 검증 손실을 낮추므로 게임이 그것을 기여로 계상하는 것이고, Flirds는 그
-값을 여전히 순위 상관 $1.000$으로 재현한다(실패는 추정이 아니라 게임 수준이다). 즉
-$\hat\phi = 0$ 보장은 zero/random-update에 한정되며, 이런 위장의 탐지는 업데이트-통계
-탐지기의 몫이다(STD-DAGMM $1.00$).
+**탐지.** 위계의 마지막 질문이고 답은 위협과 배경에 따라 다르므로, 위협별로 exact in-run
+Shapley 자신의 상한까지 명시해 보고한다. $N{=}5$ cross-silo non-IID에서 기여도 점수는 전용
+탐지기 수준의 탐지력을 보인다: Flirds는 noisy·free-rider를 AUROC $1.000$(3-seed)으로
+분리하는데, 전용 탐지기들은 각자 홈 그라운드에 구멍이 있다(FLDetector noisy $0.750$, FedDQC
+free-rider $0.750$, STD-DAGMM $0.250$–$0.417$). 배경을 바꿔도 Flirds의 탐지는 $1.00$으로
+배경-무관이고(FLTrust도 그렇다), FedDQC는 noisy에서 non-IID로 가면 침식되며($1.00 \to
+0.92$) cross-device free-rider에서는 완전히 실패한다($0.14$–$0.57$; 기여도-기반 점수는
+$1.000$). 정직한 반대면도 있다: cross-device 규모의 noisy에서는 FedDQC가 $1.0$으로
+지배하고 모든 loss 기반 점수는 $0.60$–$0.76$에 머물며 **exact in-run Shapley 자신도
+$0.604\pm.041$이다**. 깨끗한 검증 손실로 정의된 게임은 오염 탐지기가 아니며, 탐지는 기여도
+평가의 부산물로서 평가되어야 한다. 보장의 경계도 스트레스 케이스로 실측했다: 직전 라운드의
+글로벌 업데이트를 재활용해 보내는 **delta 방식 free-rider**는 잡히지 않는데(AUROC $0.33$),
+exact in-run Shapley 자신도 매 seed 정확히 같은 값이다. 재활용 업데이트가 실제로 검증
+손실을 낮추므로 게임이 기여로 계상하는 것이고, Flirds는 그 값을 여전히 $1.000$으로
+재현한다(실패는 추정이 아니라 게임 수준이다). $\hat\phi = 0$ 보장은 zero/random-update에
+한정되며, 이런 위장의 탐지는 업데이트-통계 탐지기의 몫이다(STD-DAGMM $1.00$).
 
 ---
 
 ## 6. 논의와 한계
 
-**참값 직접 검증이 사주는 것.** 이 논문의 세 가지 발견은 다운스트림 결과만으로는 보이지
-않았을 것들이다. 첫째, 오염 없는 세팅에서 게임이 근사-가법적이라는 사실이다. 이는 그런
-세팅에서 coalition 표본 추출 추정기의 비용 전제를 무효화하고, 2차 항의 위치를 정확히
-정해준다: 가법적이지 **않은** 세팅을 위한, 1차 대비 약 3배 비용이지만 coalition
-열거보다는 훨씬 싼 보험이다. 둘째, 오염 없는 IID 세팅에서는 참값 자체에 cross-seed 순위
-신호가 없다는 사실이다. 이는 "다운스트림 이득이 없다"를 실패가 아니라 그 세팅의 올바른
-답으로 재해석하게 한다. 셋째, 클라이언트당 참여 횟수가 적은 환경에서 1차 근사의 순위가
-흔들리고 2차 항이 이를 보완한다는 조건이다. 참값 대비 정확도를 직접 재지 않으면 드러나지
-않았을 것이다. 우리는 이 프로토콜(고정 공유 궤적, 두 exact 참값, fp32 utility 규율, 값
-수준 지표, 셀별 영속 산출물)이 이 하위 분야에서 재사용 가능한 표준이 되리라 믿는다.
+**참값 직접 검증이 사주는 것.** 이 논문의 세 발견은 다운스트림 결과만으로는 보이지 않았을
+것들이다. 첫째, 오염 없는 세팅에서 게임이 근사-가법적이라는 사실. coalition 표본 추출
+추정기의 비용 전제를 무효화하고, 2차 항의 위치를 "가법적이지 **않은** 세팅을 위한, 1차
+대비 약 3배 비용이지만 coalition 열거보다 훨씬 싼 보험"으로 정해 준다. 둘째, 오염 없는 IID
+세팅에서는 참값 자체에 cross-seed 순위 신호가 없다는 사실. "다운스트림 이득이 없다"를
+실패가 아니라 그 세팅의 올바른 답으로 재해석하게 한다. 셋째, 클라이언트당 참여 횟수가 적은
+환경에서 1차 근사가 흔들리고 2차 항이 보완한다는 조건. 우리는 이 프로토콜(고정 공유 궤적,
+두 exact 참값, fp32 규율, 값 수준 지표, 셀별 영속 산출물)이 재사용 가능한 표준이 되리라
+믿는다.
 
 **궤적-특이성과 유스케이스.** exact in-run Shapley는 **실현된** 런을 평가한다. 신호 없는
-세팅에서의 cross-seed 불안정성은, 그 런의 진전을 지불·감사 목적으로 귀속하는 **정산**형
-용도에는 버그가 아니라 정의 그 자체다. 다만 균질하고 깨끗한 클라이언트 집단에서 단일 런의
-값을 이식 가능한 클라이언트 평판으로 재사용하는 것은 경계해야 한다. 정산은 값 수준 정확도가
-직접 소비되는 곳이기도 하다: Pearson $\approx 1.000$의 값 일치와 exact
-efficiency($\sum_k \hat\phi_k$가 런의 실현된 손실 감소와 일치)가 결합하면, 기여도 비례
-지불은 런이 달성한 것을 정확히 분배하며 free-rider는 지불에서 증명 가능하게 배제된다(명제
-2). 클라이언트가 진짜로 다른 세팅에서는 값이 훨씬 안정적이지만(표 2: non-IID에서
-$+0.87$–$1.00$), 모든 세팅에서 균일하게 그런 것은 아니므로(일부 CNN 오염 셀은 불안정하다;
-예: MNIST feature-noise의 exact in-run Shapley 자기-일치도 $-0.123$) 이식성은 가정하지 말고 세팅별로
+세팅의 cross-seed 불안정성은, 그 런의 진전을 지불·감사 목적으로 귀속하는 **정산**형
+용도에는 버그가 아니라 정의 그 자체다. 정산은 값 수준 정확도가 직접 소비되는 곳이기도
+하다: Pearson $\approx 1.000$의 값 일치와 exact efficiency가 결합하면 기여도 비례 지불은
+런이 달성한 것을 정확히 분배하고 free-rider는 증명 가능하게 배제된다(명제 2). 다만
+균질하고 깨끗한 집단에서 단일 런의 값을 이식 가능한 평판으로 재사용하는 것은 경계해야
+한다. 클라이언트가 진짜로 다른 세팅에서는 값이 훨씬 안정적이지만(표 2) 모든 세팅에서
+균일하게 그렇지는 않으므로(일부 CNN 오염 셀은 불안정), 이식성은 가정하지 말고 세팅별로
 검사해야 한다.
 
 **알려진 한계 (숨기지 않고 명시한다).**
 
-- **게임 정의 의존성.** 고정 가중 coalition 의미론은 폐형 계산이 강제하고 런 자신의 집계
-  방식과도 일치하지만, 여전히 하나의 **선택**이다. 부분집합-재정규화 게임도 옹호 가능한
-  대안이다. 게임 정의를 전혀 참조하지 않는 removal 검증(§5.3)이 이 의존성을 부분적으로
-  완화하지만, 게임 정의들 사이의 직접 심판, 곧 두 게임을 모두 근사 없이 계산하고 exact
-  retrain Shapley를 심판으로 세우는 game-adjudication 실험은 future work로 남긴다.
-- **레짐 제약.** 로컬 학습은 momentum 없는 plain SGD, 학습률은 상수, 평가는 LoRA 좌표,
-  attention은 eager 모드, utility는 fp32다. 서버 측에 상태를 가진 optimizer를 두면
-  telescoping 항등식이 깨지고, 클라이언트 측 Adam 계열은 Taylor 전개와 업데이트의 대응을
-  깬다. 본 논문의 모든 검증은 이 레짐 안에서 수행되었으며, 다른 optimizer로의 이식은
-  검증하지 않았다.
-- **평가 단위.** 값은 클라이언트 단위다: **어느 클라이언트**인지를 지목하지, 그 안의 어느
-  샘플인지는 지목하지 않는다. 동의한 클라이언트가 자기 데이터 위에서 수행하는 샘플-수준
-  세분화는 호환 가능한 future work다. 서버 측 게임은 $\Delta w_k$보다 세밀한 것을 볼 수
-  없고, 보아서도 안 된다.
-- **프라이버시.** 클라이언트-수준 기여도 평가는 서버가 개별 업데이트 $\Delta w_k$를 볼 수
-  있어야 한다. 따라서 secure aggregation과는 호환되지 않는다. 이는 이 방법의 한계가 아니라
+- **게임 정의 의존성.** 고정 가중 의미론은 폐형 계산이 강제하고 런 자신의 집계 방식과도
+  일치하지만 여전히 하나의 **선택**이며, 부분집합-재정규화 게임도 옹호 가능한 대안이다.
+  게임-무관 removal 검증(§5.3)이 의존성을 부분 완화하고, exact retrain Shapley를 심판으로
+  세우는 game-adjudication은 future work다.
+- **레짐 제약.** momentum 없는 plain SGD·상수 학습률·LoRA 좌표·eager attention·fp32 utility.
+  서버 momentum은 telescoping을, 클라이언트 Adam 계열은 Taylor 대응을 깬다. 다른
+  optimizer로의 이식은 검증하지 않았다.
+- **평가 단위.** 값은 클라이언트 단위다. 동의한 클라이언트가 자기 데이터 위에서 수행하는
+  샘플-수준 세분화는 호환 가능한 future work다. 서버 측 게임은 $\Delta w_k$보다 세밀한 것을
+  볼 수 없고, 보아서도 안 된다.
+- **프라이버시.** 서버가 개별 업데이트를 봐야 하므로 secure aggregation과 비호환이다.
   클라이언트-수준 평가라는 문제 클래스 전체에 내재한 제약이다.
-- **적대 시나리오의 범위.** free-rider에 대한 $\hat\phi = 0$은 zero-update/random-update에
-  대해 정확히 성립하며, 직전 집계를 재활용하는 delta 방식 위장은 실측 결과 게임 수준에서
-  잡히지 않는다(§5.6). 이 보장의 한계를 명시한다. 검증 손실을 역이용하도록 설계된 표적
-  공격(예: backdoor poisoning) 하의 강건성 평가는 본 논문의 범위 밖이며 future work로
-  남긴다.
-- **참값의 커버리지.** exact 참값 대비 정확도 평가는 $N$이 작은 세팅에 제한된다(LLM
-  $N{=}5$–$10$, CNN $N{=}10$; LLM $N{=}10$은 $2^{10}$ 전수 열거가 seed당 32.7 GPU-시간이라
-  seed 0 단독이며 추가 seed는 이월). retrain 참값과의 일치는
-  1B(3 seeds)에서 측정되었고 CNN에서는 발산한다(열린 질문). 7B retrain 참값은 선행 LLM-규모
-  attribution 연구들과 마찬가지로 계산 범위 밖이다.
-- **이질성 편향.** FL-Shapley 계열은 희귀 도메인을 가진 클라이언트("maverick")를
-  과소평가한다는 지적이 있다. 우리는 이를 고치지 않고 측정해 특성화하며, 비교한 어떤 방법도
-  하나의 부호 있는 값 안에서 "noisy"와 "분포는 다르지만 유용함"을 분리하지 못한다.
+- **적대 시나리오의 범위.** $\hat\phi = 0$은 zero/random-update에 대해 성립하고, delta 방식
+  위장은 게임 수준에서 잡히지 않는다(§5.6). 검증 손실을 역이용하는 표적 공격(예: backdoor
+  poisoning)의 강건성 평가는 범위 밖이다.
+- **참값의 커버리지.** exact 참값 대비 평가는 $N$이 작은 세팅에 제한된다(LLM $N{=}5$–$10$,
+  CNN $N{=}10$; LLM $N{=}10$은 seed 0 단독). retrain 참값과의 일치는 1B에서 측정되었고
+  CNN에서는 발산한다(열린 질문). 7B retrain 참값은 선행 LLM-규모 연구들과 마찬가지로 계산
+  범위 밖이다.
+- **이질성 편향.** FL-Shapley 계열의 maverick 과소평가 지적을 고치지 않고 측정해
+  특성화하며, 비교한 어떤 방법도 하나의 부호 있는 값 안에서 "noisy"와 "분포는 다르지만
+  유용함"을 분리하지 못한다.
 
 ---
 
 ## 7. 결론
 
 우리는 연합 클라이언트 기여도 평가의 간접 정당화 루프를 직접 루프로 교체했다: 게임을
-정의하고, 그 exact Shapley 값을 실현된 in-run 정의와 counterfactual retrain 정의로 두 번
-근사 없이 계산하고, 모든 방법을 하나의 고정-궤적·fp32·멀티-seed 프로토콜 아래에서 그 대비로 측정했다.
-그 기준 안에서, 라운드당 HVP 한 번으로 닫히는 폐형 추정기는, 연합 프로토콜이 실제로
-노출하는 단위인 클라이언트를 서버가 이미 받는 업데이트로부터 평가하며, 모델 스케일과 세팅
-전반에서 exact in-run Shapley에 충실했다. 클라이언트당 참여 횟수가 적어 1차 근사만으로는
-순위가 흔들리는 세팅에서도 그렇다. 비용은 라운드 참여자 수에 지수적이지 않고(라운드당 검증-규모 계산 상수 회; 전수 열거는
-$O(2^{|P_r|})$회), 학습 데이터 수와도 무관하다(샘플-수준 방법과 학습 자체는 $O(N)$). 그만큼
-중요하게, 이 기준은 클라이언트 기여도 평가가 애초에 유의미한 조건의 지도를 그려 준다: 기여
-신호는 학습 강도가 아니라 진짜 클라이언트 간 차이가 만들며, 근사-가법성은 오염 없는 소규모
-세팅을 모든 방법에게 쉽게 만든다. 평가 프로토콜과 참값 계산을 포함한 전체 코드·실험
-산출물은 논문 게재 시점에 커뮤니티의 측정 baseline으로 공개할 예정이다.
+정의하고, exact Shapley 참값을 실현된 in-run 정의와 counterfactual retrain 정의로 두 번
+근사 없이 계산하고, 모든 방법을 하나의 고정-궤적·fp32·멀티-seed 프로토콜 아래 그 대비로
+측정했다. 그 기준 안에서, 라운드당 HVP 한 번으로 닫히는 폐형 추정기는 서버가 이미 받는
+업데이트로부터 클라이언트를 평가하며, 1차 근사만으로는 순위가 흔들리는 세팅을 포함해 모델
+스케일과 세팅 전반에서 exact in-run Shapley에 충실했다. 비용은 라운드 참여자 수에
+지수적이지 않고(전수 열거는 $O(2^{|P_r|})$회) 학습 데이터 수와도 무관하다(샘플-수준 방법과
+학습 자체는 $O(N)$). 그만큼 중요하게, 이 기준은 기여도 평가가 애초에 유의미한 조건의
+지도를 그려 준다: 기여 신호는 학습 강도가 아니라 진짜 클라이언트 간 차이가 만들며,
+근사-가법성은 오염 없는 소규모 세팅을 모든 방법에게 쉽게 만든다. 평가 프로토콜과 참값
+계산을 포함한 전체 코드·실험 산출물은 게재 시점에 공개할 예정이다.
 
 ---
 

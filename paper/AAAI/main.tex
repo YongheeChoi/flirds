@@ -149,10 +149,10 @@ measured contributions are genuinely valuable.
 The quality of a modern machine-learning model is determined by its data. Data
 valuation, which quantifies how much of a model's performance is owed to whose
 data, has accordingly grown into a research axis of its own, and the
-\textbf{Shapley value} from cooperative game theory has become its standard
+Shapley value from cooperative game theory has become its standard
 tool: it is the unique allocation that satisfies the axioms characterizing
 fair division (efficiency, symmetry, null player). The stage where this
-question is most pressing is \textbf{federated learning (FL)}: contributors
+question is most pressing is federated learning (FL): contributors
 are separated into clients from the outset; the server jointly trains a single
 model without ever seeing their data; and the incentive structures that keep
 clients participating, such as reward allocation, data markets, free-rider
@@ -191,20 +191,20 @@ federated Shapley studies have therefore mostly shifted the evaluation target
 to the round level: compute the per-round Shapley value defined on the updates
 the server receives in each round, and accumulate it across rounds. This paper
 targets the same round-level value; it is what Section~3 will define as the
-\textbf{exact in-run Shapley}.
+'exact in-run Shapley'.
 
 \textbf{Two remaining limitations: bypassed exponential computation, and
 unverified surrogate definitions.}
 This round-level lineage (FedSV, GTG-Shapley, ComFedSV, ShapleyFL, among
 others) is mostly designed to operate within the conditions above. Two
-limitations remain, however. The first is \textbf{computation}: computing the
+limitations remain, however. The first is computation: computing the
 targeted per-round Shapley value exactly requires reconstructing a model for
 every client coalition in every round and re-evaluating it on validation data,
 so the cost grows exponentially in the number of participants per round; in
 practice this has been bypassed with random-sampling and truncation
 approximations, and the entire lineage has remained at the scale of small-CNN
-validation. The second is \textbf{the unverified surrogate definitions that
-this bypass produced}: in the course of avoiding the cost, each method came to
+validation. The second is the unverified surrogate definitions that
+this bypass produced: in the course of avoiding the cost, each method came to
 target a different surrogate utility, some explicitly abandon the Shapley
 axioms, and how far these surrogate values deviate from the original Shapley
 value has been verified neither by rigorous bounds nor against exact ground
@@ -258,15 +258,15 @@ PEFT (LoRA) adapters.
 Prior studies have confirmed the validity of contribution scores mostly
 through downstream effects: whether contribution-based selection helps
 convergence or performance, or whether low-contribution clients turn out to be
-corrupted. We split verification into two layers. In the \textbf{estimator
-layer}, we directly compute, on the same training trajectory, the exact
-Shapley value of the game Flirds targets, namely the \textbf{exact in-run
-Shapley} computed from the in-run definition by exhaustively enumerating all
+corrupted. We split verification into two layers. In the estimator
+layer, we directly compute, on the same training trajectory, the exact
+Shapley value of the game Flirds targets, namely the exact in-run
+Shapley computed from the in-run definition by exhaustively enumerating all
 $2^{|P_r|}$ coalitions per round without approximation, and measure whether
 the estimates reproduce it at both the ranking and the value level. This is a
 stronger criterion than the prior practice of relying on approximate
-references or indirect downstream evidence. In the \textbf{effectiveness
-layer}, we measure whether the measured contributions are values that actually
+references or indirect downstream evidence. In the effectiveness
+layer, we measure whether the measured contributions are values that actually
 help training. Each method's contributions are consumed to improve the
 training process, and the methods are compared by the resulting training
 outcomes: online sign-gating that automatically excludes clients with net
