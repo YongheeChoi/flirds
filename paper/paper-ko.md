@@ -49,18 +49,15 @@ Flirds는 이 목표값의 근사이지만 유일한 오차인 Taylor 절단이 
   평가는 정산·운영에 쓸 수 없다. ④ 부분집합 재학습은 감당 불가능하고, 평가를 위해 추가 통신
   라운드나 클라이언트-측 추가 연산을 부과할 수도 없다. ⑤ 평가 단위는 클라이언트다: 보상과 책임의 주체가 클라이언트이기
   때문이다.
-- **스케일·통계 조건**: ⑥ 오늘의 FL 대상은 LLM의 PEFT(LoRA) 파인튜닝 규모까지 확장되었으므로,
-  평가 비용이 모델 스케일을 따라갈 수 있어야 한다. ⑦ 클라이언트 간 데이터는 일반적으로
-  non-IID를 가정한다.
 
 **왜 retrain 기반 Shapley 값이 아닌가.** 데이터 가치평가의 고전적 참값은 retrain 기반
 Shapley 값, 곧 클라이언트 부분집합별로 학습을 처음부터 다시 수행해 얻는 utility에 대한
-Shapley 값이다(§3.1). 그러나 FL에서는 매 라운드 서로 다른 클라이언트가 간헐적으로 참여하고,
+Shapley 값이다(§3.2). 그러나 FL에서는 매 라운드 서로 다른 클라이언트가 간헐적으로 참여하고,
 그때마다 공정한 기여도 평가가 요구된다. 이런 환경에서 부분집합별 재학습을 전제하는 위
 정의는 실질적으로 계산 불가능하다. 그래서 기존
 연합 Shapley 연구들은 대부분 평가 대상을 라운드 단위로 옮겨 왔다: 매 라운드 서버가 수신한
 업데이트들로 정의되는 라운드별 Shapley 값을 계산하고, 이를 라운드에 걸쳐 누적한다. 본
-논문도 같은 라운드 단위 값을 목표로 삼는다. 이 목표값이 §3에서 정의할 **exact in-run
+논문도 같은 라운드 단위 값을 목표로 삼는다. 이 목표값이 §4에서 정의할 **exact in-run
 Shapley**다.
 
 **남은 두 한계: 지수적 계산의 우회, 그리고 검증되지 않은 대체 정의.** 이 라운드 단위
@@ -146,106 +143,126 @@ FedSV에서 시작한다. 이후의 흐름은 지수적 비용을 낮추는 근�
 확인되었고, 추정값을 exact 참값 대비로 직접 잰 경우도 SPACE의 $2^n$-재학습 비교($N \le
 10$의 CNN 분류)처럼 소형 스케일에 국한된다. 이 두 관찰이 §1에서 말한 두 한계다.
 
-**In-run(단일 런) 기여도 평가.** In-Run Data Shapley(IRDS)는 재학습 없이, 실제로 일어난
-중앙집중 학습 런 하나에서 per-sample Shapley 값을 닫힌 식으로 계산한다. 본 논문이
-연합학습으로 확장하는 것이 바로 이 계산이며, §3에서 따로 설명한다. 연합 쪽 인접 선행인
-FedIF와 FedTSV는 1차 정보만으로 클라이언트 업데이트를 점수화해 곡률(상호작용) 항이 없고,
-특히 FedIF는 Hessian 계산이 연합에서 비현실적이라는 전제로 1차에 머무는데 우리는 forward
-HVP로 이 전제가 성립하지 않음을 보인다. 클라이언트-수준 Shapley를 1차+2차 폐형으로, 추가
-통신 없이, LLM 규모에서, exact 참값 대비로 검증하는 조합은 이들 어느 것과도 겹치지 않는다.
-약 40개 방법의 상세 비교는 부록 D의 taxonomy로 미루며, 그 안에서 "연합 × LLM ×
-클라이언트-수준 기여도 평가" 조합을 채우는 선행 기여도 평가 방법은 없다.
-
 **중앙집중 LLM-규모 attribution.** LLM 규모까지 확장된 데이터 귀속·선별(influence function
 계열, LESS, MATES, DsDm 등)은 전부 중앙집중 세팅이고 전부 샘플 단위다. 모든 학습 예제의
 gradient를 만져야 하므로 비용이 학습 데이터 수에 비례하고, 연합학습에서는 그 계산이
 클라이언트–서버 신뢰 경계의 반대편에 있다. 검증 기준도 규모를 따라 물러나서, LLM
 규모에서는 exact 참값(LOO-재학습) 대비 채점 대신 근사 대리 지표가 그 자리를 대신한다.
-Flirds는 이 병목 경로를 쓰지 않는다. 평가 단위가 클라이언트라 비용이 학습 데이터 수와
-무관하고, forward HVP만 계산하므로 influence function의 $H^{-1}$은 등장하지 않는다.
+평가 단위를 클라이언트로 바꿔 연합으로 이식하면 되는 것도 아니다. 서버가 가진
+클라이언트-수준 객체는 라운드 업데이트 $\Delta w_k$뿐이므로, 이식은 각 방법의 계산이
+$\Delta w_k$의 함수로 재표현될 때만 성립한다. 재표현되는 기계는 이미 위의 연합 계보와 우리
+비교군에 들어 있고 — gradient 내적은 1차 Taylor 값이 되고, influence의 연합 적응은 FedIF다
+— 재표현되지 않는 기계는 per-sample 양을 클라이언트가 계산해 올려야 하므로 보상을 결정하는
+수치의 자기 신고가 된다(조건 ②·④). 남는 예외가 이 논문의 출발점이다: FedAvg 집계
+$\sum_k p_k \Delta w_k$는 배치 gradient의 샘플-선형 분해와 같은 구조를 클라이언트 수준에서
+노출하므로, 정확히 그 선형성 위에서 작동하는 In-Run Data Shapley(§3.3)의 폐형 계산만은
+라운드 게임으로 재유도된다(§4). 재유도된 추정기는 forward HVP만 쓰므로 influence function의
+$H^{-1}$이 등장하지 않고, 평가 단위가 클라이언트라 비용은 학습 데이터 수와 무관하다.
 
 **탐지·강건 집계 baseline.** 탐지·강건 집계 계열은 이진 제거(keep/discard)나 신뢰 가중치를
 산출할 뿐 부호 있는 연속 기여도와 분배 공리를 다루지 않으므로, 기여도 평가의 대체재가
 아니다. 우리는 두 축을 분리하고, 전용 탐지기(FLDetector, FLTrust, STD-DAGMM, FedDQC)와는
 각 탐지기가 설계된 위협에서 비교한다(§5.6).
 
-**변동성과 참값에 대한 비판.** 근사 FL-Shapley 보상이 집계 프로토콜의 사소한 변화에도 크게
-출렁인다는 보고, 희귀 분포 클라이언트("maverick")가 과소평가된다는 지적, 학습의 확률성
-아래에서 semivalue가 얼마나 안정적인가를 물은 Data Banzhaf는 모두 참값 없는 근사를 얼마나
-믿을 수 있는가라는 문제의식을 공유한다. 우리의 설계는 이에 답한다. 실현된 궤적을 고정하고
-그 위에서 exact in-run Shapley를 계산하며, 이질성의 효과는 고쳤다고 주장하는 대신 측정해서
-특성화하고, 변동성은 exact 참값의 seed 간 자기-일치도로 "방법의 분산"과 "세팅에 신호
-없음"으로 분해한다(§5.4).
+---
+
+## 3. 배경: 연합학습, Data Shapley, In-Run Data Shapley
+
+### 3.1 연합학습과 FedAvg
+
+FedAvg(McMahan et al., 2017)에서는 크기 $n_k$의 로컬 데이터를 가진 클라이언트
+$k \in [N] := \{1, \dots, N\}$ 중 라운드 $r$의 참여 집합 $P_r \subseteq [N]$이 현재 모델
+$w^r$에서 로컬 학습한 차를 업데이트 $\Delta w_k^r$로 보내고, 서버는 $w^0$부터 $R$ 라운드
+동안($r = 0, \dots, R{-}1$) 데이터 크기에 비례하는 **고정 참여자 가중치**로 집계한다:
+
+$$w^{r+1} \;=\; w^r + \sum_{k \in P_r} p_k^r\, \Delta w_k^r, \qquad
+p_k^r \;=\; \frac{n_k}{\sum_{j \in P_r} n_j}.$$
+
+서버는 검증셋을 보유하며(§1의 정보 조건) 임의의 모델 $w$의 검증 손실 $\ell(w)$을 평가할 수
+있다.
+
+### 3.2 Data Shapley와 exact retrain Shapley
+
+부분집합(coalition) $S$에 가치를 주는 utility 함수 $U$의 협력 게임에서 **Shapley 값**은
+플레이어 $k$의 한계 기여를 모든 참여 순서에 대해 평균한
+
+$$\mathrm{Sh}_k(U) \;=\; \sum_{S \subseteq [N] \setminus \{k\}}
+\frac{|S|!\,(N{-}|S|{-}1)!}{N!}\, \big( U(S \cup \{k\}) - U(S) \big)$$
+
+이며(임의의 유한 플레이어 집합에 같은 식), 공정한 분배의 네 공리 — efficiency
+($\sum_k \mathrm{Sh}_k(U) = U([N]) - U(\emptyset)$), symmetry, null player, linearity — 를
+유일하게 만족한다(Shapley 1953). Data Shapley(Ghorbani & Zou 2019)는 $U(S)$를 "$S$의
+데이터만으로 학습한 모델의 검증 성능"으로 두어 이를 데이터 기여도에 적용한다. 연합학습에
+그대로 옮기면 플레이어는 클라이언트이고, utility는 재학습 시의 검증 손실 감소
+
+$$U^{\mathrm{re}}(S) \;=\; \ell(w^0) - \ell\big(w_S^R\big)$$
+
+($w_S^R$은 $S$만 참여한 $R$-라운드 재학습의 최종 모델; $w_\emptyset^R = w^0$)이며,
+$\phi_k^{\mathrm{re}} = \mathrm{Sh}_k(U^{\mathrm{re}})$를 $2^N$개 부분집합 전부의 재학습으로
+근사 없이 계산한 것이 **exact retrain Shapley** — 방법-중립적 참값(ground truth) 기준 —
+이다. 묻는 질문은 counterfactual("$S$만 참여했다면")이며, 기여도 값은 전 논문에서 클수록
+유익하다(손실을 낮추면 양수).
+
+### 3.3 In-Run Data Shapley
+
+**In-Run Data Shapley(IRDS)**(Wang et al., 2024)는 가상의 재학습들 대신 실제로 일어난 학습
+런 하나를 고정하고, 매 gradient step을 작은 협력 게임으로 본다. step $t$의 SGD 업데이트가
+$w^{t+1} = w^t - \eta_t \sum_{z \in B_t} \nabla \ell_z(w^t)$일 때($B_t$는 배치, $\ell_z$는
+샘플 $z$의 학습 손실), $S \subseteq B_t$의 utility는 "$S$의 gradient만 반영했을 때의 검증
+손실 감소"
+
+$$u_t(S) \;=\; \ell(w^t) \;-\; \ell\Big(w^t - \eta_t \textstyle\sum_{z \in S} \nabla \ell_z(w^t)\Big)$$
+
+이고, $\phi_z = \sum_{t:\, z \in B_t} \mathrm{Sh}_z(u_t)$로 합산한다. 핵심 관찰: $u_t$를
+$w^t$에서 Taylor 전개하면 근사 게임의 Shapley 값이 닫힌 식으로 나온다. 1차 게임은
+가법적이라 Shapley 값이 gradient 내적 그 자체이고, 2차까지 취하면
+
+$$\mathrm{Sh}_z(u_t) \;\approx\; \eta_t \big\langle \nabla \ell(w^t),\, \nabla \ell_z(w^t) \big\rangle
+\;-\; \tfrac{\eta_t^2}{2} \Big\langle \nabla \ell_z(w^t),\; \nabla^2 \ell(w^t)\, \textstyle\sum_{z' \in B_t} \nabla \ell_{z'}(w^t) \Big\rangle$$
+
+이다(부호는 위 규약대로). Shapley 공리는 step 게임 수준에서 계승되고, efficiency가
+telescoping과 결합해 $\sum_z \phi_z = \sum_{t=0}^{T-1} u_t(B_t) = \ell(w^0) -
+\ell(w^T)$($T$는 총 스텝 수)가 성립하며, gradient가 0인 샘플은 null player로 정확히 0을
+받는다(형식적 서술·증명은 원 논문 참조). retrain 정의와는 묻는 질문이
+다르고(counterfactual 대 realized 귀속) 값이 궤적-특이적(trajectory-specific)이다 — 두
+정의는 상보적이며, 실증적 관계는 §5.3에서 잰다.
 
 ---
 
-## 3. 배경: Data Shapley, In-Run Data Shapley, 그리고 연합 확장
+## 4. Flirds: 연합 in-run 게임과 그 폐형 추정
 
-**세팅과 표기.** $N$개의 클라이언트가 각각 크기 $n_k$의 instruction-tuning 데이터셋을
-보유하고, 학습은 FedAvg로 진행된다: 라운드 $r$마다 참여 집합 $P_r \subseteq [N]$이 현재
-모델 $w^r$에서 로컬 학습을 수행해 업데이트 $\Delta w_k^r$을 보내고, 서버는 데이터 크기에
-비례하는 **고정 참여자 가중치** $p_k^r = n_k / \sum_{j \in P_r} n_j$로
-집계한다($w^{r+1} = w^r + \sum_{k \in P_r} p_k^r \Delta w_k^r$). 서버는 검증셋을 보유하며
-임의의 모델 $w$에 대해 검증 손실 $\ell(w)$을 평가할 수 있다. 기여도 값은 클수록 유익하도록
-제시한다(검증 손실을 낮추는 클라이언트가 양수).
-
-### 3.1 Data Shapley와 exact retrain Shapley
-
-Data Shapley는 데이터 제공자 부분집합에 utility(그 부분집합만으로 학습한 모델의 검증 성능)를
-부여해 협력 게임으로 보고, 기여도를 그 게임의 **Shapley 값**으로 정의한다. Shapley 값이
-표준인 이유는 공정한 분배의 네 공리(efficiency, symmetry, null player, linearity)를 동시에
-만족하는 유일한 분배이기 때문이다(Shapley 1953; Ghorbani & Zou 2019). 이를 연합학습에
-그대로 옮기면, 부분집합 $S$에 대해 "$S$의 클라이언트만 참여시켜 같은 프로토콜로 처음부터
-다시 학습했을 때의 최종 검증 손실"을 utility로 정의하고 그 Shapley 값 $\phi^{\mathrm{re}}$를
-$2^N$개 부분집합 전부의 재학습으로 근사 없이 계산한다. 이를 **exact retrain Shapley**라
-부른다. 커뮤니티가 참값(ground truth)으로 삼는 방법-중립적 기준이며, 묻는 질문은
-counterfactual("만약 $S$만 참여했다면 어땠을까")이다.
-
-### 3.2 In-Run Data Shapley
-
-**In-Run Data Shapley(IRDS)**(Wang et al., 2024)는 중앙집중 학습에서 $2^N$번의 재학습이라는
-대가를 없애는 관점 전환이다: 가상의 재학습들 대신 실제로 일어난 학습 런 하나를 고정하고, 매
-gradient step을 "참여 샘플 부분집합 $S$의 gradient만 반영했을 때 검증 손실이 얼마나
-줄었는가"를 utility로 하는 작은 협력 게임으로 보아, step별 Shapley 값을 학습 전체에
-합산한다. 재학습 없이 per-sample 값이 나오고, Shapley 공리는 step 게임 수준에서 그대로
-계승된다. 특히 efficiency는 telescoping에 의해 "값의 합 = 그 런이 실제 달성한 검증 손실
-감소"가 된다. retrain 정의와는 묻는 질문(counterfactual 대 realized 귀속), 계산($2^N$번의
-재학습 대 관측 하나), 그리고 값이 궤적-특이적(trajectory-specific)이라는 점이 다르다. 두
-정의는 상보적이며, 실증적 관계는 §5.3에서 측정한다.
-
-### 3.3 우리의 확장: 연합 게임과 exact in-run Shapley
+### 4.1 연합 게임과 exact in-run Shapley
 
 연합학습은 retrain 정의가 가장 감당 불가능한 환경이지만(§1), FL의 라운드 구조는 IRDS의
-step 구조와 정확히 대응한다: "step의 per-sample gradient" 자리에 "라운드의 per-client
-업데이트"를 넣으면 게임이 그대로 이식되고, 재료는 서버가 표준 프로토콜에서 어차피 수신하는
-것뿐이다. 실현된 궤적 $\{w^r, \{\Delta w_k^r\}_{k \in P_r}\}_{r=1}^R$을 고정하고(**고정
+step 구조와 정확히 대응한다: §3.3의 step 게임에서 샘플의 gradient 항 $-\eta_t \nabla \ell_z$
+자리에 라운드의 per-client 가중 업데이트 $p_k^r \Delta w_k^r$를 넣으면 게임이 클라이언트
+단위로 이식되고, 재료는 서버가 표준 프로토콜에서 어차피 수신하는 것뿐이다. 실현된 궤적
+$\{w^r, \{\Delta w_k^r\}_{k \in P_r}\}_{r=0}^{R-1}$을 고정하고(**고정
 궤적**; 이후 모든 방법이 이 동일한 학습 로그를 공유한다), 라운드별 coalition utility를
 
 $$u_r(S) \;=\; \ell(w^r) \;-\; \ell\Big(w^r + \textstyle\sum_{k \in S} p_k^r\, \Delta w_k^r\Big),
 \qquad S \subseteq P_r$$
 
 로 정의한다. 가중치는 런 자신이 사용한 **고정 가중치** $p_k^r$ 그대로이며 $S$ 안에서
-재정규화하지 않는다. §4에서 이 선택이 취향이 아니라 폐형 계산과 null-player 성질을 위해
-강제됨을 보인다. **exact in-run Shapley** $\phi^{\mathrm{in}}$은 각 라운드 게임의 Shapley
+재정규화하지 않는다. 이 선택이 취향이 아니라 폐형 계산과 null-player 성질을 위해 강제됨은
+명제 4에서 보인다. **exact in-run Shapley** $\phi^{\mathrm{in}}$은 각 라운드 게임의 Shapley
 값을 라운드당 $2^{|P_r|}$개 부분집합 전수 열거로 근사 없이 계산해 합한 값이다:
-$\phi_k^{\mathrm{in}} = \sum_{r: k \in P_r} \mathrm{Sh}_k(u_r)$. IRDS의 efficiency가 그대로
-성립한다: $\sum_r u_r(P_r) = \ell(w^0) - \ell(w^R)$ (telescoping).
+$\phi_k^{\mathrm{in}} = \sum_{r: k \in P_r} \mathrm{Sh}_k(u_r)$. IRDS의 efficiency가
+telescoping과 결합해 그대로 성립한다:
+$\sum_k \phi_k^{\mathrm{in}} = \sum_{r=0}^{R-1} u_r(P_r) = \ell(w^0) - \ell(w^R)$.
 
 **용어 규약.** 이하 참값(oracle)은 방금 정의한 **exact in-run Shapley**(라운드별 전수
-열거)와 §3.1의 **exact retrain Shapley**(부분집합별 전수 재학습) 둘뿐이며, 항상 전체 이름으로
+열거)와 §3.2의 **exact retrain Shapley**(부분집합별 전수 재학습) 둘뿐이며, 항상 전체 이름으로
 지칭하고 수식어 없는 "exact"는 쓰지 않는다.
 
----
-
-## 4. Flirds: exact in-run Shapley의 폐형 추정
-
-### 4.1 추정기
+### 4.2 폐형 추정기
 
 exact in-run Shapley는 근사가 없지만 라운드당 $2^{|P_r|}$번의 검증 평가를 요구한다. Flirds의
 출발점은, 라운드 utility를 $w^r$ 주변에서 2차까지 Taylor 전개하면 그 근사 게임의 Shapley
 값이 닫힌 식으로 나온다는 것이다(명제 2). $g_r := \nabla \ell(w^r)$,
 $H_r := \nabla^2 \ell(w^r)$(Gauss–Newton 근사가 아닌 true Hessian),
-$\delta_k := \Delta w_k^r$, $\Delta W_r := \sum_{j \in P_r} p_j^r\, \delta_j$라 하면:
+$\delta_k := \Delta w_k^r$(고정된 라운드 문맥에서 첨자 $r$ 생략), coalition $S$의 집계 이동
+$\Delta_S := \sum_{k \in S} p_k^r\, \delta_k$, 그리고 $\Delta W_r := \Delta_{P_r}$라 하면:
 
 $$\hat\phi_k^{(r)}
 \;=\;
@@ -261,30 +278,27 @@ Hessian-vector product(HVP) $H_r \Delta W_r$ **한 번**과 참여자당 내적 
 Hessian을 만들거나 역행렬하지 않으며, 비용은 부분집합 수 $2^{|P_r|}$과 무관하다. 2차 항을
 제거한 변형을 **Flirds (first-order)** 라 부르고 상호작용 항의 ablation으로 사용한다.
 
-### 4.2 이론: 추정기와 exact in-run Shapley는 같은 게임을 계산한다
+### 4.3 이론: 추정기와 exact in-run Shapley는 같은 게임을 계산한다
 
-이 절의 요지는 한 문장이다: Flirds는 임의의 점수가 아니라 §3.3에서 정의한 바로 그 게임의
+이 절의 요지는 한 문장이다: Flirds는 임의의 점수가 아니라 §4.1에서 정의한 바로 그 게임의
 Shapley 값을 계산하며, exact in-run Shapley와의 유일한 차이는 Taylor 절단뿐이다. 형식적
 서술·증명·가정·반례·수치 검증은 부록 A에 있다.
 
-**명제 1 (라운드별 분해).** 고정 궤적 위에서 전체 게임 $\sum_r u_r$의 Shapley 값은 라운드별
+**명제 1 (라운드별 분해).** 고정 궤적 위에서 전체 게임 $\sum_r u_r$(각 $u_r$은
+$u_r(S) := u_r(S \cap P_r)$로 $[N]$ 위 게임으로 확장해 합산)의 Shapley 값은 라운드별
 $|P_r|$-인 게임의 Shapley 값의 합으로 정확히 분해된다(비참여 라운드의 기여 0은 정의가
-아니라 정리다). 라운드별 열거의 합과 직접 $2^N$ 열거는 GPT-2 스모크에서
-$3.9\times 10^{-7}$(fp32 forward 노이즈 바닥), 결정론 통제 CNN 측정에서
-$3\times 10^{-16}$까지 일치한다(부록 A.11).
+아니라 정리다).
 
 **명제 2 (폐형; free-rider 0; efficiency).** 라운드 utility의 2차 Taylor 근사 게임에 대해
-exact Shapley 값은 §4.1의 식과 정확히 같다(구현·$2^N$ 전수 열거와의 일치 $10^{-12}$ 수준;
-부록 A.11). 따름 성질 둘: $\delta_k = 0$인 zero-update free-rider는 대수적으로 **정확히**
+exact Shapley 값은 §4.2의 식과 정확히 같다(증명은 부록 A). 따름 성질 둘: $\delta_k = 0$인 zero-update free-rider는 대수적으로 **정확히**
 $\hat\phi_k = 0$을 받고, 값의 합은 근사 게임의 전체 utility와 일치한다(efficiency).
 
 **명제 3 (Taylor 잔차).** 근사의 대가는 절단 오차다. 라운드당 utility 오차는 2차에서
 $\frac{M_3}{6}\|\Delta_S\|^3$, 1차에서 $\frac{M_2}{2}\|\Delta_S\|^2$로 bound되고 라운드 수에
-선형 누적된다. 상수 $M_2, M_3$는 추정 가능한 양이 아니므로 잔차를 실측으로 보완한다: 1B
-실측($N{=}5$, 3-seed)에서 라운드별 잔차는 1차 평균 $\sim 2\times 10^{-6}$, 2차 평균
-$\sim 6\times 10^{-7}$로 coalition utility($10^{-3}$–$10^{-2}$)보다 $10^3$–$10^4$배 작고,
-1차 잔차의 스케일링 기울기 $1.8$–$2.7$은 이론 예측(기울기 2)과 정합한다(2차 잔차는 fp32
-해상도 수준이라 하한만 관측).
+선형 누적된다(라운드별 국소 곡률 상수 $M_2, M_3$의 형식적 정의는 부록 A). 이 상수들은
+추정 가능한 양이 아니므로, 이 bound가 주는 것은
+잔차의 **차수**(스케일링 법칙)까지다. 잔차의 실제 크기는 이론이 아니라 측정의 몫이며,
+§5.2에서 실측한다.
 
 **명제 4 (고정 가중 대 부분집합 재정규화, 그리고 비교의 공정성).** 여러
 baseline(GTG-Shapley, FedSV)은 부분집합 평가 시 가중치를 $S$ 안에서 재정규화하는데, 이는
@@ -406,11 +420,19 @@ $0.124$–$0.311$로 떨어진다.
 
 **값 수준의 정확도, 그리고 공리 준수.** 정산처럼 기여도의 **값** 자체를 소비하는 용도를
 위해 값 수준도 잰다: 표준 세팅에서 Pearson $1.000$, cosine 거리 $10^{-4}$ 미만(1B/3B/7B
-전반)이고, efficiency 항등식 $\sum_k \hat\phi_k = \ell(w^0) - \ell(w^R)$은 게이트 테스트에서
-오차 0이다. 공리 준수는 상관계수가 가르지 못하는 것을 가른다: 아무 업데이트도 보내지 않은
+전반)이고, efficiency는 게이트 테스트에서 대수 항등식(값의 합 = 근사 게임의 전체 utility;
+명제 2)으로 오차 0이며, 실현된 손실 감소 $\ell(w^0) - \ell(w^R)$와의 차이는 Taylor 잔차
+수준이다(부록 A.11의 telescoping 잔차). 공리 준수는 상관계수가 가르지 못하는 것을 가른다: 아무 업데이트도 보내지 않은
 free-rider에게 Flirds는 **정확히** $\hat\phi = 0$을 주지만(명제 2), 부분집합-재정규화 게임
 방법들은 양의 raw 값을 지급한다(3-seed 평균 GTG $0.0037$, FedSV $0.0047$). 명제 4가 말한
 게임 차이의 실무적 얼굴이다.
+
+**Taylor 잔차 실측 (명제 3의 보완).** 명제 3의 bound는 잔차의 차수만 주므로 크기는 직접
+잰다. 1B 실측($N{=}5$, 3-seed)에서 라운드별 잔차는 1차 평균 $\sim 2\times 10^{-6}$, 2차 평균
+$\sim 6\times 10^{-7}$로 coalition utility($10^{-3}$–$10^{-2}$)보다 $10^3$–$10^4$배 작고, 1차
+잔차의 스케일링 기울기 $1.8$–$2.7$은 이론 예측(기울기 2)과 정합한다(2차 잔차는 fp32 해상도
+수준이라 하한만 관측). 라운드별 열거의 합과 직접 $2^N$ 열거의 구현-수준 일치(명제 1·2의
+항등식 검증)는 부록 A.11에 있다.
 
 ### 5.3 참값 대비 검증: exact retrain Shapley, 그리고 게임-무관 척도
 
@@ -476,7 +498,7 @@ $1.00\pm.00$으로 크기와 무관하다. 오염 없는 대조 셀의 $0.83\pm.
 어떤 방법도 다운스트림 효용을 보일 수 없는 세팅이라는 뜻이기도 하다. **둘째**, 신호를
 만드는 것은 클라이언트 간 실제 차이다. 오염이 전혀 없어도 도메인 이질성만으로 $+0.87$까지
 올라간다. 반면 학습 강도는 신호를 만들지 못한다: 학습률을 키우면 $\phi$의 공통 크기만
-커지고 cross-seed 신호는 생기지 않는다(3-seed; 부록 F). **셋째**, 오염 없는 IID 세팅에서는
+커지고 cross-seed 신호는 생기지 않는다(3-seed; 부록 E). **셋째**, 오염 없는 IID 세팅에서는
 기여도 기반의 어떤 개입도 "아무것도 바꾸지 않는 것(do no harm)"이 올바른 답이다. 우리의
 selection 실험도 거기서는 vanilla와 구별되지 않았고, 이를 실패가 아니라 설계대로의 sanity
 check로 보고한다.
@@ -703,8 +725,8 @@ $|u_r(S) - \hat u_r(S)| \le \tfrac{M_3^r}{6}\|\Delta_S\|^3$, 1차는
 $\tfrac{M_2^r}{2}\|\Delta_S\|^2$. **L2 (오차 전파)**: $|\phi_i(v) - \phi_i(v')| \le 2\|v -
 v'\|_\infty$. 결합하면 $|\phi_k(U_b) - \hat\phi_k| \le \sum_r \tfrac{M_3^r}{3} \max_S
 \|\Delta_S^r\|^3$ (1차 추정기는 선행계수가 $M_2^r$이며, $M_2/3$을 쓰면 무효 상계다). **지위**:
-이는 상계이고 상수는 실측 불가하며 $R$에 선형 누적된다. 그래서 본문 §4.2처럼 잔차를 실측으로
-보완한다. per-round 이동이 $K$-스텝 누적이라 IRDS per-step보다 구조적으로 약한 보증이라는
+이는 상계이고 상수는 실측 불가하며 $R$에 선형 누적된다. 그래서 본문(명제 3)의 방침대로
+잔차의 실제 크기는 실측으로 보완한다(§5.2). per-round 이동이 $K$-스텝 누적이라 IRDS per-step보다 구조적으로 약한 보증이라는
 점도 명시한다.
 
 **A.7 명제 P4 (per-sample→per-client 브리지; 보조정리 L3).** **(i) 고정 가중의 필수성**:
@@ -749,7 +771,7 @@ $z$-공간에서 닫히는 것이며 full-weight 공간 해석은 별도 논증 
 추정기 최대 절대차 $5.8 \times 10^{-12}$; $\hat u^{(2)}$ 게임의 $2^5$ 전수 Shapley = 닫힌형
 $7.6 \times 10^{-12}$; per-round 분해 = $2^N$ 전수 (b) $3.9 \times 10^{-7}$(fp32 forward
 노이즈 바닥); telescoping 잔차 $\le 9.5 \times 10^{-7}$; Hessian 대칭성 $\le 1.8 \times
-10^{-11}$. 1B 3-seed 물리 실측(잔차 크기·스케일링)은 본문 §4.2의 명제 3 문단과 같다.
+10^{-11}$. 1B 3-seed 물리 실측(잔차 크기·스케일링)은 본문 §5.2의 잔차 실측 문단과 같다.
 ### 부록 B. Removal·dose 실험 상세
 
 **B.1 removal-curve 프로토콜.** 각 방법의 $\phi$로 클라이언트를 순위화한 뒤, **worst-first**는
@@ -862,53 +884,9 @@ $0.860$)이다.
 
 CNN의 (a) exact retrain 자기-일치도(시나리오별 $-0.28$–$+0.97$)는
 `runs/track_c/figures/a_oracle_xseed_stability.csv`에 정본화했다(§5.3의 발산 논의).
-### 부록 D. 선행연구 Taxonomy
+### 부록 D. 프로토콜 상세와 재현성
 
-**D.1 모집단과 축.** 데이터/기여도 평가·귀속 방법 약 40편(centralized·federated·decentralized
-포함) + FL 강건성/탐지 baseline 5종 + 데이터 마켓 2편을, 내부 소스 노트 약 45편과 표적 웹
-검색(2024–2026)으로 수집해 6축으로 분류했다: ① federation 세팅(C/F/D), ② valuation
-기반(retrain / in-run·trajectory / influence·gradient / coalition-재구성(recon) / 기타), ③
-실험 모델 클래스(CNN·MLP / LLM / kernel·tabular), ④ 평가 단위(sample / client / class /
-dataset / node), ⑤ 목적(효율·충실도·공정·집계·탐지·선별·마켓·귀속), ⑥ 보조 축(통신
-오버헤드, 부분 참여 처리, 검증셋/신뢰 루트 필요 여부). 제2 관점으로 검증-실험 축
-E1–E7(참값-대비 충실도 / 선별→다운스트림 / 탐지 / 공정성 / 재현성 / 비용 / 집계 품질)을
-병기했다.
-
-**D.2 교차표 A: federation × 모델 클래스 (요지).** FL-Shapley/valuation
-계열(FedSV·GTG-Shapley·ComFedSV·S-FedAvg·ShapleyFL·SPACE·ShapFed·FedTSV·FedIF)은 전부
-CNN-분류 무대이고, LLM-scale 귀속/선별
-계열(IRDS·DataInf·LoGra·EK-FAC·LESS·MATES·DsDm·DVEmb)은 전부 centralized다. **federated ×
-LLM × client-level valuation 칸은 우리가 수집한 범위 안에서 비어 있으며**, 그 칸의 현재
-점유자는 valuation이 아닌 인접 문제들, 곧 FedDQC(per-sample 품질)·FedHDS(선별)·iPFL(모델
-마켓)뿐이다.
-
-**D.3 교차표 B: federation × valuation 기반 (요지).** federated × in-run 칸에서 가장
-가까운 선행은 FedTSV(집계 지향, closed-form 없음)다. client-level + 1차+2차 Taylor
-closed-form + true-Hessian HVP + 통신 오버헤드
-0을 동시에 채우는 federated 행은 관찰 범위에서 본 논문이 유일하다. 경계에 걸친
-방법들(LESS·FedIF·FedDQC·FedHDS 등)은 표에 정직하게 표기한다. 주장하는 것은 "최초
-federated in-run"이 아니라 이 **교차점**이다.
-
-**D.4 검증 축의 비대칭.** CNN 트랙 선행은 exact/GT 대비 충실도(E1)를 자주
-재지만(대개 TMC/permutation-MC·LOO-retrain·LDS 같은 근사 GT다), LLM 트랙의 E1은 전부 centralized다. exact $2^N$
-전수 열거를 참값으로 쓰는 검증은 소규모-$N$ 정의류와 본 논문의 이중 exact 참값뿐이다. 최근
-federated 방법 다수(FedIF·FedTSV·ShapFed·S-FedAvg)는 기여도를 집계 가중치로 쓰는
-robust-aggregation으로 이동하며 E1을 생략하고 E7(집계 품질)로 평가한다. 순수
-valuation-fidelity를 1차 질문으로 두는 연구는 소수다(FedSV·GTG·ComFedSV·본 논문). 근사
-FL-Shapley의 불안정성 경고(집계 전략만 바꿔도 보상 30–50% 이동; $>$20,000 run)와 centralized
-influence의 취약성 보고(깊이/규모에 따른 LOO-대비 상관 붕괴)가 양쪽 모집단에 존재한다. exact
-기준 대비 직접 검증(본 논문의 §5)의 동기다.
-
-**D.5 스코프 caveat.** 위의 "빈칸" 서술은 단정적 novelty가 아니라 **관찰된 공백**이다(내부
-노트 + 표적 웹 2024–2026 범위). 표적 검색에서 떠올랐으나 원문 미수집으로 표에 반영하지 않은
-논문 7건, 곧 Owen Sampling for FL Contribution Estimation(2025), Maverick-Aware Shapley
-Valuation(2024), Secure Shapley Value for Cross-Silo FL(VLDB), Fair/Robust/Efficient Client
-Contribution Evaluation(2024), FedKDShap(WWW 2025), In-Run Data Shapley for Adam
-Optimizer(2026, centralized), FL-Shapley 서베이 2편은 확인된 범위에서 모두 CNN-scale
-FL-Shapley 또는 centralized LLM-Shapley 계열로, 위 공백을 메우는 것은 발견되지 않았다.
-### 부록 E. 프로토콜 상세와 재현성
-
-**E.1 세팅별 하이퍼파라미터.** 전 LLM 세팅 공통: plain SGD(momentum 0)·상수 lr(warmup 없음),
+**D.1 세팅별 하이퍼파라미터.** 전 LLM 세팅 공통: plain SGD(momentum 0)·상수 lr(warmup 없음),
 LoRA target = q/k/v/o/gate/up/down proj, dropout 0, completion-only loss, utility 평가 fp32.
 
 | 세팅 | 모델 | LoRA $r/\alpha$ | lr | 로컬 스텝 | 배치 | seq len | $R$ | 참여 | seeds |
@@ -924,7 +902,7 @@ LoRA target = q/k/v/o/gate/up/down proj, dropout 0, completion-only loss, utilit
 모델: Llama-3.2-1B/3B-Instruct, Llama-2-7B. 검증 손실 평가는 청크 합산이라 메모리 knob이 값에
 영향을 주지 않는다.
 
-**E.2 데이터 레이어.** IID 무대는 alpaca-gpt4 52k 중 20k(OpenFedLLM 템플릿 verbatim; 셔플 후
+**D.2 데이터 레이어.** IID 무대는 alpaca-gpt4 52k 중 20k(OpenFedLLM 템플릿 verbatim; 셔플 후
 val 200 → test 1,000 → train 20k 상호-disjoint carve, N개 균등 shard). 5-도메인 non-IID는
 의료 플래시카드(medical-meadow) / 법률 QA / 금융 QA(FiQA) / 수리 추론(AQuA-RAT) / 일반
 지시문(Dolly-15k)을 free-form instruction→response로 통일하고(형식 이질성이 공유 검증-손실
@@ -933,20 +911,20 @@ held-out(도메인-층화; cross-silo 셀은 도메인당 20, cross-device는 �
 val이라 AUROC가 거친 격자임을 명시). cross-device는 도메인 풀을 합친 뒤 클라이언트별
 Dirichlet($\alpha$) 혼합으로 300예제/클라를 배정한다($\alpha{=}0$은 단일-도메인 one-hot).
 
-**E.3 corruptor 정의(코드 기준).** noisy(answer-swap): 클라이언트 내부에서 completion 열만
+**D.3 corruptor 정의(코드 기준).** noisy(answer-swap): 클라이언트 내부에서 completion 열만
 무작위 순열(프롬프트 불변; 비율형은 오염 부분집합 내 순환 재배정, rate 1.0은 전체 순열과
 비트동일). CNN noisy: label shuffle/graded label-flip(정답 제외 균등 재라벨),
 feature-noise(픽셀 단위 Gaussian). free-rider: zero($\Delta w = 0$ 제출) /
 random($\Delta w \sim U(-s,s)$, $s$는 clean warmup 라운드에서 잰 benign 업데이트 std에
 매칭한 탐지-회피형 세팅) / delta(직전 라운드 글로벌 집계 재활용; §5.6의 스트레스 케이스).
 
-**E.4 탐지 baseline 설정.** FLDetector: L-BFGS Hessian 예측과 실제 업데이트의 차 norm 점수,
+**D.4 탐지 baseline 설정.** FLDetector: L-BFGS Hessian 예측과 실제 업데이트의 차 norm 점수,
 연속 점수로 AUROC(클러스터링 생략), CPU. STD-DAGMM: 업데이트를 feature-hashing으로 256차원
 투영 후 AE+GMM energy, CPU. FLTrust: 라운드별 서버 검증-gradient와의 signed cosine 평균.
 FedDQC: per-sample IRA(빈 프롬프트 대비 조건부 손실 차), 클라당 128 서브샘플. 네 탐지기 모두
 전 위협에서 실행하되 본문 비교는 각자의 홈 위협 기준이다.
 
-**E.5 하드웨어·정밀도·재현성.** DGX B200 4장(대부분 셀은 1장/셀; 2026-07 비용 재계측은 B200
+**D.5 하드웨어·정밀도·재현성.** DGX B200 4장(대부분 셀은 1장/셀; 2026-07 비용 재계측은 B200
 1장/방법). utility·HVP·내적은 fp32로 계산하며 감사로 검증했다; CNN 트랙의 conv 학습 연산은
 cuDNN 기본 TF32다. attention은 eager 모드(forward-mode HVP 호환). 전 러너
 seed-고정(torch/numpy/CUDA), CNN은 cudnn-deterministic으로 fp32 비트동일. 셀마다 run
@@ -955,16 +933,16 @@ seed-고정(torch/numpy/CUDA), CNN은 cudnn-deterministic으로 fp32 비트동�
 `timing.json`(phase별 wall-clock·peak 메모리·GPU-h)을 영속화하며, 모든 표·그림은 rundir만으로
 재생성된다.
 
-**E.6 비용 회계 caveat.** ① individual-utility 런타임은 singleton utility의 base 중복 평가
+**D.6 비용 회계 caveat.** ① individual-utility 런타임은 singleton utility의 base 중복 평가
 버그(라운드당 forward $2|P_r| \to 1{+}|P_r|$)를 교정한 재측정값이다. $\phi$는 비트동일,
 런타임만 $\sim$1.7배 과대였다. ② FLDetector·STD-DAGMM은 CPU 실행이라 GPU 방법들과 하드웨어가 다르다(model-free
 로 GPU가 불필요하다는 것 자체가 이 방법들의 특성). ③ 보조 축으로 방법별 per-round
 연산수(forward/gradient/HVP) 해석적 카운트 × 연산별 microbench 시간이 실측 wall-clock을
 재현함을 확인했다(하드웨어-독립 검산). ④ 조사한 선행 7편 중 valuation-only wall-clock 회계를
 명시 정의한 논문은 없었다. 본 절의 회계 정의 자체가 보고 관행의 개선이다.
-### 부록 F. 신호-크기 진단 (확장)
+### 부록 E. 신호-크기 진단 (확장)
 
-**F.1 학습-강도 축 probe.** "IID-clean에서 신호가 없는 것은 학습이 약해서인가"를 네 lever로
+**E.1 학습-강도 축 probe.** "IID-clean에서 신호가 없는 것은 학습이 약해서인가"를 네 lever로
 검사했다. ① **LoRA rank** $r \in \{16, 32, 64\}$ (N=5 full, seed 0): exact in-run Shapley의
 클라이언트 간 $\phi$ 범위는 $0.0012 \to 0.0011$로 평평하고 Flirds fidelity는 전 rank
 $+1.000$. ② **참여 구조** (N=50, 5/round, $r \in \{16,32,64\}$): $\phi$ 범위는 rank로
@@ -978,7 +956,7 @@ $w \in \{0.5,1,2,4\}$, 3-seed)도 같다: IID의 자기-일치도는 폭 8배에
 불변, label-flip은 폭 무관 $\approx 0.9$. **결론**: 어떤 학습-강도 lever도 cross-seed 실재
 신호를 만들지 못하며, 신호는 클라이언트 간 실제 차이(비IID·오염·데이터 양)가 만든다.
 
-**F.2 오염 × 분포 매트릭스 (1B, N=5 full, 3-seed; exact in-run Shapley 자기-일치도).**
+**E.2 오염 × 분포 매트릭스 (1B, N=5 full, 3-seed; exact in-run Shapley 자기-일치도).**
 
 | 무대 | clean | noisy | fr-random | fr-zero |
 |---|---|---|---|---|
@@ -992,7 +970,7 @@ $1.00$; FedDQC는 균질 배경에서 noisy가 더 깨끗하고(IID $1.00$ vs no
 약하다(IID $0.58$ / non-IID $0.75$); STD-DAGMM은 전반적으로 약하다. 정본:
 `runs/matrix_cxni/figures/crossseed_rho.csv` + `runs/phase2_matrix/rundirs/1B_{iid5,silo5}_*`.
 
-**F.3 검증-노이즈 분리 (bootstrap).** 학습된 모델을 고정하고 검증셋을 청크 단위로 2,000회
+**E.3 검증-노이즈 분리 (bootstrap).** 학습된 모델을 고정하고 검증셋을 청크 단위로 2,000회
 bootstrap 재표집하면: $\phi$의 클라이언트 간 산포는 클라이언트별 bootstrap 표준오차의
 $1.15/1.37/2.34$배(seed 0/1/2)에 불과하지만, 재표집 자기-순위 상관은 $0.93/0.96/0.99$,
 검증셋 반분할 상관은 $0.90/0.90/1.00$이다(rank 64도 동일 구조). 극단 쌍의 분리가 SE의
@@ -1000,7 +978,7 @@ $\sim$10배라 순위는 검증 노이즈에 강건하다. 즉 **같은 seed 안
 뚫고 재현되고, seed를 넘으면 무너지는 것은 데이터 파티션·궤적의 실현 그 자체다**. 본문
 §5.4의 층위 구분 그대로다.
 
-**F.4 MMLU 검정력.** 이 무대의 연합 SFT는 같은-분포 표면 지표(val-loss $-0.03$–$-0.12$,
+**E.4 MMLU 검정력.** 이 무대의 연합 SFT는 같은-분포 표면 지표(val-loss $-0.03$–$-0.12$,
 ROUGE-L $+1.5$–$+12.8$pp)는 실제로 움직이지만 capability 축은 움직이지 않는다: MMLU는 base
 대비 $-1.4$–$+0.3$pp(이항 SE $\pm 0.42$pp)로 향상 0 또는 소폭 하락이다. 개입 효과의 기대
 크기($\Delta$val-loss $\sim 10^{-3}$)는 MMLU 표본 SE($\pm 4 \times 10^{-3}$)와 vanilla 최종
