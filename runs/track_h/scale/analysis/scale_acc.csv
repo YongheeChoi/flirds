@@ -1,0 +1,49 @@
+rundir,threat,seed,arm,label,final_acc,auroc,rounds_to_target
+cifar10_dir1_frac1.0_clean_seed0,clean,0,observer,vanilla(observer),0.652625,,60.0
+cifar10_dir1_frac1.0_clean_seed0,clean,0,flirds_gate_v2,flirds P1(sign),0.642625,,63.0
+cifar10_dir1_frac1.0_clean_seed0,clean,0,flirds_cgate,flirds P5h(cgate),0.648,,59.0
+cifar10_dir1_frac1.0_clean_seed0,clean,0,flirds_pweight,flirds P5s(pweight),0.645875,,59.0
+cifar10_dir1_frac1.0_clean_seed1,clean,1,observer,vanilla(observer),0.655375,,63.0
+cifar10_dir1_frac1.0_clean_seed1,clean,1,flirds_gate_v2,flirds P1(sign),0.64975,,64.0
+cifar10_dir1_frac1.0_clean_seed1,clean,1,flirds_cgate,flirds P5h(cgate),0.656,,64.0
+cifar10_dir1_frac1.0_clean_seed1,clean,1,flirds_pweight,flirds P5s(pweight),0.650125,,62.0
+cifar10_dir1_frac1.0_clean_seed2,clean,2,observer,vanilla(observer),0.65,,62.0
+cifar10_dir1_frac1.0_clean_seed2,clean,2,flirds_gate_v2,flirds P1(sign),0.639625,,66.0
+cifar10_dir1_frac1.0_clean_seed2,clean,2,flirds_cgate,flirds P5h(cgate),0.641375,,63.0
+cifar10_dir1_frac1.0_clean_seed2,clean,2,flirds_pweight,flirds P5s(pweight),0.6425,,62.0
+cifar10_dir1_frac1.0_free-rider_seed0,free_rider,0,observer,vanilla(observer),0.607125,,106.0
+cifar10_dir1_frac1.0_free-rider_seed0,free_rider,0,flirds_gate_v2,flirds P1(sign),0.61975,0.9166666666666666,71.0
+cifar10_dir1_frac1.0_free-rider_seed0,free_rider,0,flirds_cgate,flirds P5h(cgate),0.6255,0.5833333333333333,73.0
+cifar10_dir1_frac1.0_free-rider_seed0,free_rider,0,flirds_pweight,flirds P5s(pweight),0.626,0.7,72.0
+cifar10_dir1_frac1.0_free-rider_seed1,free_rider,1,observer,vanilla(observer),0.611375,,108.0
+cifar10_dir1_frac1.0_free-rider_seed1,free_rider,1,flirds_gate_v2,flirds P1(sign),0.629875,0.8,71.0
+cifar10_dir1_frac1.0_free-rider_seed1,free_rider,1,flirds_cgate,flirds P5h(cgate),0.619875,0.5,71.0
+cifar10_dir1_frac1.0_free-rider_seed1,free_rider,1,flirds_pweight,flirds P5s(pweight),0.62675,0.65,70.0
+cifar10_dir1_frac1.0_free-rider_seed2,free_rider,2,observer,vanilla(observer),0.6045,,114.0
+cifar10_dir1_frac1.0_free-rider_seed2,free_rider,2,flirds_gate_v2,flirds P1(sign),0.617125,0.9,70.0
+cifar10_dir1_frac1.0_free-rider_seed2,free_rider,2,flirds_cgate,flirds P5h(cgate),0.6195,0.55,73.0
+cifar10_dir1_frac1.0_free-rider_seed2,free_rider,2,flirds_pweight,flirds P5s(pweight),0.627625,0.75,72.0
+cifar10_dir1_frac1.0_grad-noise_seed0,grad_noise,0,observer,vanilla(observer),0.544375,,
+cifar10_dir1_frac1.0_grad-noise_seed0,grad_noise,0,flirds_gate_v2,flirds P1(sign),0.609375,0.9841666666666666,93.0
+cifar10_dir1_frac1.0_grad-noise_seed0,grad_noise,0,flirds_cgate,flirds P5h(cgate),0.6005,0.9525000000000001,120.0
+cifar10_dir1_frac1.0_grad-noise_seed0,grad_noise,0,flirds_pweight,flirds P5s(pweight),0.607375,0.9925,103.0
+cifar10_dir1_frac1.0_grad-noise_seed1,grad_noise,1,observer,vanilla(observer),0.55225,,
+cifar10_dir1_frac1.0_grad-noise_seed1,grad_noise,1,flirds_gate_v2,flirds P1(sign),0.61025,0.97375,75.0
+cifar10_dir1_frac1.0_grad-noise_seed1,grad_noise,1,flirds_cgate,flirds P5h(cgate),0.603375,0.96375,84.0
+cifar10_dir1_frac1.0_grad-noise_seed1,grad_noise,1,flirds_pweight,flirds P5s(pweight),0.61,0.9970833333333333,68.0
+cifar10_dir1_frac1.0_grad-noise_seed2,grad_noise,2,observer,vanilla(observer),0.5525,,
+cifar10_dir1_frac1.0_grad-noise_seed2,grad_noise,2,flirds_gate_v2,flirds P1(sign),0.610875,0.9820833333333333,82.0
+cifar10_dir1_frac1.0_grad-noise_seed2,grad_noise,2,flirds_cgate,flirds P5h(cgate),0.60725,0.9587500000000001,87.0
+cifar10_dir1_frac1.0_grad-noise_seed2,grad_noise,2,flirds_pweight,flirds P5s(pweight),0.61475,0.9945833333333334,66.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed0,label_flip,0,observer,vanilla(observer),0.580125,,
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed0,label_flip,0,flirds_gate_v2,flirds P1(sign),0.584,0.8503572929802438,73.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed0,label_flip,0,flirds_cgate,flirds P5h(cgate),0.605875,0.48633879781420764,70.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed0,label_flip,0,flirds_pweight,flirds P5s(pweight),0.624375,0.8490962589323245,67.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed1,label_flip,1,observer,vanilla(observer),0.544375,,
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed1,label_flip,1,flirds_gate_v2,flirds P1(sign),0.577625,0.8970352564102564,80.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed1,label_flip,1,flirds_cgate,flirds P5h(cgate),0.604125,0.5296474358974359,80.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed1,label_flip,1,flirds_pweight,flirds P5s(pweight),0.621375,0.9791666666666667,74.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed2,label_flip,2,observer,vanilla(observer),0.5405,,
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed2,label_flip,2,flirds_gate_v2,flirds P1(sign),0.597,0.900040144520273,75.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed2,label_flip,2,flirds_cgate,flirds P5h(cgate),0.5925,0.5845042151746287,78.0
+cifar10_dir1_frac1.0_label-flip_fr0.70_seed2,label_flip,2,flirds_pweight,flirds P5s(pweight),0.620375,0.9598554797270172,73.0

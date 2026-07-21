@@ -12,19 +12,19 @@
 # then the rest:               REPO=... PY=... sbatch --array=1,2,4,5,7,8,10,11 sbatch_scale.sh
 #
 #SBATCH --job-name=c2scale
-#SBATCH --partition=<PARTITION>
+#SBATCH --partition=base_suma_rtx3090
 ###SBATCH --account=<ACCOUNT>            # uncomment if the cluster requires it
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=12:00:00
 #SBATCH --array=0-11%4                   # throttle: adjust to the node/queue GPU budget
-#SBATCH --output=<REPO>/runs/track_h/scale/logs/%x_%A_%a.out
+#SBATCH --output=/home/chyoyhr/projects/flirds/runs/track_h/scale/logs/%x_%A_%a.out
 
 set -euo pipefail
 
-REPO=${REPO:-<REPO>}                     # absolute path to the flirds repo on this cluster
-PY=${PY:-<VENV_PY>}                      # venv python (see header)
+REPO=${REPO:-/home/chyoyhr/projects/flirds}   # absolute path to the flirds repo on this cluster
+PY=${PY:-/home/chyoyhr/anaconda3/envs/lora4cl/bin/python}  # venv python (see header)
 export PYTHONPATH=. PYTHONUTF8=1
 
 THREATS=(clean label_flip free_rider grad_noise)

@@ -854,6 +854,36 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **출처(P5)**: `runs/track_h/rundirs_cnn/*_{<src>p5,obsp5}_*`(108런; flirds 12런 meta=`fa5fc6e`) · `runs/track_h/analysis/`(P5h/P5s policy 편입 재생성) · 코드 = `fl/intervene.py`(SignAccumulator.stats·conf-gate·prob-weight) + `experiments/track_c2.py`(`_TH_POLICIES` += cgate/pweight·`C2_T2_P5`·dispatch 순서 수정) + `tests/test_p5.py`(10) — R4(gsm50k5) 동일-정책 leg는 B200 `REMAINING.md` §1.1.
 
+#### Scale 완전참여 100/100 — 2026-07-21 사전등록 확증 런 (`rundirs_cnn_scale` 12런)
+
+> **정본 = `runs/track_h/scale/RUN_SCALE.md`**. Flirds 비용 주장(valuation이 cohort 크기 k에 선형)의 무대: R1과 동일하되 **frac 0.1→1.0**(매 라운드 100/100). k=100에선 coalition 계열이 라운드당 O(2^k)~O(k²) eval이라 **baseline 개입 arm이 존재할 수 없음**(ShapleyFL exact 2^100 등 — §1 표) → 비교 대상 = **vanilla 학습만**(observer=vanilla 비트동일; oracle_excl/random_excl/T2/audit 제외 = Yonghee 07-21 결정). arm 4종 = observer / P1 gate_v2 / P5h cgate / P5s pweight(전부 flirds 점수원; `C2_OBS_SRCS=flirds`). 게이트 하이퍼 = R1/P5 동일(z=1.645).
+
+**절대 test acc** (3-seed mean±sd; vanilla=observer가 유일 비교선):
+
+| arm | clean | label-flip@0.70 | free-rider | grad-noise | **오염-평균** |
+|---|---|---|---|---|---|
+| observer(=vanilla) | **.6527**±.003 | .5550±.022 | .6077±.004 | .5497±.005 | .5708 |
+| flirds P1(sign) | .6440±.005 | .5862±.010 | .6223±.007 | .6102±.001 | .6062 |
+| flirds P5h(cgate) | .6485±.007 | .6008±.007 | .6216±.003 | .6037±.003 | .6087 |
+| flirds P5s(pweight) | .6462±.004 | **.6220**±.002 | **.6268**±.001 | **.6107**±.004 | **.6198** |
+
+**읽기:**
+- **완전참여는 vanilla 자체를 강하게 만든다**(GN .5497 vs frac0.1 .2436 — 오염 grad가 100클라 평균에 희석) — 그럼에도 세 정책 모두 오염 3셀 전부 vanilla 상회(+1.4~+6.7pt), 오염-평균 **P5s .6198 > P5h .6087 > P1 .6062 > vanilla .5708**. n_obs≈R 증거-풍부 레짐에서 **soft(Φ-가중)가 1위** — 오염 3셀 모두 세 정책 중 최고(HS-4 방향).
+- **clean 서열도 P5 설계 의도대로**: P1 −.0087(parity band .006 밖 = 오발화) < P5h −.0042(band 내 회복) < vanilla. P5s는 −.0065로 band를 0.0005 초과(경계).
+- **게이트 행동**(`scale_gate_behavior.csv`): FR corrupt 참여율 cgate .004 ≈ P1 .005(exact-0 즉시 배제 유지 — HS-3의 FR 수렴 적중); GN·LF는 cgate가 P1보다 관대(corrupt 참여 .28/.13 vs .09/.04)한데도 acc 동급± — UCB가 배제를 늦추는 비용이 완전참여(오염 희석)에선 거의 무해. pweight는 전원 참여 + corrupt 상대가중 .00~.18로 Φ(t) 양극화 그대로.
+
+**HS-1~5 대조**(정본 §4; MISS 그대로):
+
+| # | 판정 | 근거 |
+|---|---|---|
+| HS-1 (오염 3셀 세 정책 모두 vanilla 수 pt 상회; frzero 빠른 회복) | 대체로 적중 | GN +5.4~+6.1pt·LF +3.1~+6.7pt 적중; FR은 +1.4~+1.9pt로 "수 pt"엔 경계(완전참여 vanilla가 이미 .6077로 강함), corrupt 즉시배제(참여 .004)는 적중 |
+| HS-2 (P1 clean 하회 위험·P5h parity 회복) | **적중** | P1 −.0087(band 밖) vs P5h −.0042(band 내) |
+| HS-3 (오염 셀 P5h→P1 수렴: t 조기 포화·같은 배제 집합) | 부분 | FR은 배제 집합 동일(.004≈.005)·acc 동급 적중; GN·LF는 cgate가 더 관대(참여 .28/.13 vs .09/.04)해 집합 불일치 — 단 acc는 동급±(−.65~+1.5pt) |
+| HS-4 (P5s clean parity + 오염 회복) | 대체로 적중 | 오염 3셀 전부 세 정책 중 1위(오염-평균 .6198) 적중; clean은 −.0065로 band 0.0005 초과(경계 MISS) |
+| HS-5 (셀당 wall-clock ≈ R1의 ~10배 이내) | **적중** | 실측 56~77분/셀(4-arm) = R1 2-arm 10–16분의 ~4–6배; 전체 12셀 ≈ **12.8 GPU-h**(사전 추정 60–90의 1/5 — 파일럿 게이트로 확정 후 잔여 제출) |
+
+**출처(Scale)**: `runs/track_h/rundirs_cnn_scale/`(12런; observer `phi_rounds.parquet` = flirds 전 라운드×전 클라) · `runs/track_h/scale/analysis/{scale_acc,scale_gate_behavior}.csv` · 코드 = `experiments/track_c2.py`(`C2_OBS_SRCS`·frac=1.0 coalition 가드, `fa5fc6e`).
+
 ### 3.2.7 종합 판정 — 어떤 세팅이 가장 잘 됐나
 
 | 관점 | 최고 세팅 | 수치 |
