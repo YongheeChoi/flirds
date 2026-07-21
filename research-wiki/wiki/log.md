@@ -583,3 +583,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - new: [[threads/common-limitations-and-flirds]]
 - touched: (읽기만) [[prior-work-taxonomy/README]], [[validation-experiments]], sources 44편
 - note: 초록 gap 문장 검증용 전수 대조 — 공통 한계 6축(정의 파편화/간접 검증/무대 분리/단위·비용/공리 위반/신호 질문 불가) 도출, 인과 뿌리=retrain 계산 불가능성. 초록 3문장과 1:1 정합 확인, 서론 §1 재작성 필요 표시.
+
+## [2026-07-22] note | overview 재구조화(목적 기준 3층) + 논문 실험 배치안
+- raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md
+- touched: `survey/flirds-experiment-results-overview.md` (전면 재작성) · new: [[paper-experiment-placement-plan]]
+- note: Yonghee 확정 결정 반영 — Banzhaf·Ripple 비교군 제외(전 표; Caveat 1줄)·수렴 절 삭제(위계 정의는 주석 보존)·Main/Ablation/기타 3층·전 섹션 (a)/(b)/(c) 3블록·옛↔새 매핑표. runs 계통 대조(에이전트 6): 실질 stale = β0.3 재실행(ce0b454)이 1B_silo5 오염 4셀 교체(Flirds poison AUROC 0.917→0.500 seed-혼재; Fed-LOO·ComFedSV 스위트 추가) + 총평 .570→.568; 깨진 참조 수리(루트 REMAINING.md 개명·review-claude/그림폴더 삭제·rundirs_llm 부재) + 신규 Caveat 2(Banzhaf/Ripple 제외·재현성 H1/RERUN 계획) + CNN 탐지 AUROC 절 신설. 배치안 = paper-ko §초록–§3만 근거(본문 E1–E6 / ablation 5 / appendix 10 / 의존성: R4 실행 중·β 잔여 27셀·P0 재실행).
