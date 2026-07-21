@@ -7,10 +7,14 @@ residual nondeterministic op is surfaced as a warning instead of silently tolera
 warn_only=True never aborts a run — an op that lacks a deterministic kernel just
 warns and falls back.
 
-For the CNN track pass cudnn_deterministic=True to additionally force deterministic,
-TF32-free conv → bitwise-identical fp32 on a fixed GPU architecture (protocol 5); the
-LLM track is conv-free and does not need it.  The CNN FL core (fl.server.fedavg,
-ripple_shapley) passes cudnn_deterministic=True.
+For the CNN track pass cudnn_deterministic=True to additionally force deterministic
+conv → same config + seed reproduces bitwise on a fixed GPU architecture (protocol 5);
+the LLM track is conv-free and does not need it.  The CNN FL core (fl.server.fedavg,
+ripple_shapley) passes cudnn_deterministic=True.  NOTE: cuDNN conv keeps the torch
+default TF32-on (Ampere+) — Yonghee 2026-07-21 decision reverting 8598cea's
+allow_tf32=False: the paper makes no fp-precision claim, and keeping TF32 preserves
+numeric continuity with the entire existing CNN rundir canon (TF32-off would fork
+every CNN number from the canon while both regimes are equally deterministic).
 
 PYTHONHASHSEED cannot be changed from inside a running interpreter, so it is NOT set
 here — export PYTHONHASHSEED=0 in the launch environment for fully deterministic str
@@ -44,4 +48,4 @@ def seed_everything(seed=0, cudnn_deterministic=False):
     if cudnn_deterministic:
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-        torch.backends.cudnn.allow_tf32 = False   # true fp32 conv (else TF32 on Ampere+, not bitwise-fp32)
+        # allow_tf32 left at the torch default (TF32-on conv) — see module docstring.
