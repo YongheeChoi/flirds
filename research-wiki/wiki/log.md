@@ -588,3 +588,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md
 - touched: `survey/flirds-experiment-results-overview.md` (전면 재작성) · new: [[paper-experiment-placement-plan]]
 - note: Yonghee 확정 결정 반영 — Banzhaf·Ripple 비교군 제외(전 표; Caveat 1줄)·수렴 절 삭제(위계 정의는 주석 보존)·Main/Ablation/기타 3층·전 섹션 (a)/(b)/(c) 3블록·옛↔새 매핑표. runs 계통 대조(에이전트 6): 실질 stale = β0.3 재실행(ce0b454)이 1B_silo5 오염 4셀 교체(Flirds poison AUROC 0.917→0.500 seed-혼재; Fed-LOO·ComFedSV 스위트 추가) + 총평 .570→.568; 깨진 참조 수리(루트 REMAINING.md 개명·review-claude/그림폴더 삭제·rundirs_llm 부재) + 신규 Caveat 2(Banzhaf/Ripple 제외·재현성 H1/RERUN 계획) + CNN 탐지 AUROC 절 신설. 배치안 = paper-ko §초록–§3만 근거(본문 E1–E6 / ablation 5 / appendix 10 / 의존성: R4 실행 중·β 잔여 27셀·P0 재실행).
+
+## [2026-07-22] note | 위협·무대 스코프 추가 결정 반영 — poison 제외·GSM8K selection·std50k5 미사용
+- raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 2차 절)
+- touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · memory `paper-threat-stage-scope`
+- note: Yonghee 2차 결정 — ① poison 위협축 논문 비게재(전 표·서술 제거; 위협 스코프 = noise류·FR류·label-flip류, caveat 8; 마스터표 행 12 삭제·§3.3.2(b4)·removal poison·dose pf 등) ② Tier 3/R2/track_g std50k5 selection 계열 미사용(fidelity probe §4.2는 유지) ③ LLM selection 심판 = GSM8K 확정(alpaca/MMLU/ROUGE 변별력 부족)·소규모 참여 세팅 지양. 보류: R4 현 스펙(5/50)과 ③의 정합 확인.

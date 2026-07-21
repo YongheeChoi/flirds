@@ -47,3 +47,25 @@ paper-ko §초록–§3만 근거(§4 이후 비사용, paper-ko 무수정 유�
 - 재작성: `research-wiki/survey/flirds-experiment-results-overview.md`
 - 신규: `research-wiki/survey/paper-experiment-placement-plan.md`
 - 본 세션 로그 + `wiki/log.md` append. 커밋 = 로컬만(push 금지, Yonghee 검토 대기).
+
+---
+
+## 추가 지시 (같은 세션 2차; Yonghee 원문 요지)
+
+> "poison은 논문에 싣지 않을거라 필요 없어. 다 제외시켜줘. noise, freerider, zero, label flip류만
+> 남기면 돼. 그리고 tier 3 std50k5는 gsm8k가 아니라 아마도 사용되지 않을 실험 결과야.
+> Selection → downstream performance / Aggregation quality에서 llm 실험은 alpaca, mmlu, rouge
+> 등이 성능 차이를 보여주기 어렵다고 판단해서 gsm8k 대상 실험으로 하려고해. 클라이언트
+> 소규모로 참여하는 세팅도 안하려고 하고."
+
+### 반영 내역
+
+1. **poison 위협축 전면 제거**(overview): 범례에 위협 스코프 명시(noise류·FR류·label-flip류) + caveat 8을 제외-결정으로 교체. 제거 = 마스터표 행 12(device100 poison, 이후 행 renumber)·§3.1.4 요지·§3.1.5 B축 poison 열/행·§3.3.1 poison 2열+각주·§3.3.2(b4) 전체·§3.3.3 poison 열·§4.4.2(removal poison ASR) 전체(A3가 §4.4.2로 승계)·§4.5 poison ladder·§4.7 부수관찰·§5.1(총평·판정 매트릭스·서사)·§5.4 poison 행. 잔존 poison 언급 = caveat 8 + 커버리지 비고 2곳(데이터-존속 표기)뿐. ASR 지표도 범례에서 제거.
+2. **std50k5 selection 계열 = 미사용**: §3.2 서두에 [07-22 결정] 블록 신설(GSM8K 심판 확정·소규모 참여 세팅 지양·std50k5 미사용) — §3.2.3 세팅·비용, §3.2.6 R2 블록(표 제거→미사용 1줄)·H-3(판정 없음), P10, 커버리지 갱신. **std50k5 fidelity probe(§4.2)는 별개 축이라 유지**(세션 판단 — Yonghee 문장이 Selection 절 스코프였음).
+3. **placement plan**: 전역 결정 4종으로 확장, E4/E6/ablation-dose/appendix에서 poison 제거, §4 미배치에 poison·std50k5·MMLU/ROUGE 심판 추가, §5 의존성에 **R4 스펙 정합 경고**(현 스펙 N=50·5/50 부분참여 ↔ "소규모 참여 지양" — Yonghee 확인 필요) 추가. §3.2.1 MMLU/ROUGE parity는 본문 축에서 appendix 후보로 강등.
+4. 메모리 신규: `paper-threat-stage-scope.md`.
+
+### 추가 보류 (Yonghee 확인)
+
+- **R4 gsm50k5 스펙 정합**: 현 스펙(N=50, 5/50)이 "클라이언트 소규모 참여 세팅 안 함"과 어떻게 정합되는지(스펙 유지? Tier B에서 개정?) — placement plan §5에 경고로 표기.
+- std50k5 **fidelity** probe(§4.2 부분참여 우위 +1.000)의 유지 판단이 맞는지 — "소규모 참여 세팅 지양"이 fidelity 축까지 포함하면 §4.2(b2)·E3의 부분참여 서사도 축소 필요.
