@@ -24,7 +24,8 @@ from ..data.corruptors import free_rider
 from ..repro import seed_everything
 from .server import _fedavg_core
 
-_OUT = "/tmp/flirds_llm_local"   # SFTTrainer needs output_dir; nothing is saved
+_OUT = os.path.join(os.environ.get("TMPDIR") or "/tmp",   # SFTTrainer needs output_dir; nothing is saved
+                    f"flirds_llm_{os.getpid()}")           # per-process (no cross-cell collision)
 
 
 def client_optimizer(lr):

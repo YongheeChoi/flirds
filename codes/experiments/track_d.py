@@ -73,6 +73,7 @@ from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_
                                      in_run_singletons)
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
+from flirds.hf_pin import rev
 from flirds.timing import PhaseTimer
 
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
@@ -120,11 +121,13 @@ RUNDIR_ROOT = os.environ.get("RUNDIR_ROOT",
 
 def _load(device):
     """fp32 + eager LoRA model (the (b)/estimator path; one load for the whole run)."""
-    tok = AutoTokenizer.from_pretrained(MODEL)
+    tok = AutoTokenizer.from_pretrained(MODEL, revision=rev(MODEL))
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     m = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32,
-                                             attn_implementation="eager").to(device)
+                                             attn_implementation="eager",
+                                             revision=rev(MODEL)).to(device)
+    seed_everything(0)                     # pin LoRA-A init (else entropy-seeded per process -> non-reproducible)
     m = get_peft_model(m, LoraConfig(r=LORA_R, lora_alpha=LORA_ALPHA, target_modules=TARGET,
                                      lora_dropout=0.0, task_type="CAUSAL_LM"))
     init = {n: p.detach().clone() for n, p in m.named_parameters() if p.requires_grad}

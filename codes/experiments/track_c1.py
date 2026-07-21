@@ -432,7 +432,9 @@ def main():
                 + ("_aonly" if ORACLE_A_ONLY else "") + f"_seed{SEED}")  # seed always trailing
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, scenario=SCENARIO,
                                                 seed=SEED, mode=MODE, oracle_a=ORACLE_A,
-                                                width=WIDTH, kfrac=KFRAC, removal=REMOVAL),
+                                                width=WIDTH, kfrac=KFRAC, removal=REMOVAL,
+                                                **({"v3": {"methods": V3_METHODS, "zc": V3_ZC}}
+                                                   if V3 else {})),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             if phi_rows:
                 try:

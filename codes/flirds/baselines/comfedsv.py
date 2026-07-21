@@ -25,6 +25,7 @@ import torch
 import torch.nn.functional as F
 
 from ..fl.client import local_train
+from ..repro import seed_everything
 
 
 def _uniform_subset_model(gb, deltas, subset, device):
@@ -100,7 +101,7 @@ def comfedsv_train(model_fn, client_loaders, test_loader, rounds, local_epochs, 
     Returns (eval_model, logs[(global_before, all_deltas, cohort_set)]).
     """
     rng = np.random.default_rng(seed)
-    torch.manual_seed(seed)
+    seed_everything(seed, cudnn_deterministic=True)   # was bare manual_seed (no cudnn-det); entry-point seeding
     model = model_fn().to(device)
     gstate = {k: v.detach().clone() for k, v in model.state_dict().items()}
     n = len(client_loaders)
@@ -119,7 +120,7 @@ def comfedsv_train(model_fn, client_loaders, test_loader, rounds, local_epochs, 
         for key in gstate:
             gstate[key] = gstate[key] + sum(
                 (all_deltas[c][1] / tot) * all_deltas[c][0][key].to(device)
-                for c in cohort)
+                for c in sorted(cohort))          # fixed FP-sum order (portable across interpreters)
         logs.append((gb, all_deltas, cohort))
     return model, logs
 

@@ -21,6 +21,8 @@ from collections import defaultdict
 import torch
 from datasets import load_dataset
 
+from ..hf_pin import rev
+
 _LETTERS = "ABCD"
 
 
@@ -43,7 +45,7 @@ def mmlu_accuracy(model, tokenizer, device, split="test", limit=0, batch_size=16
     max length clamped to the model's context window (gpt2 smoke: 1024).
     Returns (acc, {subject: acc}, n_questions).
     """
-    ds = load_dataset("cais/mmlu", "all", split=split)
+    ds = load_dataset("cais/mmlu", "all", split=split, revision=rev("cais/mmlu"))
     if limit:
         ds = ds.shuffle(seed=0).select(range(min(limit, len(ds))))
     letter_ids = []

@@ -91,6 +91,7 @@ from flirds.oracle.exact_sv_llm import _final_lora_state
 from flirds.oracle.in_run_sv import in_run_shapley_perround
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
+from flirds.hf_pin import rev
 from flirds.timing import PhaseTimer
 
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
@@ -256,11 +257,13 @@ def _load(device):
                                        vocab_size=len(tok),
                                        attn_implementation="eager")).to(device)
     else:
-        tok = AutoTokenizer.from_pretrained(MODEL)
+        tok = AutoTokenizer.from_pretrained(MODEL, revision=rev(MODEL))
         if tok.pad_token is None:
             tok.pad_token = tok.eos_token
         m = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32,
-                                                 attn_implementation="eager").to(device)
+                                                 attn_implementation="eager",
+                                                 revision=rev(MODEL)).to(device)
+    seed_everything(0)                     # pin LoRA-A init (else entropy-seeded per process -> non-reproducible)
     m = get_peft_model(m, LoraConfig(r=LORA_R, lora_alpha=LORA_ALPHA,
                                      target_modules=TARGET if MODEL != "tiny-gpt2" else None,
                                      lora_dropout=0.0, task_type="CAUSAL_LM"))
@@ -557,6 +560,10 @@ def persist(arm, seed, metrics, rows, acc, timing, corrupt_cfg):
                                                           else v) for k, v in RCFG.items()},
               "mcfg": MCFG, "lora": {"r": LORA_R, "alpha": LORA_ALPHA},
               "gate": GATE, "corrupt": corrupt_cfg, "noisy_rate": NOISY_RATE,
+              "dose_mult": float(os.environ.get("DOSE_MULT", "1.0")),   # frrand amplitude (self-describing)
+              "mmlu": {"limit": MMLU_LIMIT, "batch": MMLU_BATCH},
+              "obs_sources": [s for s in os.environ.get(
+                  "OBS_SOURCES", "flirds,flirds1st,lossheur,fedif").split(",") if s],
               "synth_data": SYNTH, "downstream": DOWNSTREAM, "t2": T2, "t2_p5": T2_P5,
               "orientation": {"phi.parquet": "suspicion (good->low; repo convention)",
                               "phi_rounds.parquet": "raw/cum contribution (good->high = -phi)"}}
