@@ -130,8 +130,21 @@ PY=$PY PP=<repo>/codes HOME=… HF_HOME=… HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE
 완료 후 overview 7B 열(§3.1.1·§3.5.1) 갱신.
 
 ### 1.4 장기 대기 (우선순위 낮음)
-lr·steps intervention 2차검증 · 1B·CNN β-불변 canon 확인 · probe A축 seeds 1-2.
+lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon 확인.
 (E5 N=10 oracle 확장(seeds1·2·(a) 2¹⁰) = 미진행 확정, Yonghee 07-22 — 시간 제약.)
+
+### 1.5 seed-추가 잔여 3건 (**조건부** — Yonghee 2026-07-22)
+
+> ⚠ **실행 조건: 해당 결과가 논문에 실리는 것으로 확정될 때만 돌린다.** 현재는 수록
+> 여부 자체가 미정이라 즉시 실행 대상이 아님 — 논문 구성(배치안 E6-②·§3.3.3·ablation
+> A축)이 확정되는 시점에 개별 판단.
+
+1. **R4 Tier C 3-seed** — E6-②(LLM selection 본문) 확정 수치용. 순서상 Tier B 뒤,
+   비용 ≈ (Tier A+B)×2 (`runs/track_h/README.md` §1.6). 셋 중 논문 의존성 최상위.
+2. **3B silo5 robustness seeds 1·2**(마스터 P5) — overview §3.3.3·caveat 1(현 1-seed)
+   해소용. §1.2의 β0.3 재실행 3B 4셀(seed0 재실행·라벨 통일)과는 별개.
+3. **probe A축 seeds 1·2**(rank r32/64·st20/30 셀; lr격자·noise·std50k5-r16은 3-seed
+   완료) — ablation A축 보강(선택; overview §4.2 "커진 φ의 cross-seed 실재" 확인).
 
 ## 2. 문서·부수분석 (무GPU)
 

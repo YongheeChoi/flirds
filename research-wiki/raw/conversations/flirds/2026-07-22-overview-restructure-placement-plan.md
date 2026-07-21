@@ -145,3 +145,9 @@ paper-ko §초록–§3만 근거(§4 이후 비사용, paper-ko 무수정 유�
 ### 질문 답변(7) — 남은 seed-추가 실험 인벤토리
 
 ① probe A축 seeds 1-2(rank r32/64·st20/30 — 현 seed0; lr격자·noise·std50k5-r16은 이미 3-seed) = ablation 보강(선택) ② 3B silo5 robustness seeds 1-2(마스터 P5; 현 1-seed caveat 1 — β0.3 재실행 잔여 4셀은 seed0 재실행이라 별개) ③ R4 Tier C 3-seed(Tier B 뒤; 논문 E6-② 확정치에 직결). E5 seeds = 이번에 제외. lr·steps intervention 2차검증은 seed 추가가 아니라 기존 데이터 재분석(무GPU).
+
+### 후속(같은 세션): seed-잔여 3건 REMAINING 등재
+
+Yonghee 지시 — "남은 세 개(R4 Tier C·3B silo5 seeds1-2·probe A축 seeds1-2)를 REMAINING.md에 등재하되,
+**논문에 실릴지 미정이므로 실리는 것으로 확정될 때만 실행**한다는 조건을 명기." → 루트 `REMAINING.md`
+**§1.5 신설**(조건부 3건 + 실행 조건 경고; §1.4의 probe A축 항목은 §1.5로 이동해 중복 제거). 커밋 후 push는 Yonghee.
