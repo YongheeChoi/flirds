@@ -13,19 +13,19 @@
 #      torchvision's cs.toronto.edu download stalls on some networks)
 #
 #SBATCH --job-name=p5t1
-#SBATCH --partition=<PARTITION>
+#SBATCH --partition=base_suma_rtx3090
 ###SBATCH --account=<ACCOUNT>            # uncomment if the cluster requires it
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
 #SBATCH --array=0-95%4                   # throttle: adjust to the node/queue GPU budget
-#SBATCH --output=<REPO>/runs/track_h/p5/logs/%x_%A_%a.out
+#SBATCH --output=/home/chyoyhr/projects/flirds/runs/track_h/p5/logs/%x_%A_%a.out
 
 set -euo pipefail
 
-REPO=${REPO:-<REPO>}                     # absolute path to the flirds repo on this cluster
-PY=${PY:-<VENV_PY>}                      # venv python (see header)
+REPO=${REPO:-/home/chyoyhr/projects/flirds}   # absolute path to the flirds repo on this cluster
+PY=${PY:-/home/chyoyhr/anaconda3/envs/lora4cl/bin/python}  # venv python (see header)
 export PYTHONPATH=. PYTHONUTF8=1
 
 SRCS=(flirds flirds1st lossheur fedif gtg fedsv comfedsv shapleyfl)
