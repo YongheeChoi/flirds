@@ -1,0 +1,53 @@
+cfg:
+  n: 100
+  frac: 0.1
+  rounds: 120
+  epochs: 5
+  lr: 0.01
+  batch: 64
+  n_val: 2000
+  n_test: 8000
+  target: 0.6
+dataset: cifar10
+partition: dir1
+threat: label_flip
+strength: main
+seed: 1
+mode: full
+width: 1.0
+dyn:
+  roundwise: true
+  n_corrupt: 40
+gate:
+  burn_in: 10
+  tau: 0.0
+  min_obs: 2
+  probation_every: 5
+  decay: 1.0
+  z_c: 1.5
+  alpha_w: 1.0
+  conf_z: 1.645
+flip_rate: '0.70'
+extra_arms: []
+track_h:
+  t2: false
+  t2_p5: false
+  t2_legacy: true
+  sources:
+  - flirds
+  - flirds1st
+  - lossheur
+  - gtg
+  - fedsv
+  - comfedsv
+  - shapleyfl
+  - fedif
+  obs_srcs:
+  - flirds
+  - flirds1st
+  - lossheur
+  - gtg
+  - fedsv
+  - comfedsv
+  - shapleyfl
+  - fedif

@@ -1,0 +1,46 @@
+rundir,threat,seed,arm,label,final_acc,rounds_to_target
+cifar10_dir1_dyn_free-rider_seed0,free_rider,0,vanilla,vanilla,0.609,109.0
+cifar10_dir1_dyn_free-rider_seed0,free_rider,0,oracle_excl,oracle_excl(per-round),0.64325,70.0
+cifar10_dir1_dyn_free-rider_seed0,free_rider,0,random_excl,random_excl(per-round),0.6025,119.0
+cifar10_dir1_dyn_free-rider_seed0,free_rider,0,flirds_gate_v2,flirds P1(sign),0.6295,83.0
+cifar10_dir1_dyn_free-rider_seed0,free_rider,0,flirds_pweight,flirds P5s(pweight),0.59825,
+cifar10_dir1_dyn_free-rider_seed1,free_rider,1,vanilla,vanilla,0.59275,
+cifar10_dir1_dyn_free-rider_seed1,free_rider,1,oracle_excl,oracle_excl(per-round),0.651375,77.0
+cifar10_dir1_dyn_free-rider_seed1,free_rider,1,random_excl,random_excl(per-round),0.596,
+cifar10_dir1_dyn_free-rider_seed1,free_rider,1,flirds_gate_v2,flirds P1(sign),0.623375,84.0
+cifar10_dir1_dyn_free-rider_seed1,free_rider,1,flirds_pweight,flirds P5s(pweight),0.598125,115.0
+cifar10_dir1_dyn_free-rider_seed2,free_rider,2,vanilla,vanilla,0.595875,110.0
+cifar10_dir1_dyn_free-rider_seed2,free_rider,2,oracle_excl,oracle_excl(per-round),0.642125,77.0
+cifar10_dir1_dyn_free-rider_seed2,free_rider,2,random_excl,random_excl(per-round),0.600875,114.0
+cifar10_dir1_dyn_free-rider_seed2,free_rider,2,flirds_gate_v2,flirds P1(sign),0.623125,77.0
+cifar10_dir1_dyn_free-rider_seed2,free_rider,2,flirds_pweight,flirds P5s(pweight),0.5975,113.0
+cifar10_dir1_dyn_grad-noise_seed0,grad_noise,0,vanilla,vanilla,0.2565,
+cifar10_dir1_dyn_grad-noise_seed0,grad_noise,0,oracle_excl,oracle_excl(per-round),0.64325,70.0
+cifar10_dir1_dyn_grad-noise_seed0,grad_noise,0,random_excl,random_excl(per-round),0.279125,
+cifar10_dir1_dyn_grad-noise_seed0,grad_noise,0,flirds_gate_v2,flirds P1(sign),0.1215,
+cifar10_dir1_dyn_grad-noise_seed0,grad_noise,0,flirds_pweight,flirds P5s(pweight),0.214875,
+cifar10_dir1_dyn_grad-noise_seed1,grad_noise,1,vanilla,vanilla,0.256125,
+cifar10_dir1_dyn_grad-noise_seed1,grad_noise,1,oracle_excl,oracle_excl(per-round),0.651375,77.0
+cifar10_dir1_dyn_grad-noise_seed1,grad_noise,1,random_excl,random_excl(per-round),0.238375,
+cifar10_dir1_dyn_grad-noise_seed1,grad_noise,1,flirds_gate_v2,flirds P1(sign),0.25225,
+cifar10_dir1_dyn_grad-noise_seed1,grad_noise,1,flirds_pweight,flirds P5s(pweight),0.194125,
+cifar10_dir1_dyn_grad-noise_seed2,grad_noise,2,vanilla,vanilla,0.2515,
+cifar10_dir1_dyn_grad-noise_seed2,grad_noise,2,oracle_excl,oracle_excl(per-round),0.642125,77.0
+cifar10_dir1_dyn_grad-noise_seed2,grad_noise,2,random_excl,random_excl(per-round),0.2575,
+cifar10_dir1_dyn_grad-noise_seed2,grad_noise,2,flirds_gate_v2,flirds P1(sign),0.157625,
+cifar10_dir1_dyn_grad-noise_seed2,grad_noise,2,flirds_pweight,flirds P5s(pweight),0.1615,
+cifar10_dir1_dyn_label-flip_fr0.70_seed0,label_flip,0,vanilla,vanilla,0.5615,
+cifar10_dir1_dyn_label-flip_fr0.70_seed0,label_flip,0,oracle_excl,oracle_excl(per-round),0.64325,70.0
+cifar10_dir1_dyn_label-flip_fr0.70_seed0,label_flip,0,random_excl,random_excl(per-round),0.583875,
+cifar10_dir1_dyn_label-flip_fr0.70_seed0,label_flip,0,flirds_gate_v2,flirds P1(sign),0.499375,
+cifar10_dir1_dyn_label-flip_fr0.70_seed0,label_flip,0,flirds_pweight,flirds P5s(pweight),0.56175,
+cifar10_dir1_dyn_label-flip_fr0.70_seed1,label_flip,1,vanilla,vanilla,0.57025,
+cifar10_dir1_dyn_label-flip_fr0.70_seed1,label_flip,1,oracle_excl,oracle_excl(per-round),0.651375,77.0
+cifar10_dir1_dyn_label-flip_fr0.70_seed1,label_flip,1,random_excl,random_excl(per-round),0.555375,
+cifar10_dir1_dyn_label-flip_fr0.70_seed1,label_flip,1,flirds_gate_v2,flirds P1(sign),0.5475,
+cifar10_dir1_dyn_label-flip_fr0.70_seed1,label_flip,1,flirds_pweight,flirds P5s(pweight),0.5695,
+cifar10_dir1_dyn_label-flip_fr0.70_seed2,label_flip,2,vanilla,vanilla,0.571125,
+cifar10_dir1_dyn_label-flip_fr0.70_seed2,label_flip,2,oracle_excl,oracle_excl(per-round),0.642125,77.0
+cifar10_dir1_dyn_label-flip_fr0.70_seed2,label_flip,2,random_excl,random_excl(per-round),0.5725,
+cifar10_dir1_dyn_label-flip_fr0.70_seed2,label_flip,2,flirds_gate_v2,flirds P1(sign),0.506875,
+cifar10_dir1_dyn_label-flip_fr0.70_seed2,label_flip,2,flirds_pweight,flirds P5s(pweight),0.573375,

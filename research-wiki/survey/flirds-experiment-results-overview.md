@@ -887,6 +887,37 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **출처(Scale)**: `runs/track_h/rundirs_cnn_scale/`(12런 + 앵커 9런 `*_anch_*`; observer `phi_rounds.parquet` = flirds 전 라운드×전 클라) · `runs/track_h/scale/analysis/{scale_acc,scale_gate_behavior}.csv`(앵커 편입 재생성) · 코드 = `experiments/track_c2.py`(`C2_OBS_SRCS`·frac=1.0 coalition 가드, `fa5fc6e`) + `runs/track_h/scale/sbatch_scale_anchors.sh`.
 
+#### Dyn 매 라운드 오염 재추첨 — 2026-07-21 사전등록 확증 런 (`rundirs_cnn_dyn` 9런)
+
+> **정본 = `runs/track_h/dyn/RUN_DYN.md`** (Yonghee 지시: 동학=매 라운드 재추첨·무대=R1 frac0.1; arm = P1·P5s 2정책 + vanilla/per-round oracle_excl/per-round random_excl). 오염이 **클라 속성이 아니라 라운드 속성**이 되는 극한 — 전 클라 확률 동질화로 클라-수준 신호가 구조적으로 소멸하는 null-무대에서, 정책들이 해를 안 끼치는지(do-no-harm) 시험. 오염 3위협×3seed=9셀(clean 없음), 구현=`C2_DYN=1`(`make_roundwise_mask`; 정적 경로 비트동일, 테스트 6+회귀 32 green), **~4.6 GPU-h**. ⚠ 9셀 전부 8598cea(repro 강화) **이전** 코드로 완주 — 기존 CNN canon과 동일 수치 체계(meta: 8셀 `e8be385`+dirty[=dyn diff 그 자체]·1셀 `9ce7fa9` clean — 코드 동일, 커밋 타이밍 차이).
+
+**절대 test acc** (3-seed mean±sd; 클라-수준 AUROC는 원리상 정의 불가 — 성능만 판정):
+
+| arm | label-flip@0.70 | free-rider | grad-noise | **오염-평균** |
+|---|---|---|---|---|
+| vanilla | .5676±.005 | .5992±.009 | .2547±.003 | .4738 |
+| oracle_excl (per-round 천장) | **.6456**±.005 | **.6456**±.005 | **.6456**±.005 | .6456 |
+| random_excl (per-round 통제) | .5706±.014 | .5998±.003 | .2583±.020 | .4762 |
+| flirds P1(sign) | .5179±.026 | **.6253**±.004 | .1771±.068 | .4401 |
+| flirds P5s(pweight) | .5682±.006 | .5980±.000 | .1902±.027 | .4521 |
+
+**읽기:**
+- **무대 self-check**: per-round oracle이 3위협에서 **동일값 .6456** — 같은 (seed,r) 마스크 스케줄을 완전 제외하면 위협이 아예 발현되지 않아 세 셀이 같은 clean 궤적이 됨(설계 정합 증거). 정적 oracle(.62대)보다 높은 건 제외가 회전이라 100클라 데이터를 전부 커버하기 때문. per-round random도 데이터 무손실 회전이라 **정확히 vanilla parity**(+.001~+.004; 정적 random_excl의 −0.45 recovery와 대조).
+- **P5s do-no-harm은 2/3 무대에서 성립, gn에서 붕괴**: lf +.0006·fr −.0013(band 내 — Φ 공통인자 약분 설계 그대로) vs **gn −.0645 band 밖**(.1902, seed 분산 ±.027). 메커니즘: 전 클라가 공통 강음수 드리프트(라운드의 40%가 σ=0.1 노이즈)라 t가 일제히 큰 음수 → Φ(t)가 전원 극소값 → **재정규화가 극소값들 간 꼬리 차이를 증폭**(Φ 1e-9 vs 1e-12 = 가중 1000×)해 사실상 소수 클라 랜덤 집중 학습이 됨. "모두가 나빠 보이는" 레짐에서 w∝Φ(t)의 신규 실패 모드 — floor/온도 정규화 등 보정 후보의 근거.
+- **P1은 lf·gn에서 예측대로 해악, fr에선 예상 밖 이득**: lf −.0497·gn −.0776(gn은 평균 배제 94/100명 — 대량 배제로 cohort 붕괴) vs **fr +.0261**(zero-delta는 raw exact-0이라 cum을 안 움직여 게이트가 정적-clean식 선별로 작동 + n-가중 평균에서 zero-delta 희석 제거가 이득; 정적 fr P1 .6223과 거의 같은 값).
+- **DP-4 적중(핵심 실증)**: P1 배제 집합의 "지금-오염" 적중률 **.405 ≈ 우연 .40**(전 위협 동일) — 클라-누적 통계는 라운드-수준 오염 정체를 원리상 추적 못 함의 직접 측정.
+
+**예측표 DP-1~4 대조**(MISS 그대로 — RUN_DYN.md §4):
+
+| # | 판정 | 근거 |
+|---|---|---|
+| DP-1 (P5s 전 셀 parity) | 부분 | lf·fr band 내 적중; **gn −.0645 MISS**(Φ 꼬리-증폭 — 위 메커니즘) |
+| DP-2 (P1 gn·lf 하회, fr 소폭 하락) | 부분 | gn −.0776(대량배제)·lf −.0497 적중; **fr은 +.0261 상승으로 방향 MISS**(exact-0이 cum 불변 → 게이트가 유효 선별로 잔존) |
+| DP-3 (oracle 전 셀 상회·random ≤ vanilla) | 적중 | oracle +.046~+.391; random은 등호로 성립(parity — 회전 제외는 데이터 무손실이라 "감소" 근거문은 부정확했음) |
+| DP-4 (P1 적중률 ≈ 우연 40%) | **적중** | .405/.405/.405 (`dyn_dp4.csv`) |
+
+**출처(Dyn)**: `runs/track_h/rundirs_cnn_dyn/`(9런; P1·P5s `phi_rounds.parquet` 포함) · `runs/track_h/dyn/analysis/{dyn_acc,dyn_dp4}.csv` · 코드 = `fl/intervene.py`(`make_roundwise_mask`) + `experiments/track_c2.py`(`C2_DYN` 배선) + `tests/test_dyn.py`(6).
+
 ### 3.2.7 종합 판정 — 어떤 세팅이 가장 잘 됐나
 
 | 관점 | 최고 세팅 | 수치 |

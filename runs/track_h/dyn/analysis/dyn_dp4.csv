@@ -1,0 +1,10 @@
+rundir,threat,seed,p1_excl_hit_rate,p1_excl_size_mean,chance
+cifar10_dir1_dyn_free-rider_seed0,free_rider,0,0.39488293986701534,26.636363636363637,0.4
+cifar10_dir1_dyn_free-rider_seed1,free_rider,1,0.41252968890076036,32.09090909090909,0.4
+cifar10_dir1_dyn_free-rider_seed2,free_rider,2,0.40808703631831006,30.60909090909091,0.4
+cifar10_dir1_dyn_grad-noise_seed0,grad_noise,0,0.40589694098763407,92.6,0.4
+cifar10_dir1_dyn_grad-noise_seed1,grad_noise,1,0.4047534054722576,96.14545454545454,0.4
+cifar10_dir1_dyn_grad-noise_seed2,grad_noise,2,0.40510012149775176,94.44545454545455,0.4
+cifar10_dir1_dyn_label-flip_fr0.70_seed0,label_flip,0,0.40122602043534095,76.11818181818182,0.4
+cifar10_dir1_dyn_label-flip_fr0.70_seed1,label_flip,1,0.4071919538493076,71.84545454545454,0.4
+cifar10_dir1_dyn_label-flip_fr0.70_seed2,label_flip,2,0.40766096516927997,65.87272727272727,0.4
