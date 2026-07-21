@@ -47,7 +47,7 @@ from flirds.fl.intervene import (OnlineScorer, SignAccumulator, _conf_keep,
                                  _phi_cdf, fedif_round_raw_fn,
                                  flirds_round_raw_fn, make_confgate_select_fn,
                                  make_delta_transform, make_dismissal_weights_fn,
-                                 make_fixed_excl_select_fn,
+                                 make_fixed_excl_select_fn, make_roundwise_mask,
                                  make_gatedweight_weights_fn,
                                  make_observer_weights_fn, make_probweight_weights_fn,
                                  make_rawweight_weights_fn,
@@ -105,6 +105,12 @@ _GATE_ARMS = ("flirds_gate_v1", "flirds_gate_v2", "flirds_zgate_v2",
 # control per distinct kept size.  Retrains keep the threat ACTIVE (deployment
 # semantics, track_g V3 convention) via fixed exclusion on the full loader set.
 TH_T2 = os.environ.get("C2_T2", "0") == "1"
+# C2_DYN=1 (2026-07-21): the corrupt set is RE-DRAWN EVERY ROUND (same count as
+# the static stage) instead of fixed at build -- no client is statically corrupt,
+# so the `corrupt` mask stays all-zero (client-level AUROC undefined -> skipped)
+# and oracle_excl/random_excl become per-round exclusions.  T2 unsupported.
+DYN = os.environ.get("C2_DYN", "0") == "1"
+_DYN = {"mask_at": None, "clock": None}                 # set by build() when DYN
 # P5 (2026-07-21): C2_T2_P5=1 adds the confidence-policy retrain arms
 # (t2_csign_<src> = UCB-kept retrain / t2_pw_<src> = static Phi(t)-weight retrain);
 # C2_T2_LEGACY=0 skips the already-run t2_sign/t2_signw emission (results on disk).
@@ -151,6 +157,53 @@ def _strength(default):
     return default if STRENGTH == "main" else float(STRENGTH)
 
 
+class _RoundClock:
+    """Current round for the dynamic label_flip loaders; stamped by the select
+    seam, which `_fedavg_core` calls before any local training in the round."""
+    def __init__(self):
+        self.r = 0
+
+
+class _DynLFLoader:
+    """Serves the clean or the flipped copy of a client's data depending on
+    whether the client is corrupt in the clock's current round (C2_DYN).
+    Exposes `.dataset` (clean copy; identical length) for `len(ld.dataset)`."""
+    def __init__(self, clean_ld, flip_ld, cid, clock, mask_at):
+        self._clean, self._flip, self._cid = clean_ld, flip_ld, cid
+        self._clock, self._mask_at = clock, mask_at
+        self.dataset = clean_ld.dataset
+
+    def __iter__(self):
+        cur = (self._flip if self._cid in self._mask_at(self._clock.r)
+               else self._clean)
+        return iter(cur)
+
+    def __len__(self):
+        return len(self._clean)
+
+
+def _clocked_select(base, clock, n_clients):
+    """Wrap an arm's select seam so the round clock is stamped before local
+    training; replicates the core's uniform default when `base` is None."""
+    def select_fn(r, k, rng):
+        clock.r = r
+        if base is not None:
+            return base(r, k, rng)
+        return rng.choice(n_clients, size=k, replace=False)
+    return select_fn
+
+
+def _make_dyn_excl_select_fn(n_clients, mask_at):
+    """Per-round exclusion (C2_DYN oracle_excl / random_excl): sample the
+    round's cohort from the clients NOT in mask_at(r)."""
+    def select_fn(r, k, rng):
+        keep = [i for i in range(n_clients) if i not in mask_at(r)]
+        if k >= len(keep):
+            return np.array(keep)
+        return rng.choice(keep, size=k, replace=False)
+    return select_fn
+
+
 def build():
     """Partition + threat.  Returns (loaders, corrupt_mask, delta_transform, vx, vy,
     val_loader, test_loader).  Update-level threats return a delta_transform; data-
@@ -171,7 +224,17 @@ def build():
     rng = np.random.default_rng(1000 + seed)
     corrupt = np.zeros(n, dtype=int)
     delta_transform = None
-    if THREAT in ("label_flip", "free_rider", "grad_noise"):
+    mal_ids, dyn_mask = [], None
+    if DYN and THREAT in ("label_flip", "free_rider", "grad_noise"):
+        # C2_DYN: the corrupt set is re-drawn every round (fixed count = the
+        # static fr/gn count); no client is statically corrupt -> corrupt stays
+        # all-zero and the client-level AUROC block self-skips.
+        if THREAT == "label_flip" and FLIP_RATE is None:
+            raise ValueError("C2_DYN label_flip needs the fixed-dose C2_FLIP_RATE")
+        m = max(1, int(round(_strength(MAL_FRAC) * n)))
+        dyn_mask = make_roundwise_mask(n, m, seed)
+        _DYN["mask_at"], _DYN["clock"] = dyn_mask, _RoundClock()
+    elif THREAT in ("label_flip", "free_rider", "grad_noise"):
         mal = rng.random(n) < _strength(MAL_FRAC) if THREAT == "label_flip" else \
             set(rng.choice(n, size=max(1, int(round(MAL_FRAC * n))), replace=False).tolist())
         if THREAT == "label_flip":                       # FedCorr (rho,tau): noisy mask + rate~U(tau,1)
@@ -191,12 +254,18 @@ def build():
             rate = (float(rng.uniform(TAU, 1.0))         # FedCorr per-client noise level
                     if FLIP_RATE is None else float(FLIP_RATE))   # Track G fixed-dose point
             xs, ys = CNN_CORRUPTORS["label_flip"](xs, ys, c, rate=rate)
-        loaders.append(DataLoader(TensorDataset(xs, ys), batch_size=CFG["batch"], shuffle=True))
+        ld = DataLoader(TensorDataset(xs, ys), batch_size=CFG["batch"], shuffle=True)
+        if dyn_mask is not None and THREAT == "label_flip":   # C2_DYN: clean+flipped pair
+            fxs, fys = CNN_CORRUPTORS["label_flip"](xs, ys, c, rate=float(FLIP_RATE))
+            fld = DataLoader(TensorDataset(fxs, fys), batch_size=CFG["batch"], shuffle=True)
+            ld = _DynLFLoader(ld, fld, c, _DYN["clock"], dyn_mask)
+        loaders.append(ld)
 
+    mal_arg = dyn_mask if dyn_mask is not None else mal_ids
     if THREAT == "free_rider":
-        delta_transform = make_delta_transform(mal_ids, "free_rider", seed=seed)
+        delta_transform = make_delta_transform(mal_arg, "free_rider", seed=seed)
     elif THREAT == "grad_noise":
-        delta_transform = make_delta_transform(mal_ids, "grad_noise",
+        delta_transform = make_delta_transform(mal_arg, "grad_noise",
                                                std=_strength(GAMMA_GRADNOISE), seed=seed)
 
     perm = np.random.default_rng(0).permutation(len(test))   # split seed FIXED at 0
@@ -271,12 +340,19 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
         if observer_out is not None:
             observer_out["accs"] = obs_accs
     elif arm == "oracle_excl":                        # Track G upper bound: true corrupt out
-        sel_fn = make_fixed_excl_select_fn(n, {int(c) for c in np.where(corrupt)[0]})
+        if _DYN["mask_at"] is not None:               # C2_DYN: per-round true corrupt out
+            sel_fn = _make_dyn_excl_select_fn(n, _DYN["mask_at"])
+        else:
+            sel_fn = make_fixed_excl_select_fn(n, {int(c) for c in np.where(corrupt)[0]})
     elif arm == "random_excl":                        # Track G control: same-count random out
-        rng_x = np.random.default_rng(2000 + SEED)
-        excl = {int(c) for c in rng_x.choice(n, size=int(corrupt.sum()), replace=False)}
-        print(f"  [random_excl] excluded={sorted(excl)}", flush=True)
-        sel_fn = make_fixed_excl_select_fn(n, excl)
+        if _DYN["mask_at"] is not None:               # C2_DYN: per-round same-count random out
+            m = len(_DYN["mask_at"](0))
+            sel_fn = _make_dyn_excl_select_fn(n, make_roundwise_mask(n, m, 2000 + SEED, salt=1))
+        else:
+            rng_x = np.random.default_rng(2000 + SEED)
+            excl = {int(c) for c in rng_x.choice(n, size=int(corrupt.sum()), replace=False)}
+            print(f"  [random_excl] excluded={sorted(excl)}", flush=True)
+            sel_fn = make_fixed_excl_select_fn(n, excl)
     elif arm in _GATE_ARMS:                           # Track G sign/z/magnitude gates
         g = C2GATE
         gate_acc = SignAccumulator(n, decay=g["decay"])
@@ -368,6 +444,9 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
     else:
         raise ValueError(f"unknown arm {arm!r}")
 
+    if _DYN["clock"] is not None and THREAT == "label_flip":
+        # dynamic lf: stamp the round into the loader clock before local training
+        sel_fn = _clocked_select(sel_fn, _DYN["clock"], n)
     final, hist = fedavg(MODEL_FN, loaders, test_loader, R, E, lr, sample_frac=frac,
                          device=device, seed=SEED, select_fn=sel_fn, weights_fn=wts_fn,
                          delta_transform=dtf)
@@ -450,6 +529,9 @@ def _t2_static_weights_fn(nums, wvec):
 def run():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     seed_everything(SEED, cudnn_deterministic=True)
+    if DYN and TH_T2:
+        raise ValueError("C2_DYN does not support the T2 retrain leg (final-stats "
+                         "kept-sets are undefined when no client is statically corrupt)")
     loaders, corrupt, dtf, vx, vy, vl, tl = build()
     nums = [len(l.dataset) for l in loaders]
     print(f"[build] {DATASET}/{PARTITION}/{THREAT}(str={STRENGTH}) seed={SEED} "
@@ -542,9 +624,12 @@ def run():
             print(f"  [dismiss] q={q:.1f} final_acc={hist[-1][1]:.4f}", flush=True)
 
     th_active = TH_T2 or any(_th_parse(a) or a == "observer" for a in arms)
+    dyn_info = ({"roundwise": True, "n_corrupt": len(_DYN["mask_at"](0))}
+                if _DYN["mask_at"] is not None else None)
     metrics = dict(dataset=DATASET, partition=PARTITION, threat=THREAT, strength=STRENGTH,
                    seed=SEED, mode=MODE, corrupt=corrupt.tolist(), arms=arms,
                    dismissal=dismissal,
+                   **({"dyn": dyn_info} if dyn_info else {}),
                    **({"observer_cum": {s: [float(v) for v in observer_out["accs"][s].cum]
                                         for s in observer_out["accs"]}}
                       if observer_out.get("accs") else {}))
@@ -555,6 +640,7 @@ def run():
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, partition=PARTITION,
                                                 threat=THREAT, strength=STRENGTH, seed=SEED, mode=MODE,
                                                 width=WIDTH,
+                                                **({"dyn": dyn_info} if dyn_info else {}),
                                                 **({"gate": C2GATE, "flip_rate": FLIP_RATE,
                                                     "extra_arms": EXTRA_ARMS}
                                                    if (EXTRA_ARMS or th_active) else {}),

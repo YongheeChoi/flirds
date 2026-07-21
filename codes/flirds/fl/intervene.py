@@ -180,11 +180,13 @@ def make_dismissal_weights_fn(scorer, round_raw_fn, sample_nums, q):
 def make_delta_transform(malicious, threat, std=0.1, seed=0):
     """`delta_transform(c, r, delta)` for `fl.server` update-level C2 threats:
     `malicious` clients get free_rider (zero delta) or grad_noise (Gaussian std);
-    honest clients pass through.  Per-(client, round) generator -> reproducible."""
-    mal = set(malicious)
+    honest clients pass through.  Per-(client, round) generator -> reproducible.
+    `malicious` is a static id iterable OR a callable r -> id-set (per-round
+    dynamic corruption, C2_DYN 2026-07-21)."""
+    mal = malicious if callable(malicious) else (lambda r, _s=set(malicious): _s)
 
     def transform(c, r, delta):
-        if c not in mal:
+        if c not in mal(r):
             return delta
         g = torch.Generator().manual_seed(seed + 1000 * c + r)
         if threat == "free_rider":
@@ -194,6 +196,23 @@ def make_delta_transform(malicious, threat, std=0.1, seed=0):
         raise ValueError(f"delta_transform threat must be free_rider|grad_noise, got {threat!r}")
 
     return transform
+
+
+def make_roundwise_mask(n_clients, n_corrupt, seed, salt=0):
+    """r -> frozenset of that round's corrupt clients (C2_DYN roundwise threat).
+    Deterministic in (seed, salt, r) and cached; `salt` separates independent
+    schedules under one run seed (e.g. the random_excl control).  Canonical
+    implementation shared by the runner and the analysis tooling."""
+    cache = {}
+
+    def mask_at(r):
+        if r not in cache:
+            g = np.random.default_rng([int(seed), int(salt), int(r)])
+            cache[r] = frozenset(int(c) for c in
+                                 g.choice(n_clients, size=n_corrupt, replace=False))
+        return cache[r]
+
+    return mask_at
 
 
 def make_softmax_select_fn(scorer, temperature=1.0):
