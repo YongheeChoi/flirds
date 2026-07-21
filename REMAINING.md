@@ -21,9 +21,9 @@
 17:10 kill·**다음 세션 이관**(postswap 큐 활성 등재; 이번 세션 완주 대상 = Tier A noisy +
 β a0.1_frrand 뿐). **교체 후 재개 3단계**:
 
-1. frrand 완주 확인: `grep 'done\[ok\]' $BATCH/runlogs/_driver.log` — a0.1_frrand의
-   done[ok] 없으면 `$BATCH/runlogs/queue_postswap.txt`의 `#IFKILLED` 1줄 주석 해제
-   (셀=원자적, 부분산출물 없음).
+1. ~~frrand 확인~~ **확정 완료**: a0.1_frrand done[ok] 17:33 — `#IFKILLED` 주석 그대로 둠.
+   Tier A noisy도 완주·커밋됨(4c40e30, 01:31 MULTI-DRIVER DONE). 교체 시점(07-22 02:20)
+   시스템 전체 유휴 = 진행분 손실 0(abs-probe 3개는 판정 후 의도적 중단).
 2. venv 확인: `$BATCH/venv/bin/python -c "import torch;print(torch.cuda.is_available())"`
    (깨졌으면 `$BATCH/tools/` 재구축 스크립트 + PROVENANCE.md).
 3. `bash $BATCH/tools/launch_driver.sh` — QUEUE는 이미 `queue_postswap.txt`로 전환됨
@@ -59,8 +59,13 @@ flirds P1-T1+T2, 심판 = GSM8K test 1,119 exact-match. 스펙·예측(H-8~11) =
 > track_g `GN_ABS` env, 기본 0 = 기존 비트동일; 단위 로직검증 + tiny-gpt2 스모크 green,
 > config.yaml에 gn_abs 기록). 상대-dose probe 3개는 r~60서 kill(자기감쇠 근거는 r50 추이로
 > 문서화, EM 확증은 미완 — caveat 유지), **abs-probe {5,10,20} 01:23 재기동**(observer만,
-> root `rundirs_llm_gnabs{5,10,20}`, 완주 ~06:40). EM 판정 후 `gn_full`(GN_ABS=1, 기본
-> γ=5, #GNHOLD) 해제 — γ=5가 과/부족하면 조정. γ=1.0 rundir 보존. §1.1 "GN_GAMMA 튜닝
+> root `rundirs_llm_gnabs{5,10,20}`). **probe는 r32에서 중단**(Yonghee 07-22 02시: 교체
+> 우선, "지금껄로 판단") — **γ*=5 확정**: 근거 = 3점(5/10/20) train_loss 소수3자리 동일
+> 32라운드(조기피해 γ-포화 → γ↑는 종반 붕괴위험만↑) + "적절히 망가짐"(밴드 vanilla EM
+> 0.29~0.34 = oracle −3~−8pt)엔 최소 γ + CNN 중강도 고정σ 정합. `gn_full` 활성(γ=5).
+> **체크포인트**: observer가 첫 arm·arm별 영속 → 셀 ~5h 시점 vanilla@γ5 EM을 밴드와 대조,
+> 이탈 시 셀 킬 후 γ 조정 재기동(손실 상한 ~5h). EM-미확증 caveat: 자기감쇠는 rel r50
+> 추이로만, abs 유효성은 gn_full observer가 첫 실측. γ=1.0 rundir 보존. §1.1 "GN_GAMMA 튜닝
 > 금지"는 사전등록 게이트 FAIL 후 무대-수리로 해제(Yonghee) — dose 선택 과정 전체를 보고.
 > ③ 비용 ≈ **80 GPU-h**(gn_full ~29 + soft 6런 ~50) + probe 15.6(별도, 유휴 GPU 소진).
 > ④ RUN_P5.md hard-측 예측(HP-1·2·4)은 LLM leg N/A 처리(CNN 본실험이 별도 서버서 커버).
