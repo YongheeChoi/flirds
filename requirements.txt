@@ -1,0 +1,20 @@
+# flirds canonical environment (the majority stack across the persisted rundirs;
+# meta.json.versions of 596/965 runs).  This is the COARSE, committed anchor — the
+# EXACT per-run environment is captured verbatim in each run-dir's freeze.txt
+# (flirds.run_logger).  A minority of early runs used torch 2.11.0 / transformers
+# 5.5.4 (see meta.json); re-run those on this stack before pooling into one table.
+#
+# Python 3.11.15
+torch==2.12.0            # +cu130 build (CUDA 13.0); install from the matching index-url
+transformers==5.9.0
+peft==0.19.1
+trl==1.5.1
+accelerate==1.13.0
+datasets==4.8.5
+numpy==2.4.6
+# --- infra (versions not stamped in meta; pin from a run-dir freeze.txt for a release) ---
+pandas
+pyyaml
+pyarrow                  # phi.parquet
+scipy                    # eigsh (Ripple), rankdata / spearman
+scikit-learn             # roc_auc_score (detection AUROC)

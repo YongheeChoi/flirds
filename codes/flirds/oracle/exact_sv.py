@@ -26,6 +26,7 @@ def subset_utility(model_fn, client_loaders, test_loader, subset, rounds,
     if len(subset) == 0:
         if empty_value is not None:
             return empty_value
+        seed_everything(seed, cudnn_deterministic=True)   # deterministic init (match subset_utility_valloss)
         model = model_fn().to(device)
         return evaluate(model, model.state_dict(), test_loader, device)
     loaders = [client_loaders[c] for c in subset]

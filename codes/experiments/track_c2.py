@@ -554,8 +554,8 @@ def run():
                     or f"{DATASET}_{PARTITION}_{THREAT.replace('_', '-')}_str{STRENGTH}_seed{SEED}")
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, partition=PARTITION,
                                                 threat=THREAT, strength=STRENGTH, seed=SEED, mode=MODE,
-                                                width=WIDTH,
-                                                **({"gate": C2GATE, "flip_rate": FLIP_RATE,
+                                                width=WIDTH, flip_rate=FLIP_RATE,   # always recorded (dose knob)
+                                                **({"gate": C2GATE,
                                                     "extra_arms": EXTRA_ARMS}
                                                    if (EXTRA_ARMS or th_active) else {}),
                                                 **({"track_h": {"t2": TH_T2,

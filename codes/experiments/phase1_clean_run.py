@@ -38,6 +38,7 @@ from flirds.eval.metrics import detection_auroc
 from flirds.fl.llm_server import run_llm_fedavg_logs
 from flirds.oracle.in_run_sv import in_run_shapley
 from flirds.repro import seed_everything
+from flirds.hf_pin import rev
 from flirds.run_logger import RunLogger
 
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
@@ -116,11 +117,12 @@ def _eval_arm(model, tok, logs, val_chunks, test, device, cfg):
 
 def run_seed(seed, cfg, device, root):
     seed_everything(seed)
-    tok = AutoTokenizer.from_pretrained(MODEL)
+    tok = AutoTokenizer.from_pretrained(MODEL, revision=rev(MODEL))
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32,
-                                                 attn_implementation="eager").to(device)
+                                                 attn_implementation="eager",
+                                                 revision=rev(MODEL)).to(device)
     model = get_peft_model(model, LoraConfig(r=16, lora_alpha=32, target_modules=TARGET,
                                              lora_dropout=0.0, task_type="CAUSAL_LM"))
     init_lora = {n: p.detach().clone() for n, p in model.named_parameters() if p.requires_grad}
@@ -167,7 +169,8 @@ def run_seed(seed, cfg, device, root):
     cfg_log = {"model": MODEL, "N": N, "seed": seed, "K": K, "noisy": sorted(NOISY),
                "free_riders": sorted(FREE_RIDERS), "free_rider_mode": FREE_RIDER_MODE,
                "per_domain": {"train": cfg["train"], "val": cfg["val"], "test": cfg["test"]},
-               "rounds": cfg["rounds"], "max_steps": cfg["max_steps"], "lr": cfg["lr"], "oracle_b": ORACLE_B}
+               "rounds": cfg["rounds"], "max_steps": cfg["max_steps"], "lr": cfg["lr"], "oracle_b": ORACLE_B,
+               "cfg": cfg, "mode": os.environ.get("CLEAN_RUN_MODE", "full")}   # full resolved cfg (batch/maxlen/val_*/gen_*)
     rl = RunLogger(root, f"flirds-1b-N{N}-seed{seed}", cfg_log)
     phi_rows = [{"client": i, "domain": DOMAINS[i], "phi_est": float(phi[i]),
                  "phi_oracle": (float(phi_b[i]) if phi_b is not None else None),

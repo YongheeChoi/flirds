@@ -49,6 +49,7 @@ import torch
 from datasets import Dataset, load_dataset
 
 from ..fl.partition import client_dirichlet_partition
+from ..hf_pin import rev
 from .corruptors import LLM_CORRUPTORS
 
 
@@ -144,11 +145,11 @@ def _domain_split(dom, n_train, n_val, n_test, seed):
             r["answer"] = ex["correct"]
         return r
 
-    pool = load_dataset(spec["id"], tcfg, split=tsplit).shuffle(seed=seed)
+    pool = load_dataset(spec["id"], tcfg, split=tsplit, revision=rev(spec["id"])).shuffle(seed=seed)
     if (tcfg, tsplit) != (vcfg, vsplit):            # native val split: train+test from train split, val from val split
         pool = pool.select(range(min(n_train + n_test, len(pool)))).to_list()
         tr, te = pool[:n_train], pool[n_train:n_train + n_test]
-        vp = load_dataset(spec["id"], vcfg, split=vsplit).shuffle(seed=seed).to_list()
+        vp = load_dataset(spec["id"], vcfg, split=vsplit, revision=rev(spec["id"])).shuffle(seed=seed).to_list()
         va = _stratified(vp, n_val, strat)
     else:                                            # carve val + test + train from the train split, disjoint
         pool = pool.select(range(min(n_val + n_test + n_train, len(pool)))).to_list()
@@ -273,7 +274,7 @@ def build_alpaca_iid(n_clients, total_train=20000, n_val=200, n_test=0, seed=0,
     experiments -- the IID leg of the corruption x non-IID matrix).
     Returns (clients, val_records, test_records).
     """
-    pool = load_dataset(_ALPACA_ID, split="train").shuffle(seed=seed)
+    pool = load_dataset(_ALPACA_ID, split="train", revision=rev(_ALPACA_ID)).shuffle(seed=seed)
     pool = pool.select(range(min(n_val + n_test + total_train, len(pool)))).to_list()
     recs = []
     for ex in pool:
@@ -317,8 +318,8 @@ def build_gsm8k_iid(n_clients, n_val=200, n_test=0, seed=0, noisy=frozenset(),
     (eval.generate.score_records numeric exact-match).  `noisy` = answer-swap
     clients (rate<1 -> answer_swap_graded; the R4 dose is 0.7)."""
     from ..eval.metrics import gsm8k_answer
-    tr = load_dataset(_GSM8K_ID, "main", split="train").shuffle(seed=seed).to_list()
-    te = load_dataset(_GSM8K_ID, "main", split="test").shuffle(seed=seed).to_list()
+    tr = load_dataset(_GSM8K_ID, "main", split="train", revision=rev(_GSM8K_ID)).shuffle(seed=seed).to_list()
+    te = load_dataset(_GSM8K_ID, "main", split="test", revision=rev(_GSM8K_ID)).shuffle(seed=seed).to_list()
     val_records = []
     for ex in te[:n_val]:
         p, c = _fmt_gsm8k(ex)

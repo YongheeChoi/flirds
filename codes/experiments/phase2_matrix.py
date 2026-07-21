@@ -81,6 +81,7 @@ from flirds.fl.llm_server import client_optimizer, run_llm_fedavg_logs
 from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_perround,
                                      in_run_singletons)
 from flirds.repro import seed_everything
+from flirds.hf_pin import rev
 from flirds.run_logger import RunLogger
 from flirds.timing import PhaseTimer
 
@@ -136,7 +137,7 @@ for k in ("batch", "val_chunk", "val_maxlen"):
 if os.environ.get("LR"):                                       # the poison threat reproduces D2b at lr=2e-3
     RCFG["lr"] = float(os.environ["LR"])                       # (vs the valuation lr=1e-3 for noisy/free-rider)
 
-_OUT = "/tmp/flirds_matrix"
+_OUT = os.path.join(os.environ.get("TMPDIR") or "/tmp", f"flirds_matrix_{os.getpid()}")  # per-process (no cross-cell collision)
 _CODES = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # .../flirds/codes
 RUNDIR_ROOT = os.environ.get("RUNDIR_ROOT",
                              os.path.join(os.path.dirname(_CODES), "runs", "phase2_matrix", "rundirs"))
@@ -147,11 +148,13 @@ RUNDIR_ROOT = os.environ.get("RUNDIR_ROOT",
 # --------------------------------------------------------------------------- #
 def _load(device):
     """fp32 + eager LoRA model (the (b)/estimator path; all methods share one load)."""
-    tok = AutoTokenizer.from_pretrained(MODEL)
+    tok = AutoTokenizer.from_pretrained(MODEL, revision=rev(MODEL))
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     m = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32,
-                                             attn_implementation="eager").to(device)
+                                             attn_implementation="eager",
+                                             revision=rev(MODEL)).to(device)
+    seed_everything(0)                     # pin LoRA-A init (else entropy-seeded per process -> non-reproducible)
     m = get_peft_model(m, LoraConfig(r=16, lora_alpha=32, target_modules=TARGET,
                                      lora_dropout=0.0, task_type="CAUSAL_LM"))
     init = {n: p.detach().clone() for n, p in m.named_parameters() if p.requires_grad}
@@ -503,12 +506,15 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=
     _anchor = "_anchor" if (not SILO_LIKE and oracle_b and coalition) else ""
     _dose = ((f"_nr{NOISY_RATE:g}" if NOISY_RATE != 1.0 else "")     # Exp B dose tokens (default: none)
              + (f"_dm{DOSE_MULT:g}" if DOSE_MULT != 1.0 else ""))
-    name = os.environ.get("RUN_NAME") or f"{SCALE}_{_setting}_{_cond}{_anchor}{_dose}"
+    _seedtok = f"_s{seeds[0]}" if os.environ.get("SEED") else ""   # 1-seed/process shard -> distinct dir (else silent overwrite)
+    name = os.environ.get("RUN_NAME") or f"{SCALE}_{_setting}_{_cond}{_anchor}{_dose}{_seedtok}"
     rcfg = {k: (sorted(v) if isinstance(v, (set, frozenset)) else v) for k, v in RCFG.items()}
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "alpha": ALPHA,
               "threats": threats, "seeds": seeds, "oracle_b": oracle_b, "coalition": coalition,
               "noisy_rate": NOISY_RATE, "dose_mult": DOSE_MULT, "removal": REMOVAL,
               "client_opt": os.environ.get("CLIENT_OPT", "sgd"),
+              "poison": {"bd_target": BD_TARGET, "poison_train": POISON_TRAIN,   # poison-cell knobs (self-describing)
+                         "attacker_lr": ATTACKER_LR, "attacker_epochs": ATTACKER_EPOCHS},
               "rcfg": rcfg, "mcfg": MCFG,
               "env": {k: os.environ[k] for k in
                       ("POOL", "LR", "BATCH", "EPOCHS", "POISON_FRAC", "ROUNDS", "MAX_STEPS",
