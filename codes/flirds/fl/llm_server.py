@@ -44,14 +44,20 @@ def _lora_state(model):
     return {n: p.detach() for n, p in model.named_parameters() if p.requires_grad}
 
 
-def _add_gnoise(delta, gamma, generator):
+def _add_gnoise(delta, gamma, generator, frozen=None):
     """Grad-noise corruption (Track H R4 seam, spec runs/track_h/README.md §1.6):
     delta + N(0, sigma^2) elementwise with sigma = gamma * global RMS of the delta
     (relative dose -- the CNN analog uses an absolute std; LoRA scales vary).  A
     zero delta has RMS 0 -> returned unchanged (composes cleanly with free-rider).
-    Deterministic via the passed CPU generator (deltas are already on cpu)."""
+    Deterministic via the passed CPU generator (deltas are already on cpu).
+    `frozen` (GN_ABS mode): shared dict -- sigma freezes at the run's FIRST corrupt
+    update and that ONE value applies to every noise_adder in every later round
+    (absolute dose, uniform across clients = the CNN fixed-sigma convention; the
+    relative dose self-attenuates as deltas shrink -- gamma-probe 07-22)."""
     numel = sum(v.numel() for v in delta.values())
     sigma = gamma * float(sum(v.pow(2).sum() for v in delta.values()) / numel) ** 0.5
+    if frozen is not None and sigma > 0.0:
+        sigma = frozen.setdefault("sigma", sigma)
     if sigma == 0.0:
         return delta
     return {k: v + torch.randn(v.shape, generator=generator, dtype=v.dtype) * sigma
@@ -62,7 +68,8 @@ def _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
                          batch_size, max_length, seed, formatting_func,
                          free_riders, free_rider_mode, free_rider_scale, fr_gen,
                          scaled_attackers, attack_scale, prev_state_fn=None,
-                         noise_adders=frozenset(), noise_gamma=1.0, gn_gen=None):
+                         noise_adders=frozenset(), noise_gamma=1.0, gn_gen=None,
+                         gn_frozen=None):
     def local_train_fn(c, global_state):
         model.load_state_dict(global_state, strict=False)   # sync LoRA (named key)
         if c in free_riders:                                # seam 2: fabricated update, no real training
@@ -87,7 +94,7 @@ def _make_local_train_fn(model, tokenizer, local_datasets, lr, max_steps,
         if c in scaled_attackers:        # seam 2: Bagdasaryan plain-scaled model-replacement
             delta = {k: attack_scale * v for k, v in delta.items()}
         if c in noise_adders:            # seam 2: grad-noise on the REAL update (Track H R4)
-            delta = _add_gnoise(delta, noise_gamma, gn_gen)
+            delta = _add_gnoise(delta, noise_gamma, gn_gen, gn_frozen)
         return delta
     return local_train_fn
 
@@ -98,7 +105,7 @@ def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
                         free_rider_mode="zero", free_rider_scale=1e-3,
                         scaled_attackers=frozenset(), attack_scale=10.0,
                         select_fn=None, weights_fn=None,
-                        noise_adders=frozenset(), noise_gamma=1.0):
+                        noise_adders=frozenset(), noise_gamma=1.0, gn_abs=False):
     """Run LLM FedAvg once; return logs[(w_r, deltas_map)] (LoRA-only states).
 
     `free_riders` = client indices that fabricate updates instead of training
@@ -111,6 +118,9 @@ def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
     data layer's `backdoor=` to make them trigger->target poisoners.
     `noise_adders` = client indices whose REAL update gets Gaussian grad-noise added
     (`_add_gnoise`, sigma = noise_gamma * delta RMS -- the Track H R4 threat).
+    `gn_abs` = freeze ONE shared sigma at the run's first corrupt update, applied to
+    all noise_adders (absolute uniform dose = CNN fixed-sigma convention; relative
+    dose self-attenuates as deltas shrink -- gamma-probe 07-22).
     `select_fn` / `weights_fn` = the `_fedavg_core` intervention seam (Track D online
     arms; fl/intervene builds these).  Defaults None -> bit-identical vanilla FedAvg.
     """
@@ -130,7 +140,7 @@ def run_llm_fedavg_logs(model, tokenizer, local_datasets, rounds, lr, max_steps,
                                scaled_attackers, attack_scale,
                                prev_state_fn=lambda: logs[-1][0] if logs else None,
                                noise_adders=noise_adders, noise_gamma=noise_gamma,
-                               gn_gen=gn_gen)
+                               gn_gen=gn_gen, gn_frozen={} if gn_abs else None)
     _fedavg_core(init_state, ltf, sample_nums, rounds, sample_frac, seed,
                  on_round=lambda r, w_r, dm: logs.append((w_r, dm)),
                  select_fn=select_fn, weights_fn=weights_fn)

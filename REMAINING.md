@@ -14,6 +14,22 @@
   meta-llama gated 재취득 불가(유효 토큰 무) → 해시 교차검증된 공개 미러로 캐시 재구성 —
   검증 체인·근거는 `$BATCH/PROVENANCE.md`.
 
+### 1.0 컨테이너 교체 (Yonghee 07-21: Tier A 완주 후 1회 교체) — 교체 후 재개 절차
+
+07-21 16:58 드레인 적용: 현행 큐 잔여 β 줄 `#SWAPHOLD` → 새 디스패치 없음(드라이버는 전 셀
+종료 시 `MULTI-DRIVER DONE` 후 자연 종료). β a0.1_frzero·a0.01_noisy = Yonghee 결정으로
+17:10 kill·**다음 세션 이관**(postswap 큐 활성 등재; 이번 세션 완주 대상 = Tier A noisy +
+β a0.1_frrand 뿐). **교체 후 재개 3단계**:
+
+1. frrand 완주 확인: `grep 'done\[ok\]' $BATCH/runlogs/_driver.log` — a0.1_frrand의
+   done[ok] 없으면 `$BATCH/runlogs/queue_postswap.txt`의 `#IFKILLED` 1줄 주석 해제
+   (셀=원자적, 부분산출물 없음).
+2. venv 확인: `$BATCH/venv/bin/python -c "import torch;print(torch.cuda.is_available())"`
+   (깨졌으면 `$BATCH/tools/` 재구축 스크립트 + PROVENANCE.md).
+3. `bash $BATCH/tools/launch_driver.sh` — QUEUE는 이미 `queue_postswap.txt`로 전환됨
+   (순서: **P5 8런**[noisy→clean→frzero→gnoise] → β0.3 잔여 16셀[이관 2 포함]).
+   구 큐 `queue_2026-07-20.txt`는 소진·역사 기록 — **재사용 금지**(완료 줄 미주석→재실행 사고).
+
 ### 1.1 R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (**실행 중** 2026-07-20 23:29~, 4-GPU)
 
 4셀 = {clean, noisy(answer-swap@0.7), gnoise(γ=1.0), frzero} × seed0 — observer+통제+
@@ -27,13 +43,38 @@ flirds P1-T1+T2, 심판 = GSM8K test 1,119 exact-match. 스펙·예측(H-8~11) =
 
 #### 1.1-P5 — R4에 P5 정책 leg 추가 (Yonghee 07-21: "R4도 동일 적용"; **Tier A 종료 후 실행**)
 
+> **[07-21 밤 스코프 확정 — Yonghee]** ① 정책은 **P1 sign-게이트 + P5-soft(pweight) 두 가지만**
+> (P5-hard cgate/csign 전면 제외; `track_g.py`에 `T2_CSIGN=0` 스위치 신설, 기본 1=비트동일,
+> tiny-gpt2 스모크 green — t2_pw만 생성 확인). T1(온라인)+T2(사후) × 오염축 전부.
+> P1 몫은 Tier A가 이미 확보(gate_v2 online + t2_sign). csign의 UCB-보수성 분석(noisy 오염
+> 11–13명 재포함)은 observer parquet 오프라인 선계산으로 확보됨 — GPU 불요.
+> ② **gnoise 재주입**: γ=1.0 무대 불성립 확정(oracle 갭 −0.3pt) 후 Yonghee 지시로 dose 증강.
+> 07-21 밤 유휴 GPU 3장에 **γ-probe {5,10,20}** observer 가동(23:29~, oracle_excl은 γ-무관
+> [오염클라 전원배제 = 노이즈 미유입] → 0.3735 재사용). **r50 중간판독(gn_trend.py, 07-22
+> 00:58): 상대-dose 자기감쇠 발견** — σ=γ·RMS(delta)가 수렴하며 delta와 함께 줄어 γ=5/10/20
+> train_loss가 소수 3자리까지 동일 + clean 갭 r20 +0.017→r50 +0.002 소멸 중. 어떤 γ든 종반
+> 무해 예상 → **`GN_ABS` 모드 확정**(Yonghee 07-22 01시: "클라 간 noise 크기 동일해야" —
+> **런의 첫 오염 업데이트에서 σ 한 번 동결, 전 오염클라·전 라운드 공통 적용** = CNN
+> 고정-σ(0.1, FedIF main) 관례와 정합; llm_server `_add_gnoise` shared frozen dict +
+> track_g `GN_ABS` env, 기본 0 = 기존 비트동일; 단위 로직검증 + tiny-gpt2 스모크 green,
+> config.yaml에 gn_abs 기록). 상대-dose probe 3개는 r~60서 kill(자기감쇠 근거는 r50 추이로
+> 문서화, EM 확증은 미완 — caveat 유지), **abs-probe {5,10,20} 01:23 재기동**(observer만,
+> root `rundirs_llm_gnabs{5,10,20}`, 완주 ~06:40). EM 판정 후 `gn_full`(GN_ABS=1, 기본
+> γ=5, #GNHOLD) 해제 — γ=5가 과/부족하면 조정. γ=1.0 rundir 보존. §1.1 "GN_GAMMA 튜닝
+> 금지"는 사전등록 게이트 FAIL 후 무대-수리로 해제(Yonghee) — dose 선택 과정 전체를 보고.
+> ③ 비용 ≈ **80 GPU-h**(gn_full ~29 + soft 6런 ~50) + probe 15.6(별도, 유휴 GPU 소진).
+> ④ RUN_P5.md hard-측 예측(HP-1·2·4)은 LLM leg N/A 처리(CNN 본실험이 별도 서버서 커버).
+
+(이하 07-21 낮 원계획 — 스코프는 위 블록이 우선)
+
 배선 완료(07-21 로컬 커밋: track_g.py에 `<src>_cgate`[P5-hard 신뢰게이트]/
 `<src>_pweight`[P5-soft Φ(t)-가중] arm + `T2_P5=1` → `t2_csign_*`/`t2_pw_*` 재학습 +
 `T2_LEGACY=0` = Tier A의 t2_sign 중복 재실행 스킵; 테스트 10 + tiny-gpt2 R4형 스모크
 green). **스펙·공정성 조항(z=1.645 고정, 학습-중 관측 통계만·사전 정보 금지)·예측 =
 `runs/track_h/p5/RUN_P5.md` §2–4** — 위반 금지, MISS 그대로 보고.
 
-Tier A 4셀 완주 확인 후, 셀당 2 프로세스 (env 베이스는 Tier A와 동일):
+**§1.0 `queue_postswap.txt`에 등재 완료(β보다 앞 순번) — 교체 후 자동 실행.** 수동 스펙(참고):
+셀당 2 프로세스, env 베이스는 Tier A와 동일:
 ```bash
 # ① online P5 arm 2종 (arm별 기본 명명 -> gsm50k5_<t>_flirds_cgate_seed0 등; RUN_NAME 설정 금지)
 REGIME=gsm50k5 THREAT=<t> SEED=0 ARMS=flirds_cgate,flirds_pweight \
@@ -50,9 +91,11 @@ REGIME=gsm50k5 THREAT=<t> SEED=0 ARMS=observer T2=1 T2_P5=1 T2_LEGACY=0 \
 - CNN 쪽 P5 본실험은 **별도 Slurm 서버** 담당(이 컨테이너 아님) — `runs/track_h/p5/`
   sbatch 2종, 실행 정본 = RUN_P5.md.
 
-### 1.2 β0.3 재실행 잔여 18셀 (device100 14 + 3B silo5 4) — R4 뒤 큐 자동 재개
+### 1.2 β0.3 재실행 잔여 (device100 + 3B silo5) — P5 뒤 큐 자동 재개
 
-현행 드라이버 큐에 등재되어 있음(R4 다음 순번). 드라이버 유실 시 수동 재개:
+진행: 완주 1(a0.1_noisy) + 이번 세션 완주 예정 1(a0.1_frrand; §1.0 IFKILLED 체크) +
+`queue_postswap.txt` 등재 16(이관 a0.1_frzero·a0.01_noisy 포함; P5 다음 순번).
+드라이버 유실 시 수동 재개:
 ```bash
 sed -i 's/^#phase2/phase2/' runs/rerun_beta03/logs/resume36h.txt   # 유실 시 RESUME_AFTER_MIGRATION.md 31줄에서
                                                                    # 완료분 1B_silo5 4셀 제외하고 재생성

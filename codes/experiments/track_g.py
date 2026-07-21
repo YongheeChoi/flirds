@@ -125,6 +125,9 @@ if os.environ.get("LR"):
 NOISY_RATE = float(os.environ.get("NOISY_RATE",
                                   "0.7" if REGIME == "gsm50k5" else "1.0"))
 GN_GAMMA = float(os.environ.get("GN_GAMMA", "1.0"))   # R4 grad-noise dose (spec-fixed)
+GN_ABS = os.environ.get("GN_ABS", "0") == "1"         # ONE sigma frozen at the run's first
+                                                      # corrupt update, uniform across clients
+                                                      # (relative dose self-attenuates; 07-22)
 
 MODEL_CFG = {"1B": dict(batch=16, val_chunk=10, val_maxlen=384),
              "3B": dict(batch=8, val_chunk=5, val_maxlen=384),
@@ -153,6 +156,7 @@ MMLU_BATCH = int(os.environ.get("MMLU_BATCH", "16"))
 V3 = os.environ.get("V3", "0") == "1"
 T2 = os.environ.get("T2", "0") == "1"                 # R4 observer->retrain block
 T2_P5 = os.environ.get("T2_P5", "0") == "1"           # + P5 retrains (t2_csign/t2_pw)
+T2_CSIGN = os.environ.get("T2_CSIGN", "1") == "1"     # 0 = P5-soft only: skip t2_csign_* + its ctrl
 T2_LEGACY = os.environ.get("T2_LEGACY", "1") == "1"   # 0 = skip t2_sign_* (already on disk)
 SYNTH = os.environ.get("SYNTH_DATA", "0") == "1"
 
@@ -292,7 +296,8 @@ def _fl(model, tok, clients, init, seed, select_fn=None, weights_fn=None,
                                seed=seed, select_fn=select_fn, weights_fn=weights_fn,
                                free_riders=free_riders, free_rider_mode=fr_mode,
                                free_rider_scale=fr_scale,
-                               noise_adders=noise_adders, noise_gamma=GN_GAMMA)
+                               noise_adders=noise_adders, noise_gamma=GN_GAMMA,
+                               gn_abs=GN_ABS)
 
 
 def _benign_std(logs, free_riders=frozenset()):
@@ -565,6 +570,7 @@ def persist(arm, seed, metrics, rows, acc, timing, corrupt_cfg):
               "obs_sources": [s for s in os.environ.get(
                   "OBS_SOURCES", "flirds,flirds1st,lossheur,fedif").split(",") if s],
               "synth_data": SYNTH, "downstream": DOWNSTREAM, "t2": T2, "t2_p5": T2_P5,
+              "t2_csign": T2_CSIGN,
               "orientation": {"phi.parquet": "suspicion (good->low; repo convention)",
                               "phi_rounds.parquet": "raw/cum contribution (good->high = -phi)"}}
     try:
@@ -596,12 +602,14 @@ def main():
     arms = [a for a in ARMS if not (THREAT == "clean" and a in ("oracle_excl", "random_excl"))]
     corrupt_cfg = {"noisy_ids": sorted(noisy_ids), "fr_ids": sorted(fr_ids),
                    "fr_mode": fr_mode, "gn_ids": sorted(gn_ids),
-                   "gn_gamma": (GN_GAMMA if gn_ids else None), "corrupt": sorted(corrupt)}
+                   "gn_gamma": (GN_GAMMA if gn_ids else None),
+                   "gn_abs": (GN_ABS if gn_ids else None), "corrupt": sorted(corrupt)}
 
     print(f"=== Track G | {SCALE} {REGIME} {THREAT} | N={n} K={RCFG['k_abs']}/round "
           f"R={RCFG['rounds']} lr={RCFG['lr']} | corrupt={sorted(corrupt)} fr_mode={fr_mode} "
           f"nr={NOISY_RATE:g} | gate={GATE} | arms={arms} | seeds={seeds} "
-          f"| downstream={DOWNSTREAM} V3={V3} T2={T2} T2_P5={T2_P5} ===", flush=True)
+          f"| downstream={DOWNSTREAM} V3={V3} T2={T2} T2_P5={T2_P5} T2_CSIGN={T2_CSIGN} ===",
+          flush=True)
 
     tok, model, init, pkeys = _load(device)
     for seed in seeds:
@@ -688,8 +696,9 @@ def main():
             ctrl_sizes = {len(t2_kept[prim])} if T2_LEGACY else set()
             if T2_P5:
                 for s, a in obs_accs.items():
-                    keep_c = _conf_keep(a, GATE["conf_z"], GATE["min_obs"])
-                    variants[f"t2_csign_{s}"] = [i for i in range(n) if keep_c[i]]
+                    if T2_CSIGN:
+                        keep_c = _conf_keep(a, GATE["conf_z"], GATE["min_obs"])
+                        variants[f"t2_csign_{s}"] = [i for i in range(n) if keep_c[i]]
                     _, sd_s, nob = a.stats()
                     wv = {}
                     for c in range(n):
@@ -703,7 +712,8 @@ def main():
                             wv[c] = f
                     variants[f"t2_pw_{s}"] = sorted(wv)
                     wvecs[f"t2_pw_{s}"] = wv
-                ctrl_sizes.add(len(variants[f"t2_csign_{prim}"]))
+                if T2_CSIGN:
+                    ctrl_sizes.add(len(variants[f"t2_csign_{prim}"]))
             rng = np.random.default_rng(4000 + seed)
             for k_sz in sorted(ctrl_sizes):
                 if 0 < k_sz < n:
