@@ -800,6 +800,60 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 **출처**: `runs/track_h/rundirs_cnn/`(96런)·`rundirs_llm/`(12런) + §1.5 재사용(track_g) · `runs/track_h/analysis/{competition_score,cnn_competition,llm_competition,observer_zero_semantics}.csv`(**07-20 집계 정정판** — 수정 내역 3건은 `make_analysis.py` docstring). 코드 = `codes/flirds/fl/score_providers.py` + `experiments/track_c2.py`(관찰자·T2)·`track_g.py`(provider 확장) + `tests/test_track_h.py`.
 
+#### P5 신뢰-기반 sign 정책(hard/soft) — 2026-07-21 사전등록 확증 런 (`rundirs_cnn` +108런)
+
+> **스펙·공정성·예측(HP-1~6) 정본 = `runs/track_h/p5/RUN_P5.md`** (z=1.645 보편상수·자기 스트림만·셀별 튜닝 금지; 예측은 07-20 오프라인 리플레이 유래 사전 등록). P1(strict sign)이 경계선 분산을 확신-유해와 똑같이 과금한다는 진단에서 출발 — **P5-hard** `cgate`(UCB: cum+1.645·σ̂√n≤0일 때만 배제) / **P5-soft** `pweight`(w∝n·Φ(t) 확률 가중)를 8 점수원 공통 적용. T1 online 96런(8소스×4위협×3seed×2arm) + T2 retrain 12런(관찰자 obsp5 → 최종 통계로 `t2_csign_*`/`t2_pw_*`·dedupe·size-matched random 통제). **실행 각주**: 최초 제출분에서 `flirds_cgate/pweight`가 레거시 분기에 삼켜져 vanilla로 새던 dispatch 실버그 발견(`fa5fc6e` 수정 — 스모크 AUROC=1.000 가드 신설), **t1 flirds 12런만 수정판 재실행**(동명 멱등 덮어쓰기·meta `git_sha` 전수 검증; 타 소스·T2는 diff상 비트동일로 무영향). GPU-h 실측 ≈ **48**(t1 96×~12분 + flirds 재실행 12 + t2 12×~2.2h + pre-flight; 스펙 추정 36–45 소폭 초과 = t2 실측 2.2h > 추정 1–1.5h).
+
+**P5-hard(cgate) · online / retrain** — 형식 = P1/P2 표와 동일(절대 test acc, 3-seed mean)
+
+| arm              | cln·on | FR·on | GN·on | LF·on | **오염평균·on** | cln·re | FR·re | GN·re | LF·re | **오염평균·re** |
+| ---------------- | ------ | ----- | ----- | ----- | ----------- | ------ | ----- | ----- | ----- | ----------- |
+| vanilla (바닥)     | .6389  | .5879 | .2436 | .5247 | .4521       | 〃      | 〃     | 〃     | 〃     | .4521       |
+| oracle_excl (천장) | –      | .6203 | .6203 | .6236 | .6214       | –      | 〃     | 〃     | 〃     | .6214       |
+| **flirds**       | .6375  | .6070 | .5169 | **.5928** | **.5722** | .6333  | .6197 | **.6215** | .6210 | **.6207**   |
+| flirds1st        | .6390  | **.6195** | .2422 | .5599 | .4739   | .6389  | .6195 | .2436 | .6009 | .4880       |
+| lossheur         | .6367  | .6138 | .3959 | .5835 | .5311       | .6370  | **.6210** | .3529 | .6206 | .5315   |
+| fedif            | **.6392** | **.6195** | .2422 | .5556 | .4724 | .6389  | .6195 | .2436 | .6032 | .4888       |
+| gtg              | .6351  | .5450 | .5169 | .5559 | .5393       | .6363  | .5486 | .6195 | .5850 | .5844       |
+| fedsv            | .6300  | .5310 | .5079 | .5541 | .5310       | .6384  | .5588 | .5655 | .5657 | .5634       |
+| comfedsv         | .6299  | .5400 | .4952 | .5529 | .5294       | .6388  | .5554 | .5265 | .5582 | .5467       |
+| shapleyfl        | .6355  | .5164 | .5301 | .5600 | .5355       | .6340  | .5417 | .6195 | .5865 | .5825       |
+
+**P5-soft(pweight) · online / retrain**
+
+| arm              | cln·on | FR·on | GN·on | LF·on | **오염평균·on** | cln·re | FR·re | GN·re | LF·re | **오염평균·re** |
+| ---------------- | ------ | ----- | ----- | ----- | ----------- | ------ | ----- | ----- | ----- | ----------- |
+| vanilla (바닥)     | .6389  | .5879 | .2436 | .5247 | .4521       | 〃      | 〃     | 〃     | 〃     | .4521       |
+| oracle_excl (천장) | –      | .6203 | .6203 | .6236 | .6214       | –      | 〃     | 〃     | 〃     | .6214       |
+| **flirds**       | .6370  | **.6132** | **.5416** | **.5965** | **.5838** | .6350 | .6108 | .5989 | **.6188** | **.6095** |
+| flirds1st        | .6387  | .6100 | .2446 | .5680 | .4742       | .6387  | .6201 | .2478 | .6106 | .4928       |
+| lossheur         | **.6403** | .6128 | .5373 | .5771 | .5757   | .6371  | .6159 | .4618 | .6103 | .5627       |
+| fedif            | .6392  | .6120 | .2423 | .5693 | .4745       | **.6398** | **.6204** | .2393 | .6063 | .4887   |
+| gtg              | .6330  | .5315 | .5456 | .5733 | .5501       | .6302  | .5178 | **.6134** | .5860 | .5724   |
+| fedsv            | .6330  | .5387 | .5439 | .5722 | .5516       | .6302  | .5210 | .6085 | .5865 | .5720       |
+| comfedsv         | .6334  | .5397 | .5420 | .5745 | .5521       | .6310  | .5252 | .6072 | .5884 | .5736       |
+| shapleyfl        | .6324  | .5285 | .5458 | .5770 | .5504       | .6275  | .4992 | .6038 | .5907 | .5646       |
+
+**읽기(P1 대비):**
+- **clean 오발화가 정책으로 대부분 회수**: P1 clean .596~.638 → P5h .630~.639 / P5s .632~.640. renorm 4종도 .630~.636(P1 .596~.605)으로 회복 — HP-1의 설계 의도(경계선 분산 보호)가 전 소스에서 작동. flirds .6315→.6375(h)/.6370(s), vanilla(.6389)와 −.0014 차이까지 근접.
+- **renorm free-rider "붕괴"의 원인 분리**: FR 검출은 여전히 0(cgate/pweight AUROC .00~.02 — 확신-양수 편향은 z 무관, HP-4 검출 예측 적중)인데 acc는 P1 .39~.40 → P5 .50~.55로 완화. 즉 P1 파국의 주범은 *미검출*이 아니라 *clean 오배제의 온라인 복리*였음이 정책 대조로 실증됨(그래도 vanilla .5879 아래 = 여전히 열세).
+- **flirds GN의 hard 트레이드오프**: online cgate .5169 < P1 .5668(UCB가 증거 쌓일 때까지 오염 유입 허용 — 조기배제 이득 상실, HP-2의 MISS 부분) ↔ **retrain csign .6215 = 사전등록 참조치(≈.61) 적중·천장 동급**. 그 결과 **flirds P5h retrain 오염-평균 .6207 ≈ oracle_excl .6214** — 전 위협 .6197~.6215 + clean .6333으로, Track H 전 정책·전 시점 통틀어 estimator 최고 세팅(P1 retrain .6107 대비 +.0100).
+- **hard vs soft(사전 미등록 — 관찰만)**: online 오염-평균은 soft가 **8/8 소스 우세**(약신호를 Φ(t)로 부분 반영; lossheur GN .5373 vs hard .3959가 대표 — HP-3 적중), retrain은 혼재(flirds·gtg·shapleyfl hard↑ / lossheur·fedsv·comfedsv soft↑). 오염-평균 1위는 online 양 정책 모두 flirds(.5722/.5838 — 종합 예측 적중).
+
+**예측표 HP-1~6 대조**(MISS 그대로 — RUN_P5.md §4·§7):
+
+| # | 판정 | 근거 |
+|---|---|---|
+| HP-1 (flirds cgate clean 상승) | **적중** | .6375 > P1 .6315(vanilla −.0014); UCB 배제 ~10명(clean obsp5 csign kept=90; P1 31명 대비) |
+| HP-2 (flirds cgate corrupt 유지) | 부분 | LF ↑(.5928>.5712)·FR ≈(.6070 vs .6148)·GN T2 .6215(참조 ≈.61 적중)이나 **GN online .5169 < P1 .5668 = MISS**(UCB 증거-축적 지연 비용) |
+| HP-3 (lossheur cgate GN 하락·pweight 중간 회복) | **적중** | cgate .3959(P1 .5981)·pweight .5373(중간) — marginal 신호(t≈−1.27)의 정책별 반응 예측 그대로 |
+| HP-4 (renorm FR 붕괴 유지 + clean 오배제 감소·잔존) | 부분 | 미검출 유지 적중(AUROC .00~.02 전 정책)·clean 회복+잔존 적중(.630~.636, vanilla −.003~−.009); **acc "붕괴 유지"는 MISS**(.39→.50~.55 완화 — 붕괴 주범이 오배제였음) |
+| HP-5 (flirds1st·fedif GN 실명 ≈ vanilla) | **적중** | 전 정책 .2393~.2478 ≈ vanilla .2436. 각주: fedif는 GN AUROC 1.0으로 *순위*는 가르나 cum이 양수라 UCB 임계 미달 = 배제 0 — 실명 메커니즘이 리플레이 예상(t=+3.1 확신-오판)과 소스별로 다름(flirds1st는 AUROC .49 = 순위조차 실명) |
+| HP-6 (pweight clean ≈ vanilla ±band; soft가 lossheur GN 유리) | 대체로 적중 | clean 8소스 중 7개 \|Δ\|≤.006(shapleyfl .0065로 경계 초과); soft>hard lossheur GN 적중 |
+| 종합 (오염-평균 flirds cgate 1위) | **적중** | cgate .5722 1위(2위 gtg .5393)·pweight도 .5838 1위 — 전 위협에서 vanilla 위로 생존하는 유일 소스(renorm=FR 열세 지속, 1차 estimator=GN 실명) |
+
+**출처(P5)**: `runs/track_h/rundirs_cnn/*_{<src>p5,obsp5}_*`(108런; flirds 12런 meta=`fa5fc6e`) · `runs/track_h/analysis/`(P5h/P5s policy 편입 재생성) · 코드 = `fl/intervene.py`(SignAccumulator.stats·conf-gate·prob-weight) + `experiments/track_c2.py`(`_TH_POLICIES` += cgate/pweight·`C2_T2_P5`·dispatch 순서 수정) + `tests/test_p5.py`(10) — R4(gsm50k5) 동일-정책 leg는 B200 `REMAINING.md` §1.1.
+
 ### 3.2.7 종합 판정 — 어떤 세팅이 가장 잘 됐나
 
 | 관점 | 최고 세팅 | 수치 |

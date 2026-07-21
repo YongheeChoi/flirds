@@ -9,19 +9,19 @@
 # SLURM-SERVER SETUP: fill <PARTITION>/<REPO>/<VENV_PY> -- see sbatch_p5_t1.sh header.
 #
 #SBATCH --job-name=p5t2
-#SBATCH --partition=<PARTITION>
+#SBATCH --partition=base_suma_rtx3090
 ###SBATCH --account=<ACCOUNT>
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=04:00:00
 #SBATCH --array=0-11%4
-#SBATCH --output=<REPO>/runs/track_h/p5/logs/%x_%A_%a.out
+#SBATCH --output=/home/chyoyhr/projects/flirds/runs/track_h/p5/logs/%x_%A_%a.out
 
 set -euo pipefail
 
-REPO=${REPO:-<REPO>}
-PY=${PY:-<VENV_PY>}
+REPO=${REPO:-/home/chyoyhr/projects/flirds}
+PY=${PY:-/home/chyoyhr/anaconda3/envs/lora4cl/bin/python}
 export PYTHONPATH=. PYTHONUTF8=1
 
 THREATS=(clean label_flip free_rider grad_noise)
