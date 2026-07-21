@@ -1,8 +1,8 @@
 {
-  "name": "dev_a0.1_noisy",
-  "git_sha": "8bca1d20a9e4dbeed4a257b81d41991386f28617",
-  "git_dirty": false,
-  "env_hash": "a60fac0836d4079c",
+  "name": "1B_device100-a0.1_noisy",
+  "git_sha": "088bb24f0ea61482119dda304a7bce34b44b4244",
+  "git_dirty": true,
+  "env_hash": "812a656f211f80ca",
   "versions": {
     "torch": "2.12.0+cu130",
     "transformers": "5.9.0",
@@ -11,6 +11,6 @@
     "accelerate": "1.13.0",
     "datasets": "4.8.5",
     "numpy": "2.4.6",
-    "python": "3.11.15"
+    "python": "3.12.3"
   }
 }
