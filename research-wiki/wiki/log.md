@@ -598,3 +598,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 3차 절)
 - touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · memory `paper-threat-stage-scope`
 - note: §3.2.4를 cnn_summary.csv 재집계 절대 acc 표로 교체(dir1 flirds행 = §3.2.6과 rundir 동일 확인 — 구 dAcc 표기가 커 보였던 착시)·§3.2.2에 pool-구성 주의 추가(fmnist/shard/약강도 혼합이 절대 수준을 올림). phase1 retrain×top-k = 미사용(§3.2.5 스텁; softmax-선택 arm은 유지 — 해석 확인 대상).
+
+## [2026-07-22] note | 신규 실험 결과 반영 — R4 gsm50k5 Tier A + device100 a0.1 β0.3 재실행 2셀
+- raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 4차 절)
+- touched: `survey/flirds-experiment-results-overview.md` (§3.2.7 신설 등) · [[paper-experiment-placement-plan]] §5
+- note: R4 GSM8K Tier A seed0 착지(4c40e30) — noisy(answer-swap@.7) 무대 성립 +3.6pt·T2 점수원 우열 flirds .3584 1위(동일예산 무작위 +4.7pt)·frzero 회수 1.000(H-9 적중)·clean T1 −1.0pt 오발화(H-11 MISS)·gnoise 구정의 폐기→GN_ABS γ*=5 gn_full 재실험 중(560a2fd). §3.3.2 α=0.1 열 = 재실행판(c05a951; Fed-LOO 행 신설·잔여 16셀). 수치 전부 rundir·CSV 직접 집계.

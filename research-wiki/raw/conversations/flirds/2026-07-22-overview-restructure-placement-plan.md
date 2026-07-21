@@ -93,3 +93,34 @@ paper-ko §초록–§3만 근거(§4 이후 비사용, paper-ko 무수정 유�
 ### 추가 보류 (3차)
 
 - **softmax-선택 arm 유지 여부**: "top-k selection 안 씀"을 phase1 retrain×top-k로 해석 — §3.2.1 `flirds_sel`·§3.2.2 `flirds_select`/`sfedavg`(확률적 soft 선택)까지 제외 의도였으면 추가 정리 필요.
+
+---
+
+## 추가 지시 (같은 세션 4차; Yonghee 원문 요지)
+
+> "새로운 실험 결과가 도착했어. overview에 반영해줘."
+
+### 도착분 (커밋 4건, f5d40a7 이후)
+
+1. **4c40e30** — R4 gsm50k5 Tier A seed0 4셀 완주(rundir 32 + `gsm50k5_tier_a.csv`·`llm_competition.csv`; `T2_CSIGN`·`GN_ABS` 스위치).
+2. **b45d8c6** — γ*=5 확정(abs-probe r32 판단)·gn_full 활성 (REMAINING 문서).
+3. **560a2fd** — gnoise 구정의(γ1.0 상대-dose) 폐기: rundir 7개 삭제·`oracle_excl`만 보존(γ-무관), `gsm50k5_tier_a.csv` 재생성(25행), REMAINING §1.0 인수인계 재작성.
+4. **c05a951** — β0.3 재실행 device100 a0.1 noisy·frrand 2셀 완주(스위트 10종 = Fed-LOO 추가; timing.json 신설) — 잔여 16셀 큐.
+
+### 반영 내역 (overview)
+
+1. **§3.2.7 신설** — R4 Tier A seed0 3블록: (b1) 무대 판정(noisy +3.6pt 성립 / frzero +0.9 / gnoise −0.3 불성립→신정의 / clean 게이트 비용 −1.0pt), (b2) EM 절대값 표(vanilla/oracle/random/T1/T2 4점수원/t2_random; recovery·kept 병기 — noisy T2 flirds .3584 > lossheur .3548 > 1차 .3432, 동일예산 무작위 .3110 = +4.7pt; frzero 4점수원 kept=30 recovery 1.000), H-8~11 대조표(H-9 완전 적중·H-11 MISS 정직 보고·H-10 판정 불가), gnoise 주(GN_ABS γ*=5·gn_full 큐·llm_competition.csv 구정의 행 잔존 경고), (c) GPU-h(timing.json 합산 clean 8.5/noisy 24.1/frzero 22.0[dedupe 중복 기록, 실소요 ~15.8]/gnoise 잔존 2.4) + 1-seed·스펙-정합 caveat.
+2. **§3.3.2 α=0.1 열 = 재실행판 정본으로 교체** — rundir metrics.json 직접 집계(3-seed ddof=0): Flirds .606±.056·Flirds-1st .607±.057·loss-heur .609±.055·**Fed-LOO .607±.056(행 신설)**·FedIF .692±.126·ComFedSV .430±.027·FLDetector .528±.068·STD-DAGMM .615±.103·FLTrust .726±.129·FedDQC 1.000; (b2)에 frrand α=0.1 요약 1줄·(b3)에 Fed-LOO 행·(c)에 집계 출처 주.
+3. **전파**: 헤더 HEAD c05a951 · 출처 블록(rundirs_llm 37·gsm50k5_tier_a.csv·device100 canonical 확장) · 마스터표 행10/P11(§3.2.7·상태 갱신) · §2.1 매핑 · §3.2 매트릭스(LLM·IID에 gsm50k5) · §3.2 서두/§3.2.6/(b3)/H-3 포인터 · §4.8.1 P5-leg 문구 · §5.1(2차-① R4 불릿·판정 매트릭스·최고 세팅 표·clean 무해성 예외에 R4 T1 −1.0pt 추가) · caveat 9(잔여 18→16셀) · §6.3 timing · §8 커버리지 3행.
+4. **placement plan**: §5 R4 행(완주·seed0 방향 확보·본문 확정치는 Tier C 대기; 스펙-정합 경고 유지) · appendix 게이팅·경쟁 상세 행(§3.2.6–7).
+
+### 검증 노트
+
+- 수치 전부 파일에서: `gsm50k5_tier_a.csv`(25행)·rundir `metrics.json`·`timing.json` 직접 집계(anaconda python). GPU-h는 커밋 메시지(25.2/15.8/14.4)와 timing.json 합산(24.1/22.0[중복]/2.4[잔존])이 다름 — 문서엔 timing.json 합산을 정본으로, dedupe 중복·폐기분은 주석으로 병기.
+- §3.2.7 'noisy'=answer-swap(label-flip류) ≠ silo5 alpaca-noisy — §5.2 판정 3('0-교차 도달불가')을 끌어오지 않도록 위협 구분 주석.
+- device100 재실행 전후 차: φ-method ≤.002, 탐지기 최대 .044(STD-DAGMM .659→.615) — 결론 불변, 표 주석에 명시.
+
+### 보류(기존 유지)
+
+- R4 스펙(N=50·5/50) vs 소규모-참여-지양 정합 — Yonghee 확인 대기(§3.2.7 caveat ③).
+- Tier B(전 8종, ~300–350 GPU-h) 진입 = Yonghee 승인 게이트(REMAINING §3).
