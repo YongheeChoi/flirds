@@ -1,0 +1,367 @@
+
+===== A. track_d fidelity.csv — LLM 표준 fidelity vs (b) =====
+[INFO] columns=['cell', 'seed', 'method', 'spearman', 'kendall', 'pearson', 'cosine_d', 'euclid_d', 'max_diff']
+[PASS] 1B std20 Flirds Sp mean: claimed=1.0 computed=1.0
+[PASS] 1B std20 Flirds Sp std: claimed=0.0 computed=0.0
+[PASS] 1B std20 Flirds1st Sp mean: claimed=0.999 computed=0.999498746867168
+[PASS] 1B std20 Flirds1st Sp std: claimed=0.001 computed=0.0007088789786331251
+[PASS] 1B std20 loss-heur Sp mean: claimed=1.0 computed=1.0
+[PASS] 1B std20 loss-heur Sp std: claimed=0.0 computed=0.0
+[PASS] 1B std20 GTG Sp mean: claimed=0.975 computed=0.975438596491228
+[PASS] 1B std20 GTG Sp std: claimed=0.018 computed=0.01838991110560814
+[PASS] 1B std20 FedSV Sp mean: claimed=0.91 computed=0.9097744360902255
+[PASS] 1B std20 FedSV Sp std: claimed=0.073 computed=0.07349471823766728
+[PASS] 1B std20 FedIF Sp mean: claimed=0.157 computed=0.15691768446973636
+[PASS] 1B std20 FedIF Sp std: claimed=0.303 computed=0.3025806341704505
+[PASS] 1B std20 ShapleyFL Sp mean: claimed=0.194 computed=0.19448621553884707
+[PASS] 1B std20 ShapleyFL Sp std: claimed=0.351 computed=0.3508034294108225
+[PASS] 1B std20 ComFedSV Sp mean: claimed=0.093 computed=0.09273182957393483
+[PASS] 1B std20 ComFedSV Sp std: claimed=0.146 computed=0.1461941519719274
+[PASS] 7B std20 Flirds Sp mean: claimed=0.999 computed=0.999498746867168
+[PASS] 7B std20 Flirds Sp std: claimed=0.001 computed=0.0007088789786331251
+[PASS] 3B std20 ComFedSV Sp mean: claimed=-0.137 computed=-0.1373433583959899
+[PASS] 3B std20 ComFedSV Sp std: claimed=0.065 computed=0.06527462950047491
+[PASS] 1B anchor5 Flirds Sp mean: claimed=1.0 computed=1.0
+[PASS] 1B anchor5 Flirds Sp std: claimed=0.0 computed=0.0
+[PASS] 1B anchor5 FedSV Sp mean: claimed=0.7 computed=0.6999999999999998
+[PASS] 1B anchor5 FedSV Sp std: claimed=0.163 computed=0.16329931618554516
+[PASS] 1B anchor5 ShapleyFL Sp mean: claimed=0.7 computed=0.6999999999999998
+[PASS] 1B anchor5 ShapleyFL Sp std: claimed=0.283 computed=0.2828427124746189
+[PASS] 1B anchor5 ComFedSV Sp mean: claimed=0.5 computed=0.5
+[PASS] 1B anchor5 ComFedSV Sp std: claimed=0.432 computed=0.4320493798938572
+[PASS] 1B anchor5 FedIF Sp mean: claimed=0.067 computed=0.06666666666666662
+[PASS] 1B anchor5 FedIF Sp std: claimed=0.531 computed=0.5312459150169743
+[PASS] 3B anchor5 GTG Sp mean: claimed=0.967 computed=0.9666666666666667
+[PASS] 3B anchor5 GTG Sp std: claimed=0.047 computed=0.04714045207910326
+[PASS] 3B anchor5 ShapleyFL Sp mean: claimed=0.167 computed=0.1666666666666666
+[PASS] 3B anchor5 ShapleyFL Sp std: claimed=0.094 computed=0.09428090415820638
+[PASS] 7B anchor5 Flirds Sp mean: claimed=1.0 computed=1.0
+[PASS] 7B anchor5 Flirds Sp std: claimed=0.0 computed=0.0
+
+===== B. 1B anchor5 — 방법별 vs (a) (phi.parquet 재계산) =====
+[PASS] anchor5 Flirds vs (a) Sp mean: claimed=0.933 computed=0.9333333333333331
+[PASS] anchor5 Flirds1st vs (a) Sp mean: claimed=0.933 computed=0.9333333333333331
+[PASS] anchor5 loss-heur vs (a) Sp mean: claimed=0.933 computed=0.9333333333333331
+[PASS] anchor5 GTG vs (a) Sp mean: claimed=0.933 computed=0.9333333333333331
+[PASS] anchor5 FedSV vs (a) Sp mean: claimed=0.733 computed=0.7333333333333333
+[PASS] anchor5 (b)oracle vs (a) Sp mean: claimed=0.933 computed=0.9333333333333331
+[PASS] anchor5 (a)vs(b) Sp std: claimed=0.047 computed=0.04714045207910321
+
+===== C. track_c fidelity.csv — CNN 듀얼 오라클 pool =====
+[INFO] columns=['dataset', 'scenario', 'seed', 'method', 'spearman_b', 'pearson_b', 'spearman_a', 'pearson_a']; n=300
+[PASS] C1 pool Flirds vs(b) Sp: claimed=0.919 computed=0.919191919191919
+[PASS] C1 pool Flirds vs(a) Sp: claimed=0.352 computed=0.35151515151515145
+[PASS] C1 pool Flirds1st vs(b) Sp: claimed=0.832 computed=0.8315151515151515
+[PASS] C1 pool Flirds1st vs(a) Sp: claimed=0.408 computed=0.4080808080808081
+[PASS] C1 pool loss-heur vs(b) Sp: claimed=0.86 computed=0.8602020202020202
+[PASS] C1 pool loss-heur vs(a) Sp: claimed=0.425 computed=0.4246464646464646
+[PASS] C1 pool GTG vs(b) Sp: claimed=0.569 computed=0.5692929292929293
+[PASS] C1 pool GTG vs(a) Sp: claimed=0.374 computed=0.3737373737373737
+[PASS] C1 pool FedSV vs(b) Sp: claimed=0.401 computed=0.4008080808080807
+[PASS] C1 pool FedSV vs(a) Sp: claimed=0.284 computed=0.28404040404040404
+[PASS] C1 pool ComFedSV vs(b) Sp: claimed=0.348 computed=0.3478787878787878
+[PASS] C1 pool ComFedSV vs(a) Sp: claimed=0.338 computed=0.33777777777777784
+[PASS] C1 pool ShapleyFL vs(b) Sp: claimed=0.391 computed=0.3907070707070706
+[PASS] C1 pool ShapleyFL vs(a) Sp: claimed=0.453 computed=0.4525252525252525
+[PASS] C1 pool FedIF vs(b) Sp: claimed=0.491 computed=0.4905050505050505
+[PASS] C1 pool FedIF vs(a) Sp: claimed=0.38 computed=0.37979797979797975
+[PASS] C1 iid-제외 Flirds vs(b): claimed=0.928 computed=0.9282828282828283
+[PASS] cifar10/label_flip Flirds: claimed=1.0 computed=0.9959595959595959
+[PASS] cifar10/iid Flirds: claimed=0.95 computed=0.9515151515151515
+[PASS] mnist/label_skew Flirds: claimed=0.71 computed=0.7131313131313131
+[PASS] cifar10/quantity_skew FedIF: claimed=-0.2 computed=-0.19595959595959592
+
+===== D. track_c RESULTS.txt — stability 스팟 (grep) =====
+[INFO] RESULTS.txt contains '0.547': False
+[INFO] RESULTS.txt contains '0.518': True
+[INFO] RESULTS.txt contains '0.124': False
+
+===== E. probe_signal — 참여·rank·lr lever =====
+[PASS] std50k5 r16 s0 Flirds Sp: claimed=1.0 computed=0.9999039615846338
+[PASS] std50k5 r16 s0 Flirds1st Sp: claimed=1.0 computed=0.9999039615846338
+[PASS] std50k5 r16 s0 loss-heur Sp: claimed=1.0 computed=0.9998079231692677
+[PASS] std50k5 r16 s0 GTG Sp: claimed=0.983 computed=0.9825210084033614
+[PASS] std50k5 r16 s0 FedSV Sp: claimed=0.91 computed=0.9100120048019207
+[PASS] std50k5 r16 s0 FedIF Sp: claimed=-0.04 computed=-0.040480192076830734
+[PASS] std50k5 r16 s0 ShapleyFL Sp: claimed=-0.064 computed=-0.06391356542617047
+[PASS] std50k5 r16 s0 ComFedSV Sp: claimed=-0.109 computed=-0.10895558223289314
+[PASS] std50k5 r16 s0 Fed-LOO Sp: claimed=0.9998 computed=0.9998079231692677
+[PASS] std50k5 r16 3-seed Flirds Sp mean: claimed=1.0 computed=0.9999359743897558
+[INFO] std50k5 (b) xseed rho pairs = [-0.094, 0.132, 0.152] (claimed -0.09/+0.13/+0.15)
+[PASS] std50k5 (b) xseed rho mean: claimed=0.06 computed=0.06320928371348539
+[PASS] anchor5 r64 s0 FedSV Sp: claimed=0.5 computed=0.49999999999999994
+[PASS] anchor5 r64 s0 Flirds Sp: claimed=1.0 computed=0.9999999999999999
+[PASS] lr1e-3 st10 s0 (b)range: claimed=0.00119 computed=0.0011936426162719744
+[PASS] lr3e-3 st10 s0 (b)range: claimed=0.0033 computed=0.0032969415187835693
+
+===== F. B축 2x2 — (b) 자기순위 xseed rho + 탐지 AUROC =====
+[PASS] xseed rho (b) 1B_iid5_clean: claimed=0.13 computed=0.13333333333333333
+[PASS] xseed rho (b) 1B_iid5_noisy: claimed=0.6 computed=0.6
+[PASS] xseed rho (b) 1B_iid5_frzero: claimed=0.7 computed=0.6999999999999998
+[PASS] xseed rho (b) 1B_silo5_clean: claimed=0.87 computed=0.8666666666666666
+[PASS] xseed rho (b) 1B_silo5_noisy: claimed=0.93 computed=0.9333333333333331
+[PASS] xseed rho (b) 1B_silo5_frzero: claimed=0.93 computed=0.9333333333333331
+[PASS] AUROC 1B_iid5_noisy Flirds (n=3): claimed=1.0 computed=1.0
+[PASS] AUROC 1B_iid5_noisy FedDQC (n=3): claimed=1.0 computed=1.0
+[PASS] AUROC 1B_silo5_noisy FedDQC (n=3): claimed=0.92 computed=0.9166666666666666
+[PASS] AUROC 1B_iid5_frzero FedDQC (n=3): claimed=0.58 computed=0.5833333333333334
+[PASS] AUROC 1B_silo5_frzero FedDQC (n=3): claimed=0.75 computed=0.75
+[PASS] AUROC 1B_silo5_noisy STD-DAGMM (n=3): claimed=0.25 computed=0.25
+[PASS] AUROC 1B_silo5_frzero STD-DAGMM (n=3): claimed=0.0 computed=0.0
+[PASS] AUROC 1B_silo5_noisy FLTrust (n=3): claimed=1.0 computed=1.0
+
+===== G. phase2 silo5 — AUROC/Sp/runtime =====
+[PASS] silo5 noisy Flirds AUROC: claimed=1.0 computed=1.0
+[PASS] silo5 noisy Flirds Sp: claimed=1.0 computed=0.9999999999999999
+[PASS] silo5 noisy Flirds1st AUROC: claimed=1.0 computed=1.0
+[PASS] silo5 noisy Flirds1st Sp: claimed=1.0 computed=0.9999999999999999
+[PASS] silo5 noisy loss-heur AUROC: claimed=1.0 computed=1.0
+[PASS] silo5 noisy loss-heur Sp: claimed=1.0 computed=0.9999999999999999
+[PASS] silo5 noisy Fed-LOO AUROC: claimed=1.0 computed=1.0
+[PASS] silo5 noisy Fed-LOO Sp: claimed=1.0 computed=0.9999999999999999
+[PASS] silo5 noisy GTG AUROC: claimed=1.0 computed=1.0
+[PASS] silo5 noisy GTG Sp: claimed=1.0 computed=0.9999999999999999
+[PASS] silo5 noisy ShapleyFL AUROC: claimed=1.0 computed=1.0
+[PASS] silo5 noisy ShapleyFL Sp: claimed=1.0 computed=0.9999999999999999
+[PASS] silo5 noisy FedIF Sp: claimed=0.933 computed=0.9333333333333331
+[PASS] silo5 noisy ComFedSV Sp: claimed=0.833 computed=0.8333333333333331
+[PASS] silo5 noisy FLDetector AUROC: claimed=0.75 computed=0.75
+[PASS] silo5 noisy STD-DAGMM AUROC: claimed=0.25 computed=0.25
+[INFO] silo5 noisy runtime: Flirds=107s Flirds1st=35s loss-heur=99s Fed-LOO=118s GTG=537s (b)=531s FedDQC=22s
+[PASS] silo5 frzero FedSV Sp: claimed=0.933 computed=0.9333333333333331
+[PASS] silo5 frzero FedIF Sp: claimed=0.9 computed=0.8999999999999999
+[INFO] silo5 noisy (b) phi per seed (client0=noisy):
+seed          0        1        2
+client                           
+0      -0.00210 -0.00182 -0.00145
+1      -0.00352 -0.00308 -0.00295
+2      -0.00335 -0.00300 -0.00320
+3      -0.00592 -0.00539 -0.00545
+4      -0.00264 -0.00233 -0.00218
+[INFO] noisy client0 = max-phi(최소 기여)인 seed 수: 3/3; 전 클라 phi<0(전원 loss 감소 기여): True
+
+===== H. device100 anchor(a0.5) + frdelta =====
+[PASS] d100 noisy anchor (b) AUROC: claimed=0.604 computed=0.6039544684705975
+[INFO] d100 (b) AUROC per-seed = [0.66, 0.563, 0.589] (claimed .660/.563/.589)
+[PASS] d100 noisy anchor FedDQC AUROC: claimed=1.0 computed=1.0
+[PASS] d100 noisy anchor FedIF AUROC: claimed=0.83 computed=0.8301272204498011
+[PASS] d100 noisy anchor FLTrust AUROC: claimed=0.854 computed=0.8544330221749578
+[PASS] d100 noisy anchor GTG Sp: claimed=0.784 computed=0.7838703119650332
+[PASS] d100 noisy anchor ShapleyFL Sp: claimed=0.582 computed=0.5819619284885387
+[PASS] d100 noisy anchor ComFedSV Sp: claimed=-0.023 computed=-0.02257948839609175
+[PASS] d100 noisy anchor Flirds Sp: claimed=1.0 computed=0.9999909567733768
+[INFO] d100 anchor runtime: (b)=24975s Flirds=157s Flirds1st=54s GTG=18149s FedSV=4969s ShapleyFL=24935s
+[PASS] frdelta (b)oracle AUROC: claimed=0.333 computed=0.3333333333333333
+[PASS] frdelta Flirds AUROC: claimed=0.333 computed=0.3333333333333333
+[PASS] frdelta STD-DAGMM AUROC: claimed=1.0 computed=1.0
+[PASS] frdelta FedIF AUROC: claimed=0.0 computed=0.0
+[PASS] frdelta FLDetector AUROC: claimed=0.0 computed=0.0
+[PASS] frdelta FLTrust AUROC: claimed=0.0 computed=0.0
+[PASS] frdelta FedDQC AUROC: claimed=0.75 computed=0.75
+[PASS] frdelta Flirds Sp: claimed=1.0 computed=0.9999999999999999
+[INFO] frdelta (b) phi 전 클라 음수(전원 기여): True; min=-0.00522 max=-0.00170
+
+===== I. E4 Fed-LOO (rundirs_e4_fedloo) =====
+[PASS] E4 anchor5 Fed-LOO Sp: claimed=1.0 computed=0.9999999999999999
+[PASS] E4 anchor5 Flirds Sp: claimed=1.0 computed=0.9999999999999999
+[PASS] E4 anchor5 Flirds1st runtime: claimed=232 computed=232.34270388900768
+[PASS] E4 anchor5 Flirds runtime: claimed=716 computed=716.0297623003522
+[PASS] E4 anchor5 loss-heur runtime: claimed=657 computed=657.3389853306968
+[PASS] E4 anchor5 Fed-LOO runtime: claimed=773 computed=772.7112157033213
+[PASS] E4 anchor5 (b)oracle runtime: claimed=3568 computed=3568.278870978315
+[PASS] E4 std20 Fed-LOO Sp: claimed=1.0 computed=1.0
+[PASS] E4 std20 Flirds Sp: claimed=1.0 computed=1.0
+[PASS] E4 std20 Flirds1st runtime: claimed=1535 computed=1534.8121090570155
+[PASS] E4 std20 Flirds runtime: claimed=4703 computed=4702.671930714666
+[PASS] E4 std20 loss-heur runtime: claimed=2199 computed=2199.0232777110455
+[PASS] E4 std20 Fed-LOO runtime: claimed=2925 computed=2925.2102655963586
+[PASS] E4 std20 (b)oracle runtime: claimed=2943 computed=2943.2401206936142
+
+===== J. track_g — LLM recovery / CNN 게이트 grid =====
+[INFO] llm_summary cols=['regime', 'threat', 'nr', 'seed', 'arm', 'final_val_loss', 'delta', 'recovery', 'rounds_to_target', 'gate', 'mmlu', 'rouge_l', 'kept', 'prediction', 'verdict', 'clean_raw_false_fire_rate', 'all_clean_cum_pos_from_round']
+[PASS] track_g rec silo5/frzero/flirds_gate_v2: claimed=1.0 computed=1.000021142543025
+[PASS] track_g rec iid5/frzero/flirds_gate_v2: claimed=1.0 computed=1.0000062633095326
+[PASS] track_g rec silo5/frzero/flirds_gate_v1: claimed=0.898 computed=0.897789705444887
+[PASS] track_g rec silo5/frrand/flirds_gate_v2: claimed=0.462 computed=0.46247107778886815
+[PASS] track_g rec silo5/noisy/flirds_gate_v2: claimed=0.0 computed=6.967485195035e-05
+[PASS] track_g rec silo5/frzero/v3_sign: claimed=1.0 computed=1.0
+[PASS] track_g rec iid5/frzero/random_excl: claimed=0.185 computed=0.18521419866103261
+[INFO] cnn_summary cols=['cell', 'dataset', 'partition', 'threat', 'strength', 'flip_rate', 'seed', 'arm', 'final_acc', 'delta_acc', 'recovery', 'auroc', 'rounds_to_target']
+[PASS] track_g CNN iid/grad_noise/flirds_gate_v2 acc: claimed=0.6143 computed=0.6143333333333333
+[PASS] track_g CNN dir1/grad_noise/flirds_gate_v2 acc: claimed=0.5668 computed=0.5667916666666667
+[PASS] track_g CNN iid/grad_noise/vanilla acc: claimed=0.2564 computed=0.25637499999999996
+[PASS] track_g CNN dir1/grad_noise/vanilla acc: claimed=0.2436 computed=0.24362499999999998
+[PASS] track_g CNN iid/clean/vanilla acc: claimed=0.6488 computed=0.64875
+[PASS] track_g CNN dir1/clean/vanilla acc: claimed=0.6389 computed=0.638875
+[PASS] track_g CNN iid/clean/flirds_gate_v2 acc: claimed=0.6428 computed=0.6427916666666668
+[PASS] track_g CNN dir1/clean/flirds_gate_v2 acc: claimed=0.6315 computed=0.6315
+[PASS] track_g CNN dir1/free_rider/flirds_gate_v2 acc: claimed=0.6148 computed=0.6148333333333333
+[PASS] track_g CNN iid/free_rider/oracle_excl acc: claimed=0.6356 computed=0.635625
+[PASS] track_g CNN dir1/grad_noise/oracle_excl acc: claimed=0.6203 computed=0.6203333333333334
+
+===== K. track_h — 점수원 경쟁 / R4 gsm50k5 / P5 / scale / dyn =====
+[INFO] cnn_competition cols=['dataset', 'partition', 'threat', 'flip_rate', 'seed', 'arm', 'source', 'policy', 'timing', 'final_acc', 'delta_acc', 'recovery', 'auroc', 'rounds_to_target', 'kept', 'skipped', 'dedup_shared']
+[PASS] track_h P1/online/flirds/free_rider: claimed=0.6148 computed=0.6148333333333333
+[PASS] track_h P1/online/flirds/grad_noise: claimed=0.5668 computed=0.5667916666666667
+[PASS] track_h P1/online/flirds1st/grad_noise: claimed=0.2479 computed=0.24787499999999998
+[PASS] track_h P1/online/lossheur/grad_noise: claimed=0.5981 computed=0.5980833333333333
+[PASS] track_h P1/online/fedif/grad_noise: claimed=0.2479 computed=0.24787499999999998
+[PASS] track_h P1/online/gtg/free_rider: claimed=0.3915 computed=0.3914583333333333
+[PASS] track_h P1/online/shapleyfl/free_rider: claimed=0.402 computed=0.40199999999999997
+[PASS] track_h P1/online/shapleyfl/grad_noise: claimed=0.6115 computed=0.6115416666666667
+[PASS] track_h P1/retrain/flirds/grad_noise: claimed=0.6065 computed=0.6064583333333333
+[PASS] track_h P1/retrain/flirds/label_flip: claimed=0.6192 computed=0.61925
+[PASS] track_h P1/retrain/flirds1st/label_flip: claimed=0.6236 computed=0.623625
+[PASS] track_h P1/retrain/gtg/grad_noise: claimed=0.6203 computed=0.6203333333333334
+[PASS] track_h P2/online/fedif/grad_noise: claimed=0.6043 computed=0.6042916666666666
+[PASS] track_h P2/retrain/fedif/grad_noise: claimed=0.6114 computed=0.6113749999999999
+[INFO] observer_zero_semantics cols=['dataset', 'partition', 'threat', 'flip_rate', 'seed', 'source', 'clean_false_fire', 'corrupt_fire']; head=
+    dataset partition threat  flip_rate  seed     source  clean_false_fire  corrupt_fire
+0   cifar10      dir1  clean        NaN     0   comfedsv          0.426667           NaN
+1   cifar10      dir1  clean        NaN     0      fedif          0.169167           NaN
+2   cifar10      dir1  clean        NaN     0      fedsv          0.421667           NaN
+3   cifar10      dir1  clean        NaN     0     flirds          0.423333           NaN
+4   cifar10      dir1  clean        NaN     0  flirds1st          0.169167           NaN
+5   cifar10      dir1  clean        NaN     0        gtg          0.422500           NaN
+6   cifar10      dir1  clean        NaN     0   lossheur          0.315000           NaN
+7   cifar10      dir1  clean        NaN     0  shapleyfl          0.414167           NaN
+8   cifar10      dir1  clean        NaN     0   comfedsv          0.428333           NaN
+9   cifar10      dir1  clean        NaN     0      fedif          0.168333           NaN
+10  cifar10      dir1  clean        NaN     0      fedsv          0.421667           NaN
+11  cifar10      dir1  clean        NaN     0     flirds          0.425000           NaN
+[INFO] llm_competition cols=['regime', 'threat', 'nr', 'seed', 'arm', 'source', 'policy', 'timing', 'final_val_loss', 'delta', 'recovery', 'gsm8k_em', 'delta_em', 'recovery_em', 'rounds_to_target', 'gate_precision', 'gate_recall', 'false_excl_pairs', 'kept', 'skipped']
+[PASS] track_h R3 gtg_gate_v2 val-loss: claimed=2.331 computed=2.3309613863627114
+[PASS] track_h R3 fedsv_gate_v2 val-loss: claimed=2.3308 computed=2.3308165868123374
+[PASS] track_h R3 shapleyfl_gate_v2 val-loss: claimed=2.3309 computed=2.330899477005005
+[INFO] gsm50k5_tier_a cols=['threat', 'arm', 'gsm8k_em', 'delta_em', 'recovery_em', 'final_val_loss', 'rounds_to_target', 'kept', 'skipped']; n=25
+[PASS] R4 noisy/observer EM: claimed=0.3342 computed=0.3342269883824844
+[PASS] R4 noisy/oracle_excl EM: claimed=0.37 computed=0.3699731903485255
+[PASS] R4 noisy/t2_sign_flirds EM: claimed=0.3584 computed=0.3583556747095621
+[PASS] R4 noisy/t2_sign_lossheur EM: claimed=0.3548 computed=0.354781054512958
+[PASS] R4 noisy/t2_sign_flirds1st EM: claimed=0.3432 computed=0.3431635388739946
+[PASS] R4 noisy/t2_sign_fedif EM: claimed=0.3432 computed=0.3431635388739946
+[PASS] R4 noisy/t2_random_k37 EM: claimed=0.311 computed=0.3109919571045576
+[PASS] R4 noisy/flirds_gate_v2 EM: claimed=0.353 computed=0.3529937444146559
+[PASS] R4 clean/observer EM: claimed=0.3771 computed=0.3771224307417337
+[PASS] R4 clean/flirds_gate_v2 EM: claimed=0.3673 computed=0.3672922252010724
+[PASS] R4 frzero/observer EM: claimed=0.3601 computed=0.3601429848078641
+[PASS] R4 frzero/oracle_excl EM: claimed=0.3691 computed=0.3690795352993744
+[PASS] R4 frzero/t2_sign_flirds EM: claimed=0.3691 computed=0.3690795352993744
+[PASS] R4 frzero/t2_random_k30 EM: claimed=0.3566 computed=0.35656836461126
+[INFO] R4 noisy kept = {'t2_sign_flirds': 37.0, 't2_sign_lossheur': 36.0, 't2_sign_flirds1st': 38.0, 't2_sign_fedif': 34.0} (claimed 37/36/38/34)
+[INFO] R4 frzero kept = [30.0, 30.0, 30.0, 30.0] (claimed 전부 30)
+[PASS] track_h P5 P5h/retrain/flirds/grad_noise: claimed=0.6215 computed=0.6215416666666668
+[PASS] track_h P5 P5h/retrain/flirds/free_rider: claimed=0.6197 computed=0.6196666666666667
+[PASS] track_h P5 P5h/online/flirds/grad_noise: claimed=0.5169 computed=0.5169166666666666
+[PASS] track_h P5 P5h/online/lossheur/grad_noise: claimed=0.3959 computed=0.3959166666666667
+[PASS] track_h P5 P5s/online/flirds/grad_noise: claimed=0.5416 computed=0.5416249999999999
+[PASS] track_h P5 P5s/online/lossheur/grad_noise: claimed=0.5373 computed=0.5372916666666666
+[PASS] track_h P5 P5h/online/flirds/clean: claimed=0.6375 computed=0.6374583333333333
+[PASS] track_h P5 P5s/retrain/flirds/label_flip: claimed=0.6188 computed=0.61875
+[INFO] scale_acc cols=['rundir', 'threat', 'seed', 'arm', 'label', 'final_acc', 'auroc', 'rounds_to_target']
+[PASS] scale flirds_pweight/label_flip: claimed=0.622 computed=0.6220416666666667
+[PASS] scale flirds_pweight/free_rider: claimed=0.6268 computed=0.6267916666666666
+[PASS] scale flirds_pweight/grad_noise: claimed=0.6107 computed=0.6107083333333333
+[PASS] scale observer/grad_noise: claimed=0.5497 computed=0.5497083333333334
+[PASS] scale oracle_excl/label_flip: claimed=0.6301 computed=0.6300833333333333
+[PASS] scale random_excl/grad_noise: claimed=0.5136 computed=0.5136249999999999
+[PASS] scale flirds_gate_v2/grad_noise: claimed=0.6102 computed=0.6101666666666666
+[PASS] scale flirds_cgate/label_flip: claimed=0.6008 computed=0.6008333333333333
+[INFO] dyn_acc cols=['rundir', 'threat', 'seed', 'arm', 'label', 'final_acc', 'rounds_to_target']; dyn_dp4=
+                                     rundir      threat  seed  p1_excl_hit_rate  p1_excl_size_mean  chance
+0         cifar10_dir1_dyn_free-rider_seed0  free_rider     0          0.394883          26.636364     0.4
+1         cifar10_dir1_dyn_free-rider_seed1  free_rider     1          0.412530          32.090909     0.4
+2         cifar10_dir1_dyn_free-rider_seed2  free_rider     2          0.408087          30.609091     0.4
+3         cifar10_dir1_dyn_grad-noise_seed0  grad_noise     0          0.405897          92.600000     0.4
+4         cifar10_dir1_dyn_grad-noise_seed1  grad_noise     1          0.404753          96.145455     0.4
+5         cifar10_dir1_dyn_grad-noise_seed2  grad_noise     2          0.405100          94.445455     0.4
+6  cifar10_dir1_dyn_label-flip_fr0.70_seed0  label_flip     0          0.401226          76.118182     0.4
+7  cifar10_dir1_dyn_label-flip_fr0.70_seed1  label_flip     1          0.407192          71.845455     0.4
+8  cifar10_dir1_dyn_label-flip_fr0.70_seed2  label_flip     2          0.407661          65.872727     0.4
+[PASS] dyn flirds_gate_v2/grad_noise: claimed=0.1771 computed=0.17712499999999998
+[PASS] dyn flirds_pweight/grad_noise: claimed=0.1902 computed=0.19016666666666668
+[PASS] dyn oracle_excl/label_flip: claimed=0.6456 computed=0.6455833333333333
+[PASS] dyn flirds_gate_v2/free_rider: claimed=0.6253 computed=0.6253333333333333
+[PASS] dyn flirds_pweight/label_flip: claimed=0.5682 computed=0.5682083333333333
+[PASS] dyn vanilla/grad_noise: claimed=0.2547 computed=0.2547083333333333
+[INFO] dyn DP-4 hit-rate by threat = {'free_rider': 0.405, 'grad_noise': 0.405, 'label_flip': 0.405} (claimed .405 전 위협; 우연=.40)
+
+===== L. removal_dose — A2/A3/dose/AdamW =====
+[PASS] A2 noisy worst-first dVal(mean-vs-k0): claimed=0.0076 computed=0.007649421691894531
+[PASS] A2 noisy best-first dVal(mean-vs-k0): claimed=-0.0084 computed=-0.008449236551920572
+[PASS] A2 frrand worst-first dVal(mean-vs-k0): claimed=0.0071 computed=0.007076342900594075
+[PASS] A2 frrand best-first dVal(mean-vs-k0): claimed=-0.0015 computed=-0.001489559809366862
+[PASS] A2 frzero worst-first dVal(mean-vs-k0): claimed=0.0067 computed=0.00671847661336263
+[PASS] A2 frzero best-first dVal(mean-vs-k0): claimed=-0.0016 computed=-0.0015978813171386719
+[PASS] dose noisy nr0.1 Flirds AUROC: claimed=0.75 computed=0.75
+[PASS] dose noisy nr0.25 Flirds AUROC: claimed=1.0 computed=1.0
+[PASS] AdamW Flirds Sp mean: claimed=0.767 computed=0.7666666666666665
+[INFO] AdamW Flirds per-seed = [0.8999999999999998, 0.49999999999999994, 0.8999999999999998] (claimed +0.90/+0.50/+0.90)
+[PASS] AdamW (a) vs (b) Sp mean: claimed=-0.533 computed=-0.5333333333333332
+[INFO] AdamW (a)oracle per-seed = [-0.09999999999999999, -0.8999999999999998, -0.6] (claimed -0.10/-0.90/-0.60)
+[PASS] A3 cifar10 lf Flirds rho vs(b): claimed=1.0 computed=0.9959595959595959
+[PASS] A3 cifar10 lf acc gap(Flirds): claimed=0.0445 computed=0.04448333333333334
+[INFO] A3 cifar10 lf acc gap (b)oracle = 0.0449 (claimed 0.038~0.045 동급)
+[PASS] A3 cifar10 iid acc gap(Flirds): claimed=-0.0033 computed=-0.0033125000000000077
+[INFO] A3 cifar10 iid: Flirds rho=0.97 (claimed +0.97), (b) gap=-0.0027 (claimed -0.0027)
+[PASS] A3 mnist lf acc gap(Flirds): claimed=0.0035 computed=0.003533333333333329
+[PASS] A3 mnist lf Flirds rho vs(b): claimed=1.0 computed=0.9959595959595959
+
+===== M. (b) target self-stability (Exp C) =====
+[INFO] track_d target_stability cols=['cell', 'method', 'n_seeds', 'n_pairs', 'mean_xseed_spearman', 'min_xseed_spearman', 'pairs']
+         cell     method  n_seeds  n_pairs  mean_xseed_spearman  min_xseed_spearman                                            pairs
+0  1B_anchor5  (b)oracle        3        3            -0.366667           -0.900000     0-1:+0.000(n5);0-2:-0.900(n5);1-2:-0.200(n5)
+1    1B_std20  (b)oracle        3        3            -0.113784           -0.192481  0-1:-0.036(n20);0-2:-0.113(n20);1-2:-0.192(n20)
+2  3B_anchor5  (b)oracle        3        3             0.033333           -0.100000     0-1:-0.100(n5);0-2:+0.300(n5);1-2:-0.100(n5)
+3    3B_std20  (b)oracle        3        3            -0.242607           -0.446617  0-1:-0.092(n20);0-2:-0.189(n20);1-2:-0.447(n20)
+4  7B_anchor5  (b)oracle        3        3             0.733333            0.500000     0-1:+0.800(n5);0-2:+0.500(n5);1-2:+0.900(n5)
+5    7B_std20  (b)oracle        3        3             0.164411           -0.036090  0-1:-0.036(n20);0-2:+0.310(n20);1-2:+0.220(n20)
+[INFO] phase2 target_stability:
+                               cell     method  n_seeds  n_pairs  mean_xseed_spearman  min_xseed_spearman                                            pairs
+0   1B_device100-a0.5_frrand_anchor  (b)oracle        3        3             0.124477            0.059923  0-1:+0.237(n94);0-2:+0.077(n94);1-2:+0.060(n92)
+1   1B_device100-a0.5_frzero_anchor  (b)oracle        3        3             0.119942            0.055955  0-1:+0.225(n94);0-2:+0.079(n94);1-2:+0.056(n92)
+2    1B_device100-a0.5_noisy_anchor  (b)oracle        3        3            -0.042472           -0.141100  0-1:+0.091(n94);0-2:-0.078(n94);1-2:-0.141(n92)
+3                     1B_iid5_clean  (b)oracle        3        3             0.133333           -0.300000     0-1:-0.300(n5);0-2:+0.600(n5);1-2:+0.100(n5)
+4                    1B_iid5_frrand  (b)oracle        3        3             0.800000            0.700000     0-1:+0.700(n5);0-2:+0.700(n5);1-2:+1.000(n5)
+5                    1B_iid5_frzero  (b)oracle        3        3             0.700000            0.700000     0-1:+0.700(n5);0-2:+0.700(n5);1-2:+0.700(n5)
+6                     1B_iid5_noisy  (b)oracle        3        3             0.600000            0.300000     0-1:+0.300(n5);0-2:+0.900(n5);1-2:+0.600(n5)
+7                    1B_iid5_poison  (b)oracle        3        3             0.733333            0.600000     0-1:+0.600(n5);0-2:+0.900(n5);1-2:+0.700(n5)
+8                    1B_silo5_clean  (b)oracle        3        3             0.866667            0.800000     0-1:+1.000(n5);0-2:+0.800(n5);1-2:+0.800(n5)
+9                   1B_silo5_frrand  (b)oracle        3        3             0.933333            0.900000     0-1:+1.000(n5);0-2:+0.900(n5);1-2:+0.900(n5)
+10                  1B_silo5_frzero  (b)oracle        3        3             0.933333            0.900000     0-1:+1.000(n5);0-2:+0.900(n5);1-2:+0.900(n5)
+11                   1B_silo5_noisy  (b)oracle        3        3             0.933333            0.900000     0-1:+1.000(n5);0-2:+0.900(n5);1-2:+0.900(n5)
+12                  1B_silo5_poison  (b)oracle        3        3             1.000000            1.000000     0-1:+1.000(n5);0-2:+1.000(n5);1-2:+1.000(n5)
+13                  3B_silo5_frrand  (b)oracle        1        0                  NaN                 NaN                                              NaN
+14                  3B_silo5_frzero  (b)oracle        1        0                  NaN                 NaN                                              NaN
+15                   3B_silo5_noisy  (b)oracle        1        0                  NaN                 NaN                                              NaN
+16                  3B_silo5_poison  (b)oracle        1        0                  NaN                 NaN                                              NaN
+
+===== N. microbench =====
+[INFO] microbench = {"model": "meta-llama/Llama-3.2-1B-Instruct", "val": 100, "chunks": 10, "device": "NVIDIA B200", "torch": "2.12.0+cu130", "forward_fp32": {"s_per_pass": 1.6011803258094006, "peak_GiB": 8.418497562408447, "loss": 2.31321382522583}, "forward_tf32": {"s_per_pass": 0.31051189579302446, "peak_GiB": 8.418497562408447, "loss": 2.313228130340576}, "forward_bf16": {"s_per_pass": 0.300197546207346, "peak_GiB": 9.335855960845947, "loss": 2.3138298988342285}, "hvp_fp32": {"s_per_pass": 10.359968228343254, "peak_GiB": 90.47428512573242, "dWHdW": 0.00034482512273825705}, "hvp_tf32": {"s_per_pass": 2.8479013
+
+===== O. track_g audit — frzero exact-0 / clean 전원 양수 스팟 =====
+[INFO] sign_table cols=['cell', 'family', 'regime', 'variant', 'scale', 'threat', 'seed', 'method', 'client', 'contribution', 'corrupt', 'dose_kind', 'dose', 'sign', 'crosses_zero_on_dose']; n=73288
+
+===== P. 파생 계산 — 메커니즘 판별 (min-max+EMA vs plain-sum) =====
+[INFO] P-1 std20(부분참여 2/20, R=200): Spearman(-FedIF, Flirds1st) per-seed = [-0.2, 0.235, -0.502] mean=-0.156
+[INFO] P-1 anchor5(전원, R=30): Spearman(-FedIF, Flirds1st) per-seed = [-0.7, 0.6, -0.1] mean=-0.067
+[INFO] P-2 silo5 noisy: Spearman(-FedIF, Flirds1st) per-seed = [-0.9, -0.9, -1.0]
+[INFO] P-3 CNN cifar10/label_flip: Spearman(Flirds, X) 3-seed mean = loss-heur=0.956, Flirds1st=0.960, GTG=0.657, FedSV=0.535, ShapleyFL=0.358, (b)oracle=0.996
+
+===== Q. CNN k-sweep(§4.3) / frzero exact-0(§5.2) / noisy phi 부호 ladder =====
+[PASS] pc1 lf k=0.2 Flirds Sp: claimed=0.891 computed=0.890909090909091
+[PASS] pc1 lf k=0.2 Flirds1st Sp: claimed=0.305 computed=0.305050505050505
+[PASS] pc1 lf k=0.2 loss-heur Sp: claimed=0.862 computed=0.8616161616161615
+[PASS] pc1 lf k=1.0 Flirds1st Sp: claimed=0.94 computed=0.9404040404040401
+[PASS] pc1 lf k=1.0 GTG Sp: claimed=0.497 computed=0.49696969696969684
+[INFO] pc1 pool n: k0.2=12 k1.0=12 (기대 12)
+[PASS] frzero bit-exact 0 (exact-0 계열): {'(b)oracle': True, 'Flirds': True, 'Flirds1st': True, 'loss-heur': True, 'FedIF': True, 'Fed-LOO': True}
+[INFO] frzero renorm 계열 |phi| max = {'GTG': 0.003770739224586664, 'FedSV': 0.004848694801330567, 'ComFedSV': 0.004988670349121094} (0 아님 = 감사 판정 2)
+[INFO] noisy dose ladder Flirds phi(client0) (mean, 전부<0=기여방향 양수): {'0.1': (-0.0024580848072389473, True), '0.25': (-0.0024096734351473966, True), '0.5': (-0.0022830396116603423, True), '0.75': (-0.0019934787615435803, True), '1.0': (-0.0018577851118327735, True)} → 0-교차 없음(감사 판정 3: sign-게이트 작동영역 없음)의 직접 확인
+
+===== R. 잔여 스팟 — track_g lf0.70(V2) / track_h 총평 재계산 / P5 LF =====
+[PASS] track_g lf0.70 V2 iid: claimed=0.5967 computed=0.5967083333333333
+[PASS] track_g lf0.70 V2 dir1: claimed=0.5712 computed=0.5712083333333333
+[PASS] track_h P5h/retrain/flirds/LF@0.7: claimed=0.621 computed=0.621
+[PASS] track_h P5h/retrain/flirds/clean: claimed=0.6333 computed=0.6333333333333333
+[INFO] 경쟁 총평(자체 재계산, 6개 오염-평균의 평균) = {'flirds': 0.5682, 'lossheur': 0.5584, 'fedif': 0.5366, 'gtg': 0.529, 'shapleyfl': 0.5239, 'comfedsv': 0.5173, 'fedsv': 0.5166, 'flirds1st': 0.4712} (overview §3.2.6 '.568 flirds 1위 / .471 flirds1st 최하'와 정합)

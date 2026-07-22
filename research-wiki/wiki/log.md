@@ -612,3 +612,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 5차 절)
 - touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · 루트 `REMAINING.md` §1.4/§3 · memory `paper-threat-stage-scope`
 - note: '소규모 참여 지양'=silo5류 cohort 지칭 확정(R4 N=50·5/50 사용 확정, ⚠ 전부 해소) · A3 label/quantity_skew 확장 폐기 · E5 N=10 oracle 확장 미진행(시간 제약) · std50k5 fidelity probe·softmax-선택 arm 유지 확정. 잔존 보류 = Exp C/Taylor appendix 배치(차후)·R4 Tier B 진입 승인.
+
+## [2026-07-22] query | Flirds 원리 분석 — 승패 메커니즘 해석 → 논문용 성공 세팅 (신규 survey)
+- raw: raw/conversations/flirds/2026-07-22-principle-analysis.md
+- distilled into: `survey/flirds-principle-analysis.md` (신규; 검증 스크립트 = survey/flirds-principle-analysis/)
+- note: Yonghee 지시(루트 PRINCIPLE_ANALYSIS_PROMPT_2026-07-22.md) 수행 — overview 표 수치만 데이터로 쓰고(§5.1 등 의견 차단) 전 논거 수치를 원 파일에서 재검증(**237 PASS/0 FAIL**). 산출: ① 요소 인벤토리 9축(암묵 고정 발굴: 등n 전면·오염 인덱스 고정·MC seed 고정 등) ② 이론-우선 원리 10건(T1–T10→관측 대조; 신규 판별 계산 = FedIF↔Flirds-1st 같은-신호 쌍으로 부분참여 붕괴가 min-max+EMA 후처리 소행임을 직접 증명, renorm frzero 유령값 ~0.004=clean φ 동급) ③ §5.1 대조 불일치 6건(AdamW = same-game 내 진짜 패배 재규정 · CNN vs(a) 1위=ShapleyFL .453 누락 발견 = T10 적중 · silo5 탐지 1.0=포화 재분류 등) ④ 제안: 피해야 할 세팅 10 + shortlist 5(gn_full→R4 Tier C 3-seed→3B 3-seed→**비등n silo5 신규 1셀(P5c 실증, ~10–15 GPU-h)**→Tier B T2-only 축소). runs read-only·GPU 0·로컬 커밋만.
