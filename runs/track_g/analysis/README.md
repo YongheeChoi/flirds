@@ -642,6 +642,15 @@ vanilla observer (per-round raw, the project's first per-round phi record):
 | cifar10 | dir1 | free_rider | main |  | 2 | oracle_excl | 0.6231 | +0.0374 | 0.0374 | +1.0000 |  |  |  |
 | cifar10 | dir1 | free_rider | main |  | 2 | random_excl | 0.5606 | -0.0251 | 0.0374 | -0.6722 |  |  |  |
 | cifar10 | dir1 | free_rider | main |  | 2 | vanilla | 0.5857 | +0.0000 | 0.0374 | +0.0000 |  |  |  |
+| cifar10 | dir1 | frrand | main |  | 0 | flirds_gate_v1 | 0.5999 | +0.0134 | 0.0336 | +0.3978 | 0.8996 | 267.0000 | 0.4785 |
+| cifar10 | dir1 | frrand | main |  | 0 | flirds_gate_v2 | 0.5806 | -0.0059 | 0.0336 | -0.1747 | 0.5096 | 2514.0000 | 0.5195 |
+| cifar10 | dir1 | frrand | main |  | 0 | flirds_gatew_v1 | 0.6254 | +0.0389 | 0.0336 | +1.1561 | 1.0000 | 99.0000 | 0.7188 |
+| cifar10 | dir1 | frrand | main |  | 0 | flirds_gatew_v2 | 0.6109 | +0.0244 | 0.0336 | +0.7249 | 0.8500 | 886.0000 | 0.7582 |
+| cifar10 | dir1 | frrand | main |  | 0 | flirds_mult | 0.5971 | +0.0106 | 0.0336 | +0.3160 | 0.3567 |  |  |
+| cifar10 | dir1 | frrand | main |  | 0 | flirds_zgate_v2 | 0.5909 | +0.0044 | 0.0336 | +0.1301 | 0.5858 |  |  |
+| cifar10 | dir1 | frrand | main |  | 0 | oracle_excl | 0.6201 | +0.0336 | 0.0336 | +1.0000 |  |  |  |
+| cifar10 | dir1 | frrand | main |  | 0 | random_excl | 0.5934 | +0.0069 | 0.0336 | +0.2045 |  |  |  |
+| cifar10 | dir1 | frrand | main |  | 0 | vanilla | 0.5865 | +0.0000 | 0.0336 | +0.0000 |  |  |  |
 | cifar10 | dir1 | grad_noise | main |  | 0 | flirds_gate_v1 | 0.5724 | +0.3066 | 0.3546 | +0.8646 | 0.9987 | 203.0000 | 0.6915 |
 | cifar10 | dir1 | grad_noise | main |  | 0 | flirds_gate_v2 | 0.5370 | +0.2713 | 0.3546 | +0.7649 | 0.9892 | 1243.0000 | 0.7649 |
 | cifar10 | dir1 | grad_noise | main |  | 0 | flirds_gatew_v1 | 0.5449 | +0.2791 | 0.3546 | +0.7871 | 0.9996 | 172.0000 | 0.7287 |
@@ -798,6 +807,15 @@ vanilla observer (per-round raw, the project's first per-round phi record):
 | cifar10 | iid | free_rider | main |  | 2 | oracle_excl | 0.6354 | +0.0235 | 0.0235 | +1.0000 |  |  |  |
 | cifar10 | iid | free_rider | main |  | 2 | random_excl | 0.5886 | -0.0232 | 0.0235 | -0.9894 |  |  |  |
 | cifar10 | iid | free_rider | main |  | 2 | vanilla | 0.6119 | +0.0000 | 0.0235 | +0.0000 |  |  |  |
+| cifar10 | iid | frrand | main |  | 0 | flirds_gate_v1 | 0.6195 | +0.0086 | 0.0239 | +0.3613 | 0.9833 | 172.0000 | 0.5795 |
+| cifar10 | iid | frrand | main |  | 0 | flirds_gate_v2 | 0.6105 | -0.0004 | 0.0239 | -0.0157 | 0.8683 | 326.0000 | 0.8910 |
+| cifar10 | iid | frrand | main |  | 0 | flirds_gatew_v1 | 0.6319 | +0.0210 | 0.0239 | +0.8796 | 1.0000 | 95.0000 | 0.6984 |
+| cifar10 | iid | frrand | main |  | 0 | flirds_gatew_v2 | 0.6295 | +0.0186 | 0.0239 | +0.7801 | 0.9667 | 18.0000 | 0.9941 |
+| cifar10 | iid | frrand | main |  | 0 | flirds_mult | 0.6278 | +0.0169 | 0.0239 | +0.7068 | 0.4629 |  |  |
+| cifar10 | iid | frrand | main |  | 0 | flirds_zgate_v2 | 0.6062 | -0.0046 | 0.0239 | -0.1937 | 0.8762 |  |  |
+| cifar10 | iid | frrand | main |  | 0 | oracle_excl | 0.6348 | +0.0239 | 0.0239 | +1.0000 |  |  |  |
+| cifar10 | iid | frrand | main |  | 0 | random_excl | 0.6038 | -0.0071 | 0.0239 | -0.2984 |  |  |  |
+| cifar10 | iid | frrand | main |  | 0 | vanilla | 0.6109 | +0.0000 | 0.0239 | +0.0000 |  |  |  |
 | cifar10 | iid | grad_noise | main |  | 0 | flirds_gate_v1 | 0.5836 | +0.3249 | 0.3759 | +0.8643 | 1.0000 | 207.0000 | 0.6929 |
 | cifar10 | iid | grad_noise | main |  | 0 | flirds_gate_v2 | 0.6285 | +0.3697 | 0.3759 | +0.9837 | 1.0000 | 821.0000 | 0.8339 |
 | cifar10 | iid | grad_noise | main |  | 0 | flirds_gatew_v1 | 0.5836 | +0.3249 | 0.3759 | +0.8643 | 1.0000 | 162.0000 | 0.7437 |
@@ -906,21 +924,295 @@ vanilla observer (per-round raw, the project's first per-round phi record):
 | cifar10 | iid | label_flip | main | 0.1500 | 2 | vanilla | 0.6220 | +0.0000 | 0.0062 |  |  |  |  |
 | cifar10 | iid | label_flip | main | 0.3500 | 2 | vanilla | 0.5903 | +0.0000 | 0.0380 | +0.0000 |  |  |  |
 | cifar10 | iid | label_flip | main | 0.7000 | 2 | vanilla | 0.5100 | +0.0000 | 0.1182 | +0.0000 |  |  |  |
+| cifar10 | qskew | clean | main |  | 0 | flirds_gate_v1 | 0.6614 | -0.0076 |  |  |  | 358.0000 | 0.0000 |
+| cifar10 | qskew | clean | main |  | 0 | flirds_gate_v2 | 0.6591 | -0.0099 |  |  |  | 1703.0000 | 0.0000 |
+| cifar10 | qskew | clean | main |  | 0 | flirds_gatew_v1 | 0.6570 | -0.0120 |  |  |  | 276.0000 | 0.0000 |
+| cifar10 | qskew | clean | main |  | 0 | flirds_gatew_v2 | 0.6561 | -0.0129 |  |  |  | 1254.0000 | 0.0000 |
+| cifar10 | qskew | clean | main |  | 0 | flirds_mult | 0.6637 | -0.0053 |  |  |  |  |  |
+| cifar10 | qskew | clean | main |  | 0 | flirds_zgate_v2 | 0.6666 | -0.0024 |  |  |  |  |  |
+| cifar10 | qskew | clean | main |  | 0 | vanilla | 0.6690 | +0.0000 |  |  |  |  |  |
+| cifar10 | qskew | free_rider | main |  | 0 | flirds_gate_v1 | 0.6472 | +0.0241 | 0.0201 | +1.1988 | 0.9667 | 125.0000 | 0.7934 |
+| cifar10 | qskew | free_rider | main |  | 0 | flirds_gate_v2 | 0.6316 | +0.0085 | 0.0201 | +0.4224 | 0.6833 | 1306.0000 | 0.7590 |
+| cifar10 | qskew | free_rider | main |  | 0 | flirds_gatew_v1 | 0.6406 | +0.0175 | 0.0201 | +0.8696 | 0.9833 | 95.0000 | 0.8348 |
+| cifar10 | qskew | free_rider | main |  | 0 | flirds_gatew_v2 | 0.6312 | +0.0081 | 0.0201 | +0.4037 | 0.6500 | 1123.0000 | 0.7855 |
+| cifar10 | qskew | free_rider | main |  | 0 | flirds_mult | 0.6366 | +0.0135 | 0.0201 | +0.6708 | 0.4325 |  |  |
+| cifar10 | qskew | free_rider | main |  | 0 | flirds_zgate_v2 | 0.6202 | -0.0029 | 0.0201 | -0.1429 | 0.8333 |  |  |
+| cifar10 | qskew | free_rider | main |  | 0 | oracle_excl | 0.6432 | +0.0201 | 0.0201 | +1.0000 |  |  |  |
+| cifar10 | qskew | free_rider | main |  | 0 | random_excl | 0.6128 | -0.0104 | 0.0201 | -0.5155 |  |  |  |
+| cifar10 | qskew | free_rider | main |  | 0 | vanilla | 0.6231 | +0.0000 | 0.0201 | +0.0000 |  |  |  |
+| cifar10 | qskew | frrand | main |  | 0 | flirds_gate_v1 | 0.6284 | +0.0045 | 0.0194 |  | 0.8667 | 205.0000 | 0.5341 |
+| cifar10 | qskew | frrand | main |  | 0 | flirds_gate_v2 | 0.6240 | +0.0001 | 0.0194 |  | 0.8071 | 828.0000 | 0.7943 |
+| cifar10 | qskew | frrand | main |  | 0 | flirds_gatew_v1 | 0.6309 | +0.0070 | 0.0194 |  | 0.9667 | 105.0000 | 0.6866 |
+| cifar10 | qskew | frrand | main |  | 0 | flirds_gatew_v2 | 0.6341 | +0.0103 | 0.0194 |  | 0.7812 | 622.0000 | 0.8248 |
+| cifar10 | qskew | frrand | main |  | 0 | flirds_mult | 0.6358 | +0.0119 | 0.0194 |  | 0.4383 |  |  |
+| cifar10 | qskew | frrand | main |  | 0 | flirds_zgate_v2 | 0.6215 | -0.0024 | 0.0194 |  | 0.8358 |  |  |
+| cifar10 | qskew | frrand | main |  | 0 | oracle_excl | 0.6432 | +0.0194 | 0.0194 |  |  |  |  |
+| cifar10 | qskew | frrand | main |  | 0 | random_excl | 0.6118 | -0.0121 | 0.0194 |  |  |  |  |
+| cifar10 | qskew | frrand | main |  | 0 | vanilla | 0.6239 | +0.0000 | 0.0194 |  |  |  |  |
+| cifar10 | qskew | grad_noise | main |  | 0 | flirds_gate_v1 | 0.5441 | +0.2916 | 0.3907 | +0.7463 | 0.9958 | 197.0000 | 0.6965 |
+| cifar10 | qskew | grad_noise | main |  | 0 | flirds_gate_v2 | 0.6366 | +0.3841 | 0.3907 | +0.9830 | 0.9879 | 1273.0000 | 0.7608 |
+| cifar10 | qskew | grad_noise | main |  | 0 | flirds_gatew_v1 | 0.2039 | -0.0486 | 0.3907 | -0.1244 | 0.9067 | 278.0000 | 0.6166 |
+| cifar10 | qskew | grad_noise | main |  | 0 | flirds_gatew_v2 | 0.6304 | +0.3779 | 0.3907 | +0.9671 | 0.9871 | 888.0000 | 0.8190 |
+| cifar10 | qskew | grad_noise | main |  | 0 | flirds_mult | 0.4871 | +0.2346 | 0.3907 | +0.6004 | 0.9446 |  |  |
+| cifar10 | qskew | grad_noise | main |  | 0 | flirds_zgate_v2 | 0.4339 | +0.1814 | 0.3907 | +0.4642 | 0.9833 |  |  |
+| cifar10 | qskew | grad_noise | main |  | 0 | oracle_excl | 0.6432 | +0.3907 | 0.3907 | +1.0000 |  |  |  |
+| cifar10 | qskew | grad_noise | main |  | 0 | random_excl | 0.2556 | +0.0031 | 0.3907 | +0.0080 |  |  |  |
+| cifar10 | qskew | grad_noise | main |  | 0 | vanilla | 0.2525 | +0.0000 | 0.3907 | +0.0000 |  |  |  |
+| cifar10 | qskew | label_flip | main | 0.1500 | 0 | flirds_gate_v1 | 0.6325 | -0.0081 | 0.0082 |  | 0.5523 | 205.0000 | 0.4225 |
+| cifar10 | qskew | label_flip | main | 0.3500 | 0 | flirds_gate_v1 | 0.6176 | +0.0106 | 0.0419 | +0.2537 | 0.8108 | 152.0000 | 0.6415 |
+| cifar10 | qskew | label_flip | main | 0.7000 | 0 | flirds_gate_v1 | 0.5827 | +0.0241 | 0.0902 | +0.2673 | 0.9706 | 126.0000 | 0.7353 |
+| cifar10 | qskew | label_flip | main | 0.1500 | 0 | flirds_gate_v2 | 0.6298 | -0.0109 | 0.0082 |  | 0.4687 | 941.0000 | 0.5300 |
+| cifar10 | qskew | label_flip | main | 0.3500 | 0 | flirds_gate_v2 | 0.6101 | +0.0031 | 0.0419 | +0.0746 | 0.7175 | 715.0000 | 0.7950 |
+| cifar10 | qskew | label_flip | main | 0.7000 | 0 | flirds_gate_v2 | 0.5969 | +0.0383 | 0.0902 | +0.4238 | 0.7945 | 1150.0000 | 0.7431 |
+| cifar10 | qskew | label_flip | main | 0.1500 | 0 | flirds_gatew_v1 | 0.6404 | -0.0002 | 0.0082 |  | 0.5322 | 157.0000 | 0.3938 |
+| cifar10 | qskew | label_flip | main | 0.3500 | 0 | flirds_gatew_v1 | 0.6196 | +0.0126 | 0.0419 | +0.3015 | 0.8087 | 115.0000 | 0.6637 |
+| cifar10 | qskew | label_flip | main | 0.7000 | 0 | flirds_gatew_v1 | 0.5374 | -0.0212 | 0.0902 | -0.2355 | 0.9739 | 111.0000 | 0.7528 |
+| cifar10 | qskew | label_flip | main | 0.1500 | 0 | flirds_gatew_v2 | 0.6391 | -0.0015 | 0.0082 |  | 0.3775 | 580.0000 | 0.4821 |
+| cifar10 | qskew | label_flip | main | 0.3500 | 0 | flirds_gatew_v2 | 0.6171 | +0.0101 | 0.0419 | +0.2418 | 0.5221 | 977.0000 | 0.6503 |
+| cifar10 | qskew | label_flip | main | 0.7000 | 0 | flirds_gatew_v2 | 0.5823 | +0.0236 | 0.0902 | +0.2618 | 0.6675 | 940.0000 | 0.7573 |
+| cifar10 | qskew | label_flip | main | 0.1500 | 0 | flirds_mult | 0.6374 | -0.0032 | 0.0082 |  | 0.2459 |  |  |
+| cifar10 | qskew | label_flip | main | 0.3500 | 0 | flirds_mult | 0.6248 | +0.0178 | 0.0419 | +0.4239 | 0.5628 |  |  |
+| cifar10 | qskew | label_flip | main | 0.7000 | 0 | flirds_mult | 0.6252 | +0.0666 | 0.0902 | +0.7382 | 0.7907 |  |  |
+| cifar10 | qskew | label_flip | main | 0.1500 | 0 | flirds_zgate_v2 | 0.6430 | +0.0024 | 0.0082 |  | 0.4212 |  |  |
+| cifar10 | qskew | label_flip | main | 0.3500 | 0 | flirds_zgate_v2 | 0.6251 | +0.0181 | 0.0419 | +0.4328 | 0.9252 |  |  |
+| cifar10 | qskew | label_flip | main | 0.7000 | 0 | flirds_zgate_v2 | 0.5995 | +0.0409 | 0.0902 | +0.4529 | 0.9878 |  |  |
+| cifar10 | qskew | label_flip | main | 0.1500 | 0 | oracle_excl | 0.6489 | +0.0082 | 0.0082 |  |  |  |  |
+| cifar10 | qskew | label_flip | main | 0.3500 | 0 | oracle_excl | 0.6489 | +0.0419 | 0.0419 | +1.0000 |  |  |  |
+| cifar10 | qskew | label_flip | main | 0.7000 | 0 | oracle_excl | 0.6489 | +0.0902 | 0.0902 | +1.0000 |  |  |  |
+| cifar10 | qskew | label_flip | main | 0.1500 | 0 | random_excl | 0.6378 | -0.0029 | 0.0082 |  |  |  |  |
+| cifar10 | qskew | label_flip | main | 0.3500 | 0 | random_excl | 0.6191 | +0.0121 | 0.0419 | +0.2896 |  |  |  |
+| cifar10 | qskew | label_flip | main | 0.7000 | 0 | random_excl | 0.5891 | +0.0305 | 0.0902 | +0.3380 |  |  |  |
+| cifar10 | qskew | label_flip | main | 0.1500 | 0 | vanilla | 0.6406 | +0.0000 | 0.0082 |  |  |  |  |
+| cifar10 | qskew | label_flip | main | 0.3500 | 0 | vanilla | 0.6070 | +0.0000 | 0.0419 | +0.0000 |  |  |  |
+| cifar10 | qskew | label_flip | main | 0.7000 | 0 | vanilla | 0.5586 | +0.0000 | 0.0902 | +0.0000 |  |  |  |
+| cifar10 | shard | clean | main |  | 0 | flirds_gate_v1 | 0.4556 | -0.0572 |  |  |  | 455.0000 | 0.0000 |
+| cifar10 | shard | clean | main |  | 0 | flirds_gate_v2 | 0.4491 | -0.0637 |  |  |  | 3747.0000 | 0.0000 |
+| cifar10 | shard | clean | main |  | 0 | flirds_gatew_v1 | 0.3905 | -0.1224 |  |  |  | 368.0000 | 0.0000 |
+| cifar10 | shard | clean | main |  | 0 | flirds_gatew_v2 | 0.4009 | -0.1120 |  |  |  | 3207.0000 | 0.0000 |
+| cifar10 | shard | clean | main |  | 0 | flirds_mult | 0.5271 | +0.0142 |  |  |  |  |  |
+| cifar10 | shard | clean | main |  | 0 | flirds_zgate_v2 | 0.5042 | -0.0086 |  |  |  |  |  |
+| cifar10 | shard | clean | main |  | 0 | vanilla | 0.5129 | +0.0000 |  |  |  |  |  |
+| cifar10 | shard | clean | main |  | 1 | flirds_gate_v1 | 0.4629 | +0.0260 |  |  |  | 442.0000 | 0.0000 |
+| cifar10 | shard | clean | main |  | 1 | flirds_gate_v2 | 0.4674 | +0.0305 |  |  |  | 2984.0000 | 0.0000 |
+| cifar10 | shard | clean | main |  | 1 | flirds_gatew_v1 | 0.1930 | -0.2439 |  |  |  | 393.0000 | 0.0000 |
+| cifar10 | shard | clean | main |  | 1 | flirds_gatew_v2 | 0.4959 | +0.0590 |  |  |  | 3678.0000 | 0.0000 |
+| cifar10 | shard | clean | main |  | 1 | flirds_mult | 0.4547 | +0.0179 |  |  |  |  |  |
+| cifar10 | shard | clean | main |  | 1 | flirds_zgate_v2 | 0.4180 | -0.0189 |  |  |  |  |  |
+| cifar10 | shard | clean | main |  | 1 | vanilla | 0.4369 | +0.0000 |  |  |  |  |  |
+| cifar10 | shard | free_rider | main |  | 0 | flirds_gate_v1 | 0.2018 | -0.1751 | 0.0805 | -2.1755 | 0.9833 | 208.0000 | 0.6977 |
+| cifar10 | shard | free_rider | main |  | 0 | flirds_gate_v2 | 0.3644 | -0.0125 | 0.0805 | -0.1553 | 0.6667 | 1870.0000 | 0.6896 |
+| cifar10 | shard | free_rider | main |  | 0 | flirds_gatew_v1 | 0.2054 | -0.1715 | 0.0805 | -2.1304 | 1.0000 | 179.0000 | 0.7284 |
+| cifar10 | shard | free_rider | main |  | 0 | flirds_gatew_v2 | 0.4675 | +0.0906 | 0.0805 | +1.1258 | 0.6333 | 1821.0000 | 0.6937 |
+| cifar10 | shard | free_rider | main |  | 0 | flirds_mult | 0.4120 | +0.0351 | 0.0805 | +0.4363 | 0.3150 |  |  |
+| cifar10 | shard | free_rider | main |  | 0 | flirds_zgate_v2 | 0.4126 | +0.0358 | 0.0805 | +0.4441 | 0.4167 |  |  |
+| cifar10 | shard | free_rider | main |  | 0 | oracle_excl | 0.4574 | +0.0805 | 0.0805 | +1.0000 |  |  |  |
+| cifar10 | shard | free_rider | main |  | 0 | random_excl | 0.4059 | +0.0290 | 0.0805 | +0.3602 |  |  |  |
+| cifar10 | shard | free_rider | main |  | 0 | vanilla | 0.3769 | +0.0000 | 0.0805 | +0.0000 |  |  |  |
+| cifar10 | shard | frrand | main |  | 0 | flirds_gate_v1 | 0.4706 | +0.0939 | 0.0806 | +1.1643 | 0.8187 | 308.0000 | 0.4390 |
+| cifar10 | shard | frrand | main |  | 0 | flirds_gate_v2 | 0.4057 | +0.0290 | 0.0806 | +0.3597 | 0.6833 | 1698.0000 | 0.6622 |
+| cifar10 | shard | frrand | main |  | 0 | flirds_gatew_v1 | 0.2076 | -0.1691 | 0.0806 | -2.0977 | 1.0000 | 180.0000 | 0.5714 |
+| cifar10 | shard | frrand | main |  | 0 | flirds_gatew_v2 | 0.4461 | +0.0694 | 0.0806 | +0.8605 | 0.8833 | 751.0000 | 0.7662 |
+| cifar10 | shard | frrand | main |  | 0 | flirds_mult | 0.4118 | +0.0350 | 0.0806 | +0.4341 | 0.3150 |  |  |
+| cifar10 | shard | frrand | main |  | 0 | flirds_zgate_v2 | 0.4674 | +0.0906 | 0.0806 | +1.1240 | 0.4667 |  |  |
+| cifar10 | shard | frrand | main |  | 0 | oracle_excl | 0.4574 | +0.0806 | 0.0806 | +1.0000 |  |  |  |
+| cifar10 | shard | frrand | main |  | 0 | random_excl | 0.4084 | +0.0316 | 0.0806 | +0.3922 |  |  |  |
+| cifar10 | shard | frrand | main |  | 0 | vanilla | 0.3767 | +0.0000 | 0.0806 | +0.0000 |  |  |  |
+| cifar10 | shard | grad_noise | main |  | 0 | flirds_gate_v1 | 0.1174 | -0.0535 | 0.2865 | -0.1867 | 0.8383 | 277.0000 | 0.5554 |
+| cifar10 | shard | grad_noise | main |  | 0 | flirds_gate_v2 | 0.4079 | +0.2370 | 0.2865 | +0.8272 | 0.8408 | 3582.0000 | 0.5289 |
+| cifar10 | shard | grad_noise | main |  | 0 | flirds_gatew_v1 | 0.1430 | -0.0279 | 0.2865 | -0.0973 | 0.8108 | 229.0000 | 0.5655 |
+| cifar10 | shard | grad_noise | main |  | 0 | flirds_gatew_v2 | 0.4062 | +0.2354 | 0.2865 | +0.8216 | 0.9004 | 2152.0000 | 0.6468 |
+| cifar10 | shard | grad_noise | main |  | 0 | flirds_mult | 0.2829 | +0.1120 | 0.2865 | +0.3909 | 0.9908 |  |  |
+| cifar10 | shard | grad_noise | main |  | 0 | flirds_zgate_v2 | 0.1659 | -0.0050 | 0.2865 | -0.0175 | 1.0000 |  |  |
+| cifar10 | shard | grad_noise | main |  | 0 | oracle_excl | 0.4574 | +0.2865 | 0.2865 | +1.0000 |  |  |  |
+| cifar10 | shard | grad_noise | main |  | 0 | random_excl | 0.1809 | +0.0100 | 0.2865 | +0.0349 |  |  |  |
+| cifar10 | shard | grad_noise | main |  | 0 | vanilla | 0.1709 | +0.0000 | 0.2865 | +0.0000 |  |  |  |
+| cifar10 | shard | label_flip | main | 0.1500 | 0 | flirds_gate_v1 | 0.4517 | -0.0271 | -0.0217 | +1.2471 | 0.3178 | 285.0000 | 0.3357 |
+| cifar10 | shard | label_flip | main | 0.3500 | 0 | flirds_gate_v1 | 0.3029 | -0.1344 | 0.0199 |  | 0.3443 | 293.0000 | 0.3122 |
+| cifar10 | shard | label_flip | main | 0.7000 | 0 | flirds_gate_v1 | 0.2416 | -0.1247 | 0.0907 | -1.3747 | 0.3728 | 294.0000 | 0.2864 |
+| cifar10 | shard | label_flip | main | 0.1500 | 0 | flirds_gate_v2 | 0.2299 | -0.2490 | -0.0217 | +11.4483 | 0.3573 | 2417.0000 | 0.2160 |
+| cifar10 | shard | label_flip | main | 0.3500 | 0 | flirds_gate_v2 | 0.1732 | -0.2640 | 0.0199 |  | 0.2102 | 3187.0000 | 0.1809 |
+| cifar10 | shard | label_flip | main | 0.7000 | 0 | flirds_gate_v2 | 0.3540 | -0.0124 | 0.0907 | -0.1364 | 0.2699 | 3318.0000 | 0.0758 |
+| cifar10 | shard | label_flip | main | 0.1500 | 0 | flirds_gatew_v1 | 0.3101 | -0.1688 | -0.0217 | +7.7586 | 0.3279 | 244.0000 | 0.2989 |
+| cifar10 | shard | label_flip | main | 0.3500 | 0 | flirds_gatew_v1 | 0.2451 | -0.1921 | 0.0199 |  | 0.3804 | 246.0000 | 0.2545 |
+| cifar10 | shard | label_flip | main | 0.7000 | 0 | flirds_gatew_v1 | 0.2160 | -0.1504 | 0.0907 | -1.6570 | 0.3918 | 245.0000 | 0.2462 |
+| cifar10 | shard | label_flip | main | 0.1500 | 0 | flirds_gatew_v2 | 0.4494 | -0.0295 | -0.0217 | +1.3563 | 0.3274 | 2748.0000 | 0.3031 |
+| cifar10 | shard | label_flip | main | 0.3500 | 0 | flirds_gatew_v2 | 0.3871 | -0.0501 | 0.0199 |  | 0.2930 | 2610.0000 | 0.0419 |
+| cifar10 | shard | label_flip | main | 0.7000 | 0 | flirds_gatew_v2 | 0.1745 | -0.1919 | 0.0907 | -2.1143 | 0.2135 | 2988.0000 | 0.0565 |
+| cifar10 | shard | label_flip | main | 0.1500 | 0 | flirds_mult | 0.5064 | +0.0275 | -0.0217 | -1.2644 | 0.4590 |  |  |
+| cifar10 | shard | label_flip | main | 0.3500 | 0 | flirds_mult | 0.4575 | +0.0202 | 0.0199 |  | 0.5158 |  |  |
+| cifar10 | shard | label_flip | main | 0.7000 | 0 | flirds_mult | 0.3729 | +0.0065 | 0.0907 | +0.0716 | 0.5439 |  |  |
+| cifar10 | shard | label_flip | main | 0.1500 | 0 | flirds_zgate_v2 | 0.4699 | -0.0090 | -0.0217 | +0.4138 | 0.3127 |  |  |
+| cifar10 | shard | label_flip | main | 0.3500 | 0 | flirds_zgate_v2 | 0.4487 | +0.0115 | 0.0199 |  | 0.3607 |  |  |
+| cifar10 | shard | label_flip | main | 0.7000 | 0 | flirds_zgate_v2 | 0.2789 | -0.0875 | 0.0907 | -0.9642 | 0.3888 |  |  |
+| cifar10 | shard | label_flip | main | 0.1500 | 0 | oracle_excl | 0.4571 | -0.0217 | -0.0217 | +1.0000 |  |  |  |
+| cifar10 | shard | label_flip | main | 0.3500 | 0 | oracle_excl | 0.4571 | +0.0199 | 0.0199 |  |  |  |  |
+| cifar10 | shard | label_flip | main | 0.7000 | 0 | oracle_excl | 0.4571 | +0.0907 | 0.0907 | +1.0000 |  |  |  |
+| cifar10 | shard | label_flip | main | 0.1500 | 0 | random_excl | 0.3762 | -0.1026 | -0.0217 | +4.7184 |  |  |  |
+| cifar10 | shard | label_flip | main | 0.3500 | 0 | random_excl | 0.3469 | -0.0904 | 0.0199 |  |  |  |  |
+| cifar10 | shard | label_flip | main | 0.7000 | 0 | random_excl | 0.3086 | -0.0578 | 0.0907 | -0.6364 |  |  |  |
+| cifar10 | shard | label_flip | main | 0.1500 | 0 | vanilla | 0.4789 | +0.0000 | -0.0217 | -0.0000 |  |  |  |
+| cifar10 | shard | label_flip | main | 0.3500 | 0 | vanilla | 0.4373 | +0.0000 | 0.0199 |  |  |  |  |
+| cifar10 | shard | label_flip | main | 0.7000 | 0 | vanilla | 0.3664 | +0.0000 | 0.0907 | +0.0000 |  |  |  |
+| fmnist | dir1 | clean | main |  | 0 | flirds_gate_v1 | 0.8459 | +0.0519 |  |  |  | 456.0000 | 0.0000 |
+| fmnist | dir1 | clean | main |  | 0 | flirds_gate_v2 | 0.8275 | +0.0335 |  |  |  | 2746.0000 | 0.0000 |
+| fmnist | dir1 | clean | main |  | 0 | flirds_gatew_v1 | 0.8475 | +0.0535 |  |  |  | 323.0000 | 0.0000 |
+| fmnist | dir1 | clean | main |  | 0 | flirds_gatew_v2 | 0.8435 | +0.0495 |  |  |  | 1860.0000 | 0.0000 |
+| fmnist | dir1 | clean | main |  | 0 | flirds_mult | 0.8154 | +0.0214 |  |  |  |  |  |
+| fmnist | dir1 | clean | main |  | 0 | flirds_zgate_v2 | 0.8455 | +0.0515 |  |  |  |  |  |
+| fmnist | dir1 | clean | main |  | 0 | vanilla | 0.7940 | +0.0000 |  |  |  |  |  |
+| fmnist | dir1 | free_rider | main |  | 0 | flirds_gate_v1 | 0.7819 | -0.0119 | 0.0440 | -0.2699 | 0.9333 | 196.0000 | 0.7101 |
+| fmnist | dir1 | free_rider | main |  | 0 | flirds_gate_v2 | 0.8371 | +0.0434 | 0.0440 | +0.9858 | 0.7000 | 1544.0000 | 0.7298 |
+| fmnist | dir1 | free_rider | main |  | 0 | flirds_gatew_v1 | 0.7943 | +0.0005 | 0.0440 | +0.0114 | 0.9833 | 142.0000 | 0.7717 |
+| fmnist | dir1 | free_rider | main |  | 0 | flirds_gatew_v2 | 0.8204 | +0.0266 | 0.0440 | +0.6051 | 0.7333 | 1244.0000 | 0.7673 |
+| fmnist | dir1 | free_rider | main |  | 0 | flirds_mult | 0.8085 | +0.0148 | 0.0440 | +0.3352 | 0.3946 |  |  |
+| fmnist | dir1 | free_rider | main |  | 0 | flirds_zgate_v2 | 0.8021 | +0.0084 | 0.0440 | +0.1903 | 0.7000 |  |  |
+| fmnist | dir1 | free_rider | main |  | 0 | oracle_excl | 0.8377 | +0.0440 | 0.0440 | +1.0000 |  |  |  |
+| fmnist | dir1 | free_rider | main |  | 0 | random_excl | 0.8095 | +0.0158 | 0.0440 | +0.3580 |  |  |  |
+| fmnist | dir1 | free_rider | main |  | 0 | vanilla | 0.7937 | +0.0000 | 0.0440 | +0.0000 |  |  |  |
+| fmnist | dir1 | frrand | main |  | 0 | flirds_gate_v1 | 0.7934 | -0.0027 | 0.0416 | -0.0661 | 0.8350 | 295.0000 | 0.4517 |
+| fmnist | dir1 | frrand | main |  | 0 | flirds_gate_v2 | 0.7989 | +0.0028 | 0.0416 | +0.0661 | 0.6033 | 2039.0000 | 0.5764 |
+| fmnist | dir1 | frrand | main |  | 0 | flirds_gatew_v1 | 0.7991 | +0.0030 | 0.0416 | +0.0721 | 0.9833 | 150.0000 | 0.6042 |
+| fmnist | dir1 | frrand | main |  | 0 | flirds_gatew_v2 | 0.8381 | +0.0420 | 0.0416 | +1.0090 | 0.7558 | 956.0000 | 0.7296 |
+| fmnist | dir1 | frrand | main |  | 0 | flirds_mult | 0.8071 | +0.0110 | 0.0416 | +0.2643 | 0.3904 |  |  |
+| fmnist | dir1 | frrand | main |  | 0 | flirds_zgate_v2 | 0.8009 | +0.0048 | 0.0416 | +0.1141 | 0.7000 |  |  |
+| fmnist | dir1 | frrand | main |  | 0 | oracle_excl | 0.8377 | +0.0416 | 0.0416 | +1.0000 |  |  |  |
+| fmnist | dir1 | frrand | main |  | 0 | random_excl | 0.8087 | +0.0126 | 0.0416 | +0.3033 |  |  |  |
+| fmnist | dir1 | frrand | main |  | 0 | vanilla | 0.7961 | +0.0000 | 0.0416 | +0.0000 |  |  |  |
+| fmnist | dir1 | grad_noise | main |  | 0 | flirds_gate_v1 | 0.7969 | +0.0486 | 0.0895 | +0.5433 | 0.9871 | 226.0000 | 0.6367 |
+| fmnist | dir1 | grad_noise | main |  | 0 | flirds_gate_v2 | 0.8592 | +0.1110 | 0.0895 | +1.2402 | 0.9512 | 1325.0000 | 0.7496 |
+| fmnist | dir1 | grad_noise | main |  | 0 | flirds_gatew_v1 | 0.7691 | +0.0209 | 0.0895 | +0.2332 | 0.9888 | 151.0000 | 0.7140 |
+| fmnist | dir1 | grad_noise | main |  | 0 | flirds_gatew_v2 | 0.8578 | +0.1095 | 0.0895 | +1.2235 | 0.9808 | 859.0000 | 0.8091 |
+| fmnist | dir1 | grad_noise | main |  | 0 | flirds_mult | 0.8066 | +0.0584 | 0.0895 | +0.6522 | 0.9896 |  |  |
+| fmnist | dir1 | grad_noise | main |  | 0 | flirds_zgate_v2 | 0.8079 | +0.0596 | 0.0895 | +0.6662 | 0.9996 |  |  |
+| fmnist | dir1 | grad_noise | main |  | 0 | oracle_excl | 0.8377 | +0.0895 | 0.0895 | +1.0000 |  |  |  |
+| fmnist | dir1 | grad_noise | main |  | 0 | random_excl | 0.7705 | +0.0222 | 0.0895 | +0.2486 |  |  |  |
+| fmnist | dir1 | grad_noise | main |  | 0 | vanilla | 0.7482 | +0.0000 | 0.0895 | +0.0000 |  |  |  |
+| fmnist | dir1 | label_flip | main | 0.1500 | 0 | flirds_gate_v1 | 0.6817 | -0.1401 | -0.0015 |  | 0.9197 | 185.0000 | 0.6358 |
+| fmnist | dir1 | label_flip | main | 0.3500 | 0 | flirds_gate_v1 | 0.8014 | -0.0108 | 0.0082 |  | 0.9954 | 174.0000 | 0.6871 |
+| fmnist | dir1 | label_flip | main | 0.7000 | 0 | flirds_gate_v1 | 0.7571 | -0.0389 | 0.0244 | -1.5949 | 1.0000 | 195.0000 | 0.6761 |
+| fmnist | dir1 | label_flip | main | 0.1500 | 0 | flirds_gate_v2 | 0.8423 | +0.0204 | -0.0015 |  | 0.8567 | 892.0000 | 0.7163 |
+| fmnist | dir1 | label_flip | main | 0.3500 | 0 | flirds_gate_v2 | 0.8155 | +0.0034 | 0.0082 |  | 0.8878 | 1215.0000 | 0.7357 |
+| fmnist | dir1 | label_flip | main | 0.7000 | 0 | flirds_gate_v2 | 0.8335 | +0.0375 | 0.0244 | +1.5385 | 0.9630 | 1247.0000 | 0.7507 |
+| fmnist | dir1 | label_flip | main | 0.1500 | 0 | flirds_gatew_v1 | 0.8346 | +0.0127 | -0.0015 |  | 0.9096 | 142.0000 | 0.6459 |
+| fmnist | dir1 | label_flip | main | 0.3500 | 0 | flirds_gatew_v1 | 0.8156 | +0.0035 | 0.0082 |  | 0.9933 | 143.0000 | 0.7111 |
+| fmnist | dir1 | label_flip | main | 0.7000 | 0 | flirds_gatew_v1 | 0.7901 | -0.0059 | 0.0244 | -0.2410 | 1.0000 | 195.0000 | 0.6814 |
+| fmnist | dir1 | label_flip | main | 0.1500 | 0 | flirds_gatew_v2 | 0.8360 | +0.0141 | -0.0015 |  | 0.8029 | 1332.0000 | 0.6282 |
+| fmnist | dir1 | label_flip | main | 0.3500 | 0 | flirds_gatew_v2 | 0.8316 | +0.0195 | 0.0082 |  | 0.8680 | 1576.0000 | 0.6749 |
+| fmnist | dir1 | label_flip | main | 0.7000 | 0 | flirds_gatew_v2 | 0.8383 | +0.0423 | 0.0244 | +1.7333 | 0.9668 | 1307.0000 | 0.7435 |
+| fmnist | dir1 | label_flip | main | 0.1500 | 0 | flirds_mult | 0.8239 | +0.0020 | -0.0015 |  | 0.8684 |  |  |
+| fmnist | dir1 | label_flip | main | 0.3500 | 0 | flirds_mult | 0.8043 | -0.0079 | 0.0082 |  | 0.9777 |  |  |
+| fmnist | dir1 | label_flip | main | 0.7000 | 0 | flirds_mult | 0.7770 | -0.0190 | 0.0244 | -0.7795 | 0.9996 |  |  |
+| fmnist | dir1 | label_flip | main | 0.1500 | 0 | flirds_zgate_v2 | 0.8364 | +0.0145 | -0.0015 |  | 0.9252 |  |  |
+| fmnist | dir1 | label_flip | main | 0.3500 | 0 | flirds_zgate_v2 | 0.8207 | +0.0086 | 0.0082 |  | 1.0000 |  |  |
+| fmnist | dir1 | label_flip | main | 0.7000 | 0 | flirds_zgate_v2 | 0.8197 | +0.0237 | 0.0244 | +0.9744 | 1.0000 |  |  |
+| fmnist | dir1 | label_flip | main | 0.1500 | 0 | oracle_excl | 0.8204 | -0.0015 | -0.0015 |  |  |  |  |
+| fmnist | dir1 | label_flip | main | 0.3500 | 0 | oracle_excl | 0.8204 | +0.0082 | 0.0082 |  |  |  |  |
+| fmnist | dir1 | label_flip | main | 0.7000 | 0 | oracle_excl | 0.8204 | +0.0244 | 0.0244 | +1.0000 |  |  |  |
+| fmnist | dir1 | label_flip | main | 0.1500 | 0 | random_excl | 0.7943 | -0.0276 | -0.0015 |  |  |  |  |
+| fmnist | dir1 | label_flip | main | 0.3500 | 0 | random_excl | 0.7849 | -0.0272 | 0.0082 |  |  |  |  |
+| fmnist | dir1 | label_flip | main | 0.7000 | 0 | random_excl | 0.7695 | -0.0265 | 0.0244 | -1.0872 |  |  |  |
+| fmnist | dir1 | label_flip | main | 0.1500 | 0 | vanilla | 0.8219 | +0.0000 | -0.0015 |  |  |  |  |
+| fmnist | dir1 | label_flip | main | 0.3500 | 0 | vanilla | 0.8121 | +0.0000 | 0.0082 |  |  |  |  |
+| fmnist | dir1 | label_flip | main | 0.7000 | 0 | vanilla | 0.7960 | +0.0000 | 0.0244 | +0.0000 |  |  |  |
+| fmnist | iid | clean | main |  | 0 | flirds_gate_v1 | 0.8518 | +0.0001 |  |  |  | 397.0000 | 0.0000 |
+| fmnist | iid | clean | main |  | 0 | flirds_gate_v2 | 0.8520 | +0.0004 |  |  |  | 828.0000 | 0.0000 |
+| fmnist | iid | clean | main |  | 0 | flirds_gatew_v1 | 0.8492 | -0.0024 |  |  |  | 298.0000 | 0.0000 |
+| fmnist | iid | clean | main |  | 0 | flirds_gatew_v2 | 0.8508 | -0.0009 |  |  |  | 648.0000 | 0.0000 |
+| fmnist | iid | clean | main |  | 0 | flirds_mult | 0.8529 | +0.0013 |  |  |  |  |  |
+| fmnist | iid | clean | main |  | 0 | flirds_zgate_v2 | 0.8535 | +0.0019 |  |  |  |  |  |
+| fmnist | iid | clean | main |  | 0 | vanilla | 0.8516 | +0.0000 |  |  |  |  |  |
+| fmnist | iid | free_rider | main |  | 0 | flirds_gate_v1 | 0.8501 | +0.0288 | 0.0290 | +0.9914 | 1.0000 | 140.0000 | 0.7742 |
+| fmnist | iid | free_rider | main |  | 0 | flirds_gate_v2 | 0.8506 | +0.0292 | 0.0290 | +1.0086 | 0.9000 | 515.0000 | 0.8884 |
+| fmnist | iid | free_rider | main |  | 0 | flirds_gatew_v1 | 0.8474 | +0.0260 | 0.0290 | +0.8966 | 0.9833 | 114.0000 | 0.8081 |
+| fmnist | iid | free_rider | main |  | 0 | flirds_gatew_v2 | 0.8504 | +0.0290 | 0.0290 | +1.0000 | 0.8833 | 463.0000 | 0.8994 |
+| fmnist | iid | free_rider | main |  | 0 | flirds_mult | 0.8375 | +0.0161 | 0.0290 | +0.5560 | 0.5092 |  |  |
+| fmnist | iid | free_rider | main |  | 0 | flirds_zgate_v2 | 0.8165 | -0.0049 | 0.0290 | -0.1681 | 0.9833 |  |  |
+| fmnist | iid | free_rider | main |  | 0 | oracle_excl | 0.8504 | +0.0290 | 0.0290 | +1.0000 |  |  |  |
+| fmnist | iid | free_rider | main |  | 0 | random_excl | 0.8289 | +0.0075 | 0.0290 | +0.2586 |  |  |  |
+| fmnist | iid | free_rider | main |  | 0 | vanilla | 0.8214 | +0.0000 | 0.0290 | +0.0000 |  |  |  |
+| fmnist | iid | frrand | main |  | 0 | flirds_gate_v1 | 0.8269 | +0.0060 | 0.0295 | +0.2034 | 0.9487 | 198.0000 | 0.5733 |
+| fmnist | iid | frrand | main |  | 0 | flirds_gate_v2 | 0.8407 | +0.0199 | 0.0295 | +0.6737 | 0.8733 | 746.0000 | 0.7882 |
+| fmnist | iid | frrand | main |  | 0 | flirds_gatew_v1 | 0.8464 | +0.0255 | 0.0295 | +0.8644 | 0.9992 | 125.0000 | 0.6556 |
+| fmnist | iid | frrand | main |  | 0 | flirds_gatew_v2 | 0.8491 | +0.0282 | 0.0295 | +0.9576 | 0.9671 | 44.0000 | 0.9846 |
+| fmnist | iid | frrand | main |  | 0 | flirds_mult | 0.8355 | +0.0146 | 0.0295 | +0.4958 | 0.4858 |  |  |
+| fmnist | iid | frrand | main |  | 0 | flirds_zgate_v2 | 0.8179 | -0.0030 | 0.0295 | -0.1017 | 0.9754 |  |  |
+| fmnist | iid | frrand | main |  | 0 | oracle_excl | 0.8504 | +0.0295 | 0.0295 | +1.0000 |  |  |  |
+| fmnist | iid | frrand | main |  | 0 | random_excl | 0.8290 | +0.0081 | 0.0295 | +0.2754 |  |  |  |
+| fmnist | iid | frrand | main |  | 0 | vanilla | 0.8209 | +0.0000 | 0.0295 | +0.0000 |  |  |  |
+| fmnist | iid | grad_noise | main |  | 0 | flirds_gate_v1 | 0.8306 | +0.0421 | 0.0619 | +0.6808 | 1.0000 | 162.0000 | 0.7259 |
+| fmnist | iid | grad_noise | main |  | 0 | flirds_gate_v2 | 0.8684 | +0.0799 | 0.0619 | +1.2909 | 0.9950 | 1144.0000 | 0.7760 |
+| fmnist | iid | grad_noise | main |  | 0 | flirds_gatew_v1 | 0.8321 | +0.0436 | 0.0619 | +0.7051 | 0.8054 | 173.0000 | 0.7112 |
+| fmnist | iid | grad_noise | main |  | 0 | flirds_gatew_v2 | 0.8698 | +0.0813 | 0.0619 | +1.3131 | 0.9987 | 210.0000 | 0.9457 |
+| fmnist | iid | grad_noise | main |  | 0 | flirds_mult | 0.8472 | +0.0587 | 0.0619 | +0.9495 | 1.0000 |  |  |
+| fmnist | iid | grad_noise | main |  | 0 | flirds_zgate_v2 | 0.7844 | -0.0041 | 0.0619 | -0.0667 | 1.0000 |  |  |
+| fmnist | iid | grad_noise | main |  | 0 | oracle_excl | 0.8504 | +0.0619 | 0.0619 | +1.0000 |  |  |  |
+| fmnist | iid | grad_noise | main |  | 0 | random_excl | 0.8003 | +0.0118 | 0.0619 | +0.1899 |  |  |  |
+| fmnist | iid | grad_noise | main |  | 0 | vanilla | 0.7885 | +0.0000 | 0.0619 | +0.0000 |  |  |  |
+| fmnist | iid | label_flip | main | 0.1500 | 0 | flirds_gate_v1 | 0.8502 | +0.0039 | 0.0091 |  | 0.9861 | 153.0000 | 0.7156 |
+| fmnist | iid | label_flip | main | 0.3500 | 0 | flirds_gate_v1 | 0.8391 | +0.0024 | 0.0188 |  | 1.0000 | 171.0000 | 0.7116 |
+| fmnist | iid | label_flip | main | 0.7000 | 0 | flirds_gate_v1 | 0.8296 | +0.0076 | 0.0335 | +0.2276 | 1.0000 | 186.0000 | 0.7005 |
+| fmnist | iid | label_flip | main | 0.1500 | 0 | flirds_gate_v2 | 0.8454 | -0.0010 | 0.0091 |  | 0.9369 | 331.0000 | 0.8985 |
+| fmnist | iid | label_flip | main | 0.3500 | 0 | flirds_gate_v2 | 0.8516 | +0.0149 | 0.0188 |  | 0.9874 | 750.0000 | 0.8325 |
+| fmnist | iid | label_flip | main | 0.7000 | 0 | flirds_gate_v2 | 0.8490 | +0.0270 | 0.0335 | +0.8060 | 1.0000 | 509.0000 | 0.8839 |
+| fmnist | iid | label_flip | main | 0.1500 | 0 | flirds_gatew_v1 | 0.8484 | +0.0020 | 0.0091 |  | 0.9807 | 136.0000 | 0.7275 |
+| fmnist | iid | label_flip | main | 0.3500 | 0 | flirds_gatew_v1 | 0.8417 | +0.0050 | 0.0188 |  | 1.0000 | 156.0000 | 0.7277 |
+| fmnist | iid | label_flip | main | 0.7000 | 0 | flirds_gatew_v1 | 0.8354 | +0.0134 | 0.0335 | +0.3993 | 1.0000 | 179.0000 | 0.7122 |
+| fmnist | iid | label_flip | main | 0.1500 | 0 | flirds_gatew_v2 | 0.8510 | +0.0046 | 0.0091 |  | 0.9546 | 171.0000 | 0.9420 |
+| fmnist | iid | label_flip | main | 0.3500 | 0 | flirds_gatew_v2 | 0.8500 | +0.0132 | 0.0188 |  | 0.9983 | 95.0000 | 0.9750 |
+| fmnist | iid | label_flip | main | 0.7000 | 0 | flirds_gatew_v2 | 0.8535 | +0.0315 | 0.0335 | +0.9403 | 0.9983 | 203.0000 | 0.9499 |
+| fmnist | iid | label_flip | main | 0.1500 | 0 | flirds_mult | 0.8500 | +0.0036 | 0.0091 |  | 0.9933 |  |  |
+| fmnist | iid | label_flip | main | 0.3500 | 0 | flirds_mult | 0.8485 | +0.0118 | 0.0188 |  | 1.0000 |  |  |
+| fmnist | iid | label_flip | main | 0.7000 | 0 | flirds_mult | 0.8486 | +0.0266 | 0.0335 | +0.7948 | 1.0000 |  |  |
+| fmnist | iid | label_flip | main | 0.1500 | 0 | flirds_zgate_v2 | 0.8486 | +0.0022 | 0.0091 |  | 1.0000 |  |  |
+| fmnist | iid | label_flip | main | 0.3500 | 0 | flirds_zgate_v2 | 0.8410 | +0.0042 | 0.0188 |  | 1.0000 |  |  |
+| fmnist | iid | label_flip | main | 0.7000 | 0 | flirds_zgate_v2 | 0.8354 | +0.0134 | 0.0335 | +0.3993 | 1.0000 |  |  |
+| fmnist | iid | label_flip | main | 0.1500 | 0 | oracle_excl | 0.8555 | +0.0091 | 0.0091 |  |  |  |  |
+| fmnist | iid | label_flip | main | 0.3500 | 0 | oracle_excl | 0.8555 | +0.0188 | 0.0188 |  |  |  |  |
+| fmnist | iid | label_flip | main | 0.7000 | 0 | oracle_excl | 0.8555 | +0.0335 | 0.0335 | +1.0000 |  |  |  |
+| fmnist | iid | label_flip | main | 0.1500 | 0 | random_excl | 0.8474 | +0.0010 | 0.0091 |  |  |  |  |
+| fmnist | iid | label_flip | main | 0.3500 | 0 | random_excl | 0.8404 | +0.0036 | 0.0188 |  |  |  |  |
+| fmnist | iid | label_flip | main | 0.7000 | 0 | random_excl | 0.8283 | +0.0063 | 0.0335 | +0.1866 |  |  |  |
+| fmnist | iid | label_flip | main | 0.1500 | 0 | vanilla | 0.8464 | +0.0000 | 0.0091 |  |  |  |  |
+| fmnist | iid | label_flip | main | 0.3500 | 0 | vanilla | 0.8367 | +0.0000 | 0.0188 |  |  |  |  |
+| fmnist | iid | label_flip | main | 0.7000 | 0 | vanilla | 0.8220 | +0.0000 | 0.0335 | +0.0000 |  |  |  |
 
 ## V2w promotion gate (spec §5-2): **DO NOT PROMOTE (report CNN-only -- an honest finding)**
 
   cifar10/dir1/free_rider(str=main): V2w-V2 mean dAcc=-0.0092 FAIL
+  cifar10/dir1/frrand(str=main): V2w-V2 mean dAcc=+0.0302 OK
   cifar10/dir1/grad_noise(str=main): V2w-V2 mean dAcc=+0.0206 OK
   cifar10/dir1/label_flip(str=main): V2w-V2 mean dAcc=+0.0046 OK
   cifar10/iid/free_rider(str=main): V2w-V2 mean dAcc=+0.0008 OK
+  cifar10/iid/frrand(str=main): V2w-V2 mean dAcc=+0.0190 OK
   cifar10/iid/grad_noise(str=main): V2w-V2 mean dAcc=+0.0041 OK
   cifar10/iid/label_flip(str=main): V2w-V2 mean dAcc=-0.0020 FAIL
+  cifar10/qskew/free_rider(str=main): V2w-V2 mean dAcc=-0.0004 FAIL
+  cifar10/qskew/frrand(str=main): V2w-V2 mean dAcc=+0.0101 OK
+  cifar10/qskew/grad_noise(str=main): V2w-V2 mean dAcc=-0.0062 FAIL
+  cifar10/qskew/label_flip(str=main): V2w-V2 mean dAcc=+0.0006 OK
+  cifar10/shard/free_rider(str=main): V2w-V2 mean dAcc=+0.1031 OK
+  cifar10/shard/frrand(str=main): V2w-V2 mean dAcc=+0.0404 OK
+  cifar10/shard/grad_noise(str=main): V2w-V2 mean dAcc=-0.0016 FAIL
+  cifar10/shard/label_flip(str=main): V2w-V2 mean dAcc=+0.0846 OK
+  fmnist/dir1/free_rider(str=main): V2w-V2 mean dAcc=-0.0168 FAIL
+  fmnist/dir1/frrand(str=main): V2w-V2 mean dAcc=+0.0393 OK
+  fmnist/dir1/grad_noise(str=main): V2w-V2 mean dAcc=-0.0015 FAIL
+  fmnist/dir1/label_flip(str=main): V2w-V2 mean dAcc=+0.0049 OK
+  fmnist/iid/free_rider(str=main): V2w-V2 mean dAcc=-0.0002 FAIL
+  fmnist/iid/frrand(str=main): V2w-V2 mean dAcc=+0.0084 OK
+  fmnist/iid/grad_noise(str=main): V2w-V2 mean dAcc=+0.0014 OK
+  fmnist/iid/label_flip(str=main): V2w-V2 mean dAcc=+0.0028 OK
   clean cifar10_dir1_clean_g_seed0: V2w dAcc=-0.0200 FAIL(parity broken)
   clean cifar10_dir1_clean_g_seed1: V2w dAcc=-0.0100 FAIL(parity broken)
   clean cifar10_dir1_clean_g_seed2: V2w dAcc=-0.0302 FAIL(parity broken)
   clean cifar10_iid_clean_g_seed0: V2w dAcc=-0.0122 FAIL(parity broken)
   clean cifar10_iid_clean_g_seed1: V2w dAcc=-0.0016 OK
   clean cifar10_iid_clean_g_seed2: V2w dAcc=-0.0086 FAIL(parity broken)
+  clean cifar10_qskew_clean_g_seed0: V2w dAcc=-0.0129 FAIL(parity broken)
+  clean cifar10_shard_clean_g_seed0: V2w dAcc=-0.1120 FAIL(parity broken)
+  clean cifar10_shard_clean_g_seed1: V2w dAcc=+0.0590 FAIL(parity broken)
+  clean fmnist_dir1_clean_g_seed0: V2w dAcc=+0.0495 FAIL(parity broken)
+  clean fmnist_iid_clean_g_seed0: V2w dAcc=-0.0009 OK
 
 ## CNN skew 분해 (2×2: iid=skew없음 / shard=label만 / qskew=size만 / dir1=둘다) — 3-seed 평균
 
@@ -928,105 +1220,235 @@ vanilla observer (per-round raw, the project's first per-round phi record):
 
 **cifar10 / clean** — 절대 acc (recovery; 분모<0.02 → 공란)
 
-| arm | iid | dir1 |
-|---|---|---|
-| flirds_gate_v1 | 0.6415 | 0.6357 |
-| flirds_gate_v2 | 0.6428 | 0.6315 |
-| flirds_gatew_v1 | 0.6339 | 0.6198 |
-| flirds_gatew_v2 | 0.6412 | 0.6188 |
-| flirds_mult | 0.6467 | 0.6425 |
-| flirds_zgate_v2 | 0.6481 | 0.6341 |
-| vanilla | 0.6488 | 0.6389 |
+| arm | iid | shard | qskew | dir1 |
+|---|---|---|---|---|
+| flirds_gate_v1 | 0.6415 | 0.4592 | 0.6614 | 0.6357 |
+| flirds_gate_v2 | 0.6428 | 0.4582 | 0.6591 | 0.6315 |
+| flirds_gatew_v1 | 0.6339 | 0.2918 | 0.6570 | 0.6198 |
+| flirds_gatew_v2 | 0.6412 | 0.4484 | 0.6561 | 0.6188 |
+| flirds_mult | 0.6467 | 0.4909 | 0.6637 | 0.6425 |
+| flirds_zgate_v2 | 0.6481 | 0.4611 | 0.6666 | 0.6341 |
+| vanilla | 0.6488 | 0.4749 | 0.6690 | 0.6389 |
 
 **cifar10 / free_rider** — 절대 acc (recovery; 분모<0.02 → 공란)
 
-| arm | iid | dir1 |
-|---|---|---|
-| flirds_gate_v1 | 0.6209 (+0.42) | 0.6106 (+0.72) |
-| flirds_gate_v2 | 0.6308 (+0.81) | 0.6148 (+0.84) |
-| flirds_gatew_v1 | 0.6249 (+0.58) | 0.6113 (+0.75) |
-| flirds_gatew_v2 | 0.6317 (+0.84) | 0.6056 (+0.59) |
-| flirds_mult | 0.6259 (+0.66) | 0.5979 (+0.31) |
-| flirds_zgate_v2 | 0.6083 (-0.01) | 0.5840 (-0.14) |
-| oracle_excl | 0.6356 (+1.00) | 0.6203 (+1.00) |
-| random_excl | 0.5986 (-0.41) | 0.5838 (-0.08) |
-| vanilla | 0.6083 (+0.00) | 0.5879 (+0.00) |
+| arm | iid | shard | qskew | dir1 |
+|---|---|---|---|---|
+| flirds_gate_v1 | 0.6209 (+0.42) | 0.2018 (-2.18) | 0.6472 (+1.20) | 0.6106 (+0.72) |
+| flirds_gate_v2 | 0.6308 (+0.81) | 0.3644 (-0.16) | 0.6316 (+0.42) | 0.6148 (+0.84) |
+| flirds_gatew_v1 | 0.6249 (+0.58) | 0.2054 (-2.13) | 0.6406 (+0.87) | 0.6113 (+0.75) |
+| flirds_gatew_v2 | 0.6317 (+0.84) | 0.4675 (+1.13) | 0.6312 (+0.40) | 0.6056 (+0.59) |
+| flirds_mult | 0.6259 (+0.66) | 0.4120 (+0.44) | 0.6366 (+0.67) | 0.5979 (+0.31) |
+| flirds_zgate_v2 | 0.6083 (-0.01) | 0.4126 (+0.44) | 0.6202 (-0.14) | 0.5840 (-0.14) |
+| oracle_excl | 0.6356 (+1.00) | 0.4574 (+1.00) | 0.6432 (+1.00) | 0.6203 (+1.00) |
+| random_excl | 0.5986 (-0.41) | 0.4059 (+0.36) | 0.6128 (-0.52) | 0.5838 (-0.08) |
+| vanilla | 0.6083 (+0.00) | 0.3769 (+0.00) | 0.6231 (+0.00) | 0.5879 (+0.00) |
 
-gap(oracle_excl−vanilla): iid=0.0273, dir1=0.0324
+gap(oracle_excl−vanilla): iid=0.0273, shard=0.0805, qskew=0.0201, dir1=0.0324
+
+**cifar10 / frrand** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | shard | qskew | dir1 |
+|---|---|---|---|---|
+| flirds_gate_v1 | 0.6195 (+0.36) | 0.4706 (+1.16) | 0.6284 | 0.5999 (+0.40) |
+| flirds_gate_v2 | 0.6105 (-0.02) | 0.4057 (+0.36) | 0.6240 | 0.5806 (-0.17) |
+| flirds_gatew_v1 | 0.6319 (+0.88) | 0.2076 (-2.10) | 0.6309 | 0.6254 (+1.16) |
+| flirds_gatew_v2 | 0.6295 (+0.78) | 0.4461 (+0.86) | 0.6341 | 0.6109 (+0.72) |
+| flirds_mult | 0.6278 (+0.71) | 0.4118 (+0.43) | 0.6358 | 0.5971 (+0.32) |
+| flirds_zgate_v2 | 0.6062 (-0.19) | 0.4674 (+1.12) | 0.6215 | 0.5909 (+0.13) |
+| oracle_excl | 0.6348 (+1.00) | 0.4574 (+1.00) | 0.6432 | 0.6201 (+1.00) |
+| random_excl | 0.6038 (-0.30) | 0.4084 (+0.39) | 0.6118 | 0.5934 (+0.20) |
+| vanilla | 0.6109 (+0.00) | 0.3767 (+0.00) | 0.6239 | 0.5865 (+0.00) |
+
+gap(oracle_excl−vanilla): iid=0.0239, shard=0.0806, qskew=0.0194, dir1=0.0336
 
 **cifar10 / grad_noise** — 절대 acc (recovery; 분모<0.02 → 공란)
 
-| arm | iid | dir1 |
-|---|---|---|
-| flirds_gate_v1 | 0.5796 (+0.85) | 0.5462 (+0.81) |
-| flirds_gate_v2 | 0.6143 (+0.94) | 0.5668 (+0.85) |
-| flirds_gatew_v1 | 0.5772 (+0.85) | 0.5180 (+0.73) |
-| flirds_gatew_v2 | 0.6185 (+0.95) | 0.5874 (+0.91) |
-| flirds_mult | 0.5329 (+0.73) | 0.4364 (+0.51) |
-| flirds_zgate_v2 | 0.3191 (+0.17) | 0.3419 (+0.26) |
-| oracle_excl | 0.6356 (+1.00) | 0.6203 (+1.00) |
-| random_excl | 0.2645 (+0.02) | 0.2590 (+0.04) |
-| vanilla | 0.2564 (+0.00) | 0.2436 (+0.00) |
+| arm | iid | shard | qskew | dir1 |
+|---|---|---|---|---|
+| flirds_gate_v1 | 0.5796 (+0.85) | 0.1174 (-0.19) | 0.5441 (+0.75) | 0.5462 (+0.81) |
+| flirds_gate_v2 | 0.6143 (+0.94) | 0.4079 (+0.83) | 0.6366 (+0.98) | 0.5668 (+0.85) |
+| flirds_gatew_v1 | 0.5772 (+0.85) | 0.1430 (-0.10) | 0.2039 (-0.12) | 0.5180 (+0.73) |
+| flirds_gatew_v2 | 0.6185 (+0.95) | 0.4062 (+0.82) | 0.6304 (+0.97) | 0.5874 (+0.91) |
+| flirds_mult | 0.5329 (+0.73) | 0.2829 (+0.39) | 0.4871 (+0.60) | 0.4364 (+0.51) |
+| flirds_zgate_v2 | 0.3191 (+0.17) | 0.1659 (-0.02) | 0.4339 (+0.46) | 0.3419 (+0.26) |
+| oracle_excl | 0.6356 (+1.00) | 0.4574 (+1.00) | 0.6432 (+1.00) | 0.6203 (+1.00) |
+| random_excl | 0.2645 (+0.02) | 0.1809 (+0.03) | 0.2556 (+0.01) | 0.2590 (+0.04) |
+| vanilla | 0.2564 (+0.00) | 0.1709 (+0.00) | 0.2525 (+0.00) | 0.2436 (+0.00) |
 
-gap(oracle_excl−vanilla): iid=0.3793, dir1=0.3767
+gap(oracle_excl−vanilla): iid=0.3793, shard=0.2865, qskew=0.3907, dir1=0.3767
 
 **cifar10 / label_flip@0.15** — 절대 acc (recovery; 분모<0.02 → 공란)
 
-| arm | iid | dir1 |
-|---|---|---|
-| flirds_gate_v1 | 0.6162 | 0.6160 |
-| flirds_gate_v2 | 0.6228 | 0.5991 |
-| flirds_gatew_v1 | 0.6201 | 0.6027 |
-| flirds_gatew_v2 | 0.6137 | 0.5932 |
-| flirds_mult | 0.6243 | 0.6172 |
-| flirds_zgate_v2 | 0.6252 | 0.6149 |
-| oracle_excl | 0.6310 | 0.6236 |
-| random_excl | 0.6018 | 0.5924 |
-| vanilla | 0.6277 | 0.6172 |
+| arm | iid | shard | qskew | dir1 |
+|---|---|---|---|---|
+| flirds_gate_v1 | 0.6162 | 0.4517 (+1.25) | 0.6325 | 0.6160 |
+| flirds_gate_v2 | 0.6228 | 0.2299 (+11.45) | 0.6298 | 0.5991 |
+| flirds_gatew_v1 | 0.6201 | 0.3101 (+7.76) | 0.6404 | 0.6027 |
+| flirds_gatew_v2 | 0.6137 | 0.4494 (+1.36) | 0.6391 | 0.5932 |
+| flirds_mult | 0.6243 | 0.5064 (-1.26) | 0.6374 | 0.6172 |
+| flirds_zgate_v2 | 0.6252 | 0.4699 (+0.41) | 0.6430 | 0.6149 |
+| oracle_excl | 0.6310 | 0.4571 (+1.00) | 0.6489 | 0.6236 |
+| random_excl | 0.6018 | 0.3762 (+4.72) | 0.6378 | 0.5924 |
+| vanilla | 0.6277 | 0.4789 (+0.00) | 0.6406 | 0.6172 |
 
-gap(oracle_excl−vanilla): iid=0.0033, dir1=0.0064
+gap(oracle_excl−vanilla): iid=0.0033, shard=-0.0217, qskew=0.0082, dir1=0.0064
 
 **cifar10 / label_flip@0.35** — 절대 acc (recovery; 분모<0.02 → 공란)
 
-| arm | iid | dir1 |
-|---|---|---|
-| flirds_gate_v1 | 0.6164 (+0.65) | 0.5969 (+0.31) |
-| flirds_gate_v2 | 0.6025 (+0.26) | 0.5723 (-0.33) |
-| flirds_gatew_v1 | 0.6112 (+0.51) | 0.5917 (+0.16) |
-| flirds_gatew_v2 | 0.5992 (+0.18) | 0.5821 (-0.13) |
-| flirds_mult | 0.6161 (+0.62) | 0.6002 (+0.41) |
-| flirds_zgate_v2 | 0.5978 (+0.15) | 0.5880 (+0.11) |
-| oracle_excl | 0.6310 (+1.00) | 0.6236 (+1.00) |
-| random_excl | 0.5723 (-0.50) | 0.5598 (-0.67) |
-| vanilla | 0.5923 (+0.00) | 0.5849 (+0.00) |
+| arm | iid | shard | qskew | dir1 |
+|---|---|---|---|---|
+| flirds_gate_v1 | 0.6164 (+0.65) | 0.3029 | 0.6176 (+0.25) | 0.5969 (+0.31) |
+| flirds_gate_v2 | 0.6025 (+0.26) | 0.1732 | 0.6101 (+0.07) | 0.5723 (-0.33) |
+| flirds_gatew_v1 | 0.6112 (+0.51) | 0.2451 | 0.6196 (+0.30) | 0.5917 (+0.16) |
+| flirds_gatew_v2 | 0.5992 (+0.18) | 0.3871 | 0.6171 (+0.24) | 0.5821 (-0.13) |
+| flirds_mult | 0.6161 (+0.62) | 0.4575 | 0.6248 (+0.42) | 0.6002 (+0.41) |
+| flirds_zgate_v2 | 0.5978 (+0.15) | 0.4487 | 0.6251 (+0.43) | 0.5880 (+0.11) |
+| oracle_excl | 0.6310 (+1.00) | 0.4571 | 0.6489 (+1.00) | 0.6236 (+1.00) |
+| random_excl | 0.5723 (-0.50) | 0.3469 | 0.6191 (+0.29) | 0.5598 (-0.67) |
+| vanilla | 0.5923 (+0.00) | 0.4373 | 0.6070 (+0.00) | 0.5849 (+0.00) |
 
-gap(oracle_excl−vanilla): iid=0.0387, dir1=0.0387
+gap(oracle_excl−vanilla): iid=0.0387, shard=0.0199, qskew=0.0419, dir1=0.0387
 
 **cifar10 / label_flip@0.7** — 절대 acc (recovery; 분모<0.02 → 공란)
 
+| arm | iid | shard | qskew | dir1 |
+|---|---|---|---|---|
+| flirds_gate_v1 | 0.5881 (+0.61) | 0.2416 (-1.37) | 0.5827 (+0.27) | 0.5820 (+0.60) |
+| flirds_gate_v2 | 0.5967 (+0.70) | 0.3540 (-0.14) | 0.5969 (+0.42) | 0.5712 (+0.43) |
+| flirds_gatew_v1 | 0.6063 (+0.78) | 0.2160 (-1.66) | 0.5374 (-0.24) | 0.5480 (+0.18) |
+| flirds_gatew_v2 | 0.6032 (+0.76) | 0.1745 (-2.11) | 0.5823 (+0.26) | 0.5810 (+0.56) |
+| flirds_mult | 0.6076 (+0.80) | 0.3729 (+0.07) | 0.6252 (+0.74) | 0.5870 (+0.63) |
+| flirds_zgate_v2 | 0.5415 (+0.25) | 0.2789 (-0.96) | 0.5995 (+0.45) | 0.5339 (+0.14) |
+| oracle_excl | 0.6310 (+1.00) | 0.4571 (+1.00) | 0.6489 (+1.00) | 0.6236 (+1.00) |
+| random_excl | 0.5023 (-0.10) | 0.3086 (-0.64) | 0.5891 (+0.34) | 0.5018 (-0.22) |
+| vanilla | 0.5171 (+0.00) | 0.3664 (+0.00) | 0.5586 (+0.00) | 0.5247 (+0.00) |
+
+gap(oracle_excl−vanilla): iid=0.1138, shard=0.0907, qskew=0.0902, dir1=0.0990
+
+**fmnist / clean** — 절대 acc (recovery; 분모<0.02 → 공란)
+
 | arm | iid | dir1 |
 |---|---|---|
-| flirds_gate_v1 | 0.5881 (+0.61) | 0.5820 (+0.60) |
-| flirds_gate_v2 | 0.5967 (+0.70) | 0.5712 (+0.43) |
-| flirds_gatew_v1 | 0.6063 (+0.78) | 0.5480 (+0.18) |
-| flirds_gatew_v2 | 0.6032 (+0.76) | 0.5810 (+0.56) |
-| flirds_mult | 0.6076 (+0.80) | 0.5870 (+0.63) |
-| flirds_zgate_v2 | 0.5415 (+0.25) | 0.5339 (+0.14) |
-| oracle_excl | 0.6310 (+1.00) | 0.6236 (+1.00) |
-| random_excl | 0.5023 (-0.10) | 0.5018 (-0.22) |
-| vanilla | 0.5171 (+0.00) | 0.5247 (+0.00) |
+| flirds_gate_v1 | 0.8518 | 0.8459 |
+| flirds_gate_v2 | 0.8520 | 0.8275 |
+| flirds_gatew_v1 | 0.8492 | 0.8475 |
+| flirds_gatew_v2 | 0.8508 | 0.8435 |
+| flirds_mult | 0.8529 | 0.8154 |
+| flirds_zgate_v2 | 0.8535 | 0.8455 |
+| vanilla | 0.8516 | 0.7940 |
 
-gap(oracle_excl−vanilla): iid=0.1138, dir1=0.0990
+**fmnist / free_rider** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | dir1 |
+|---|---|---|
+| flirds_gate_v1 | 0.8501 (+0.99) | 0.7819 (-0.27) |
+| flirds_gate_v2 | 0.8506 (+1.01) | 0.8371 (+0.99) |
+| flirds_gatew_v1 | 0.8474 (+0.90) | 0.7943 (+0.01) |
+| flirds_gatew_v2 | 0.8504 (+1.00) | 0.8204 (+0.61) |
+| flirds_mult | 0.8375 (+0.56) | 0.8085 (+0.34) |
+| flirds_zgate_v2 | 0.8165 (-0.17) | 0.8021 (+0.19) |
+| oracle_excl | 0.8504 (+1.00) | 0.8377 (+1.00) |
+| random_excl | 0.8289 (+0.26) | 0.8095 (+0.36) |
+| vanilla | 0.8214 (+0.00) | 0.7937 (+0.00) |
+
+gap(oracle_excl−vanilla): iid=0.0290, dir1=0.0440
+
+**fmnist / frrand** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | dir1 |
+|---|---|---|
+| flirds_gate_v1 | 0.8269 (+0.20) | 0.7934 (-0.07) |
+| flirds_gate_v2 | 0.8407 (+0.67) | 0.7989 (+0.07) |
+| flirds_gatew_v1 | 0.8464 (+0.86) | 0.7991 (+0.07) |
+| flirds_gatew_v2 | 0.8491 (+0.96) | 0.8381 (+1.01) |
+| flirds_mult | 0.8355 (+0.50) | 0.8071 (+0.26) |
+| flirds_zgate_v2 | 0.8179 (-0.10) | 0.8009 (+0.11) |
+| oracle_excl | 0.8504 (+1.00) | 0.8377 (+1.00) |
+| random_excl | 0.8290 (+0.28) | 0.8087 (+0.30) |
+| vanilla | 0.8209 (+0.00) | 0.7961 (+0.00) |
+
+gap(oracle_excl−vanilla): iid=0.0295, dir1=0.0416
+
+**fmnist / grad_noise** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | dir1 |
+|---|---|---|
+| flirds_gate_v1 | 0.8306 (+0.68) | 0.7969 (+0.54) |
+| flirds_gate_v2 | 0.8684 (+1.29) | 0.8592 (+1.24) |
+| flirds_gatew_v1 | 0.8321 (+0.71) | 0.7691 (+0.23) |
+| flirds_gatew_v2 | 0.8698 (+1.31) | 0.8578 (+1.22) |
+| flirds_mult | 0.8472 (+0.95) | 0.8066 (+0.65) |
+| flirds_zgate_v2 | 0.7844 (-0.07) | 0.8079 (+0.67) |
+| oracle_excl | 0.8504 (+1.00) | 0.8377 (+1.00) |
+| random_excl | 0.8003 (+0.19) | 0.7705 (+0.25) |
+| vanilla | 0.7885 (+0.00) | 0.7482 (+0.00) |
+
+gap(oracle_excl−vanilla): iid=0.0619, dir1=0.0895
+
+**fmnist / label_flip@0.15** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | dir1 |
+|---|---|---|
+| flirds_gate_v1 | 0.8502 | 0.6817 |
+| flirds_gate_v2 | 0.8454 | 0.8423 |
+| flirds_gatew_v1 | 0.8484 | 0.8346 |
+| flirds_gatew_v2 | 0.8510 | 0.8360 |
+| flirds_mult | 0.8500 | 0.8239 |
+| flirds_zgate_v2 | 0.8486 | 0.8364 |
+| oracle_excl | 0.8555 | 0.8204 |
+| random_excl | 0.8474 | 0.7943 |
+| vanilla | 0.8464 | 0.8219 |
+
+gap(oracle_excl−vanilla): iid=0.0091, dir1=-0.0015
+
+**fmnist / label_flip@0.35** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | dir1 |
+|---|---|---|
+| flirds_gate_v1 | 0.8391 | 0.8014 |
+| flirds_gate_v2 | 0.8516 | 0.8155 |
+| flirds_gatew_v1 | 0.8417 | 0.8156 |
+| flirds_gatew_v2 | 0.8500 | 0.8316 |
+| flirds_mult | 0.8485 | 0.8043 |
+| flirds_zgate_v2 | 0.8410 | 0.8207 |
+| oracle_excl | 0.8555 | 0.8204 |
+| random_excl | 0.8404 | 0.7849 |
+| vanilla | 0.8367 | 0.8121 |
+
+gap(oracle_excl−vanilla): iid=0.0188, dir1=0.0082
+
+**fmnist / label_flip@0.7** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | dir1 |
+|---|---|---|
+| flirds_gate_v1 | 0.8296 (+0.23) | 0.7571 (-1.59) |
+| flirds_gate_v2 | 0.8490 (+0.81) | 0.8335 (+1.54) |
+| flirds_gatew_v1 | 0.8354 (+0.40) | 0.7901 (-0.24) |
+| flirds_gatew_v2 | 0.8535 (+0.94) | 0.8383 (+1.73) |
+| flirds_mult | 0.8486 (+0.79) | 0.7770 (-0.78) |
+| flirds_zgate_v2 | 0.8354 (+0.40) | 0.8197 (+0.97) |
+| oracle_excl | 0.8555 (+1.00) | 0.8204 (+1.00) |
+| random_excl | 0.8283 (+0.19) | 0.7695 (-1.09) |
+| vanilla | 0.8220 (+0.00) | 0.7960 (+0.00) |
+
+gap(oracle_excl−vanilla): iid=0.0335, dir1=0.0244
 
 ## 사전등록 예측 대조 (README 확장 ②; MISS 그대로 보고)
 
-- **H-K1** cifar10 free_rider V2 recovery iid=+0.81, dir1=+0.84 -> pending
-- **H-K2** cifar10 iid frrand V2 recovery= -> pending
-- **H-K3** cifar10 clean 오발화 pairs iid=561, dir1=3808 | V2 dAcc iid=-0.0060, dir1=-0.0074 -> pending
+- **H-K1** cifar10 free_rider V2 recovery iid=+0.81, shard=-0.16, qskew=+0.42, dir1=+0.84 -> **MISS**
+- **H-K2** cifar10 iid frrand V2 recovery=-0.02 (frzero=+0.81; ratio=-0.02 — <=0.6이면 LLM 감사의 코인플립과 일치) -> **MISS**
+- **H-K3** cifar10 clean 오발화 pairs iid=561, shard=3366, qskew=1703, dir1=3808 | V2 dAcc iid=-0.0060, shard=-0.0166, qskew=-0.0099, dir1=-0.0074 -> **MISS**
 - **H-K4** cifar10 free_rider recovery seed-sd iid=0.162 -> pending
 - **H-K4** cifar10 grad_noise recovery seed-sd iid=0.057 -> pending
-- **H-K5** cifar10 lf@0.15 gap iid=0.0033, dir1=0.0064 -> **HIT**
-- **H-K6** fmnist↔cifar10 recovery diff (no comparable cells) -> pending
+- **H-K5** cifar10 lf@0.15 gap iid=0.0033, shard=-0.0217, qskew=0.0082, dir1=0.0064 -> **MISS**
+- **H-K1** fmnist free_rider V2 recovery iid=+1.01, dir1=+0.99 -> pending
+- **H-K2** fmnist iid frrand V2 recovery=+0.67 (frzero=+1.01; ratio=+0.67 — <=0.6이면 LLM 감사의 코인플립과 일치) -> **MISS**
+- **H-K3** fmnist clean 오발화 pairs iid=828, dir1=2746 | V2 dAcc iid=+0.0004, dir1=+0.0335 -> pending
+- **H-K4** fmnist free_rider recovery seed-sd  -> pending
+- **H-K4** fmnist grad_noise recovery seed-sd  -> pending
+- **H-K5** fmnist lf@0.15 gap iid=0.0091, dir1=-0.0015 -> **HIT**
+- **H-K6** fmnist↔cifar10 recovery diff iid/free_rider=0.20, iid/frrand=0.69, iid/grad_noise=0.35, iid/label_flip=0.11, dir1/free_rider=0.15, dir1/frrand=0.24, dir1/grad_noise=0.39, dir1/label_flip=1.11 -> **MISS**
 
 ## C2 소프트-arm 같은-셀 대조 (runs/track_c/c2, read-only)
 
@@ -1038,6 +1460,15 @@ gap(oracle_excl−vanilla): iid=0.1138, dir1=0.0990
 | cifar10 | iid | clean | 0.6479 | 0.6488 | 0.6460 | 0.6428 | same cell |
 | cifar10 | iid | free_rider | 0.6084 | 0.6083 | 0.6264 | 0.6308 | same cell |
 | cifar10 | iid | grad_noise | 0.2627 | 0.2564 | 0.5401 | 0.6143 | same cell |
+| cifar10 | shard | clean | 0.4751 | 0.4749 | 0.4977 | 0.4582 | same cell |
+| cifar10 | shard | free_rider | 0.3982 | 0.3769 | 0.4165 | 0.3644 | same cell |
+| cifar10 | shard | grad_noise | 0.1667 | 0.1709 | 0.2843 | 0.4079 | same cell |
+| fmnist | dir1 | clean | 0.8117 | 0.7940 | 0.8293 | 0.8275 | same cell |
+| fmnist | dir1 | free_rider | 0.8081 | 0.7937 | 0.8205 | 0.8371 | same cell |
+| fmnist | dir1 | grad_noise | 0.7400 | 0.7482 | 0.7948 | 0.8592 | same cell |
+| fmnist | iid | clean | 0.8559 | 0.8516 | 0.8555 | 0.8520 | same cell |
+| fmnist | iid | free_rider | 0.8282 | 0.8214 | 0.8405 | 0.8506 | same cell |
+| fmnist | iid | grad_noise | 0.7828 | 0.7885 | 0.8305 | 0.8684 | same cell |
 
 ⚠️ qskew·frrand는 C2 대응 셀 없음. label_flip은 C2가 strmain(rate~U(0.5,1))이라 Track G의 고정 dose와 같은 셀이 아니어서 제외.
 
