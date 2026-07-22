@@ -26,7 +26,7 @@ val-grad). 반면 per-round exact (b)는 2^k, coalition-MC 계열은 O(k²) eval
 
 ## 2. 설계 — R1과 동일, 참여 frac만 0.1 → 1.0
 
-**훈련/무대** (Track H CNN R1 = overview §3.2.6 스테이지와 동일; 변경점은 굵게):
+**훈련/무대** (Track H CNN R1 = overview §3.2.3 스테이지와 동일; 변경점은 굵게):
 
 | 항목 | 값 |
 |---|---|

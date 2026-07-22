@@ -68,7 +68,7 @@ rundir과 충돌 없음). 총 **~5 GPU-h**. 부분 실패는 해당 index만 재
 1. `PYTHONPATH=codes <PY> runs/track_h/dyn/make_analysis.py` — 절대 acc 표 +
    parity 판정 + 게이트 행동(동적 마스크 대비).
 2. 보고: acc 표(3-seed mean±sd) + DP-1~4 HIT/MISS + GPU-h 실측.
-3. 커밋: rundir + analysis + (수치는 overview §3.2.6 계열 블록에만 — 이 문서 수정 금지).
+3. 커밋: rundir + analysis + (수치는 overview §3.2.3 계열 블록에만 — 이 문서 수정 금지).
 
 ## 8. 금지
 

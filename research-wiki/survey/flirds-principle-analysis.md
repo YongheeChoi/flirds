@@ -71,7 +71,7 @@ tags: [survey, principle, mechanism, win-loss, paper-settings]
 
 | 요소 | 취한 값 | 미탐색 | 관찰된 변화 | 교락 주의 |
 |---|---|---|---|---|
-| 데이터셋 | alpaca-gpt4(LLM 본선)/GSM8K(R4)/MMLU·alpaca-test(평가)/mnist·cifar10(C1)/fmnist(C2) | 코드/수학 외 도메인, 실제 기관 데이터 | GSM8K 전환으로 selection 변별력 확보(vanilla↔oracle 갭 +3.6pt vs alpaca parity, §3.2.7); cifar10은 mnist보다 오염 실효 큼(removal acc 분리 13×, §4.4.2) | 데이터셋↔심판 지표(EM vs loss)도 함께 바뀜 |
+| 데이터셋 | alpaca-gpt4(LLM 본선)/GSM8K(R4)/MMLU·alpaca-test(평가)/mnist·cifar10(C1)/fmnist(C2) | 코드/수학 외 도메인, 실제 기관 데이터 | GSM8K 전환으로 selection 변별력 확보(vanilla↔oracle 갭 +3.6pt vs alpaca parity, §3.2.4); cifar10은 mnist보다 오염 실효 큼(removal acc 분리 13×, §4.4.2) | 데이터셋↔심판 지표(EM vs loss)도 함께 바뀜 |
 | 분배 | IID(std·iid5·C2 iid)/domain-silo 5종(silo5)/Dirichlet α∈{0,0.01,0.1,0.5,5}/shard/dir1/label·quantity skew(C1) | 극단 label-skew LLM, 실제 기관 비IID | **비IID가 신호를 만든다**: silo5 clean (b) xseed **+0.87** vs iid5 clean **+0.13**(§3.1.5 재검증) — 오염 0이어도 도메인 분리만으로 타깃 순위 실재 | α-sweep 탐지축은 truth=proxy·tiny val과 교락 |
 | per-client 량 | 149(gsm)~6k(mnist) 다양 | 클라 간 극단 불균형(LLM) | 량 자체 통제 비교 없음(등n 고정) | 1.3 등n 행과 동일 공백 |
 | val 크기·구성 | 200(track_d·gsm)/20(silo)/10(device)/2000(CNN) — 전부 서버-측 held-out, 학습분포서 카브 | val 분포 shift, val 오염 | val=20 노이즈가 φ spread와 동급(spread/SE 1.1~2.3, §4.2 b4) — within-seed 순위는 강건(boot ρ 0.9+) | tiny val은 AUROC coarse의 원인(§6.2-7); noisy nr0 대조군 AUROC 0.83(무신호 기준선≠0.5, §4.5) |
@@ -89,7 +89,7 @@ tags: [survey, principle, mechanism, win-loss, paper-settings]
 | 요소 | 취한 값 | 미탐색 | 관찰된 변화 | 교락 주의 |
 |---|---|---|---|---|
 | 게임 정의 | **(b) in-run 고정가중**(D1·D2; 본선) vs **(a) retrain 재정규화**(1B anchor5·C1·A1/D) vs Flirds-proxy(device off-anchor) | (a) LLM 3B/7B(⬚ 확정), 비등n (a) | (a)↔(b): SGD +0.933(등n·near-additive 축퇴 지역), AdamW **−0.53**; CNN vs(a) 전 방법 0.2~0.45 — **vs(a) 1위는 ShapleyFL .453(uniform-subset 계열)이고 Flirds .352**(§3.1.2 재검증) = renorm-족 방법이 renorm-족 게임을 더 잘 추정(P5 정합; §2.7-6) | "(a)가 진실"이라는 관점 채택 여부가 서사를 좌우 — 게임 선택은 정의 문제(P6) |
-| 채점 시점 | post-hoc from-logs(fidelity 전부)/online 게이트(V1/V2/z/cgate/pweight)/observer(비트동일 병행)/T2 최종-부호 재학습/V3 | 중간-체크포인트 재채점 | R4: T2가 T1보다 정확(noisy .3584 vs .3530; clean 무해 vs −1.0pt)(§3.2.7); CNN lf: retrain .62대 > online .57대(§3.2.6) | online은 개입이 궤적을 바꿔 자기-교란(관찰자와 분리 필요 — 이미 설계됨) |
+| 채점 시점 | post-hoc from-logs(fidelity 전부)/online 게이트(V1/V2/z/cgate/pweight)/observer(비트동일 병행)/T2 최종-부호 재학습/V3 | 중간-체크포인트 재채점 | R4: T2가 T1보다 정확(noisy .3584 vs .3530; clean 무해 vs −1.0pt)(§3.2.4); CNN lf: retrain .62대 > online .57대(§3.2.3) | online은 개입이 궤적을 바꿔 자기-교란(관찰자와 분리 필요 — 이미 설계됨) |
 | EMA β | flirds_w 0.5 / ShapleyFL 0.3(신규가중 0.7) / FedIF γ 0.3(신규가중 0.3) / β0.3 재실행 캠페인 | β sweep 본격 | β0.5→0.3 효과는 재실행 노이즈 수준(3B 대조 ρ 0.90–1.00, §4.7) — 단 **EMA 존재 자체**가 plain-sum 게임과의 괴리 기전(§2 원리 4) | CNN 120셀 β-era provenance 미확보(§6.2-9) |
 | 게이트 HP | τ=0(sign)/z=1.645 보편상수/burn-in·probation(V2)/min_obs | 셀별 튜닝(금지 설계) | P5(신뢰-게이트)가 P1 clean 오발화 대부분 회수(.596→.630~.639, §4.8.1) | parameter-free가 주장 포인트 — HP 튜닝 도입 시 서사 훼손 |
 | 2차항 | on(Flirds)/off(Flirds-1st) 전 트랙 병렬 | 3차(불필요 판정: 잔차가 3차항의 21~37×, §5.5) | §2 원리 3 참조(GN·저참여서만 가치) | — |
@@ -98,7 +98,7 @@ tags: [survey, principle, mechanism, win-loss, paper-settings]
 
 | 요소 | 취한 값 | 미탐색 | 관찰된 변화 | 교락 주의 |
 |---|---|---|---|---|
-| 지표 | Spearman/Kendall/Pearson/cosine·euclid·max_diff/AUROC/EM/절대 acc/val-loss/recovery/xseed ρ/topJ·botJ/rounds-to-target | 캘리브레이션 지표, 하위셋 정밀도@k | 지표가 구조적으로 보는 것이 다름(§2.6 교락 D-8): 순위상관은 값 크기 못 봄(ShapleyFL max_diff .98이어도 Sp 0.7 가능, §3.1.1) · N=5 Spearman 1스왑=0.1 · AUROC 무신호 기준선 0.5 아님(nr0서 0.83) · recovery는 분모 갭 작으면 >1 폭발(§3.2.3 ¹) · val-loss 4째자리는 seed-분산에 묻힘(짝지은 delta 필요) | — |
+| 지표 | Spearman/Kendall/Pearson/cosine·euclid·max_diff/AUROC/EM/절대 acc/val-loss/recovery/xseed ρ/topJ·botJ/rounds-to-target | 캘리브레이션 지표, 하위셋 정밀도@k | 지표가 구조적으로 보는 것이 다름(§2.6 교락 D-8): 순위상관은 값 크기 못 봄(ShapleyFL max_diff .98이어도 Sp 0.7 가능, §3.1.1) · N=5 Spearman 1스왑=0.1 · AUROC 무신호 기준선 0.5 아님(nr0서 0.83) · recovery는 분모 갭 작으면 >1 폭발(§3.2.2 ¹) · val-loss 4째자리는 seed-분산에 묻힘(짝지은 delta 필요) | — |
 | seed 수 | 3(본선 대부분)/1(3B silo5·E5·R4 Tier A·rank probe·st20/30) | ≥5 seed | seed가 (b) 타깃 자체를 재추첨(IID-clean, §5.4) — seed 수는 단순 분산 문제가 아니라 신호 실재성 판정 도구 | 1-seed 셀 목록은 §2.6 D-2 |
 | truth | exact (b) 2^N/2^k·per-round/(a) retrain/Flirds-proxy/corrupt 마스크 | — | truth 선택이 결론을 좌우: proxy 칸의 1.000은 "Flirds와 동일"의 뜻(§6.2-3) | — |
 
@@ -216,9 +216,9 @@ FedIF/Fed-LOO 모두 0.0, renorm 3종은 \|φ\|~0.004–0.005(부록 A Q-2; **cl
 |---|---|---|
 | LLM alpaca 개입(§3.2.1) | 전 arm MMLU·ROUGE parity(±.003) | **동(설계 기대)** — do-no-harm만 입증, 우열 무정보 |
 | CNN C2 soft 가중(§3.2.2) | GN: vanilla .499→flirds_mult .609·**shapleyfl .645**·fedif .624; lf: .583→.626 | **승(개입군 공통)** — flirds가 1위 아닌 칸 존재(**패(개별 칸)**: GN pool 최고는 shapleyfl) |
-| Track G LLM 게이트(§3.2.3) | frzero recovery **1.000**(V2·3-seed·오배제 0)·clean 무발화(maxΔ .00056)·noisy 회수 0.000(침묵)·frrand 0.462 | frzero **승(청정)**; noisy **동(작동영역 없음 — T7 예측 적중)**; frrand **동(코인플립)** |
+| Track G LLM 게이트(§3.2.2) | frzero recovery **1.000**(V2·3-seed·오배제 0)·clean 무발화(maxΔ .00056)·noisy 회수 0.000(침묵)·frrand 0.462 | frzero **승(청정)**; noisy **동(작동영역 없음 — T7 예측 적중)**; frrand **동(코인플립)** |
 | Track G CNN 게이트(§3.2.4) | GN 회수 .86~.94(V2 .6143/.5668); FR .81~.84; lf0.70 .5967/.5712; **clean 오발화**(V2 .6428/.6315 < vanilla .6488/.6389); V2w 불승격 | GN·FR **승**; clean **패(오발화)** — from-scratch 레짐의 cum 0-교차 노이즈 |
-| Track H 경쟁 CNN(§3.2.6) | 총평(자체 재계산): **flirds .5682 1위** > lossheur .5584 > fedif .5366 > renorm .517~.529 > **1st .4712 최하**; FR: exact-0 .61~.62 vs renorm .37~.40(<vanilla .59); GN: flirds .567/.607 vs 1st·fedif .242~.248, renorm .59~.62, lossheur on .598/re .452; clean: 1st·fedif 무발화 .638~.639 vs flirds .632·lossheur .626·renorm .60~.605 | 계열-수준 **승**(T3·T5·T6·T7 전부 실증); 개별 칸 **패 다수**(clean=1st·fedif 우위, FR 최고=1st .6252, GN online 최고=shapleyfl .6115) |
+| Track H 경쟁 CNN(§3.2.3) | 총평(자체 재계산): **flirds .5682 1위** > lossheur .5584 > fedif .5366 > renorm .517~.529 > **1st .4712 최하**; FR: exact-0 .61~.62 vs renorm .37~.40(<vanilla .59); GN: flirds .567/.607 vs 1st·fedif .242~.248, renorm .59~.62, lossheur on .598/re .452; clean: 1st·fedif 무발화 .638~.639 vs flirds .632·lossheur .626·renorm .60~.605 | 계열-수준 **승**(T3·T5·T6·T7 전부 실증); 개별 칸 **패 다수**(clean=1st·fedif 우위, FR 최고=1st .6252, GN online 최고=shapleyfl .6115) |
 | Track H R3 LLM noisy | renorm 게이트 발화 val-loss 2.3308~2.3310 < vanilla 2.3340; flirds/lossheur 침묵(=vanilla) | **패(정직)** — renorm 값-오차가 우연히 유효 문턱(T7의 대우); 절대 갭 0.003 소폭 |
 | R4 GSM8K Tier A(seed0 ◐) | noisy T2: **flirds .3584 > lossheur .3548 > 1st=fedif .3432**, t2_random_k37 .3110(순위정보 가치 +4.7pt); frzero: 4점수원 kept=30=oracle, recovery 1.000; clean: T1 −1.0pt 오발화·T2 무해 | **승(방향; 1-seed)** — 첫 LLM-accuracy 점수원 우열; clean T1은 **패(오발화)** |
 | P5/Scale/Dyn(§4.8) | P5h-retrain flirds 오염평균 **.6207 ≈ 천장 .6214**; Scale P5s .6198(회수 .78); Dyn: P1 GN **.1771 < vanilla .2547**·P5s GN .1902(붕괴), DP-4 적중률 .405≈우연 | P5h-retrain **승(최고 확증)**; Dyn **패(설계된 null-무대)** — 클라-수준 도구의 한계 명시 |
@@ -441,7 +441,7 @@ K_r=2에선 역전당한다.**
 | 1 | "CNN 무대 vs (b) 0.919 = 비교군 내 1위" (승) | 1위는 맞으나 **심판=(b)가 same-game(G1·G2)에 구조적으로 유리**하다는 명시가 §5.1에 없음. 순수 우열 근거는 (게임-무관 심판인) removal-변별(§4.4.2)과 k-sweep의 1st 대비 갭이 더 강함 | **보완 불일치** — 서술 순서를 removal 우선으로 바꿀 것을 제안 |
 | 2 | AdamW를 "약세: (a)↔(b) 게임 괴리 → Flirds 실패 아님"으로 분류 | vs **(b) 기준으로도** loss-heur .967 > Flirds .767 — 같은 게임 안에서 0차 실평가가 Taylor를 이긴 **진짜 패배 셀**이며, 기전은 게임 괴리가 아니라 Taylor의 optimizer-기하 의존(원리 8). §5.1의 "Flirds 저하는 그 다음 순서의 관측" 문구가 이 구조를 가림 | **불일치(패배의 성격 규정)** — 논문 한계절에 "적응형 optimizer에선 same-game 0차 버전(loss-heur/Fed-LOO) 권장"을 넣는 게 정직하고 방어력 있음 |
 | 3 | "noisy·zero/random FR 탐지 — 승 (1.0)" (판정 매트릭스) | silo5·B축의 1.0은 **valuation 전원 동률 = 포화**라 "탐지기 4종 중 일부 대비 승, valuation 간 무정보"로 분리해야. 진짜 탐지 승은 device100 FR(exact-0 계열만 1.0)뿐 | **분류 불일치**(포화/진짜 승 구분) |
-| 4 | "grad-noise를 잡는 유일한 estimator" (§3.2.6 판정 ③·§5.1 인용) | loss-heur(estimator 4종에 포함)가 online .5981로 Flirds .5668보다 높음 — "유일"은 **retrain·P5까지 포함한 시점-강건 기준**에서만 성립(loss-heur re .4518 하락). 문구 한정 필요 | **표현 강도 불일치** |
+| 4 | "grad-noise를 잡는 유일한 estimator" (§3.2.3 판정 ③·§5.1 인용) | loss-heur(estimator 4종에 포함)가 online .5981로 Flirds .5668보다 높음 — "유일"은 **retrain·P5까지 포함한 시점-강건 기준**에서만 성립(loss-heur re .4518 하락). 문구 한정 필요 | **표현 강도 불일치** |
 | 5 | CNN vs (a) 0.35를 "전 방법 공통(두 게임 괴리)"로만 서술 | 공통 저조 안에서 **ShapleyFL .453 > loss-heur .425 > … > Flirds .352**로 uniform/renorm-족이 상위 — (a)=재정규화-족 게임이므로 T10 예측 그대로. 이는 "(a)와 (b)는 다른 게임"의 **데이터 측 능동 증거**(우연한 잡음이 아니라 이론이 예측한 방향)로 쓸 수 있는데 §5.1·§3.1.2 어디에도 없음 | **불일치(놓친 발견)** — 논문 (a)/(b) 절의 방어 논거로 추가 제안 |
 | 6 | "IID-clean 무대 = 무정보(전 semivalue 공통)" | 동의 + **7B anchor5 xseed +0.733 예외**(스케일이 신호를 만들 가능성)가 §5.4에만 있고 §5.1 매트릭스에 미반영 — 무정보 판정의 스케일-조건부 가능성을 각주로 | **보완** |
 | 7 | 서사 한 줄("신호가 존재하는 곳에서 oracle 동률을 5~160× 싸게…") | 동의 — 단 경쟁자 실패의 **이유**(후처리가 게임을 바꿈·null-player 파괴)가 빠져 있어 "우리가 유리한 무대를 골랐다"는 반론에 취약. 원리 4·5의 메커니즘 문장을 서사에 결합할 것 | **보완** |
@@ -582,7 +582,7 @@ caveat 제거, ④는 저비용 novelty, ⑤는 고비용·고임팩트라 마�
 | N | microbench summary.json | fwd 1.60s·HVP 10.36s(비율 6.47) |
 | P | **파생: 메커니즘 판별** | Spearman(FedIF, Flirds-1st): silo5 +0.9/+0.9/+1.0 vs std20 +0.2/−0.24/+0.5 vs anchor5 산포 — 후처리 파괴 가설의 직접 판별(원리 4-③) · CNN lf Spearman(Flirds, X): (b) .996·loss-heur .956·1st .960 vs GTG .657·FedSV .535·ShapleyFL .358(same-game 군집) |
 | Q | **파생: 부호 원리** | frzero bit-exact 0(6종 True)·renorm \|φ\| .0038~.0050(≠0)·noisy dose ladder φ(오염클라) 전 구간 음수(−0.00246→−0.00186; 기여-양수=0-교차 없음) |
-| R | 잔여 스팟 | track_g lf0.70(.5967/.5712)·P5h-retrain LF .6210·clean .6333·**경쟁 총평 자체 재계산**(flirds .5682 1위 > lossheur .5584 > fedif .5366 > renorm .517~.529 > 1st .4712 최하 — overview §3.2.6 총평과 정합) |
+| R | 잔여 스팟 | track_g lf0.70(.5967/.5712)·P5h-retrain LF .6210·clean .6333·**경쟁 총평 자체 재계산**(flirds .5682 1위 > lossheur .5584 > fedif .5366 > renorm .517~.529 > 1st .4712 최하 — overview §3.2.3 총평과 정합) |
 
 주의: 절대값 인용에는 전부 D-7(H1 재현성·CNN β-era·torch 혼재) caveat가 적용된다(overview
 §6.2-13). 본 문서의 결론은 순위·구조 수준이라 강건 예상이나, "재현 가능" 주장은 재실행 후에만.

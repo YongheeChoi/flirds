@@ -627,3 +627,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 7차 절)
 - touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]]
 - note: §3.2.7을 §3.2.6과 같은 시점-분리(T1 online/T2 retrain) 절대 EM 표로 재구성(점수원 4종 × P1/P5-soft 행 통합; recovery·kept 괄호 제거). gnoise는 §3.2.7에서 전부 제거하고 negative-result 기록을 §6.3 검증-전용으로 이관(포인터만 유지).
+
+## [2026-07-23] note | 신규 실험 반영(P5-soft 완주·a0.1 frzero β0.3·신규 3계획) + §3.2 재번호
+- raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 8차 절)
+- touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · REMAINING·track_h 런독(번호 전파)
+- note: R4 P5-soft t2 11/12 착지 → §3.2.4 표 채움 + **기준선 오배정 정정**(P5s의 vanilla는 dup observer — 07-22의 "clean −0.4pt 구조적 비용"은 vanilla 재실행 변동이었음) + **EM 노이즈 바닥 ±0.5pt 신설**(observer 2회 5–6문항 차 → flirds↔lossheur 0.36pt는 미분리로 격하). device100 a0.1 frzero β0.3 정본화(§3.3.2)·캠페인 상태 개정(poison 3셀 영구제외·10셀 보류). 신규 계획 P12(R4 (b)-fidelity)·P13(CNN c2fid 144셀)·P14(CNN 확장, 인용 금지) 등재 — 포화된 fidelity 표를 넘어설 축. **§3.2 결번 제거 재번호**(구 3.2.3→2·3.2.6→3·3.2.7→4; "구 §" 표기 규약 = §2.1 주) + 삭제 문서·깨진 위키링크 참조 정리.

@@ -1,6 +1,6 @@
 # Track H — 점수원 경쟁(score-source competition): 어느 기여도 정의가 학습을 가장 잘 만드는가
 
-> 스펙: 2026-07-19 Yonghee 결정 세션. 상태(2026-07-20) = **Tier 1(CNN 96런)+Tier 2(LLM 12런) 완주(실패 0) — 결과·예측 대조 = overview §3.2.6(07-20 집계 정정판)**; Tier 3(std50k5 12런) 대기 = 루트 `REMAINING.md` §1.1. **R4(gsm50k5 accuracy 무대) 설계+구현 완료 07-20** = §1.6·예측 H-8~11·Tier 5 — 실행 대기(`REMAINING.md` §1.5).
+> 스펙: 2026-07-19 Yonghee 결정 세션. 상태(2026-07-20) = **Tier 1(CNN 96런)+Tier 2(LLM 12런) 완주(실패 0) — 결과·예측 대조 = overview §3.2.3(07-20 집계 정정판)**; Tier 3(std50k5 12런) 대기 = 루트 `REMAINING.md` §1.1. **R4(gsm50k5 accuracy 무대) 설계+구현 완료 07-20** = §1.6·예측 H-8~11·Tier 5 — 실행 대기(`REMAINING.md` §1.5).
 > 질문: 서로 다른 기여도 정의(방법)들이 **같은 개입 정책** 아래 경쟁할 때, 어느
 > 기여도가 다운스트림 학습을 가장 잘 만드는가.
 > 동기: fidelity(§3.1)는 "우리가 정의한 게임((b) oracle)"을 기준으로 한 자기-일치라
@@ -147,13 +147,13 @@ Track H의 Flirds-점수원 arm과 통제 arm은 **track_g Phase B가 이미 동
 | H-3 | R2 | Flirds-P1 → oracle_excl 근접; **ShapleyFL-P1 ≤ random_excl**(track_g §2-6 예측 승계)·ComFedSV 동반 붕괴 | §3.6.1 붕괴 |
 | H-4 | R3 (P1) | GTG/FedSV 게이트 발화 — noisy 클라를 맞게 잡으면 소폭 이득이나 renorm-교차의 부산물이라 **clean 오배제 동반** 예측; Flirds/loss-heur 침묵=parity | audit 권고1·2 |
 | H-5 | P2 vs P1 | 오염 무대서 P2 소폭 우위(V2w 전례 +0.34~0.36 vs V2 +0.32~0.36), clean서 P2 오발화 악화(V2w 불승격 전례) — 이 trade-off가 점수원 무관하게 재현되는지 | §3.2.4 |
-| H-6 | T1 vs T2 | 스텝-함수 위협(FR-류)은 동률(전례 v3_sign=gate_v2=1.000); 점진 위협(noisy·label-flip)은 T1 우위(학습 중 조기 배제 이득) | §3.2.3 |
+| H-6 | T1 vs T2 | 스텝-함수 위협(FR-류)은 동률(전례 v3_sign=gate_v2=1.000); 점진 위협(noisy·label-flip)은 T1 우위(학습 중 조기 배제 이득) | §3.2.2 |
 | H-7 | 종합 | **fidelity가 다운스트림을 예측한다** — 예측 실패(fidelity 높은데 경쟁 패배, 또는 역) 자체가 1급 결과 | 경쟁 실험의 존재 이유 |
 | H-8 | R4 answer-swap | estimator 계열 게이트 발화·acc 회복(swap 클라가 val-loss를 올림 → 음수 φ); renorm은 CNN lf 유사(부분 회복+오배제) | Tier 1 lf 결과·§3.8 |
 | H-9 | R4 free-rider | exact-0 계열 완전 배제(LLM frzero 전례 recovery 1.000) vs **renorm은 FR 방치+clean 오배제 = CNN FR 붕괴의 LLM 재현 여부**(§1 frzero-공백을 이 셀이 채움) | Tier 1 FR·감사 판정 2 |
 | H-10 | R4 grad-noise | 1차 estimator(flirds1st/fedif) 실명 vs Flirds(2차) 포착의 LLM 재현; 단 LoRA 소스텝 레짐이라 Taylor 정확 → CNN과 달리 **clean 오발화 없이** 잡을 것 | Tier 1 GN + Taylor 잔차(§3.1.7) |
-| H-11 | R4 clean | LLM 무발화 전례 유지(누적 φ 전원 양수 — CNN clean 오발화와 대비 = 레짐 효과 확증) | overview §3.2.3 |
-| H-12 | R4 Tier C 재실행 {noisy, frzero} × seeds 0·1·2 (fix-후 코드; 사전등록 2026-07-23) | pre-fix seed0(4c40e30; H1 미적용 git `fa5fc6e`)의 구조 재현: T2 점수원 순위 flirds ≥ lossheur > 1st=fedif + frzero kept=oracle-동일 + vs 동일예산 random **+4pt대 유지**. flirds↔lossheur 격차(+0.36pt)는 seed-분산 안 — 뒤집히면 "exact-0 계열 동률"로 완화 보고(MISS 아님·격차 주장만 철회) | P-1 판정(REMAINING §1.5-1: seed0 git_sha=`fa5fc6e`=fix-전) + Tier A 관측(overview §3.2.7) |
+| H-11 | R4 clean | LLM 무발화 전례 유지(누적 φ 전원 양수 — CNN clean 오발화와 대비 = 레짐 효과 확증) | overview §3.2.2 |
+| H-12 | R4 Tier C 재실행 {noisy, frzero} × seeds 0·1·2 (fix-후 코드; 사전등록 2026-07-23) | pre-fix seed0(4c40e30; H1 미적용 git `fa5fc6e`)의 구조 재현: T2 점수원 순위 flirds ≥ lossheur > 1st=fedif + frzero kept=oracle-동일 + vs 동일예산 random **+4pt대 유지**. flirds↔lossheur 격차(+0.36pt)는 seed-분산 안 — 뒤집히면 "exact-0 계열 동률"로 완화 보고(MISS 아님·격차 주장만 철회) | P-1 판정(REMAINING §1.5-1: seed0 git_sha=`fa5fc6e`=fix-전) + Tier A 관측(overview §3.2.4) |
 | H-13 | R4 (b)-fidelity 셀(phase2_matrix REGIME=gsm50k5; noisy nr0.7 → clean; 사전등록 2026-07-23) | same-game 계열(Flirds/1st/loss-heur/Fed-LOO) vs (b) per-round Spearman ≈ 1.0(가산 축퇴) vs **renorm·uniform(GTG/FedSV/ShapleyFL/ComFedSV/FedIF) 유의미 하락 = std50k5 부분참여 붕괴 패턴의 GSM 재현**; noisy 셀 탐지는 \|AUROC(Flirds) − AUROC((b))\| ≤ 0.05(같은 게임 추적 — 절대값이 아니라 oracle-동행이 주장); runtime 우위는 K_r=5 조건부(vs (b) ~5×)로만 서술 | std50k5 probe(overview §4.2)·원리 4(min-max+EMA)·T3/T5 |
 
 ## 3. 판정 지표 — **우열 기준은 학습 성능만** (탐지 아님)
@@ -175,7 +175,7 @@ Track H의 Flirds-점수원 arm과 통제 arm은 **track_g Phase B가 이미 동
 ## 4. 비용 산정 + 티어별 승인 게이트
 
 > 러닝타임 기준: C2 arm ~5–8분(track_g CNN 그리드 실측), silo5 arm ~2 GPU-h,
-> std50k5 arm ~4.4 GPU-h(§3.2.3 비용). 각 티어 종료 시 GPU-h 실측 보고 후 다음 티어
+> std50k5 arm ~4.4 GPU-h(§3.2.2 비용). 각 티어 종료 시 GPU-h 실측 보고 후 다음 티어
 > 진행(Yonghee 게이트).
 
 | 티어 | 내용 (**§1.5 재사용 차감 후 신규만**) | 신규 arm (셀당) | 총 신규 run | 추정 |

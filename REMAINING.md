@@ -273,7 +273,7 @@ hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이�
 5. **Track G 서술**: 잔여 = paper-ko §6.5 — silo5/iid5 3-seed + CNN 그리드 + std50k5-mixed
    **s0 1-seed 파일럿(동결; 1-seed caveat 필수)** 구성. 확정치 = V2w 불승격·frzero 회수 1.0·
    noisy 게이트 침묵·clean parity max|Δ|=0.00056. LLM 참여축 성능 주장은 R4가 담당.
-6. **Track H 서술**: overview §3.2.6 반영 완료 — **정본 수치 = §3.2.6**(P1-T1 동률 .707·
+6. **Track H 서술**: overview §3.2.3 반영 완료 — **정본 수치 = §3.2.3**(P1-T1 동률 .707·
    P1-T2 flirds .839 1위·renorm 붕괴는 FR 국한 −5.9~−6.6·GN은 renorm도 0.9+;
    07-19 커밋 메시지의 정정-전 수치 인용 금지). 잔여 = paper 반영. LLM 경쟁 무대 = R4.
 7. **부수분석**: 3.1 loss-heur 정본화(CSV/rundir) · oracle noisy AUROC 0.604/0.660 불일치 확정 ·
@@ -286,4 +286,4 @@ hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이�
 ## 3. Yonghee 결정 대기
 
 - **push**: 로컬 커밋 다수 — push 여부/시점(07-22: Yonghee가 직접 push 예정).
-- **R4 Tier B 진입**(1.1 seed0 보고 완료 — overview §3.2.7; 승인 대기).
+- **R4 Tier B 진입**(1.1 seed0 보고 완료 — overview §3.2.4; 승인 대기).

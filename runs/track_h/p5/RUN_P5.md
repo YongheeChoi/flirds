@@ -8,7 +8,7 @@
 
 ## 1. 배경 — 왜 P5인가
 
-Track H Tier 1(CNN dir1, overview §3.2.6)에서 strict sign 게이트(P1: cum≤0 즉시
+Track H Tier 1(CNN dir1, overview §3.2.3)에서 strict sign 게이트(P1: cum≤0 즉시
 배제)는 **경계선 분산을 확신 있는 유해와 똑같이 과금**한다는 것이 관찰자 데이터
 재분석(07-20 로컬, 탐색적)으로 확인됐다: flirds의 clean 오배제 31/100 중 21은
 |t|<1.645의 경계선 노이즈(진짜 기여 ≈0인 클라의 cum은 ±σ√n 랜덤워크라 절반 확률로
@@ -115,8 +115,8 @@ RUN_NAME이 같으므로 그 셀만 덮어씀).
 
 1. `python runs/track_h/make_analysis.py` — P5h/P5s가 policy 열로 자동 편입.
 2. 보고: **P1 vs P5h vs P5s 절대 test acc 표**(vanilla/oracle_excl 앵커 포함,
-   위협별 + 오염-평균; overview §3.2.6 형식) + HP-1~6 HIT/MISS + GPU-h 실측.
-3. 커밋: 신규 rundir + `analysis/` 재생성분 + (수치 반영은 overview §3.2.6에만 —
+   위협별 + 오염-평균; overview §3.2.3 형식) + HP-1~6 HIT/MISS + GPU-h 실측.
+3. 커밋: 신규 rundir + `analysis/` 재생성분 + (수치 반영은 overview §3.2.3에만 —
    이 문서는 스펙 정본이라 결과 수치 기입 금지).
 
 ## 8. R4(gsm50k5) 연계 — Yonghee 07-21: "R4도 동일 정책 적용"
