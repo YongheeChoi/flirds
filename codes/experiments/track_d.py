@@ -69,7 +69,7 @@ from flirds.fl.intervene import (OnlineScorer, fedif_round_raw_fn, flirds_round_
 from flirds.fl.llm_server import run_llm_fedavg_logs
 from flirds.oracle.exact_sv import exact_shapley
 from flirds.oracle.exact_sv_llm import _final_lora_state
-from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_perround,
+from flirds.oracle.in_run_sv import (in_run_shapley, in_run_shapley_perround,
                                      in_run_singletons)
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
@@ -110,7 +110,7 @@ MMLU_BATCH = int(os.environ.get("MMLU_BATCH", "16"))
 ARMS = os.environ.get("ARMS", "1") == "1"              # 0 = phase-1 fidelity only
 FIDELITY = os.environ.get("FIDELITY", "1") == "1"      # 0 = arm-only (cheap re-run; no (a)/coalition cost)
 ORACLE_A = os.environ.get("ORACLE_A", "1" if REGIME == "anchor5" else "0") == "1"
-# METHODS="Flirds,Flirds1st,loss-heur,Fed-LOO" -> run only these (+ the (b) oracle, always).
+# METHODS="Flirds,Flirds1st,loss-heur" -> run only these (+ the (b) oracle, always).
 # Empty/unset = full suite.  E4/E5 light re-runs: coalition baselines off without code edits.
 METHODS = frozenset(m for m in os.environ.get("METHODS", "").split(",") if m)
 
@@ -236,9 +236,8 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
     if _want("loss-heur"):
         phi_h, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
         out.append(("loss-heur", phi_h, t))
-    if _want("Fed-LOO"):
-        phi_lo, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
-        out.append(("Fed-LOO", phi_lo, t))
+    # Fed-LOO dropped from the comparison (Yonghee 2026-07-23).  The estimator
+    # `flirds.oracle.in_run_sv.in_run_loo` stays so existing rundirs replay.
     return out, u_a
 
 

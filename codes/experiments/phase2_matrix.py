@@ -84,7 +84,7 @@ from flirds.data.llm import build, build_alpaca_iid, build_crossdevice, build_gs
 from flirds.eval.generate import backdoor_asr
 from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference, pearson
 from flirds.fl.llm_server import client_optimizer, run_llm_fedavg_logs
-from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_perround,
+from flirds.oracle.in_run_sv import (in_run_shapley, in_run_shapley_perround,
                                      in_run_singletons)
 from flirds.repro import seed_everything
 from flirds.hf_pin import rev
@@ -373,8 +373,8 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
 
     phi_h, t_h = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
     out.append(("loss-heur", "val", phi_h, t_h))
-    phi_lo, t_lo = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO
-    out.append(("Fed-LOO", "val", np.asarray(phi_lo), t_lo))   # marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
+    # Fed-LOO dropped from the comparison (Yonghee 2026-07-23).  The estimator
+    # `flirds.oracle.in_run_sv.in_run_loo` stays so existing rundirs replay.
 
     # ---- detectors (AUROC only) ----
     fld, t_fld = _timed(lambda: fldetector_from_logs(logs, n, device="cpu"), device)

@@ -15,7 +15,8 @@
   `test_trajectory_join_logged_equals_unlogged`가 비트동일 강제).
 - 정답 = **(b) in-run per-round oracle만**(`in_run_shapley_perround` 동치 증명 경로;
   (a) 2^100 재학습 불가). 셀당 Σ_r 2^{|P_r|} = 120×2^10 = 122,880 평가.
-- 방법 9종 = C1 11종 − Banzhaf(2^N) − Ripple(자체궤적) + Fed-LOO.
+- 방법 8종 = C1 11종 − Banzhaf(2^N) − Ripple(자체궤적) − **Fed-LOO**(비교 제외, Yonghee
+  2026-07-23 — 이 leg 실행 전 결정이라 rundir에 열 자체가 없음).
   부호 전부 good→low (ComFedSV·ShapleyFL·FedIF 는 negate).
 - 지표 = C1 세트(Spearman/Kendall/Pearson + 거리 3종 + wall-clock) + AUROC(오염 셀)
   + **spearman_vs_rate 양변형**(`spearman_vs_rate`=전클라·C1 호환 /
@@ -42,11 +43,11 @@ grad-noise, lf@0.15, lf@0.35, lf@0.70, lf strmain} × seed {0,1,2}. 범위 144 �
   qskew(24× 크기격차)에서 iid 대비 뚜렷. 코드 사실: 균등 합성 = **ShapleyFL**(shapleyfl.py
   `1/len(subset)`)·**ComFedSV**(comfedsv.py 동일), n-비례 재구성 = GTG·FedSV(gtg.py
   `nc/tot`). 예측: ShapleyFL·ComFedSV 하락 / GTG·FedSV·Taylor 계열(Flirds·1st·FedIF)·
-  게임직접 계열(loss-heur·Fed-LOO) 상대 유지. *(계획 세션 릴레이 표기는 "uniform-subset
+  게임직접 계열(loss-heur) 상대 유지. *(계획 세션 릴레이 표기는 "uniform-subset
   계열(G4·G6)" — G-번호 매핑을 교환 안 했으므로 여기선 코드 근거 명단으로 등록;
   FedSV 포함 여부가 릴레이와 다를 수 있어 대조 시 FedSV 를 별도 행으로 함께 보고.)*
 - **F-2 (free-rider·frrand → exact-0 계열 vs renorm 유령값)**: free-rider(Δ=0) 셀 φ
-  exact-0 = Flirds·Flirds1st·(b)·loss-heur·Fed-LOO·FedIF, vs GTG·FedSV 는 재구성/renorm
+  exact-0 = Flirds·Flirds1st·(b)·loss-heur·FedIF, vs GTG·FedSV 는 재구성/renorm
   잔차 ≠0 유령값(N=5 canon 재현) → AUROC 1.0 vs 저하. frrand(benign-매칭 노이즈) 셀은
   exact-0 아님 — Taylor·게임직접 계열은 2차항 ½ΔᵀHΔ≥0 로 일관된 양-suspicion(순위 안정),
   renorm 계열은 부호 불안정 → AUROC 격차(Flirds 계열 ≥ GTG/FedSV) 예측.

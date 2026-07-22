@@ -64,13 +64,12 @@
   아님). `make_analysis`는 arm별 dup 중 하나만 채택하므로 중복집계는 없으나,
   **분석 시 어느 rundir이 채택됐는지 확인**할 것.
 
-### 1.1 P5-soft 분석 (무GPU; 즉시 실행 대상)
+### 1.1 P5-soft 분석 — **DROPPED (Yonghee 2026-07-23: P5 전면 비교 제외)**
 
-6런 완주(07-23 02:46; rundir 커밋 완료). `python runs/track_h/make_analysis.py` →
-**P1 vs P5s EM 표**(vanilla/oracle_excl 앵커 포함) + `runs/track_h/p5/RUN_P5.md` §4 HP 대조 →
-분석 커밋. LLM 몫은 **HP-3·5·6**만 — hard-측 HP-1·2·4는 P5-hard(cgate/csign) 전면 제외로 **N/A**
-(CNN 본실험이 별도 Slurm 서버서 커버, 실행 정본 = RUN_P5.md). **MISS는 그대로 보고**
-(RUN_P5 §2 공정성 조항: z=1.645 고정, 학습-중 관측 통계만·사전 정보 금지).
+P5h(`_cgate`/`t2_csign_*`)에 이어 **P5s(`_pweight`/`t2_pw_*`)도 비교 대상에서 제외** 확정
+(Fed-LOO 전면 제외 `b8ab238`과 같은 정리). 따라서 P1 vs P5s EM 표·HP-3·5·6 대조 = **미진행 확정**.
+완주한 6런과 `runs/track_h/p5/` rundir·`RUN_P5.md`는 **삭제하지 않고 보존**(재현 가능 상태 유지).
+CNN 쪽 후속은 `sbatch_strmain.sh`에서 P5 셀·obsp5 셀 제거로 반영됨(§1.4b).
 
 ### 1.2 β0.3 재실행 잔여 **10셀** (device100 7 + 3B silo5 3) — 07-23 **보류**(§1.0)
 
@@ -118,12 +117,19 @@ lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon �
   2×2 표의 스택 경계(감사 M1: 기존=torch 2.12/B200, 신규=2.11/RTX3090) 제거할지
   ② 예산 압박 시 5-arm 축소안 사용 여부(현재는 9-arm 대칭 유지).
 - 완료 후: overview §3.2.4 skew-분해·fmnist 블록 + §3.2 커버리지 매트릭스 + §8 갱신.
+- **오염집합 규약 감사(07-23, 재실행 없음)**: label-flip 오염 클라 수가 시드마다 변동
+  (39/48/47, 평균 **44.7% ≠ 명목 40%**) — FedCorr 공식 구현의 베르누이 draw를 그대로 재현한
+  것이라 버그 아님. 통일 시 222런(~155 GPU-h) 무효화 + 구/신 규약 분열이라 **병기로 해결** 확정.
+  코드 주석·canon 테스트·`n_corrupt` 컬럼 반영 완료; **남은 것 = 논문 §D.3 뒤 병기 문단 삽입**
+  (붙여넣기용 한/영 문구 = 루트 `CORRUPT_SET_CONVENTION_2026-07-23.md` §3; `paper/`는 미수정).
 - **07-22 확장 확정(제출됨)**: ① label_flip **strmain** 셀(rate~U(0.5,1)) 18런(1860471) —
-  fidelity 강도응답 ruler + C2 lf 같은-셀 대조 확보 ② **Track H strmain** 51런(1860727;
-  17셀타입×3s, P5 경계-클라 첫 시험 무대; `runs/track_h/sbatch_strmain.sh`) ③ **CNN fidelity
-  leg 설계 확정**(C2 무대 동결 궤적 × 9방법 vs (b)-perround oracle; (a) 포기·Ripple/Banzhaf
-  제외·Fed-LOO 포함) → 구현 완료(아래). **종합 계획·교차검증 핸드오프 =
-  루트 `CNN_CAMPAIGN_PLAN_2026-07-22.md`**.
+  fidelity 강도응답 ruler + C2 lf 같은-셀 대조 확보 ② **Track H strmain** — 원 51런(1860727,
+  17셀타입×3s)에서 **P5 전면 제외로 24런(1861601, 8셀타입×3s = P1 7 + obs)** 으로 축소·재제출
+  (07-23; 취소 시점 실행 0런이라 손실 없음; `runs/track_h/sbatch_strmain.sh`) ③ **CNN fidelity
+  leg 설계 확정**(C2 무대 동결 궤적 × **8방법** vs (b)-perround oracle; (a) 포기·Ripple/Banzhaf
+  /**Fed-LOO** 제외) → 구현 완료(아래).
+  ⚠ 여기서 참조하던 루트 `CNN_CAMPAIGN_PLAN_2026-07-22.md`는 `4399be3`에서 **삭제됨** —
+  포인터 정리 필요(내용은 git 히스토리에 존속).
 - **07-23 fidelity leg 구현 완료 + 교차검증 회신 7건 전건 해소**(plan §6 결정 10–17):
   범위 **144셀 확정**, `codes/experiments/track_c2_fid.py` + `tests/test_c2fid.py`(5 green)
   + fmnist smoke e2e green(eff-gap 0.0) + `runs/track_c/c2fid/{README.md(1행 게임 캐비엇 +
