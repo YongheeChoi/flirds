@@ -62,8 +62,8 @@ from flirds.data.cnn import _STATS, get_dataset, get_labels
 from flirds.data.corruptors import CNN_CORRUPTORS
 from flirds.eval.metrics import (cosine_distance, detection_auroc,
                                  euclidean_distance, max_difference, pearson)
-from flirds.fl.partition import (iid_partition, label_skew_partition,
-                                 quantity_skew_partition)
+from flirds.fl.partition import (gtg_quantity_ratios, iid_partition,
+                                 label_skew_partition, quantity_skew_partition)
 from flirds.fl.server import evaluate, fedavg
 from flirds.models.cnn import FedSVCNN, LeNet5
 from flirds.oracle.exact_sv import exact_shapley, subset_utility_valloss
@@ -110,8 +110,10 @@ def _pair_ladder(n):
 
 
 def _quantity_ratios(n):
-    """GTG quantity-skew ratios generalized: pair p gets 10+5p (N=10 -> 10..30)."""
-    return [10 + 5 * (i // 2) for i in range(n)]
+    """GTG quantity-skew ratios generalized: pair p gets 10+5p (N=10 -> 10..30).
+    Definition moved to fl.partition (2026-07-22) so track_c2's `qskew` partition
+    reuses the identical rule; values unchanged (tests/test_partition_qskew.py)."""
+    return gtg_quantity_ratios(n)
 
 
 def _timed(fn, device):

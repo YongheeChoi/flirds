@@ -170,6 +170,34 @@ PY=$PY PP=<repo>/codes HOME=… HF_HOME=… HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE
 lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon 확인.
 (E5 N=10 oracle 확장(seeds1·2·(a) 2¹⁰) = 미진행 확정, Yonghee 07-22 — 시간 제약.)
 
+### 1.4b Track G CNN skew-축 확장 + fmnist + frrand (**즉시 실행 대상**; Slurm 서버, 2026-07-22)
+
+컨테이너 48h 큐와 **독립**(yonsei Slurm `base_suma_rtx3090`, torch 2.11.0 env). 지시 = Yonghee
+2026-07-22. 구현·스모크·사전등록 **완료(로컬 커밋, push 안 함)** — 남은 것은 제출·분석·문서.
+
+- **그리드 90런/30셀** = ① cifar10×{shard(label만),qskew(size만)} ② fmnist×{iid,dir1}
+  각각 × {clean, free_rider, **frrand**, grad_noise, label_flip@{0.15,0.35,0.70}} × 3-seed
+  + ③ cifar10×{iid,dir1}×frrand 백필 6런. 기존 36런 rundir는 **read-only**.
+- **스택 통일 재실행 36런 동반**(Yonghee 07-22 결정): cifar10 {iid,dir1} 12셀을 현 스택에서
+  재실행해 `rundirs_cnn_restack/`에 착지 → 2×2 표 단일 스택화 + `RERUN_AFTER_REPRO_FIX` P1 해소.
+  기존 36 rundir는 무수정 보존(→ 두 스택 재현성 drift 표 자동 생성).
+- **제출**: `sbatch runs/track_g/sbatch_cnn_skew.sh`(90런) + `sbatch runs/track_g/sbatch_cnn_restack.sh`(36런).
+  인덱스는 둘 다 seed-major(필요시 `--array` 절단으로 파일럿 가능).
+- **예상 비용**: 126런 총 **48–56 GPU-h**(cifar10 실측 앵커 3.5분/scoring-arm, fmnist 미측정
+  0.5–1.0×), QOS 8-GPU 동시 → wall 6–7h.
+- **사전등록 H-K1~H-K6** = `runs/track_g/README.md` "확장 ②". 완료 후
+  `python runs/track_g/make_analysis.py` → 2×2 분해표·예측 대조·C2 같은-셀 대조 자동 생성.
+- **Yonghee 결정 대기 2건**: ① cifar10 {iid,dir1} 12셀 동일-스택 재실행(+18 GPU-h)로
+  2×2 표의 스택 경계(감사 M1: 기존=torch 2.12/B200, 신규=2.11/RTX3090) 제거할지
+  ② 예산 압박 시 5-arm 축소안 사용 여부(현재는 9-arm 대칭 유지).
+- 완료 후: overview §3.2.4 skew-분해·fmnist 블록 + §3.2 커버리지 매트릭스 + §8 갱신.
+- **07-22 확장 확정(제출됨)**: ① label_flip **strmain** 셀(rate~U(0.5,1)) 18런(1860471) —
+  fidelity 강도응답 ruler + C2 lf 같은-셀 대조 확보 ② **Track H strmain** 51런(1860727;
+  17셀타입×3s, P5 경계-클라 첫 시험 무대; `runs/track_h/sbatch_strmain.sh`) ③ **CNN fidelity
+  leg 설계 확정**(C2 무대 동결 궤적 × 9방법 vs (b)-perround oracle; (a) 포기·Ripple/Banzhaf
+  제외·Fed-LOO 포함) — 구현 대기 + 1셀 파일럿 게이트. **종합 계획·교차검증 핸드오프 =
+  루트 `CNN_CAMPAIGN_PLAN_2026-07-22.md`** (열린 질문 7건 포함).
+
 ### 1.5 seed-추가 잔여 3건 (**조건부** — Yonghee 2026-07-22)
 
 > ⚠ **실행 조건: 해당 결과가 논문에 실리는 것으로 확정될 때만 돌린다.** 현재는 수록

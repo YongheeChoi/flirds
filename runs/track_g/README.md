@@ -78,6 +78,78 @@
 
 로컬(무네트워크) 와이어링 스모크: `SMOKE_MODEL=tiny-gpt2 SYNTH_DATA=1 ...` (track_g.py 헤더).
 
+## 확장 ② — skew-축 분해 + fmnist + frrand (사전등록 2026-07-22, 실행 전)
+
+> 지시: Yonghee 2026-07-22. 기존 12셀/36런(cifar10 {iid,dir1})은 **read-only**,
+> 세팅 verbatim(N=100·10/100·R=120·E=5·lr0.01·burn_in10·τ0·min_obs2·probation5·α1)로
+> 조합만 추가. 이 절은 **실행 전에 등록**되며 완료 후 MISS 포함 그대로 대조한다.
+
+### 무대 구성 (신규 30셀/90런)
+
+| 축 | 값 |
+|---|---|
+| 파티션(2×2 완성) | iid(skew 없음) · **shard**(label만) · **qskew**(size만) · dir1(label+size) |
+| 데이터셋 | cifar10(기존) + **fmnist**(신규; N=100 개입 무대의 C2 canon 짝) |
+| 위협(7) | clean · free_rider(Δw=0) · **frrand**(Δw~U(−s,s), 신규) · grad_noise(Δw+N(0,0.1)) · label_flip@{0.15,0.35,0.70} |
+| arm | 기존과 동일 9종(clean 셀은 excl 2종 제외한 7종) |
+| 신규 셀 | cifar10×{shard,qskew} 42런 + fmnist×{iid,dir1} 42런 + cifar10×{iid,dir1}×frrand 백필 6런 |
+
+**frrand**(2026-07-22 신설) = LLM leg에 이미 있던 `frrand`의 CNN 이식. Lin et al. 2019
+free-rider 택소노미 "random" 모드를 `make_delta_transform`에 배선하고, 진폭은 **benign
+per-entry std 정합**(s=√3·std(정직 Δw), LLM leg의 `_benign_std(warm)·√3·DOSE_MULT`와 동일
+규칙을 warm-up 평균 대신 해당 클라의 would-be 업데이트에서 온라인 측정). 세 update-level
+위협이 **신호/노이즈 사다리**를 이룬다: free_rider=신호0·노이즈0 / frrand=신호0·노이즈全 /
+grad_noise=신호+노이즈. 크기로는 정직 업데이트와 구분 불가(norm 필터 무력).
+
+### 파티션 축의 실측 특성 (cifar10 N=100, seed0) — 해석의 전제
+
+| 파티션 | 크기 min/med/max | 크기 span | 클래스/클라 | 순수 축 |
+|---|---|---|---|---|
+| iid | 500/500/500 | 1.0× | 10.0 | — |
+| shard | 500/500/500 | 1.0× | **1.95** | label |
+| qskew | 40/510/960 | **24×** | 10.0 | size |
+| dir1 | 187/488/1168 | 6.2× | 9.87 | label(비율)+size |
+
+⚠️ **2×2는 가법 분해가 아니다**: shard의 label-skew는 dir1보다 훨씬 세고(1.95 vs 9.87
+클래스/클라), qskew의 size-skew도 dir1보다 세다(24× vs 6.2×). 따라서 "dir1 = shard +
+qskew"를 수치로 검산하는 것이 아니라 **어느 축이 어느 현상을 만드는지의 귀속(attribution)**
+만 읽는다. 서술에서 가법성을 주장하지 않는다.
+
+### recovery 분모 가드 (기존 그리드에서 확인된 함정 — 신규 규칙)
+
+recovery=(arm−van)/(oracle_excl−van)은 **위협이 약하면 분모가 붕괴**한다. 기존 실측
+분모: lf@0.15 iid 0.0033 / dir1 0.0064 (vs grad_noise 0.379) → 같은 셀의 seed-std가
+3.14·1.58까지 튐. 따라서 **분모 |oracle_excl−vanilla| < 0.02인 셀은 recovery를 표에서
+공란 처리하고 절대 Δacc만 보고**한다(고정 결정 "절대 accuracy 표"와 정합).
+
+### 예측 (make_analysis가 자동 대조; MISS 그대로 보고)
+
+| id | 예측 | 근거 | crisp check |
+|---|---|---|---|
+| **H-K1** | free_rider 회복은 **파티션-불변** — shard·qskew에서도 V2 recovery ≥ 0.6, 4파티션 spread < 0.35 | φ=exact 0 → strict cum>0는 데이터 분포와 무관한 구조적 발화(audit P2). 기존 실측 iid 0.808 / dir1 0.838 | `recovery(V2) ≥ 0.6` (shard·qskew) |
+| **H-K2** | **frrand도 체계적으로 잡힌다** — V2 recovery ≥ 0.7, frzero와 같은 급 | 1차항 ⟨∇ℓ,Δw⟩는 랜덤 방향이라 평균0(=LLM 감사의 ±코인플립)이지만, **2차항 ½Δwᵀ**H**Δw는 H⪰0이므로 항상 손실증가=음의 기여**이고 d~10⁵에서 1차항 변동을 압도. grad_noise가 최고 회복(0.944/0.855)인 것이 같은 기전 | `recovery(V2,frrand) ≥ 0.7` |
+| | ↳ **반증 시 해석**: recovery ≈ 0.5×frzero면 CNN 스케일에서도 2차항이 약하다는 뜻이며 **LLM leg 감사(frrand 부호=코인플립)와 일치**하는 결과로 보고 | — | — |
+| **H-K3** | **clean 오발화는 shard에서 최대** — 오발화 제외 클라 수 shard > dir1 > qskew ≈ iid, 그리고 shard clean에서 V2 Δacc < −0.006(parity 밴드 위반), qskew clean은 밴드 유지 | 라벨 이질성 → 정직 클라의 φ 분산↑(2개 클래스만 개선, 글로벌 val엔 손해 가능) → cum≤0 정직 클라 발생. 기존 clean Δacc는 이미 경계값(iid −0.0060, dir1 −0.0074) | `shard: Δacc < −0.006` / `qskew: |Δacc| < 0.006` |
+| **H-K4** | **qskew에서 seed 분산 최대** — V2 recovery의 seed-std가 iid의 1.5배 초과(free_rider·grad_noise) | 오염 클라 추첨은 크기와 무관 → 제외되는 데이터 mass가 seed마다 24× 범위에서 요동. iid는 항상 정확히 40% | `sd(qskew) > 1.5·sd(iid)` |
+| **H-K5** | **lf@0.15는 4파티션 모두 분모 < 0.02**(위협이 약해 회복 여지 자체가 없음) → recovery 공란·Δacc만. 단 shard에서는 flip 해악이 iid보다 커서 분모가 iid(0.0033)의 2배 이상 | 저용량 flip은 오염 클라도 순기여 양수 → 제외가 손해. shard는 클라당 클래스가 2개라 flip이 해당 클래스 학습을 통째로 파괴 | `gap(lf0.15) < 0.02` (4/4) |
+| **H-K6** | **fmnist는 효과 크기만 축소, 상대 유효성은 보존** — 같은 (part,threat)에서 분모 gap은 fmnist < cifar10, 그러나 recovery는 cifar10 대비 ±0.15 이내 | 쉬운 무대(fmnist vanilla 0.57–0.85)는 위협의 해악·회복 여지를 함께 줄이므로 비율은 보존 | `|rec(fmnist) − rec(cifar10)| ≤ 0.15` (분모 ≥ 0.02 셀만) |
+
+### 대조표 계획
+
+- **C2 소프트-arm 같은-셀 대조**(§3.2.2 30셀): 대응 존재 = `cifar10_shard` · `fmnist_{iid,dir1,shard}`
+  의 {clean, free-rider, grad-noise} strmain 셀. **qskew·frrand는 C2 대응 없음**(표에 명시).
+  ⚠️ label_flip은 C2가 strmain(=FedCorr rate~U(0.5,1), 평균 0.75)이고 Track G는 고정 dose라
+  **같은 셀이 아니다** — fr0.70만 근사 대조로 쓰고 캐비엇을 단다.
+- **스택 경계**(감사 M1) — **해소 결정(Yonghee 07-22)**: 기존 36런 = torch 2.12.0 / B200 /
+  git 69cb6bf, 신규 = torch 2.11.0 / RTX3090. 2×2 표가 하드웨어+스택 경계를 가로지르므로
+  cifar10 {iid,dir1} 12셀을 **현 스택에서 재실행**(`sbatch_cnn_restack.sh` → `rundirs_cnn_restack/`)
+  하여 표 전체를 단일 스택으로 만든다. 기존 36 rundir는 **무수정 보존** → 같은 config·seed가
+  두 스택에 존재하는 **재현성 데이터포인트**가 되며 make_analysis가 drift 표로 보고한다.
+  (착수 전 실측한 예상 drift: C2 소프트 그리드 18셀 동일-config 대조에서 clean·free_rider
+  |Δacc| ≤ 0.0020 / grad_noise ≤ 0.0241 — 후자는 vanilla 0.23~0.28 붕괴 레짐이라 seed
+  산포와 같은 급. 재실행은 이 값을 표에서 제거하는 것이 목적이며, 결론 변화는 예상되지 않는다.)
+  이 재실행은 `RERUN_AFTER_REPRO_FIX_2026-07-21.md` P1(CNN 재실행 권장)도 함께 해소한다.
+
 ## Stage 0 감사
 
 `phi_sign_audit.py` → `audit/sign_table.csv` + `audit/SIGN_AUDIT.md` (2026-07-19 완료·커밋).

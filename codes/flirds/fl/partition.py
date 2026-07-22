@@ -99,6 +99,16 @@ def label_skew_partition(labels, n_clients, major_frac=0.8, per_client=None, see
     return client_idx
 
 
+def gtg_quantity_ratios(n_clients):
+    """GTG quantity-skew ratios generalized: pair p gets 10+5p (N=10 -> the paper's
+    10/10/15/15/20/20/25/25/30/30).  Single source of truth for every track that
+    runs the quantity-skew stage (track_c1 scenario `quantity_skew`, track_c2
+    partition `qskew`) -- the ratio rule is a fixed project convention, not a
+    per-experiment knob.  NOTE the max/min span grows with n (3x at N=10,
+    25.5x at N=100): the rule is scale-free in shape, not in spread."""
+    return [10 + 5 * (i // 2) for i in range(n_clients)]
+
+
 def quantity_skew_partition(labels, n_clients, ratios, seed=0):
     """GTG scenario-3 quantity skew, disjoint-normalized (2026-06-12 decision):
     client sizes proportional to `ratios` (GTG: 10/10/15/15/20/20/25/25/30/30 —
