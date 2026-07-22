@@ -1,0 +1,19 @@
+{
+  "name": "cifar10_qskew_label-flip_fr0.35_g_seed0",
+  "git_sha": "0ae7307f89da6648dbf74e76d38f6f046d997ca5",
+  "git_dirty": true,
+  "git_diff_stat": "runs/track_g/analysis/README.md        | 247 +++++++++++++++++++++++----------\n runs/track_g/analysis/cnn_cellmean.csv |  77 ++++++++++\n runs/track_g/analysis/cnn_summary.csv  |  77 ++++++++++\n 3 files changed, 329 insertions(+), 72 deletions(-)",
+  "env_hash": "be4b11eda33078df",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "5.5.4",
+    "peft": "0.19.1",
+    "trl": "1.2.0",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.4",
+    "numpy": "2.4.4",
+    "python": "3.11.15",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  }
+}
