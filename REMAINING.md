@@ -14,38 +14,75 @@
   meta-llama gated 재취득 불가(유효 토큰 무) → 해시 교차검증된 공개 미러로 캐시 재구성 —
   검증 체인·근거는 `$BATCH/PROVENANCE.md`.
 
-### 1.0 다음 세션 재개 절차 (컨테이너 재생성 07-22 02:2x; **새 컨테이너도 48h 제약**)
+### 1.0 현 세션 진행 상황 (컨테이너 07-22 02:2x 생성, 드라이버 02:45 기동; **48h 제약 → 마감 07-24 02:2x**)
 
-직전 컨테이너 마감 상태: Tier A 4/4 완주·커밋(4c40e30) + β 2셀(a0.1 noisy·frrand) 완주,
-시스템 전체 유휴로 교체 = 진행분 손실 0. gnoise는 **신정의(GN_ABS 공통고정σ, γ*=5)로 재실험
-확정** — 구정의(γ1.0 상대) rundir 7개 폐기, `gsm50k5_gnoise_oracle_excl_seed0`만 보존
-(oracle은 오염클라 전원배제라 γ·모드 무관 = 신무대 oracle로 재사용).
+재개 절차(venv 확인 → `launch_driver.sh` → 4-GPU 디스패치)는 **02:45 완료**. `queue_postswap.txt`
+체크리스트대로 `done[ok]: 1B_device100-a0.1_frrand`(07-21 17:33) 확인 → IFKILLED 줄 주석 유지.
 
-**재개(컨테이너 생성 직후 즉시 — 48h 예산이 빠듯함):**
+#### gnoise 축 — **종결**(Yonghee 07-22 결정: "gnoise 제외하고 나머지 먼저")
 
-1. venv 확인: `$BATCH/venv/bin/python -c "import torch;print(torch.cuda.is_available())"`
-   (깨졌으면 `$BATCH/tools/` 재구축 스크립트 + PROVENANCE.md; BATCH=…/flirds_batch).
-2. `bash $BATCH/tools/launch_driver.sh` → `tail -f $BATCH/runlogs/_driver.log`로 4-GPU
-   디스패치 확인. QUEUE = `queue_postswap.txt`(완비): **gn_full(신정의 gnoise, ~29h 최장
-   셀) → P5-soft 6런(p5s_*; online=pweight, t2=T2_CSIGN=0) → β0.3 16셀**(이관 2 포함,
-   3B silo5 4셀 맨 뒤). 구 큐 `queue_2026-07-20.txt` 재사용 금지(완료 줄 미주석).
-3. **gn_full 체크포인트(의무)**: 시작 ~5h 시점 observer 영속 → vanilla@γ5 EM을 밴드
-   **0.29~0.34**(oracle 0.3735 − 3~8pt)와 대조. 이탈 시 셀 킬 → GN_GAMMA 조정(미달↑/붕괴↓)
-   → gn_full만 재기동(뒤 큐는 계속 돎).
+γ=5(`gn_full`, 08:56 킬)·γ=20(`gn20_probe`, 16:01 완주) 모두 밴드 미달. **γ 축을 닫는다.**
 
-**48h 검산(07-22 02시 산정)**: gn_full ~29 + P5-soft ~51(online 9.9 + t2 41: pw 가중이
-소스별로 달라 dedupe 불가 전제) + β0.3 ~83(device100 10×4.2 + poison 2×4.5 + 3B 4×8)
-= **~163 GPU-h → 4-GPU wall ~43–45h = 48h 내 가능(마진 3–5h)**. 전제 = 즉시 기동·무사고.
-**spill 규칙**: 초과 위험 시 **3B silo5 4셀(~32 GPU-h, 큐 맨 뒤)을 다음 컨테이너로 이월**
-(캠페인상 독립; 자르면 wall ~35h로 여유). gn_full 재도스 발생 시(+5h) 3B 이월을 조기 결정.
+| | val | gsm8k_em | |
+|---|---|---|---|
+| clean observer | 0.60219 | 0.3771 | 기준 |
+| **gnoise γ=5** | 0.60246 | **0.3753** | oracle보다 높음(부호 반대) |
+| **gnoise γ=20** | 0.60247 | **0.3718** | 부호는 정상화, 여전히 밴드 밖 |
+| oracle_excl(γ-무관) | 0.60239 | 0.3735 | |
+
+**판정 = dose가 아니라 방향 문제**(진단·문헌·실무대 3경로 일치). 상세·재현법 =
+`runs/track_h/gnoise_diag/README.md`(진단 스크립트 + diag30.json 동봉). 요점만:
+- **진단**(forward-only 섭동, γ 1~1000 × 3방식 × 2스냅샷): (a)A·B노이즈≈(b)ΔW등방≈0,
+  **(c)gradient방향만 2,400~38,000배**. γ=1000의 ‖Ξ‖/‖W0‖=1.30%인데 Δval +0.0083뿐.
+  (a)>(b)이므로 "ΔW 공간으로 dose 재지정" 처방은 **역효과**. ‖A‖는 학습 내내 불변(B만 움직임).
+- **문헌**: Fang(USENIX Sec'20)이 가우시안 공격 σ를 benign 클라간 분포에 moment-matching
+  (**canonical γ≈1**)하고, 이를 *"randomly crafted models can not effectively attack"*를 보이는
+  **음성 대조군**으로 명시 → 우리 결과는 실패가 아니라 **예측된 결과**. LoRASC(EMNLP'24)는
+  같은 축(std of BA)에서 λ=10≈**γ2.9**를 **성능 향상** 레시피로 씀. γ=1000도 INT8 양자화 수준.
+  **LLM/LoRA FL 노이즈 dose 선행 0건** — OpenFedLLM §5.4가 남긴 open problem 그 자체.
+- **γ*=5 선정근거 무효**: `_add_gnoise`는 `trainer.train()` **이후** 주입
+  (`flirds/fl/llm_server.py:91-97`) → train_loss는 노이즈를 구조적으로 미반영. "abs-probe
+  train_loss 3자리 동일 = γ-포화"는 근거가 아니었음.
+- **남은 것**: negative result 서술(§2에 신설) + 위협 교체 여부. 문헌 표준 대안 = **LIE**
+  (`μ_j+z·σ_j`, z≈1σ, 조정된 mean-shift) 또는 **sign-flip**(크기 파라미터 없음). 프로젝트
+  인벤토리 **I-28**(direction-aligned poison = 2차항 flagship 후보)과 동일 안건.
+  **H-10은 CNN에서 이미 성립**(vanilla .244 vs Flirds .567~.607 vs 1차계열 .244~.248)이라
+  서사는 유지되고 LLM leg만 공백.
+
+#### P5-soft 6런 (진행 중)
+
+online 2런 완주(`noisy` 06:41, `clean` 06:43). 잔여 = `noisy_t2`·`clean_t2`·`frzero_online`·
+`frzero_t2`. **주의**: t2 런이 observer를 재실행하며 `gsm50k5_noisy_nr0.7_observer_seed0_4a55c78a`
+처럼 **해시 접미사 rundir을 새로 생성**(큐 주석의 "결정론적 동일값 덮어쓰기"는 부정확 —
+덮어쓰지 않고 별도 저장 = 원본 보존). 값도 비트동일 아님(val 0.6088232 vs 0.6091607,
+EM 0.3342270 vs 0.3351206 = 1문항): LLM 트랙은 conv-free라 `cudnn_deterministic` 미사용
+= 비트재현 미보장(알려진 특성, 타당성 문제 아님). `make_analysis`는 arm별 dup 중 하나만
+채택하므로 중복집계는 없으나, **분석 시 어느 rundir이 채택됐는지 확인**할 것.
+
+#### 예산·스케줄 (07-22 20:42 기준)
+
+**큐 잔여 = β0.3 16셀뿐**(device100 10 + poison 2 + 3B silo5 4 = ~79 GPU-h). gnoise·P5-soft
+online은 종료, t2 2런만 진행 중. 시뮬레이션(GPU 해제 시각 반영):
+
+| 순서 | makespan | 완료 |
+|---|---|---|
+| 현재(3B 맨 뒤) / 3B 먼저 / 완전 LPT | **모두 28.9h** | 07-23 20:53 |
+| 3B 이월(spill 발동) | 20.9h | 07-23 12:53 |
+
+**큐 재배열은 이득 0** — 15셀 대 4 GPU라 GPU가 쉬지 않고 makespan이 총량에 지배됨(LPT 이득은
+작업 수 ≈ GPU 수일 때만). **3B가 맨 뒤인 건 spill 설계이므로 그대로 유지**. 마감 대비 여유 5.5h.
+- **관측된 진짜 비효율 = t2 셀의 내부 직렬화**: 한 프로세스가 observer(~6h) 후 **t2_pw 4소스를
+  순차 재학습**(소스당 ~3h). 소스는 서로 독립이라 4-GPU 분할 시 wall 13.7h→8h 가능했음.
+  이미 진행 중이라 이번엔 미조치 — **다음 캠페인은 쪼갤 수 있는 축(소스·arm)을 큐 레벨로 노출**할 것.
+- GPU 유휴는 사실상 0(gn20 완료 16:01:19 → 같은 초에 β 디스패치).
 
 **실험 완료 후 후처리(순서대로)**: ①P5-soft 완료 시 `make_analysis` → P1 vs P5s EM 표
 (vanilla/oracle 앵커) + RUN_P5.md §4 HP 대조(LLM 몫: HP-3·5·6 재판정, hard-측 HP-1·2·4는
-N/A) → rundir+분석 커밋 ②gn_full 완료 시 H-10 재판정(신무대) ③β 완주 시 rundir 커밋 +
-overview §3.4 phase2 ShapleyFL 행 갱신 ④push는 Yonghee 결정 대기.
+N/A) → rundir+분석 커밋 ②β 완주 시 rundir 커밋 + overview §3.4 phase2 ShapleyFL 행 갱신
+③gnoise negative result 서술(§2) ④push는 Yonghee 결정 대기.
 
 ### 1.1 R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (**완주 07-22 01:31, 커밋 4c40e30**;
-gnoise만 구정의 폐기→§1.0 신정의 재실험)
+gnoise 셀은 §1.0에서 **종결** — γ=5·20 모두 무대 미성립, 재실험 계획 없음)
 
 4셀 = {clean, noisy(answer-swap@0.7), gnoise(γ=1.0), frzero} × seed0 — observer+통제+
 flirds P1-T1+T2, 심판 = GSM8K test 1,119 exact-match. 스펙·예측(H-8~11) =
@@ -161,6 +198,10 @@ lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon �
    07-19 커밋 메시지의 정정-전 수치 인용 금지). 잔여 = paper 반영. LLM 경쟁 무대 = R4.
 7. **부수분석**: 3.1 loss-heur 정본화(CSV/rundir) · oracle noisy AUROC 0.604/0.660 불일치 확정 ·
    bootstrap CI(B=1000) · momentum 열화(0.73 vs 0.81) 정본 rundir 위치.
+8. **NEW gnoise negative result 서술**: "CNN 표준 grad-noise 위협이 LLM LoRA에서는 무대 미성립"
+   — 근거·수치·문헌대조 전부 `runs/track_h/gnoise_diag/README.md`에 정리됨(그대로 인용 가능).
+   배치 후보 = paper §5 한계/negative 또는 부록 1문단. **인용 금지 항목 주의**(Krum σ=200,
+   arXiv 2509.09097·2602.19926·2605.07961 = 검증 실패). H-10은 CNN 결과로만 서술.
 
 ## 3. Yonghee 결정 대기
 

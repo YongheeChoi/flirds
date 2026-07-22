@@ -1,0 +1,12 @@
+{
+  "phases": {
+    "t2-retrain": {
+      "s": 9708.063,
+      "peak_gib": 0.0
+    }
+  },
+  "total_s": 9708.063,
+  "gpu_hours": 2.696684,
+  "n_gpus": 1,
+  "peak_gib": 0.0
+}
