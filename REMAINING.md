@@ -167,7 +167,9 @@ PY=$PY PP=<repo>/codes HOME=… HF_HOME=… HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE
 완료 후 overview 7B 열(§3.1.1·§3.5.1) 갱신.
 
 ### 1.4 장기 대기 (우선순위 낮음)
-lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon 확인.
+lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon 확인 ·
+**P0(H1) 소급 재실행 스코프 결정**(논문 인용 셀 한정으로 이후 진행; 그룹 카탈로그 = git 히스토리의
+`RERUN_AFTER_REPRO_FIX_2026-07-21.md` — 파일 삭제 07-23, TF32-on=CNN canon 확정으로 P1은 DROP).
 (E5 N=10 oracle 확장(seeds1·2·(a) 2¹⁰) = 미진행 확정, Yonghee 07-22 — 시간 제약.)
 
 ### 1.4b Track G CNN skew-축 확장 + fmnist + frrand (**즉시 실행 대상**; Slurm 서버, 2026-07-22)
@@ -179,7 +181,8 @@ lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon �
   각각 × {clean, free_rider, **frrand**, grad_noise, label_flip@{0.15,0.35,0.70}} × 3-seed
   + ③ cifar10×{iid,dir1}×frrand 백필 6런. 기존 36런 rundir는 **read-only**.
 - **스택 통일 재실행 36런 동반**(Yonghee 07-22 결정): cifar10 {iid,dir1} 12셀을 현 스택에서
-  재실행해 `rundirs_cnn_restack/`에 착지 → 2×2 표 단일 스택화 + `RERUN_AFTER_REPRO_FIX` P1 해소.
+  재실행해 `rundirs_cnn_restack/`에 착지 → 2×2 표 단일 스택화(`RERUN_AFTER_REPRO_FIX` P1은
+  07-23 TF32-on canon 확정으로 **DROPPED** — restack은 스택-통일 역할만 담당).
   기존 36 rundir는 무수정 보존(→ 두 스택 재현성 drift 표 자동 생성).
 - **제출**: `sbatch runs/track_g/sbatch_cnn_skew.sh`(90런) + `sbatch runs/track_g/sbatch_cnn_restack.sh`(36런).
   인덱스는 둘 다 seed-major(필요시 `--array` 절단으로 파일럿 가능).
@@ -204,12 +207,34 @@ lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon �
 > 여부 자체가 미정이라 즉시 실행 대상이 아님 — 논문 구성(배치안 E6-②·§3.3.3·ablation
 > A축)이 확정되는 시점에 개별 판단.
 
-1. **R4 Tier C 3-seed** — E6-②(LLM selection 본문) 확정 수치용. 순서상 Tier B 뒤,
-   비용 ≈ (Tier A+B)×2 (`runs/track_h/README.md` §1.6). 셋 중 논문 의존성 최상위.
+1. **R4 Tier C 3-seed** — E6-②(LLM selection 본문) 확정 수치용. **[07-23 조건 충족·실행
+   확정]** R4=LLM 주 무대 확정(Yonghee)으로 승격 — 스펙·예산·순서 = **§1.6(L1)**.
+   **seeds 0·1·2 전체 재실행**(Tier A seed0 = fix-전 코드 `fa5fc6e`로 판정 — H1 미적용이라
+   canonical 아님; pre-fix rundir는 동결 보존). Tier B(L4)와 독립으로 선행.
 2. **3B silo5 robustness seeds 1·2**(마스터 P5) — overview §3.3.3·caveat 1(현 1-seed)
    해소용. §1.2의 β0.3 재실행 3B 4셀(seed0 재실행·라벨 통일)과는 별개.
 3. **probe A축 seeds 1·2**(rank r32/64·st20/30 셀; lr격자·noise·std50k5-r16은 3-seed
    완료) — ablation A축 보강(선택; overview §4.2 "커진 φ의 cross-seed 실재" 확인).
+
+### 1.6 LLM L1–L6 캠페인 (**차기 B200 컨테이너 최우선** — Yonghee 07-23: β0.3 잔여보다 선행, β는 그 후 재개)
+
+**실행 절차·명령 정본 = `runs/track_h/QUEUE_L1L2_2026-07-23.md`**(사전절차: git-clean 확인 →
+hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이브[git_sha==`fa5fc6e`만
+`rundirs_llm_prefixh1/`로] → L2 스모크 → L1 → L2). 사전등록 = `runs/track_h/README.md` H-12·H-13.
+
+| # | 셀 | 비용(GPU-h) | 상태 |
+|---|---|---|---|
+| **L1** | R4 Tier C: {noisy nr0.7, frzero} × **seeds 0·1·2**(§1.5-1; Tier A arm 세트 동일, T2 4점수원은 소스별 프로세스 분할) | ~120–138 | 확정 — 큐 문서 §2 |
+| **L2** | R4 (b)-fidelity: `phase2_matrix.py REGIME=gsm50k5`(**이식 완료 07-23** — nr 기본 0.7·(b) per-round 2⁵·9방법+Fed-LOO·탐지기 4종·timing.json) — noisy→clean 각 seed0; 산출은 c2fid 열-호환 스키마로 롤업(CNN fidelity leg와 공용 표) | ~10–15/셀 | 코드 완료·서버 스모크 대기 |
+| **L4** | R4 Tier B **T2-only**(renorm 4점수원 × noisy·frzero) | ~150 | **Yonghee 승인 게이트**(§3) — L1·L2 순항 확인 후 |
+| L5 | 비등n silo5 1셀(4:2:1:1:1, clean+noisy, 3-seed; phase2_matrix 분배만 변경) — CNN qskew fidelity와 P5c 쌍 | ~10–15 | 여유 시 |
+| L6 | silo5 graded-noisy(per-client nr~U(0.5,1), `answer_swap_graded`) — spearman_vs_rate의 LLM 대응(CNN strmain 거울) | ~6–12 | 여유 시(L4와 경합 시 L4 우선) |
+
+- (L3 = 3B silo5 β0.3 4셀은 §1.2 β 재개 큐 몫 — 착지 시 git_sha만 확인.)
+- **하지 않는 것**: gnoise 재개·등방 노이즈류 LLM 재시도·LIE/sign-flip(위협 스코프 게이트)·
+  (a) retrain 3B/7B(P2/P3)·R4 frrand 추가(frzero와 실질 동일)·P0 전면 소급(§1.4).
+- 예산: 필수(L1+L2) 140–168 → +L4 290–318 → 최대 ~345 / B200×4 5일 ≈480 GPU-h(명목).
+  vast.ai는 B200 초과 시 **비-timing seed 복제만** 예외(timing/canonical 셀 이관 금지).
 
 ## 2. 문서·부수분석 (무GPU)
 

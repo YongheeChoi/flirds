@@ -15,6 +15,10 @@ so the matrix shows each detector winning on-threat and losing off-threat):
 
 REGIMES (env REGIME):
   silo5      N=5 cross-silo, full participation; (b)=exact 2^N, all coalition baselines run.
+  gsm50k5    Track H R4 stage (N=50 IID GSM8K, K=5/round; spec runs/track_h/README.md §1.6).
+             (b)=per-round decomposition (2^K=32/round -> exact), full method suite incl.
+             coalition baselines by default -- the R4 fidelity cell (EXPERIMENT_PLAN L2).
+             poison is out of scope (threat scope: clean/noisy/freerider_zero).
   device100  N=100 cross-device, K=10, Dirichlet(ALPHA) domain mixtures.  The 2^N methods
              (Banzhaf, exact-(b)) drop out; (b)=per-round decomposition, ComFedSV is the
              partial-participation Shapley baseline.  GTG/FedSV/ShapleyFL/(b) are ~2^K/round
@@ -48,6 +52,8 @@ Run from codes/ (env-parameterized per cell; seeds shard across GPUs 0-3 like ph
   ... REGIME=device100 ALPHA=0.1 SEED=0 python -u experiments/phase2_matrix.py
   # cross-device alpha=0.5 ANCHOR (turn the (b) oracle + coalition baselines on):
   ... REGIME=device100 ALPHA=0.5 ORACLE_B=1 COALITION=1 SEED=0 python -u experiments/phase2_matrix.py
+  # R4 fidelity cell (gsm50k5; nr defaults to the R4 dose 0.7; one threat/seed per process):
+  ... REGIME=gsm50k5 THREAT=noisy SEED=0 python -u experiments/phase2_matrix.py
 """
 import os
 import time
@@ -74,7 +80,7 @@ from flirds.baselines.shapleyfl import shapleyfl_from_logs
 from flirds.baselines.std_dagmm import std_dagmm_from_logs
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.corruptors import BACKDOOR_TRIGGER
-from flirds.data.llm import build, build_alpaca_iid, build_crossdevice, build_val_batches
+from flirds.data.llm import build, build_alpaca_iid, build_crossdevice, build_gsm8k_iid, build_val_batches
 from flirds.eval.generate import backdoor_asr
 from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference, pearson
 from flirds.fl.llm_server import client_optimizer, run_llm_fedavg_logs
@@ -95,6 +101,7 @@ REGIME = os.environ.get("REGIME", "silo5")
 SILO_LIKE = REGIME in ("silo5", "iid5")    # N=5 full-participation: (b)=exact 2^N, Banzhaf on, no ComFedSV.
 #   silo5 = 5-domain non-IID stage; iid5 = alpaca IID stage (same N=5 config, only the data builder differs)
 #   -> the corruption-axis x non-IID-axis matrix: {iid5, silo5} x {clean, noisy, free-rider, poison}.
+GSM_LIKE = REGIME == "gsm50k5"             # R4 stage: partial participation -> per-round (b), ComFedSV partial.
 ALPHA = float(os.environ.get("ALPHA", "0.5"))
 BD_TARGET = os.environ.get("BD_TARGET", "delicious")       # single-token target (D1/D2 install regime)
 POISON_FRAC = float(os.environ.get("POISON_FRAC", "0.5"))  # clean-preserving knob (D1: 0.5-0.8)
@@ -105,7 +112,8 @@ ATTACKER_EPOCHS = float(os.environ.get("EPOCHS", "3"))     # attacker local epoc
 ATTACKER_LR = float(os.environ.get("ATTACKER_LR", "2e-3"))  # attacker install lr (D1/D2 validated; > FL lr)
 
 # --- C-1~C-5 mitigation experiments (removal_dose; all default to no-op = current behavior) ---
-NOISY_RATE = float(os.environ.get("NOISY_RATE", "1.0"))    # Exp B: graded answer_swap dose (1.0 = full swap = current)
+NOISY_RATE = float(os.environ.get("NOISY_RATE",            # Exp B: graded answer_swap dose (1.0 = full swap = current)
+                                  "0.7" if GSM_LIKE else "1.0"))   # gsm50k5 default = the R4 dose (nr0.7)
 DOSE_MULT = float(os.environ.get("DOSE_MULT", "1.0"))      # Exp B: free-rider-random amplitude multiplier
 REMOVAL = os.environ.get("REMOVAL", "0") == "1"            # Exp A2: removal/selection curve (extra retrains; silo only)
 REMOVAL_METHODS = [m for m in os.environ.get("REMOVAL_METHODS", "").split(",") if m]  # [] = all val methods
@@ -127,7 +135,12 @@ SILO = dict(n_clients=5, train=200, val=20, test=40, rounds=10, max_steps=10, lr
 DEVICE = dict(n_clients=100, per_client=300, pool=7000, val=10, test=40, rounds=30, max_steps=5,
               lr=1e-3, maxlen=768, k_frac=0.1, warmup=3,
               noisy={10, 30, 50, 70, 90}, freerider={10, 30, 50, 70, 90}, attacker=0)
-RCFG = dict(SILO if SILO_LIKE else DEVICE)   # iid5 shares silo5's N=5 config (only the data builder differs)
+# Track H R4 stage spec (runs/track_h/README.md §1.6; matches the Tier A rundir config exactly:
+# N=50, K=5/round (k_frac=0.1), R=200, val=200 from the official test split, corrupt = clients 0-19).
+GSM = dict(n_clients=50, val=200, test=0, rounds=200, max_steps=10, lr=1e-3,
+           maxlen=512, k_frac=0.1, warmup=3,
+           noisy=set(range(20)), freerider=set(range(20)), attacker=0)
+RCFG = dict(SILO if SILO_LIKE else GSM if GSM_LIKE else DEVICE)   # iid5 shares silo5's N=5 config (only the data builder differs)
 for k in ("rounds", "max_steps", "train", "per_client", "pool", "val", "test", "warmup"):
     if os.environ.get(k.upper()):
         RCFG[k] = int(os.environ[k.upper()])
@@ -174,6 +187,9 @@ def _build_clients(seed, noisy=frozenset(), backdoor=frozenset(), train=None):
                                 n_val=RCFG["val"] * n, n_test=RCFG["test"] * n, seed=seed,
                                 noisy=noisy, backdoor=backdoor, noisy_rate=NOISY_RATE,
                                 backdoor_kwargs=dict(target=BD_TARGET, poison_frac=POISON_FRAC))
+    if GSM_LIKE:                                  # R4 loader (no backdoor seam -- poison out of scope)
+        return build_gsm8k_iid(RCFG["n_clients"], n_val=RCFG["val"], n_test=RCFG["test"],
+                               seed=seed, noisy=noisy, noisy_rate=NOISY_RATE)
     return build_crossdevice(RCFG["n_clients"], alpha=ALPHA, per_client_train=train or RCFG["per_client"],
                              per_domain_pool=RCFG["pool"], per_domain_val=RCFG["val"],
                              per_domain_test=RCFG["test"], seed=seed, noisy=noisy, backdoor=backdoor,
@@ -261,6 +277,8 @@ def build_trajectory(threat, seed, model, tok, init, pkeys, device, exclude=froz
         return logs, clients, corrupt, None, val
 
     if threat == "poison":                                         # D2b synthesis
+        if GSM_LIKE:
+            raise ValueError("poison is out of scope for gsm50k5 (threat scope: clean/noisy/freerider_zero)")
         a = RCFG["attacker"]
         corrupt = {a}
         ptrain = POISON_TRAIN if SILO_LIKE else None               # device100 attacker is per_client-sized
@@ -502,8 +520,8 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=
     _abbr = {"freerider_random": "frrand", "freerider_zero": "frzero",
              "freerider_delta": "frdelta"}                               # canonical condition tokens
     _cond = "-".join(_abbr.get(t, t) for t in threats)
-    _setting = REGIME if SILO_LIKE else f"{REGIME}-a{ALPHA}"              # silo5 / iid5 / device100-a0.5
-    _anchor = "_anchor" if (not SILO_LIKE and oracle_b and coalition) else ""
+    _setting = REGIME if (SILO_LIKE or GSM_LIKE) else f"{REGIME}-a{ALPHA}"   # silo5 / iid5 / gsm50k5 / device100-a0.5
+    _anchor = "_anchor" if (not SILO_LIKE and not GSM_LIKE and oracle_b and coalition) else ""
     _dose = ((f"_nr{NOISY_RATE:g}" if NOISY_RATE != 1.0 else "")     # Exp B dose tokens (default: none)
              + (f"_dm{DOSE_MULT:g}" if DOSE_MULT != 1.0 else ""))
     _seedtok = f"_s{seeds[0]}" if os.environ.get("SEED") else ""   # 1-seed/process shard -> distinct dir (else silent overwrite)
@@ -539,10 +557,11 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     pt = PhaseTimer(device, n_gpus=int(os.environ.get("N_GPUS", "1")))   # §15.1 timing.json substrate
     threats = ([os.environ["THREAT"]] if os.environ.get("THREAT")
+               else ["clean", "noisy", "freerider_zero"] if GSM_LIKE
                else ["noisy", "freerider_random", "freerider_zero", "poison"])
     seeds = [int(os.environ["SEED"])] if os.environ.get("SEED") else [0, 1, 2]
-    oracle_b = os.environ.get("ORACLE_B", "1" if SILO_LIKE else "0") == "1"
-    coalition = os.environ.get("COALITION", "1" if SILO_LIKE else "0") == "1"
+    oracle_b = os.environ.get("ORACLE_B", "1" if (SILO_LIKE or GSM_LIKE) else "0") == "1"
+    coalition = os.environ.get("COALITION", "1" if (SILO_LIKE or GSM_LIKE) else "0") == "1"
 
     print(f"=== step5 MATRIX | {SCALE} {REGIME}" + (f" alpha={ALPHA}" if not SILO_LIKE else "")
           + f" | R={RCFG['rounds']} K_frac={RCFG['k_frac']} lr={RCFG['lr']} batch={MCFG['batch']} "
