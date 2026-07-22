@@ -19,6 +19,7 @@ runs/phase2_matrix/analysis/
 
 # Track C: Slurm per-job .out logs are transient; the rundirs under runs/track_c/ ARE tracked.
 slurm/logs/
+runs/track_c/c2fid/_logs/
 # Derived fidelity tables (Spearman+Pearson vs oracle, regenerated from rundir phi):
 runs/track_c/fidelity.csv
 runs/track_d/fidelity.csv

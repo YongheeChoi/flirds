@@ -214,6 +214,14 @@ lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon �
   leg 설계 확정**(C2 무대 동결 궤적 × 9방법 vs (b)-perround oracle; (a) 포기·Ripple/Banzhaf
   제외·Fed-LOO 포함) — 구현 대기 + 1셀 파일럿 게이트. **종합 계획·교차검증 핸드오프 =
   루트 `CNN_CAMPAIGN_PLAN_2026-07-22.md`** (열린 질문 7건 포함).
+- **07-23 fidelity leg 구현 완료 + 교차검증 회신 7건 전건 해소**(plan §6 결정 10–17):
+  범위 **144셀 확정**, `codes/experiments/track_c2_fid.py` + `tests/test_c2fid.py`(5 green)
+  + fmnist smoke e2e green(eff-gap 0.0) + `runs/track_c/c2fid/{README.md(1행 게임 캐비엇 +
+  **사전등록 F-1~F-4**), sbatch_fid.sh}`. (b) 라운드 샤딩 채택(병합 커버리지 assert).
+  **잔여**: ① 현 큐 종료 → **파일럿 `sbatch --array=11 runs/track_c/c2fid/sbatch_fid.sh`**
+  (cifar10 dir1 grad_noise seed0) → GPU-h 실측 보고 → GO 후 144셀 ② fidelity 분석 도구
+  (산출 = c1 fidelity.csv 열-호환 + stage 컬럼) ③ `runs/track_h/make_analysis.py` strmain
+  인식 확장(THREATS 4→5종; 완주 후) ④ 완료 후 F-1~F-4 대조(MISS 포함).
 
 ### 1.5 seed-추가 잔여 3건 (**조건부** — Yonghee 2026-07-22)
 

@@ -243,7 +243,7 @@ LLM device100·task7 기실전 사용). 비용/셀 = Σ_r 2^{|P_r|} = 120 × 2^1
 C1(N=10 전원참여 R=10)과 **다른 게임** → C1 표와 수치 직접 비교 금지, **"배포(cross-device)
 레짐 fidelity"**로 별도 절 서술. (b)가 같은 게임의 exact 값이므로 fidelity 정의는 자기완결.
 
-### 4.6 구현 계획 (안 A = from-logs 포팅; 구현은 무GPU라 지금 진행 가능)
+### 4.6 구현 계획 (안 A = from-logs 포팅) — ✅ 구현 완료 2026-07-23 (하단 상태 블록)
 
 1. 신규 러너 (제안: `codes/experiments/track_c2_fid.py`) — `track_c2.build()` **재사용**
    (파티션·위협·마스크 규약 자동 상속), `fedavg(..., on_round=logs.append)`로 동결 궤적
@@ -258,12 +258,21 @@ C1(N=10 전원참여 R=10)과 **다른 게임** → C1 표와 수치 직접 비�
 5. 스모크: smoke 모드(n=20, R=4) 1셀 — (b) 대수검증(perround vs 전열거 2^N smoke 규모 대조),
    부호 방향(오염 φ>clean φ), 지표 산출 확인.
 
-### 4.7 범위 (⚠️ 교차검증 확정 요청 — §7-1)
+**→ 구현 완료(2026-07-23, 이 세션)**: `codes/experiments/track_c2_fid.py` — build() 재사용
++rate 캡처(corruptor 랩, 비트중립)+로그 CPU 강제+**(b) per-round 청킹**(라운드별
+`in_run_shapley_perround` 1콜 = GPU 1회 스테이징+phi_b_rounds.parquet 영속+라운드 샤딩
+`C2FID_B_ROUNDS` 일체 해결)+지표 C1 세트+svr 양변형. `codes/tests/test_c2fid.py` **5개
+green**((b)청크=2^N 동치 / 샤드 병합+커버리지 / efficiency=독립 U(N) / rate 캡처 비트중립 /
+궤적 조인 비트동일). fmnist smoke e2e green(eff-gap **0.0**, 9방법 전부 부분참여 산출,
+phi.parquet 열-호환 확인). `runs/track_c/c2fid/{README.md(1행 캐비엇+**F-1~F-4 사전등록**),
+sbatch_fid.sh(144셀 seed-major; **파일럿 = `sbatch --array=11`** = cifar10 dir1 grad_noise
+seed0)}. 파일럿 제출은 현 큐(195런) 종료 후.
 
-- **권고 = downstream과 동일 6콤보 × 8위협 × 3seed = 144셀.** 근거: 궤적 조인(§4.9)은
-  downstream 쌍이 있어야 성립하고, fmnist×{shard,qskew}는 downstream에 없음(원 지시 기본 제외).
-- 대화 승인 문구는 "2×4 전부"(=192셀) 기준이었음 — fmnist×{shard,qskew} +48셀을 fidelity에만
-  넣을지가 잔여 결정. 넣으면 downstream 쌍도 함께 추가(+48런)하는 게 정합적.
+### 4.7 범위 — ✅ 확정 144셀 (교차검증 세션 회신 07-23)
+
+- **144 = downstream 동일 6콤보 × 8위협 × 3seed** 확정(192 반대). 근거: 궤적 조인(§4.9)이
+  핵심 자산인데 downstream 쌍 없는 48셀은 조인 불가 + fmnist 는 효과크기 축소 무대(H-K6).
+- 여유 시 fmnist×{shard,qskew} +48 은 **downstream 쌍으로 동반** 추가(fidelity 단독 금지).
 
 ### 4.8 순서·비용 (Yonghee 확정: **구현 대기 + 1셀 파일럿**)
 
@@ -308,16 +317,32 @@ from-logs φ 교차검증 가능. 단 게이트 arm들의 궤적은 개입으로
 9. **Fidelity leg**: 오염축 C2 통일, (a) 포기, Fed-LOO 포함, Ripple·Banzhaf 제외, 동결
    궤적(selection 없음), GT=(b), 지표=C1 세트. 순서 = 구현 대기 + 1셀 파일럿.
 
-## 7. 열린 질문 (교차검증 요청)
+**(07-23, 교차검증 세션 회신 — §7 전건 해소)**
 
-1. **fidelity 범위**: 144(=downstream 6콤보 정합; 권고) vs 192(fmnist shard/qskew 포함;
-   포함 시 downstream 쌍 +48런 동반 권고).
-2. fidelity 러너 파일명·rundir 위치(제안: `experiments/track_c2_fid.py` → `runs/track_c/c2fid/`).
-3. spearman_vs_rate 변형(전클라/corrupt-only) 둘 다 산출?
-4. fidelity 분석 도구: 신규 make_analysis vs track_c 기존 툴 확장.
-5. (b) 파일럿에서 oracle wall 과대 시 대응(라운드 샤딩 준비돼 있음 — 채택 여부).
-6. Track H strmain의 T2(재학습) leg까지 포함 제출됨 — 범위 이견 있으면 조기 scancel 가능.
-7. `runs/track_h/make_analysis.py` strmain 인식 확장(§3.2) — 완료 후 수정 예정.
+10. **fidelity 범위 = 144**(§4.7): 궤적 조인이 핵심 자산 — downstream 쌍 없는 48셀 조인
+    불가 + fmnist=효과크기 축소 무대(H-K6); +48 은 쌍 동반일 때만.
+11. 러너/rundir = `experiments/track_c2_fid.py` → `runs/track_c/c2fid/` 확정 + **§4.5
+    게임 캐비엇을 c2fid README 1행으로 명기**(반영됨).
+12. spearman_vs_rate **양변형 산출**(전클라=C1·LLM 호환 / corrupt-only=용량 해상도; 비용 0).
+13. fidelity 분석 도구 = 신규 스크립트 가능하되 **산출 스키마 = c1 fidelity.csv 열-호환 +
+    `stage` 컬럼**(LLM fidelity 표와 병합·논문 표 생성기 재사용).
+14. **(b) 라운드 샤딩 채택**(라운드 독립=손실 0; 샤드 병합 커버리지 assert 1개 —
+    `test_c2fid` 로 규약 고정).
+15. Track H strmain **T2 leg 유지**(R4 T2 와의 CNN↔LLM 대칭 자산 — 사후-부호 재학습).
+16. `runs/track_h/make_analysis.py` strmain 확장 동의(**완주 후** 수정).
+17. **fidelity-leg 사전등록 추가**(H-K1~6 은 downstream 예측뿐이었음): **F-1~F-4** 를
+    `runs/track_c/c2fid/README.md` 에 본런 전 등록 완료 — qskew 균등-합성 계열(코드 근거
+    ShapleyFL·ComFedSV; 릴레이 표기 "G4·G6"는 매핑 미교환이라 FedSV 별도 행 병기) 하락 /
+    fr·frrand exact-0 계열 정상 vs renorm 유령값 / 참여 10/100 std50k5 붕괴 서열 재현 /
+    strmain svr **Flirds≈(b)>1st**. qskew fidelity 착지 시 **F-L2(LLM 비등n silo5)와
+    cross-track 쌍** → F-L2 우선순위 근거 강화(P5c 양 트랙 실증).
+
+## 7. 열린 질문 (교차검증 요청) — ✅ 전건 회신 완료 07-23; 답 = §6 결정 10–16
+
+1. fidelity 범위 → **144**(결정 10). 2. 러너/rundir → **확정**(결정 11). 3. svr 변형 →
+**둘 다**(결정 12). 4. 분석 도구 → **신규+열-호환 스키마**(결정 13). 5. (b) 샤딩 →
+**채택**(결정 14). 6. Track H T2 → **유지**(결정 15). 7. hstrmain make_analysis →
+**완주 후 확장**(결정 16).
 
 ## 8. 인벤토리
 
@@ -327,6 +352,9 @@ from-logs φ 교차검증 가능. 단 게이트 arm들의 궤적은 개입으로
 15셀 완료·8 실행·172 대기. 완료 감시 모니터 가동 중(실패·15셀 단위·전체 완료 알림).
 **sbatch**: `runs/track_g/sbatch_cnn_{skew,restack,strmain}.sh`, `runs/track_h/sbatch_strmain.sh`.
 **테스트**: `codes/tests/test_partition_qskew.py`(3)·`test_frrand_cnn.py`(4) 신규, 전 54개 green.
+**07-23 fidelity leg 자산(구현 완료)**: `codes/experiments/track_c2_fid.py` ·
+`codes/tests/test_c2fid.py`(5 green) · `runs/track_c/c2fid/{README.md(캐비엇+F-1~F-4
+사전등록), sbatch_fid.sh(144셀; 파일럿 `--array=11`)}` — 파일럿은 현 큐 종료 후 제출.
 **레거시 회귀**: fmnist×{iid,dir1,shard} HEAD-트리 vs 작업-트리 metrics.json **완전 동일**(3/3).
 **인접 자산(이번 캠페인 밖)**: `rundirs_cnn_v3/`(C1_V3 12런), `runs/track_h/rundirs_cnn_{dyn,scale}/`,
 `runs/track_c/c1`(N=10 fidelity 30런; mnist+cifar10 — 이 캠페인의 fidelity leg와 **별개 무대**).
