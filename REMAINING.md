@@ -39,18 +39,22 @@
   수라 makespan이 총량에 지배됨). **쪼갤 수 있는 축(소스·arm)을 큐 레벨로 노출**할 것 —
   §1.6 L1에 반영 완료(T2 4점수원 = 소스별 프로세스 분할).
 
-#### rundir 충돌 가드 — 미결 3건 + 상시 캐비엇
+#### rundir 충돌 가드 — 처리 완료(2d3f482) + 설계 결함(§1.7)
 
 `RunLogger`는 같은 이름에 **다른 config**면 `<name>_<cfg-sha8>`로 비켜 쓰고, **같으면 덮어쓴다**
-(`flirds/run_logger.py:70-82`). config 스키마 증가(`attacker_*`·`poison`·`dose_mult` 등 신규 키)로
-이번 세션 β 재실행분이 해시 접미사에 착지했다. `1B_device100-a0.1_frzero`만 **Yonghee 07-23 지시로
-canonical 덮어씀**(해시 디렉터리 제거, β0.5 원본은 git 히스토리에만). 나머지는 **해시 이름 그대로
-비파괴 커밋**해 두었고 canonical 통합 여부는 **판단 대기**(§3):
-`1B_device100-a0.01_noisy_31132ce3` / `1B_device100-a0.01_frrand_72cbf7a2` /
-`gsm50k5_frzero_observer_seed0_1073ceb7`(track_h; 아래 P5 observer 중복과 같은 사안).
+(`flirds/run_logger.py:70-82`). config 스키마 증가(`poison`·`dose_mult`·`removal`·`client_opt`·
+`noisy_rate` 신규 키 = 해당 셀엔 전부 기본값/무관)로 이번 세션 β 재실행분이 해시 접미사에 착지.
+**phase2_matrix 3셀은 canonical로 통합 완료**(a0.1_frzero=49c402a, a0.01_noisy·a0.01_frrand=2d3f482).
+- 검증: 신규 = 구 canonical 대비 **Fed-LOO + cos_d/euc_d 추가된 상위집합**(단순 β 재실행 아님).
+  겹치는 수치 미세차(Flirds 0.6344→0.6323)는 LLM 트랙 비결정성 범위. 구본은 git 히스토리(4be6f48).
+- **track_h observer 해시 3건은 덮어쓰지 않음 — 반대 상황**: canonical=`fa5fc6e`(**pre-fix,
+  H1 미적용**), 해시=`262f67c`(post-fix). 해시 쪽이 옳은 판본이나 §1.5-1 "pre-fix 동결 보존"에
+  따라 §1.6 사전절차(`rundirs_llm_prefixh1/` 아카이브)로 처리할 것. **그 전에 분석 돌리면
+  make_analysis가 pre-fix를 집을 수 있다** — arm별 dup 중 하나만 채택하므로 채택본 확인 필수.
 
-- ⚠ **β는 `config.yaml`에 기록되지 않는다** → 가드가 β0.5 원본을 지켜주지 못함. β 출처 근거는
-  mtime·커밋 이력뿐(a0.1_noisy·a0.1_frrand·silo5 4셀은 config가 같아 자동 덮어써짐).
+- ⚠ **β는 `config.yaml`에 기록되지 않는다**(소스 리터럴 `beta=0.3` 하드코딩 4곳: `phase2_matrix.py:359`,
+  `track_c1.py:302`, `track_d.py:226`, `track_c2_fid.py:218`) → 가드가 β0.5 원본을 지켜주지 못함.
+  β 출처 근거는 `meta.json:git_sha`뿐(a0.1_noisy·a0.1_frrand·silo5 4셀은 config가 같아 자동 덮어써짐).
 - ⚠ **poison 열은 β 혼재**: poison 3셀 영구 제외(Yonghee 07-23 "오염축 poison 미사용")로
   device100 a0.5/a0.0 + 3B_silo5는 **β0.5 원본 그대로**(mtime 06-12), 1B_silo5(07-20)·
   1B_iid5(07-06)만 β0.3. poison 열을 다시 쓰게 되면 β 일관성부터 확인(§1.4 'β-불변 canon'과 동일 안건).
@@ -166,6 +170,30 @@ hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이�
 - 예산: 필수(L1+L2) 140–168 → +L4 290–318 → 최대 ~345 / B200×4 5일 ≈480 GPU-h(명목).
   vast.ai는 B200 초과 시 **비-timing seed 복제만** 예외(timing/canonical 셀 이관 금지).
 
+### 1.7 rundir 정체성 설계 수정 (**미착수** — 승인 후 구현; 원인 진단은 07-23 완료)
+
+**진단**: `run_logger.py:77`이 `config`를 **문자열 통째로** 비교한다. 그런데 `config`는 상반된 두
+역할을 겸한다 — **정체성**("어떤 실험인가", 좁고 안정적이어야 함) vs **출처**("정확히 뭐가 돌았나",
+넓고 계속 늘어남). 한 딕셔너리에 섞어 통째 비교하니 **출처를 개선할 때마다 정체성이 바뀐 것처럼
+보인다.** 가드가 목적과 **역상관**: 무해한 스키마 증가엔 오발화(5건), 진짜 의미 변경인 β0.5→β0.3엔
+침묵(소스 리터럴 → config 바이트 동일 → 조용히 덮어씀). 덤으로 LLM 트랙은 conv-free라 같은 config로도
+같은 숫자가 안 나오므로 "config 같음 ⇒ 같은 런"이 애초에 참이 아니다.
+
+**처방**:
+1. **정체성 allow-list 분리**(핵심) — `RunLogger(..., identity=(...))`로 지정 필드만 비교.
+   같으면 **덮어쓴다**(재실행; 이전 판본은 git). 다르면 **이름 생성 버그이므로 크게 실패** —
+   팬텀 디렉터리를 만들지 않는다. 출처 키가 늘어도 절대 포크되지 않음.
+   근거: `phase2_matrix.py:520-528`의 이름 생성이 이미 **"기본값이면 토큰 없음"** 규약을 써서
+   knob이 추가돼도 옛 이름이 안 바뀐다 — 가드를 같은 원리로 맞추는 것.
+2. **이름에 없는 의미 파라미터 제거**(근본 원인) — β 하드코딩 4곳을 `SFL_BETA` 하나로 올려
+   config+정체성에 태움. 그러면 β 변경이 **발사 시점에 실패** → "조용히 덮어씀"이 구조적으로 불가능.
+   현재 이름에 없는 것 = **β·`removal`·`client_opt`**.
+3. (선택) 덮어쓸 때 이전 `meta.json`의 git_sha+시각을 `superseded.json`에 append → 커밋 전 창까지 커버.
+
+**결정 필요**: 2를 넣으면 β0.3 잔여 10셀 재개 시 canonical(β0.5)과 정체성이 달라 **멈춘다**
+(의도된 동작이나 `RUNDIR_REPLACE=1` 같은 명시 플래그가 한 번 필요). 1만 하고 β는 문서로 관리하는
+축소안도 가능 — 어느 쪽인지 = §3.
+
 ## 2. 문서·부수분석 (무GPU)
 
 1. **overview 반영**(`research-wiki/survey/flirds-experiment-results-overview.md`): E4 Fed-LOO·E5 N=10·
@@ -190,5 +218,6 @@ hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이�
 
 - **push**: 로컬 커밋 다수 — push 여부/시점(07-22: Yonghee가 직접 push 예정).
 - **R4 Tier B 진입**(§1.6 L4; Tier A seed0 보고 완료 — overview §3.2.7).
-- **해시 접미사 rundir 3건 canonical 통합 여부**(§1.0) — 현재 비파괴 커밋 상태.
+- **§1.7 rundir 정체성 수정 범위**: 처방 1+2(β를 정체성에 태움 — 재개 시 명시 플래그 필요) vs
+  1만(β는 문서 관리). 미착수.
 - **잔여 컨테이너 ~23h(마감 07-24 02:2x)에 무엇을 넣을지** — "β 이전에 할 다른 실험" 미지정.
