@@ -250,3 +250,61 @@ a0.1_frzero β0.3 canonical) · 48734fc(track_g CNN skew 31 rundir 중간 스냅
 - 신규 수치 전부 rundir `metrics.json`/`timing.json` 직접 집계(anaconda python; ddof=0):
   gsm50k5 43 rundir EM·kept·gate·GPU-h 표 + device100 a0.1_frzero 3-seed mean±std.
 - runs/ 읽기 전용 · GPU 0 · paper/ 무수정 · 로컬 커밋만(push = Yonghee).
+
+---
+
+## 추가 지시 (9차, 2026-07-23)
+
+> Yonghee: "새로 완료된 실험들 overview에 업데이트 해줘."
+> Yonghee(중간 추가): "그리고 fed-loo는 논문에서 제외하기로 결정했기 때문에 overview에서도 그냥 다 지워줘."
+
+착지 커밋: `4fb02fb`(드레인 완주 — device100 a0.01 2셀 + P5-soft frzero×fedif) ·
+`2d3f482`(a0.01 2셀 canonical 통합) · `b4f238a`·`194c2e4`·`23659af`·`914b922`(REMAINING 개정, 타 세션).
+
+### 반영 내역 — (1) 신규 결과
+
+1. **R4 P5-soft 12/12 완주**: 마지막 `gsm50k5_frzero_t2_pw_fedif_seed0` 착지 → §3.2.4 (b2) T2 표의
+   마지막 ⬚ = **.3700**. kept=30(=oracle 집합)이나 dedupe 불발로 **독립 재학습** → 타 3점수원 .3691과
+   **1문항** 차. 이 1문항이 "init 고정 후 run-to-run 잔차"의 눈금이 됨.
+2. **[신규 발견] EM ±0.5pt 노이즈 바닥의 정체 = H1 재현성-fix 경계**(커널 비결정성 아님):
+   전 gsm50k5 rundir `meta.json:git_sha`를 fix 커밋 `8598cea`(track_g.py:270 `seed_everything(0)`)
+   기준으로 가른 결과 — canonical observer 3개 = pre-fix(`fa5fc6e`, LoRA-A init entropy-seeded),
+   dup observer 3개 = post-fix(`262f67c`). 즉 ±0.5pt = **init 재추첨 2회의 실측 스프레드**
+   (§4.7 'run-인스턴스 재추첨'·caveat 13① 과 같은 현상).
+   - **판본 분포(42런)**: pre-fix 21 = observer 3·oracle_excl 2·random_excl 2·clean t2_sign 4·
+     frzero t2_sign 4·frzero t2_random·**noisy t2_sign_flirds**·flirds_gate_v2 3 /
+     post-fix 21 = noisy t2_sign 3종·noisy t2_random·flirds_pweight 3·P5s t2 12·dup observer 3.
+   - **함의**: (b2) noisy T2 P1 행에서 **flirds만 pre-fix**, 경쟁 3종+t2_random은 post-fix로 init 공유
+     → flirds가 낀 비교엔 재추첨 1회가 섞임. 1.5pt(vs 1차)·4.7pt(vs random)는 3~9배로 생존,
+     0.36pt(vs lossheur)는 이중 미분리. Tier C(L1)는 전부 post-fix라 해소.
+   - **부수**: P5s의 `vanilla_target`이 dup을 가리키는 것은 단순 기록이 아니라 **판본 정합**.
+   - 반영: §3.2.4 (b1) 주·읽기 1·2·3 불릿·caveat ④ 전면 개정 · §5.1 R4 불릿.
+3. **device100 a0.01 noisy·frrand = β0.3 재실행판 canonical**(2d3f482): §3.3.2 (b1) α=0.01 열 갱신
+   (Flirds .575→.572·1st .575→.571·loss-heur .574→.571·FedIF .568→.570·ComFedSV .419→.438·
+   FLDetector .482→.499·STD-DAGMM .652→.600·FLTrust .602→.592) + frrand 표 밖 열 신설 +
+   (b3) FedIF 재실행 a0.01 Spearman(noisy .616±.094·frrand .756±.030) + timing 5.18/5.01 GPU-h.
+   ⚠ **a0.01 frzero는 미재실행**(구 실행 = 판본 혼재 명기).
+4. **β 캠페인 종료 반영**: §4.7·caveat 9 — 완주 5셀 전부 커밋 완료 / poison 3 영구제외 /
+   보류 10(device100 7[a0.0·a5.0·a0.01 frzero] + 3B silo5 3, ~36 GPU-h).
+5. GPU-h 재집계: R4 Tier A 54.6 + P5s **60.4** = **115.0**(rundir timing.json 합산).
+
+### 반영 내역 — (2) Fed-LOO 전면 제외
+
+- **caveat 15 신설**(Banzhaf·Ripple caveat 12와 동형): 논문 비게재 → 전 표·범례·baseline-set에서
+  행·열·언급 삭제, **rundir 데이터는 존속**, 러너는 계속 산출하므로 집계 단계에서만 제외.
+- 삭제 지점: §3.1.3 (b1)·(b2) 행 + 절 제목·(a)·읽기(E4 = '경량 3-seed 재확인 + loss-heur post-fix
+  runtime 정본'으로 재정의) · §3.1.4 · §3.3.1 표 행·읽기·baseline-set(14종→13종) · §3.3.2 (b1)·(b3)
+  행 + 표 밖 열 3곳 + runtime · §3.3.4 표 행(레이아웃 재배치) · §3.4.1 op-count 열 · §3.4.3 ·
+  §4.2 (c) · §4.4.1(5종→4종) · §4.4.2(cifar10 최고 분리 = 익명 처리) · §4.6 AdamW 열거 ·
+  §5.1 2곳 · §5.2 감사 2곳 · §6.3 E3 · §2 행 10·19·21·P12·P13 · §2.1 매핑.
+- **placement plan도 동반 수정**(논문 계획 문서라 live 인용이 남으면 모순): §전역결정에 Fed-LOO 행 추가 ·
+  E2 확장 문구에서 "Fed-LOO 동률"·"분야표준 앵커" 제거(→ §2 계보 공백 앵커 논거 공석으로 명기) ·
+  §제외 목록에 항목 추가.
+
+### 검증
+
+- 잔존 "Fed-LOO" 10곳 = 전부 **제외 사실을 기록하는 주석**(caveat 15·폴더명 유래·rundir 존속 안내).
+- 표 셀 수 정합 자동검사 통과(escape된 `\|` 1건은 기존 §4.8 P5 표).
+- 신규 수치 전부 rundir `metrics.json`/`timing.json` 직접 집계(anaconda python; ddof=0):
+  gsm50k5 44 rundir(EM·kept·dedup_shared·git_sha·GPU-h) + device100 a0.01 2셀 3-seed 전후 대조.
+- runs/ 읽기 전용 · GPU 0 · paper/ 무수정 · 로컬 커밋만(push = Yonghee).

@@ -632,3 +632,14 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 8차 절)
 - touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · REMAINING·track_h 런독(번호 전파)
 - note: R4 P5-soft t2 11/12 착지 → §3.2.4 표 채움 + **기준선 오배정 정정**(P5s의 vanilla는 dup observer — 07-22의 "clean −0.4pt 구조적 비용"은 vanilla 재실행 변동이었음) + **EM 노이즈 바닥 ±0.5pt 신설**(observer 2회 5–6문항 차 → flirds↔lossheur 0.36pt는 미분리로 격하). device100 a0.1 frzero β0.3 정본화(§3.3.2)·캠페인 상태 개정(poison 3셀 영구제외·10셀 보류). 신규 계획 P12(R4 (b)-fidelity)·P13(CNN c2fid 144셀)·P14(CNN 확장, 인용 금지) 등재 — 포화된 fidelity 표를 넘어설 축. **§3.2 결번 제거 재번호**(구 3.2.3→2·3.2.6→3·3.2.7→4; "구 §" 표기 규약 = §2.1 주) + 삭제 문서·깨진 위키링크 참조 정리.
+
+## [2026-07-23] note | R4 P5-soft 완주·a0.01 β0.3 반영 + EM 노이즈 바닥의 정체(H1 경계) + Fed-LOO 전면 제외
+
+- 대상: [[../survey/flirds-experiment-results-overview]] · [[../survey/paper-experiment-placement-plan]]
+- raw: `raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md` (추가 지시 9차)
+- note: ① R4 P5-soft 마지막 런(frzero×fedif .3700) 착지로 (b2) 표 전 칸 완성 — kept 동일·독립 재학습이
+  1문항 차. ② **EM ±0.5pt 노이즈 바닥 = 커널 비결정성이 아니라 H1 seeding-fix 경계**(rundir git_sha 감사)
+  = init 재추첨 스프레드; noisy T2 행은 flirds만 pre-fix라 그 비교에 재추첨 1회가 섞임(Tier C서 해소).
+  ③ device100 a0.01 noisy·frrand β0.3 정본화(frzero는 미재실행 = 혼재 명기), β 캠페인 종료 상태 갱신.
+  ④ **Fed-LOO 논문 비게재 결정(Yonghee)** → overview 전 표·서술에서 제거, caveat 15 신설(rundir 존속·
+  러너는 계속 산출 → 집계 단계 필터), placement plan E2 문구 동반 수정.

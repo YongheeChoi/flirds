@@ -42,6 +42,7 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 
 **전역 결정 반영(2026-07-22 Yonghee)**:
 - Banzhaf·Ripple 비교군 제외(overview §6.2-12) — 논문 전 표에서도 제외.
+- **Fed-LOO 비교군 제외**(2026-07-23 Yonghee; overview §6.2-15) — 논문 전 표에서 제외. E2 확장 문구에서 "Fed-LOO 동률"·"분야표준 앵커" 논거가 빠지므로 §2 계보 공백 대응은 다른 축으로.
 - 수렴(rounds-to-target) 축 스코프 제외(overview §5.6) — 전용 절 없음.
 - **poison(clean-preserving backdoor) 위협축 제외**(overview §6.2-8) — 논문 위협 스코프 = noise류·free-rider류(zero/random/delta)·label-flip류만.
 - **LLM selection→성능 실험의 심판 = GSM8K(exact-match)로 확정** — alpaca val-loss·MMLU·ROUGE는 성능 차이 변별력 부족 판단; **소규모 cohort(silo5류, N=5급) selection 세팅은 이 축에서 진행하지 않음**(07-22 후속 확인: '소규모'는 cohort 규모 지칭 — **R4 N=50·5/50은 해당 없음, 사용 확정**); std50k5(alpaca 부분참여) selection 계열(Track H Tier 3·R2·track_g 파일럿) = 미사용(overview §3.2 서두 ③; std50k5 *fidelity* probe는 유지 확정 — 지양은 selection 축 한정).
@@ -51,7 +52,7 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 | # | 절(가칭) | 내용 | overview 출처 | 배치 근거 (§1–§3) | 진행 중 의존성 |
 |---|---|---|---|---|---|
 | E1 | 실험 세팅과 측정 프로토콜 | 무대(std20/anchor5/robustness silo5·device100/CNN C1·C2), 듀얼 오라클 (a)/(b) 정의, 비교군·지표, seed 규약 | §3.1.1(a)·§3.1.2(a)·§3.3.1(a)·§3.3.2(a)·§1 범례 | 기여 2가 "검증 프로토콜" 자체를 주장 — 프로토콜을 명시 절로 세워야 주장이 성립 | β0.3 잔여 18+9셀·재현성 P0 재실행(caveat 13)이 절대값 표기·재현성 서술에 영향 |
-| E2 | Exact in-run oracle 대비 추정 정확도 (헤드라인) | LLM 1B–7B × std20/anchor5 fidelity 표(순위·값·거리) + 확장: N=10 exact 2¹⁰·Fed-LOO 동률 | §3.1.1(b) 표 3종 · §3.1.3(b1) | 초록 "ρ≥0.999 전 스케일" 직접 실증 = L2 해소; Fed-LOO는 분야표준 앵커 대비(§2 계보 공백) | 없음(완료) |
+| E2 | Exact in-run oracle 대비 추정 정확도 (헤드라인) | LLM 1B–7B × std20/anchor5 fidelity 표(순위·값·거리) + 확장: N=10 exact 2¹⁰ 동률 | §3.1.1(b) 표 3종 · §3.1.3(b1) | 초록 "ρ≥0.999 전 스케일" 직접 실증 = L2 해소 | 없음(완료) — 단 Fed-LOO 열 제외(07-23)로 §2 계보 공백의 앵커 논거는 공석 |
 | E3 | 기여 신호의 존재 조건 + 오염·비IID·부분참여 fidelity | B축 2×2(오염×비IID) cross-seed ρ · (b) self-stability 요지(IID-clean 불안정 vs non-IID 안정) · silo5/device100 오염 무대 Spearman · std50k5 부분참여(uniform-subset 계열 붕괴 vs Flirds 1.000) | §3.1.5(b1) · §5.4(요지) · §3.1.4/§3.3.1–2(Sp 열) · §4.2(b2) | "왜 IID-clean에서 전원 만점인가"의 선제 답(정직-검증 기조) — fidelity 주장의 해석 조건을 규정해야 L2 주장이 리뷰에 버팀; 부분참여는 FL 조건 ③(간헐 참여)에서의 차별화 | silo5 값은 β0.3 재실행판(ce0b454) 정본 — 3B silo5 4셀 재실행(REMAINING §1.2) 후 3B 값 재확인 |
 | E4 | Retrain oracle 특성화 + 게임-무관 척도 | (a)vs(b) 0.933(1B anchor5) + 전 방법 vs (a) · CNN 듀얼 오라클(vs (a) 0.35 전 방법 공통 = 두 게임 괴리) · removal-curve 요약(worst-first 인과) | §3.1.1 (a)행·vs(a) 표 · §3.1.2(b1) · §4.4.1–2(요약) | §1 명시 "retrain 관계는 특성화 실험으로만 보고"; removal은 §1이 열거한 실효성 실험이자 게임-무관 공통 자 — 본문 요약+appendix 상세 분할 | P2/P3((a) 3B/7B retrain) ⬚ — 채우면 표 확장; 미완이면 1B 한정 명기 |
 | E5 | 비용: 평가 단위와 참여자 수 | op-count 축(하드웨어 독립) + 전 무대 runtime 표 + (b) 지수 비용의 N=10 실측(160×) + "cohort 작으면 (b)가 더 쌈" 정직 보고 | §3.4.1 · §3.4.2 · §3.4.3 · §3.1.3(b2) | L1 해소·기여 1("HVP 1회 고정, 내적 하나")의 실증; FL 조건 ④(재학습·추가연산 불가) | loss-heur 3B/7B 재측정·β deferred 9셀(7B runtime) 대기 — pre-fix 값 caveat 유지 |
@@ -91,6 +92,8 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 - **수렴(rounds-to-target)**: 스코프 제외(overview §5.6) — 본문·appendix 모두 전용 절 없음.
 - **Banzhaf·Ripple**: 비교군 제외(overview §6.2-12) — 전 표 제외; Ripple 제외 근거는
   [[ripple-audit-2026-07/ripple-baseline-exclusion]]을 프로토콜 각주로 인용 가능.
+- **Fed-LOO**: 비교군 제외(overview §6.2-15, 07-23) — 전 표 제외. rundir엔 계속 산출되므로
+  집계 스크립트 결과를 표로 옮길 때 열 필터를 확인할 것.
 - **poison 위협축**: 논문 비게재(overview §6.2-8) — 관련 실험(silo5/device100/3B poison 셀·
   removal poison ASR·dose pf ladder) 전부 미배치. 데이터는 rundir 존속.
 - **std50k5 selection 계열**(Track H Tier 3·R2·track_g std50k5-mixed 파일럿): 미사용(overview
