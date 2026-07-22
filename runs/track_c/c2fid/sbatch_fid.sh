@@ -21,7 +21,11 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=04:00:00
+#SBATCH --time=08:00:00
+# 8h, not the grid's 3h: the (b) oracle is 122,880 utility evals + GTG/FedSV/ShapleyFL
+# add their own per-round coalition sweeps, and NONE of it is measured yet -- a wall
+# truncation would destroy the very measurement the pilot exists to take.  Partition
+# MaxTime is 14 days, so the request costs nothing but backfill priority.
 #SBATCH --array=0-143%8
 #SBATCH --output=/home/chyoyhr/projects/flirds/runs/track_c/c2fid/_logs/%x_%A_%a.out
 
