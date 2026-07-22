@@ -622,3 +622,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 6차 절)
 - touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · memory `paper-threat-stage-scope`
 - note: R4 gnoise = γ={1,5,20} 전부 무대 미성립 → negative result로 종결(방향-문제 진단; H-10은 CNN-only) · P5-soft ◐(noisy T2 점수원 순위 역전 = fedif 최고) — §3.2.7 갱신. Yonghee 결정으로 C2 개입(§3.2.2)·CNN 게이트 그리드(§3.2.4)·top-k 스텁(§3.2.5) 절 삭제(caveat 14; CNN 증거는 §3.2.6·§4.8 일원화, rundir 존속).
+
+## [2026-07-22] note | §3.2.7 T1/T2 절대 EM 표로 재구성 — recovery 제거·gnoise §6.3 이관
+- raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 7차 절)
+- touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]]
+- note: §3.2.7을 §3.2.6과 같은 시점-분리(T1 online/T2 retrain) 절대 EM 표로 재구성(점수원 4종 × P1/P5-soft 행 통합; recovery·kept 괄호 제거). gnoise는 §3.2.7에서 전부 제거하고 negative-result 기록을 §6.3 검증-전용으로 이관(포인터만 유지).

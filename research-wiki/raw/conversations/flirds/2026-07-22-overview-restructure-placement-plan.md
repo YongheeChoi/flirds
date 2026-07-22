@@ -176,3 +176,21 @@ Yonghee 지시 — "남은 세 개(R4 Tier C·3B silo5 seeds1-2·probe A축 seed
 
 - §3.2.2/4/5 잔존 참조 0(구-표기·§6.2-14 제외) · 절 헤더 = 3.2.1/3/6/7 결번 구조 · banzhaf/ripple 1줄·poison 3회 유지.
 - 신규 수치 전부 rundir metrics.json·timing·config 직접 확인(gn20 R=200 완주 EM .37176·γ5 observer R=200 EM .37534·P5s EM 12런).
+
+---
+
+## 추가 지시 (같은 세션 7차; Yonghee 원문 요지)
+
+> "3.2.7도 3.2.6처럼 retrain/online 구분하고 다른 baseline의 수치까지 포함시켜서 accuracy 비교
+> 가능한 테이블로 바꿔줘. gnoise는 3.2.7에서는 우선은 안 쓸 거라 다 지워도 돼."
+> (이어서) "3.2.7에 recovery 정보도 필요 없으니까 지워줘."
+
+### 반영 내역
+
+1. **§3.2.7 (b2) 재구성** — §3.2.6 스타일로: **T1 online 표**(vanilla/oracle/random + flirds P1 게이트·P5-soft 가중 — Tier A 설계상 online은 flirds만, 타 점수원은 Tier B 명시) + **T2 retrain 표**(vanilla/oracle/t2_random + 점수원 4종 × {P1 sign, P5-soft 가중} 행 — P5s clean·frzero의 lossheur/fedif는 ⬚ 진행 중). 구 (b2) recovery/kept 괄호 표기·(b3) P5-soft 별도 블록은 폐지(표에 통합), kept·발화 정보는 읽기 불릿으로.
+2. **recovery 전면 제거**(§3.2.7): 표 괄호·읽기 불릿·H-8(EM pt로 환산 +2.4/+2.1/+0.9)·H-9("EM oracle 동값"으로) — §5.1 R4 불릿·배치안 2곳도 "frzero 회수 1.000"→"kept=oracle-동일(EM 동값)"로 정합.
+3. **gnoise 전부 §3.2.7에서 제거** — (b1) 3행·gnoise 주·H-10 행·(c) GPU-h/출처/caveat의 gnoise 항목 삭제. 기록은 **§6.3 검증-전용으로 이관**(negative result 요약 + rundir·진단 출처 + H-10 CNN-only + LIE/sign-flip 미결); §3.2.7 서두·(c)에 §6.3 포인터만. 마스터 P11·§8·배치안 §5/E6도 §6.3 포인터로 정합.
+
+### 검증
+
+- §3.2.7 내 "recovery/회수/gnoise" 잔존 = §6.3 포인터 2곳뿐(내용 0) · (b2) 두 표 = 절대 EM만.
