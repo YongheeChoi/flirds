@@ -59,27 +59,44 @@ EM 0.3342270 vs 0.3351206 = 1문항): LLM 트랙은 conv-free라 `cudnn_determin
 = 비트재현 미보장(알려진 특성, 타당성 문제 아님). `make_analysis`는 arm별 dup 중 하나만
 채택하므로 중복집계는 없으나, **분석 시 어느 rundir이 채택됐는지 확인**할 것.
 
-#### 예산·스케줄 (07-22 20:42 기준)
+#### 세션 종료 — **드레인 정지**(Yonghee 07-23 00:2x: "β 작업 이전에 다른 실험을 해야 해서
+우선 지금 돌리는 것까지 하고 멈추자" + "poison 오염축은 안 쓸 거라 빼도 된다")
 
-**큐 잔여 = β0.3 16셀뿐**(device100 10 + poison 2 + 3B silo5 4 = ~79 GPU-h). gnoise·P5-soft
-online은 종료, t2 2런만 진행 중. 시뮬레이션(GPU 해제 시각 반영):
+**큐 편집 완료**(`$BATCH/runlogs/queue_postswap.txt`, 00:25). 실행 중 4셀만 완주하고 드라이버가
+스스로 `MULTI-DRIVER DONE`으로 종료 — **kill 없음**(러너는 셀 단위 원자적이라 중도 킬이 곧 손실).
+- **줄 삭제 대신 주석 처리**: 드라이버는 매 루프 큐를 다시 읽고 `consumed` **인덱스**로 위치를
+  추적하므로 줄을 지우면 인덱스가 밀려 오배치가 난다. 줄 수(48)를 보존해야 안전.
+- `#DROPPED-poison` **3셀 영구 제외**: device100 a0.5/a0.0 + 3B_silo5. `#PAUSED-0723` **10셀 보류**
+  (device100 7 + 3B silo5 3, ~36 GPU-h) — 접두어만 지우면 그대로 재개.
 
-| 순서 | makespan | 완료 |
-|---|---|---|
-| 현재(3B 맨 뒤) / 3B 먼저 / 완전 LPT | **모두 28.9h** | 07-23 20:53 |
-| 3B 이월(spill 발동) | 20.9h | 07-23 12:53 |
+| GPU | 셀 | 시작 | 완료(예상) |
+|---|---|---|---|
+| 1 | `p5s_gsm_clean_t2` | 07-22 06:41 | ~00:20 (fedif 1소스 잔여) |
+| 2 | `1B_device100-a0.01_noisy` | 07-22 20:32 | ~01:00 |
+| 3 | `1B_device100-a0.01_frrand` | 07-22 20:49 | ~01:20 |
+| 0 | `p5s_gsm_frzero_t2` | 07-22 08:56 | **~03:00** ← 드라이버 종료 시각 |
 
-**큐 재배열은 이득 0** — 15셀 대 4 GPU라 GPU가 쉬지 않고 makespan이 총량에 지배됨(LPT 이득은
-작업 수 ≈ GPU 수일 때만). **3B가 맨 뒤인 건 spill 설계이므로 그대로 유지**. 마감 대비 여유 5.5h.
-- **관측된 진짜 비효율 = t2 셀의 내부 직렬화**: 한 프로세스가 observer(~6h) 후 **t2_pw 4소스를
-  순차 재학습**(소스당 ~3h). 소스는 서로 독립이라 4-GPU 분할 시 wall 13.7h→8h 가능했음.
-  이미 진행 중이라 이번엔 미조치 — **다음 캠페인은 쪼갤 수 있는 축(소스·arm)을 큐 레벨로 노출**할 것.
-- GPU 유휴는 사실상 0(gn20 완료 16:01:19 → 같은 초에 β 디스패치).
+**poison 제외의 부작용(기록 필수)**: `runs/phase2_matrix/rundirs/`의 poison 5셀 중 device100 2 +
+3B_silo5 1은 mtime 06-12 = **β0.5 원본 그대로**(재실행 안 됨), 1B_silo5(07-20)·1B_iid5(07-06)만
+재실행분. **β는 config.yaml에 기록되지 않아** mtime·커밋 이력이 유일한 근거 — 매트릭스에 β 혼재.
+poison 열을 다시 쓰게 되면 β 일관성부터 확인할 것(§1.4 '1B·CNN β-불변 canon 확인'과 같은 안건).
 
-**실험 완료 후 후처리(순서대로)**: ①P5-soft 완료 시 `make_analysis` → P1 vs P5s EM 표
+**rundir 이름 규칙(알아둘 것)**: `RunLogger`는 같은 이름에 **다른 config**가 있으면
+`<name>_<cfg-sha8>`로 비켜 쓰고, **같으면 덮어쓴다**(`flirds/run_logger.py:70-82` collision guard).
+이번에 `1B_device100-a0.1_frzero`가 config 스키마 증가(attacker_*·poison·dose_mult 등 신규 키)로
+`..._fd887e1b`에 비켜 썼으나 **Yonghee 07-23 지시로 canonical에 덮어씀**(해시 디렉터리 제거,
+β0.5 원본은 git 히스토리에만). a0.1_noisy·a0.1_frrand·silo5 4셀은 애초에 config가 같아 자동 덮어씀 —
+**β가 config에 없어 가드가 β0.5 원본을 지켜주지 못한다**는 점은 그대로 유효(위 poison 항과 같은 안건).
+
+**남은 후처리(무GPU, 순서대로)**: ①P5-soft 6런 완주 → `make_analysis` → P1 vs P5s EM 표
 (vanilla/oracle 앵커) + RUN_P5.md §4 HP 대조(LLM 몫: HP-3·5·6 재판정, hard-측 HP-1·2·4는
-N/A) → rundir+분석 커밋 ②β 완주 시 rundir 커밋 + overview §3.4 phase2 ShapleyFL 행 갱신
-③gnoise negative result 서술(§2) ④push는 Yonghee 결정 대기.
+N/A) → rundir+분석 커밋 ②이번 세션 β 완주 3셀(a0.1_frzero·a0.01_noisy·a0.01_frrand) rundir 커밋
+③gnoise negative result 서술(§2-8) ④push는 Yonghee 결정 대기.
+
+**이번 세션 스케줄 회고(다음 캠페인 반영)**: 큐 재배열(3B 먼저·LPT)은 이득 0이었음 — 셀 수 ≫ GPU
+수라 GPU가 쉬지 않고 makespan이 총량에 지배됨. **진짜 비효율은 t2 셀의 내부 직렬화**: 한 프로세스가
+observer(~6h) 후 t2_pw 4소스를 **순차** 재학습(소스당 ~3h) → 셀 하나가 17h를 점유. 소스는 서로
+독립이므로 **다음 캠페인은 쪼갤 수 있는 축(소스·arm)을 큐 레벨로 노출**할 것(4-GPU 분할 시 8h).
 
 ### 1.1 R4 Tier A — gsm50k5 accuracy 파일럿 seed0 (**완주 07-22 01:31, 커밋 4c40e30**;
 gnoise 셀은 §1.0에서 **종결** — γ=5·20 모두 무대 미성립, 재실험 계획 없음)
@@ -148,11 +165,11 @@ REGIME=gsm50k5 THREAT=<t> SEED=0 ARMS=observer T2=1 T2_P5=1 T2_LEGACY=0 \
 - CNN 쪽 P5 본실험은 **별도 Slurm 서버** 담당(이 컨테이너 아님) — `runs/track_h/p5/`
   sbatch 2종, 실행 정본 = RUN_P5.md.
 
-### 1.2 β0.3 재실행 잔여 (device100 + 3B silo5) — P5 뒤 큐 자동 재개
+### 1.2 β0.3 재실행 잔여 **10셀** (device100 7 + 3B silo5 3) — 07-23 **보류**(§1.0)
 
-진행: 완주 1(a0.1_noisy) + 이번 세션 완주 예정 1(a0.1_frrand; §1.0 IFKILLED 체크) +
-`queue_postswap.txt` 등재 16(이관 a0.1_frzero·a0.01_noisy 포함; P5 다음 순번).
-드라이버 유실 시 수동 재개:
+진행: 완주 2(a0.1_noisy·a0.1_frrand) + 07-22~23 세션 완주 3(a0.1_frzero·a0.01_noisy·a0.01_frrand)
+→ **잔여 10셀 = `queue_postswap.txt`의 `#PAUSED-0723` 줄**(접두어 제거로 재개, ~36 GPU-h ≈ 4-GPU 9h).
+poison 3셀은 **영구 제외**(Yonghee 07-23; 부작용은 §1.0 참조). 드라이버 유실 시 수동 재개:
 ```bash
 sed -i 's/^#phase2/phase2/' runs/rerun_beta03/logs/resume36h.txt   # 유실 시 RESUME_AFTER_MIGRATION.md 31줄에서
                                                                    # 완료분 1B_silo5 4셀 제외하고 재생성
@@ -160,7 +177,7 @@ PY=$PY PP=<repo>/codes HOME=… HF_HOME=… HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE
   QUEUE=<abs>/runs/rerun_beta03/logs/resume36h.txt GPUS_FILE=<abs>/logs/gpus36h.txt GPUS="<g...>" \
   LOGDIR=<abs>/runs/rerun_beta03/logs bash runs/rerun_beta03/run_multi_driver.sh
 ```
-완료 후: 18셀 rundir 커밋 + overview §3.4 phase2 ShapleyFL 행 갱신.
+완료 후: rundir 커밋 + overview §3.4 phase2 ShapleyFL 행 갱신(**poison 행은 β0.3 아님** — §1.0).
 
 ### 1.3 β0.3 deferred 9셀 (최중량 꼬리; 별도 캠페인)
 7B_std20×3(70–90h) + device100-a0.5 anchor×3(63h) + 7B_anchor5×3(35–45h) — `RESUME_AFTER_MIGRATION.md`.

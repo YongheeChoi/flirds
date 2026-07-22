@@ -1,8 +1,8 @@
 {
-  "name": "1B_device100-a0.1_frzero",
-  "git_sha": "77ba50085c50fd0fa0303000ae1496e5e38ae576",
+  "name": "gsm50k5_frzero_t2_pw_lossheur_seed0",
+  "git_sha": "3e9e3cfd1d8185cf98c925c725458fc0fae3faea",
   "git_dirty": true,
-  "git_diff_stat": "",
+  "git_diff_stat": "requirements.txt | 20 --------------------\n 1 file changed, 20 deletions(-)",
   "env_hash": "812a656f211f80ca",
   "versions": {
     "torch": "2.12.0+cu130",
