@@ -218,10 +218,12 @@ lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon �
   범위 **144셀 확정**, `codes/experiments/track_c2_fid.py` + `tests/test_c2fid.py`(5 green)
   + fmnist smoke e2e green(eff-gap 0.0) + `runs/track_c/c2fid/{README.md(1행 게임 캐비엇 +
   **사전등록 F-1~F-4**), sbatch_fid.sh}`. (b) 라운드 샤딩 채택(병합 커버리지 assert).
-  **잔여**: ① 현 큐 종료 → **파일럿 `sbatch --array=11 runs/track_c/c2fid/sbatch_fid.sh`**
-  (cifar10 dir1 grad_noise seed0) → GPU-h 실측 보고 → GO 후 144셀 ② fidelity 분석 도구
-  (산출 = c1 fidelity.csv 열-호환 + stage 컬럼) ③ `runs/track_h/make_analysis.py` strmain
-  인식 확장(THREATS 4→5종; 완주 후) ④ 완료 후 F-1~F-4 대조(MISS 포함).
+  분석 도구 `runs/track_c/c2fid/make_analysis.py`도 작성 완료(c1 열-호환+stage, F-1~F-4
+  자동 판정, 샤드 병합+커버리지 assert; 스모크 rundir로 배선 검증).
+  **잔여**: ① **파일럿 제출됨 = job 1861057**(현 큐 4잡 `afterany` 의존 → 자동 기동) →
+  완주 시 GPU-h 실측 보고 → Yonghee GO 후 `sbatch runs/track_c/c2fid/sbatch_fid.sh`(144셀)
+  ② `runs/track_h/make_analysis.py` strmain 인식 확장(THREATS 4→5종; 완주 후)
+  ③ 본런 완료 후 F-1~F-4 대조(MISS 포함 보고).
 
 ### 1.5 seed-추가 잔여 3건 (**조건부** — Yonghee 2026-07-22)
 
