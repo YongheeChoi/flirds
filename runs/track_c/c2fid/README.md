@@ -79,5 +79,14 @@ grad-noise, lf@0.15, lf@0.35, lf@0.70, lf strmain} × seed {0,1,2}. 범위 144 �
 - `timing.json`: client-training / oracle-b / valuation 페이즈(§15.1;
   aggregate_runs.py 흡수 가능).
 
-분석 도구(작성 예정): rundir-only 재생성, **산출 스키마 = c1 fidelity.csv 열-호환 +
-`stage` 컬럼**(LLM fidelity 표와 병합·논문 표 생성기 재사용 — 교차검증 세션 합의).
+## 분석 도구 `make_analysis.py` (작성 완료 07-23; rundir-only 재생성)
+
+`python runs/track_c/c2fid/make_analysis.py` → `analysis/{fidelity.csv, cellmean.csv,
+README.md}`. **산출 스키마 = c1 `runs/track_c/fidelity.csv` 열-호환**(dataset, scenario,
+seed, method, spearman_b, pearson_b, spearman_a, pearson_a) **+ `stage` 컬럼** + 본 무대
+확장열(partition, threat, flip_rate, cell, kendall_b, cos/euc/maxdiff_b, auroc, svr 2종,
+runtime_s) — LLM/C1 표와 병합·논문 표 생성기 재사용(교차검증 결정 13). `scenario`=위협
+태그(dose 구분), `partition`은 별도 열. spearman_a/pearson_a는 **항상 공란**((a) 불가).
+F-1~F-4 자동 대조 내장(데이터 부족 시 MISS 아닌 **N/A** 표기). 라운드 샤딩 rundir
+(`*_b<lo>-<hi>`)은 자동 병합 + **커버리지 assert**(라운드 0..R−1 정확히 1회) 후 methods
+런의 φ와 결합해 vs-(b) 지표 재계산. 스모크 rundir 1셀로 배선 검증 완료.
