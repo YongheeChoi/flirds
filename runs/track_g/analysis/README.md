@@ -1041,6 +1041,10 @@ gap(oracle_excl−vanilla): iid=0.1138, dir1=0.0990
 
 ⚠️ qskew·frrand는 C2 대응 셀 없음. label_flip은 C2가 strmain(rate~U(0.5,1))이라 Track G의 고정 dose와 같은 셀이 아니어서 제외.
 
+## 스택 재현성 (동일 config·seed, 두 스택) — 감사 M1
+
+(restack 셀 없음 — 전 CNN 표는 단일 원본 스택)
+
 ## CNN V3 (track_c1 C1_V3 cells)
 
 - cifar10_feature_noise_v3_seed0 sign_Flirds: kept=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] val_loss=1.1702529191970825 acc=0.6105 (full: 1.1076332330703735/0.63175)

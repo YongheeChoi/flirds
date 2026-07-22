@@ -295,6 +295,43 @@ def v2w_promotion(cnn):
 PARTS = ("iid", "shard", "qskew", "dir1")            # no-skew / label / size / both
 
 
+def restack_merge(orig, restack):
+    """Fold rundirs_cnn_restack (the 12 cifar10 cells re-run on the CURRENT stack)
+    into the CNN frame so every headline table is single-stack.
+
+    The first 36 cells ran on torch 2.12 / B200; everything since runs on torch 2.11
+    / RTX3090 (audit M1).  A same-cell re-run replaces the frozen copy in the tables
+    -- the frozen rundirs stay on disk untouched and become a same-config /
+    different-stack reproducibility datapoint, reported as the drift table.
+    Returns (merged frame with a `stack` column, drift rows).
+    """
+    orig = orig.assign(stack="orig")
+    if restack.empty:
+        return orig, pd.DataFrame()
+    restack = restack.assign(stack="restack")
+    key = ["cell", "seed", "arm"]
+    d = orig.merge(restack[key + ["final_acc"]], on=key, suffixes=("", "_re"))
+    drift = d.assign(drift=d.final_acc_re - d.final_acc)[
+        ["cell", "seed", "arm", "final_acc", "final_acc_re", "drift"]]
+    keep = orig[~orig["cell"].isin(set(restack["cell"]))]
+    return pd.concat([keep, restack], ignore_index=True), drift
+
+
+def drift_table(drift):
+    """orig-vs-restack absolute-accuracy drift, grouped by threat regime."""
+    if drift.empty:
+        return ["(restack 셀 없음 — 전 CNN 표는 단일 원본 스택)"]
+    d = drift.copy()
+    d["threat"] = d["cell"].str.extract(r"cifar10_\w+?_([a-z-]+?)(?:_fr[0-9.]+)?_g_seed")
+    md = ["| 레짐 | 셀×arm 수 | mean drift | max |drift| |", "|---|---|---|---|"]
+    for thr, g in d.groupby("threat"):
+        md.append(f"| {thr} | {len(g)} | {g.drift.mean():+.4f} | {g.drift.abs().max():.4f} |")
+    md.append(f"| **전체** | {len(d)} | {d.drift.mean():+.4f} | {d.drift.abs().max():.4f} |")
+    md += ["", "drift = restack(torch 2.11/RTX3090) − orig(torch 2.12/B200), 동일 "
+           "config·seed. 표의 iid·dir1 행은 restack 값을 쓴다(단일 스택)."]
+    return md
+
+
 def _cellmean(cnn):
     """Per (dataset, partition, threat, dose, arm) 3-seed mean/std of the axes."""
     if cnn.empty:
@@ -516,6 +553,7 @@ def main():
     status, lines = v2w_promotion(cnn)
     md += ["", f"## V2w promotion gate (spec §5-2): **{status}**", ""] + lines
     if not cnn.empty:                       # 2026-07-22 skew-axis extension
+        cnn, drift = restack_merge(cnn, analyze_cnn(load_cnn("rundirs_cnn_restack")))
         cm = _cellmean(cnn)
         cm.to_csv(OUT / "cnn_cellmean.csv", index=False)
         md += ["", "## CNN skew 분해 (2×2: iid=skew없음 / shard=label만 / qskew=size만 "
@@ -527,6 +565,8 @@ def main():
         md += prereg_verdicts(cm)
         md += ["", "## C2 소프트-arm 같은-셀 대조 (runs/track_c/c2, read-only)", ""]
         md += c2_soft_compare(cm)
+        md += ["", "## 스택 재현성 (동일 config·seed, 두 스택) — 감사 M1", ""]
+        md += drift_table(drift)
     v3 = load_cnn("rundirs_cnn_v3")
     if v3:
         md += ["", "## CNN V3 (track_c1 C1_V3 cells)", ""]

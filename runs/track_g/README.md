@@ -140,11 +140,15 @@ recovery=(arm−van)/(oracle_excl−van)은 **위협이 약하면 분모가 붕�
   의 {clean, free-rider, grad-noise} strmain 셀. **qskew·frrand는 C2 대응 없음**(표에 명시).
   ⚠️ label_flip은 C2가 strmain(=FedCorr rate~U(0.5,1), 평균 0.75)이고 Track G는 고정 dose라
   **같은 셀이 아니다** — fr0.70만 근사 대조로 쓰고 캐비엇을 단다.
-- **스택 경계**(감사 M1): 기존 36런 = torch 2.12.0 / B200 / git 69cb6bf, 신규 = torch 2.11.0 /
-  RTX3090. 2×2 표의 iid·dir1(기존)과 shard·qskew(신규)가 하드웨어+스택 경계를 가로지른다.
-  셀 내부 비교(Δacc·recovery)는 각 셀이 자기 vanilla/oracle 앵커를 갖고 있어 무관하지만
-  **절대 acc의 파티션 간 비교에는 캐비엇 필수**. cifar10 {iid,dir1} 12셀 동일-스택 재실행
-  (+19.5 GPU-h)은 Yonghee 결정 사항.
+- **스택 경계**(감사 M1) — **해소 결정(Yonghee 07-22)**: 기존 36런 = torch 2.12.0 / B200 /
+  git 69cb6bf, 신규 = torch 2.11.0 / RTX3090. 2×2 표가 하드웨어+스택 경계를 가로지르므로
+  cifar10 {iid,dir1} 12셀을 **현 스택에서 재실행**(`sbatch_cnn_restack.sh` → `rundirs_cnn_restack/`)
+  하여 표 전체를 단일 스택으로 만든다. 기존 36 rundir는 **무수정 보존** → 같은 config·seed가
+  두 스택에 존재하는 **재현성 데이터포인트**가 되며 make_analysis가 drift 표로 보고한다.
+  (착수 전 실측한 예상 drift: C2 소프트 그리드 18셀 동일-config 대조에서 clean·free_rider
+  |Δacc| ≤ 0.0020 / grad_noise ≤ 0.0241 — 후자는 vanilla 0.23~0.28 붕괴 레짐이라 seed
+  산포와 같은 급. 재실행은 이 값을 표에서 제거하는 것이 목적이며, 결론 변화는 예상되지 않는다.)
+  이 재실행은 `RERUN_AFTER_REPRO_FIX_2026-07-21.md` P1(CNN 재실행 권장)도 함께 해소한다.
 
 ## Stage 0 감사
 

@@ -178,10 +178,13 @@ lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon �
 - **그리드 90런/30셀** = ① cifar10×{shard(label만),qskew(size만)} ② fmnist×{iid,dir1}
   각각 × {clean, free_rider, **frrand**, grad_noise, label_flip@{0.15,0.35,0.70}} × 3-seed
   + ③ cifar10×{iid,dir1}×frrand 백필 6런. 기존 36런 rundir는 **read-only**.
-- **제출**: `sbatch --array=0-29%8 runs/track_g/sbatch_cnn_skew.sh`(seed0 파일럿 30셀)
-  → 실측 GPU-h 보고 → `--array=30-89%8`(seeds 1·2). 인덱스는 seed-major.
-- **예상 비용**: 총 30–38 GPU-h(cifar10 실측 앵커 3.5분/scoring-arm, fmnist 미측정 0.5–1.0×),
-  8-GPU 동시 → wall 4–5h.
+- **스택 통일 재실행 36런 동반**(Yonghee 07-22 결정): cifar10 {iid,dir1} 12셀을 현 스택에서
+  재실행해 `rundirs_cnn_restack/`에 착지 → 2×2 표 단일 스택화 + `RERUN_AFTER_REPRO_FIX` P1 해소.
+  기존 36 rundir는 무수정 보존(→ 두 스택 재현성 drift 표 자동 생성).
+- **제출**: `sbatch runs/track_g/sbatch_cnn_skew.sh`(90런) + `sbatch runs/track_g/sbatch_cnn_restack.sh`(36런).
+  인덱스는 둘 다 seed-major(필요시 `--array` 절단으로 파일럿 가능).
+- **예상 비용**: 126런 총 **48–56 GPU-h**(cifar10 실측 앵커 3.5분/scoring-arm, fmnist 미측정
+  0.5–1.0×), QOS 8-GPU 동시 → wall 6–7h.
 - **사전등록 H-K1~H-K6** = `runs/track_g/README.md` "확장 ②". 완료 후
   `python runs/track_g/make_analysis.py` → 2×2 분해표·예측 대조·C2 같은-셀 대조 자동 생성.
 - **Yonghee 결정 대기 2건**: ① cifar10 {iid,dir1} 12셀 동일-스택 재실행(+18 GPU-h)로
