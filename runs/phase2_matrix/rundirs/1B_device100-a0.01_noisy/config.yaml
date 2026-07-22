@@ -10,6 +10,15 @@ seeds:
 - 2
 oracle_b: false
 coalition: false
+noisy_rate: 1.0
+dose_mult: 1.0
+removal: false
+client_opt: sgd
+poison:
+  bd_target: delicious
+  poison_train: 1000
+  attacker_lr: 0.002
+  attacker_epochs: 3.0
 rcfg:
   n_clients: 100
   per_client: 300
