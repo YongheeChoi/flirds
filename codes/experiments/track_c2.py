@@ -116,6 +116,7 @@ TH_T2 = os.environ.get("C2_T2", "0") == "1"
 # and oracle_excl/random_excl become per-round exclusions.  T2 unsupported.
 DYN = os.environ.get("C2_DYN", "0") == "1"
 _DYN = {"mask_at": None, "clock": None}                 # set by build() when DYN
+_EMPTY_CLIENTS = []                                     # dirichlet clients build() had to backfill
 # P5 (2026-07-21): C2_T2_P5=1 adds the confidence-policy retrain arms
 # (t2_csign_<src> = UCB-kept retrain / t2_pw_<src> = static Phi(t)-weight retrain);
 # C2_T2_LEGACY=0 skips the already-run t2_sign/t2_signw emission (results on disk).
@@ -243,6 +244,16 @@ def build():
         dyn_mask = make_roundwise_mask(n, m, seed)
         _DYN["mask_at"], _DYN["clock"] = dyn_mask, _RoundClock()
     elif THREAT in ("label_flip", "free_rider", "frrand", "grad_noise"):
+        # The corrupt-set draw is PER-THREAT by source convention, not uniform (audit
+        # 2026-07-23).  label_flip reproduces FedCorr's official model verbatim --
+        # gamma_s = binomial(1, rho, n) -- so the COUNT is Bernoulli and varies by seed
+        # (realized 39/48/47 for seeds 0/1/2 vs nominal rho=.4; report the realized
+        # number, never "40%"), and C2_STRENGTH sweeps rho because rho IS FedCorr's
+        # dose knob.  The update-level threats have no such source: they take exactly
+        # round(MAL_FRAC*n)=40 and their C2_STRENGTH sweeps amplitude (FRRAND_MULT /
+        # GAMMA_GRADNOISE) instead.  Both rules are seed-only -- a given seed yields the
+        # same set across dataset/partition/dose/track -- and every contrast we draw
+        # holds the threat fixed, so the two rules never meet inside one comparison.
         mal = rng.random(n) < _strength(MAL_FRAC) if THREAT == "label_flip" else \
             set(rng.choice(n, size=max(1, int(round(MAL_FRAC * n))), replace=False).tolist())
         if THREAT == "label_flip":                       # FedCorr (rho,tau): noisy mask + rate~U(tau,1)
@@ -253,8 +264,14 @@ def build():
             corrupt[c] = 1
 
     loaders = []
+    _EMPTY_CLIENTS.clear()
     for c, ci in enumerate(idx):
         if not ci:                                       # dirichlet can leave a client empty
+            # Has never fired at N=100 (dir1 min client size 187-236 across seeds).  It
+            # draws from the SAME stream as the strmain rate below, so a fire would make
+            # the rate vector partition-dependent -- record it instead of letting that
+            # happen silently (audit 2026-07-23).
+            _EMPTY_CLIENTS.append(c)
             ci = [int(rng.integers(len(labels)))]
         xs = torch.stack([train[i][0] for i in ci])
         ys = torch.tensor([train[i][1] for i in ci])
@@ -548,6 +565,10 @@ def run():
     print(f"[build] {DATASET}/{PARTITION}/{THREAT}(str={STRENGTH}) seed={SEED} "
           f"n={CFG['n']} corrupt={int(corrupt.sum())} sizes[min/med/max]="
           f"{min(nums)}/{int(np.median(nums))}/{max(nums)}", flush=True)
+    if _EMPTY_CLIENTS:                                   # see the backfill note in build()
+        print(f"  [WARN] {len(_EMPTY_CLIENTS)} empty client(s) backfilled "
+              f"{_EMPTY_CLIENTS} -- the strmain rate draw is no longer partition-"
+              f"independent for this cell", flush=True)
 
     arms = {}
     all_rows = []                                        # Track G/H gate arms' phi_rounds
@@ -639,6 +660,7 @@ def run():
                 if _DYN["mask_at"] is not None else None)
     metrics = dict(dataset=DATASET, partition=PARTITION, threat=THREAT, strength=STRENGTH,
                    seed=SEED, mode=MODE, corrupt=corrupt.tolist(), arms=arms,
+                   n_corrupt=int(corrupt.sum()), empty_clients=list(_EMPTY_CLIENTS),
                    dismissal=dismissal,
                    **({"dyn": dyn_info} if dyn_info else {}),
                    **({"observer_cum": {s: [float(v) for v in observer_out["accs"][s].cum]
