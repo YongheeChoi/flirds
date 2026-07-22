@@ -121,8 +121,8 @@ lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon �
 - **07-22 확장 확정(제출됨)**: ① label_flip **strmain** 셀(rate~U(0.5,1)) 18런(1860471) —
   fidelity 강도응답 ruler + C2 lf 같은-셀 대조 확보 ② **Track H strmain** 51런(1860727;
   17셀타입×3s, P5 경계-클라 첫 시험 무대; `runs/track_h/sbatch_strmain.sh`) ③ **CNN fidelity
-  leg 설계 확정**(C2 무대 동결 궤적 × 9방법 vs (b)-perround oracle; (a) 포기·Ripple/Banzhaf
-  제외·Fed-LOO 포함) → 구현 완료(아래). **종합 계획·교차검증 핸드오프 =
+  leg 설계 확정**(C2 무대 동결 궤적 × 8방법 vs (b)-perround oracle; (a) 포기·Ripple/Banzhaf/
+  **Fed-LOO**[07-23 비교 제외] 제외) → 구현 완료(아래). **종합 계획·교차검증 핸드오프 =
   루트 `CNN_CAMPAIGN_PLAN_2026-07-22.md`**.
 - **07-23 fidelity leg 구현 완료 + 교차검증 회신 7건 전건 해소**(plan §6 결정 10–17):
   범위 **144셀 확정**, `codes/experiments/track_c2_fid.py` + `tests/test_c2fid.py`(5 green)
@@ -159,7 +159,7 @@ hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이�
 | # | 셀 | 비용(GPU-h) | 상태 |
 |---|---|---|---|
 | **L1** | R4 Tier C: {noisy nr0.7, frzero} × **seeds 0·1·2**(§1.5-1; Tier A arm 세트 동일, T2 4점수원은 소스별 프로세스 분할) | ~120–138 | 확정 — 큐 문서 §2 |
-| **L2** | R4 (b)-fidelity: `phase2_matrix.py REGIME=gsm50k5`(**이식 완료 07-23** — nr 기본 0.7·(b) per-round 2⁵·9방법+Fed-LOO·탐지기 4종·timing.json) — noisy→clean 각 seed0; 산출은 c2fid 열-호환 스키마로 롤업(CNN fidelity leg와 공용 표) | ~10–15/셀 | 코드 완료·서버 스모크 대기 |
+| **L2** | R4 (b)-fidelity: `phase2_matrix.py REGIME=gsm50k5`(**이식 완료 07-23** — nr 기본 0.7·(b) per-round 2⁵·9방법[**Fed-LOO 제외 = Yonghee 07-23**]·탐지기 4종·timing.json) — noisy→clean 각 seed0; 산출은 c2fid 열-호환 스키마로 롤업(CNN fidelity leg와 공용 표) | ~10–15/셀 | 코드 완료·서버 스모크 대기 |
 | **L4** | R4 Tier B **T2-only**(renorm 4점수원 × noisy·frzero) | ~150 | **Yonghee 승인 게이트**(§3) — L1·L2 순항 확인 후 |
 | L5 | 비등n silo5 1셀(4:2:1:1:1, clean+noisy, 3-seed; phase2_matrix 분배만 변경) — CNN qskew fidelity와 P5c 쌍 | ~10–15 | 여유 시 |
 | L6 | silo5 graded-noisy(per-client nr~U(0.5,1), `answer_swap_graded`) — spearman_vs_rate의 LLM 대응(CNN strmain 거울) | ~6–12 | 여유 시(L4와 경합 시 L4 우선) |
@@ -170,7 +170,7 @@ hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이�
 - 예산: 필수(L1+L2) 140–168 → +L4 290–318 → 최대 ~345 / B200×4 5일 ≈480 GPU-h(명목).
   vast.ai는 B200 초과 시 **비-timing seed 복제만** 예외(timing/canonical 셀 이관 금지).
 
-### 1.7 rundir 정체성 설계 수정 (**미착수** — 승인 후 구현; 원인 진단은 07-23 완료)
+### 1.7 rundir 정체성 설계 수정 (**처방 1+2 구현 완료 07-23**; 잔여 배선은 아래 "잔여")
 
 **진단**: `run_logger.py:77`이 `config`를 **문자열 통째로** 비교한다. 그런데 `config`는 상반된 두
 역할을 겸한다 — **정체성**("어떤 실험인가", 좁고 안정적이어야 함) vs **출처**("정확히 뭐가 돌았나",
@@ -179,20 +179,29 @@ hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이�
 침묵(소스 리터럴 → config 바이트 동일 → 조용히 덮어씀). 덤으로 LLM 트랙은 conv-free라 같은 config로도
 같은 숫자가 안 나오므로 "config 같음 ⇒ 같은 런"이 애초에 참이 아니다.
 
-**처방**:
-1. **정체성 allow-list 분리**(핵심) — `RunLogger(..., identity=(...))`로 지정 필드만 비교.
-   같으면 **덮어쓴다**(재실행; 이전 판본은 git). 다르면 **이름 생성 버그이므로 크게 실패** —
-   팬텀 디렉터리를 만들지 않는다. 출처 키가 늘어도 절대 포크되지 않음.
-   근거: `phase2_matrix.py:520-528`의 이름 생성이 이미 **"기본값이면 토큰 없음"** 규약을 써서
-   knob이 추가돼도 옛 이름이 안 바뀐다 — 가드를 같은 원리로 맞추는 것.
-2. **이름에 없는 의미 파라미터 제거**(근본 원인) — β 하드코딩 4곳을 `SFL_BETA` 하나로 올려
-   config+정체성에 태움. 그러면 β 변경이 **발사 시점에 실패** → "조용히 덮어씀"이 구조적으로 불가능.
-   현재 이름에 없는 것 = **β·`removal`·`client_opt`**.
-3. (선택) 덮어쓸 때 이전 `meta.json`의 git_sha+시각을 `superseded.json`에 append → 커밋 전 창까지 커버.
+**처방 1+2 구현 완료(07-23, Yonghee 승인)**. 원칙 = **정체성 ≡ 이름이 인코딩하는 것** →
+"이름 같은데 정체성 다름"은 정의상 이름 생성 버그.
+1. **정체성 allow-list** — `run_logger.check_identity()` + `RunLogger(..., identity=(...))`.
+   같으면 **덮어쓴다**(이전 판본은 git). 다르면 `RunDirIdentityError`로 **크게 실패**(팬텀 미생성).
+   **저장된 config에 정체성 키가 아예 없으면 불일치로 센다** — β0.5 시절 rundir엔 `sfl_beta`
+   키가 없고, 그 부재가 바로 조용한 덮어쓰기를 허용했던 구멍이다. 우회 = `RUNDIR_REPLACE=1`.
+   ⚠ **`precheck` 추가 이유**: `RunLogger`는 **arm 종료 후 `persist()` 안에서** 생성된다
+   (`track_g.py:589` ← `:678`). 그대로 두면 16h 돌고 마지막에 죽으므로,
+   `RunLogger.precheck(...)`를 **프로세스 시작 시점**(`_load` 전)에 호출한다.
+2. **β 단일화** — `flirds/baselines/shapleyfl.BETA = float(env SFL_BETA, 기본 0.3)`.
+   ⚠ **정정: 하드코딩은 4곳이 아니라 7곳이었다** — `shapleyfl_from_logs(beta=)` 4곳
+   (phase2_matrix·track_c1·track_c2_fid·track_d) + `OnlineScorer(beta=)` 2곳(track_c2·track_d)
+   + `sfl_beta=` 1곳(phase1_baseline_compare). 4곳만 고쳤으면 나머지 3곳이 조용히 갈라졌다.
+   phase2_matrix는 `sfl_beta`를 config+정체성에 실었다(+`removal`·`client_opt`).
+   → **β0.3 잔여 10셀 재개 시 `RUNDIR_REPLACE=1`이 셀당 1회 필요**(의도된 동작).
+- 배선 완료 = `track_g`(IDENTITY: track/regime/threat/noisy_rate/arm/seed/scale/model — 이름에
+  없는 scale·model 포함 → 3B가 1B 셀을 덮어쓰면 실패) · `phase2_matrix`.
+  테스트 `tests/test_rundir_identity.py` 6개(출처 증가 무포크 / 정체성 변경 차단 / β-키-부재 /
+  RUNDIR_REPLACE / precheck 무부작용 / 레거시 경로 불변).
 
-**결정 필요**: 2를 넣으면 β0.3 잔여 10셀 재개 시 canonical(β0.5)과 정체성이 달라 **멈춘다**
-(의도된 동작이나 `RUNDIR_REPLACE=1` 같은 명시 플래그가 한 번 필요). 1만 하고 β는 문서로 관리하는
-축소안도 가능 — 어느 쪽인지 = §3.
+**잔여**: ① `track_c1`·`track_c2`·`track_c2_fid`·`track_d`·`phase1_*`는 아직 `identity=None`
+(레거시 통짜 비교) — 이들 config에 `sfl_beta`를 추가하려면 **identity 배선을 함께** 해야 한다
+(레거시 가드에선 키 추가 자체가 포크를 유발). ② 처방 3(`superseded.json`) 미착수.
 
 ## 2. 문서·부수분석 (무GPU)
 
