@@ -151,3 +151,28 @@ paper-ko §초록–§3만 근거(§4 이후 비사용, paper-ko 무수정 유�
 Yonghee 지시 — "남은 세 개(R4 Tier C·3B silo5 seeds1-2·probe A축 seeds1-2)를 REMAINING.md에 등재하되,
 **논문에 실릴지 미정이므로 실리는 것으로 확정될 때만 실행**한다는 조건을 명기." → 루트 `REMAINING.md`
 **§1.5 신설**(조건부 3건 + 실행 조건 경고; §1.4의 probe A축 항목은 §1.5로 이동해 중복 제거). 커밋 후 push는 Yonghee.
+
+---
+
+## 추가 지시 (같은 세션 6차; Yonghee 원문 요지)
+
+> "새로 완료된 실험들 overview에 업데이트 해줘. 그리고 3.2.2, 3.2.4, 3.2.5는 미사용할거라 아예 지워도 될 것 같아."
+
+### 도착분 (커밋, 1be6bcf 이후)
+
+- **77ba500** — gnoise γ축 종결(γ=5 gn_full 체크포인트 FAIL·observer 완주 EM .3753[부호 반대] / γ=20 gn20_probe 완주 EM .3718[밴드 밖]; 진단 `gnoise_diag/` = gradient-방향만 2,400~38,000배 민감·등방 LoRA-delta 노이즈 무해; Fang'20 음성대조군·LoRASC 정합; γ*=5 선정근거 무효[주입이 train() 후라 train_loss 무반영]) + P5-soft 진행분 14 rundir(online 3 + t2_pw 8 + dup observer 3).
+- **ae1c063** — 원리 분석 프롬프트 수행 완료(다른 세션): `survey/flirds-principle-analysis/`.
+- 3a3d139·262f67c — paper §1–4 개정·AAAI 이관(Yonghee 작업; 워킹트리에 paper-ko·citations-table 진행 중).
+
+### 반영 내역
+
+1. **§3.2.7 갱신**: (b1) gnoise 3행(γ1.0/γ5/γ20 전부 불성립 → γ축 종결) · gnoise 주 전면 재작성(negative result 서술 — 방향-문제 진단·문헌 앵커·γ*=5 근거 무효·LIE/sign-flip 미결·H-10 CNN-only) · H-10 행 "판정 불가 확정" · **(b3) P5-soft 신설**(EM 표: noisy T2 순위 역전 fedif .3584 최고·flirds .3467 < lossheur .3503; online pweight 무효과 .3324; frzero pweight 회수 1.50[EM 노이즈 감안]·t2_pw = oracle 동값; clean 구조적 −0.4pt; dup observer 비트비재현 주의) · (c) 출처 40 rundir+gn20 root+gnoise_diag·잔여 4런.
+2. **§3.2.2(C2 개입)·§3.2.4(CNN 게이트 그리드+V2w·V3)·§3.2.5(top-k 스텁) 절 삭제** — 번호 결번 유지, **caveat 14 신설**로 기록. 참조 정리: §3.2 매트릭스(CNN 칸 ○ 미사용)·매트릭스 주(CNN 증거 §3.2.6·§4.8 일원화)·마스터 행8/13/24·§2.1 3행·§3.1.2(c)·§3.2.1(flirds_sel 문구·pool 문구)·§3.2.6(R1 재사용 문구·판정 ④ V2w→0-교차 원인으로)·§3.3.5 헤더·§4.3.2 4곳·§5.1 4곳(최대 절대 이득 = §3.2.6 기반 .5668/.6065·회수 0.86/0.96으로 재구성)·§6.1·caveat 5 재스코프·§8 3행.
+3. 전파: 헤더 HEAD 77ba500·출처 블록(rundirs_llm 52)·P11·§8 track_h/계획 행·§6.4에 원리분석 링크.
+4. placement plan: E6(③ C2 삭제→②에 흡수·softmax-C2 문구 정리·의존성 갱신)·appendix 게이팅 행(V2w 제거·gnoise negative result 추가)·§4 미배치에 C2·CNN그리드 신설·§6 매핑 2곳.
+5. 메모리 paper-threat-stage-scope 항목 6(CNN 개입 축 정리)·7(gnoise γ축 종결) 추가, 4번 softmax 잔존 범위 정정(std20 flirds_sel만).
+
+### 검증
+
+- §3.2.2/4/5 잔존 참조 0(구-표기·§6.2-14 제외) · 절 헤더 = 3.2.1/3/6/7 결번 구조 · banzhaf/ripple 1줄·poison 3회 유지.
+- 신규 수치 전부 rundir metrics.json·timing·config 직접 확인(gn20 R=200 완주 EM .37176·γ5 observer R=200 EM .37534·P5s EM 12런).

@@ -617,3 +617,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 - raw: raw/conversations/flirds/2026-07-22-principle-analysis.md
 - distilled into: `survey/flirds-principle-analysis.md` (신규; 검증 스크립트 = survey/flirds-principle-analysis/)
 - note: Yonghee 지시(루트 PRINCIPLE_ANALYSIS_PROMPT_2026-07-22.md) 수행 — overview 표 수치만 데이터로 쓰고(§5.1 등 의견 차단) 전 논거 수치를 원 파일에서 재검증(**237 PASS/0 FAIL**). 산출: ① 요소 인벤토리 9축(암묵 고정 발굴: 등n 전면·오염 인덱스 고정·MC seed 고정 등) ② 이론-우선 원리 10건(T1–T10→관측 대조; 신규 판별 계산 = FedIF↔Flirds-1st 같은-신호 쌍으로 부분참여 붕괴가 min-max+EMA 후처리 소행임을 직접 증명, renorm frzero 유령값 ~0.004=clean φ 동급) ③ §5.1 대조 불일치 6건(AdamW = same-game 내 진짜 패배 재규정 · CNN vs(a) 1위=ShapleyFL .453 누락 발견 = T10 적중 · silo5 탐지 1.0=포화 재분류 등) ④ 제안: 피해야 할 세팅 10 + shortlist 5(gn_full→R4 Tier C 3-seed→3B 3-seed→**비등n silo5 신규 1셀(P5c 실증, ~10–15 GPU-h)**→Tier B T2-only 축소). runs read-only·GPU 0·로컬 커밋만.
+
+## [2026-07-22] note | gnoise γ축 종결·P5-soft 진행분 반영 + §3.2.2/4/5 미사용 삭제
+- raw: raw/conversations/flirds/2026-07-22-overview-restructure-placement-plan.md (추가 지시 6차 절)
+- touched: `survey/flirds-experiment-results-overview.md` · [[paper-experiment-placement-plan]] · memory `paper-threat-stage-scope`
+- note: R4 gnoise = γ={1,5,20} 전부 무대 미성립 → negative result로 종결(방향-문제 진단; H-10은 CNN-only) · P5-soft ◐(noisy T2 점수원 순위 역전 = fedif 최고) — §3.2.7 갱신. Yonghee 결정으로 C2 개입(§3.2.2)·CNN 게이트 그리드(§3.2.4)·top-k 스텁(§3.2.5) 절 삭제(caveat 14; CNN 증거는 §3.2.6·§4.8 일원화, rundir 존속).

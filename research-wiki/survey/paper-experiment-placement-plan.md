@@ -55,7 +55,7 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 | E3 | 기여 신호의 존재 조건 + 오염·비IID·부분참여 fidelity | B축 2×2(오염×비IID) cross-seed ρ · (b) self-stability 요지(IID-clean 불안정 vs non-IID 안정) · silo5/device100 오염 무대 Spearman · std50k5 부분참여(uniform-subset 계열 붕괴 vs Flirds 1.000) | §3.1.5(b1) · §5.4(요지) · §3.1.4/§3.3.1–2(Sp 열) · §4.2(b2) | "왜 IID-clean에서 전원 만점인가"의 선제 답(정직-검증 기조) — fidelity 주장의 해석 조건을 규정해야 L2 주장이 리뷰에 버팀; 부분참여는 FL 조건 ③(간헐 참여)에서의 차별화 | silo5 값은 β0.3 재실행판(ce0b454) 정본 — 3B silo5 4셀 재실행(REMAINING §1.2) 후 3B 값 재확인 |
 | E4 | Retrain oracle 특성화 + 게임-무관 척도 | (a)vs(b) 0.933(1B anchor5) + 전 방법 vs (a) · CNN 듀얼 오라클(vs (a) 0.35 전 방법 공통 = 두 게임 괴리) · removal-curve 요약(worst-first 인과) | §3.1.1 (a)행·vs(a) 표 · §3.1.2(b1) · §4.4.1–2(요약) | §1 명시 "retrain 관계는 특성화 실험으로만 보고"; removal은 §1이 열거한 실효성 실험이자 게임-무관 공통 자 — 본문 요약+appendix 상세 분할 | P2/P3((a) 3B/7B retrain) ⬚ — 채우면 표 확장; 미완이면 1B 한정 명기 |
 | E5 | 비용: 평가 단위와 참여자 수 | op-count 축(하드웨어 독립) + 전 무대 runtime 표 + (b) 지수 비용의 N=10 실측(160×) + "cohort 작으면 (b)가 더 쌈" 정직 보고 | §3.4.1 · §3.4.2 · §3.4.3 · §3.1.3(b2) | L1 해소·기여 1("HVP 1회 고정, 내적 하나")의 실증; FL 조건 ④(재학습·추가연산 불가) | loss-heur 3B/7B 재측정·β deferred 9셀(7B runtime) 대기 — pre-fix 값 caveat 유지 |
-| E6 | 기여도의 가치: 부호-게이팅·경쟁·탐지 | ① frzero 온라인 자동배제 recovery 1.000(오배제 0)+clean 무발화 = null-player 공리의 배포 실증 ② 점수원 경쟁(같은 정책·8종): exact-0 계열 생존 vs renorm free-rider 붕괴, zero-semantics 트레이드오프 — **LLM 축 심판은 R4 GSM8K(확정 무대; Tier A seed0 첫 실측 = T2 flirds 1위·순위정보 +4.7pt)** ③ CNN C2 오염 회복 ④ 탐지: noisy/FR 1.0 vs 전용 탐지기, frdelta 정직 한계 | §3.2.3–4 · §3.2.6–7 · §3.2.2 · §3.3.1–5(+§3.3.4) | §1 실효성 층의 명시 열거 + 기여 3(정확 0 → 온라인 정산) + §2 "각자가 설계된 위협에서" 탐지기 비교; "다른 정의로 똑같은 실험" 경쟁이 기여도 정의의 실효 우열 증명. §1이 열거한 "selection"은 top-k 재학습 대신 **게이팅(온라인 참여-배제 = selection의 배포형)과 softmax-선택 arm(C2)이 커버**(phase1 top-k는 미사용 07-22 — §1 문구도 이에 맞춰 조정 권고). §3.2.1의 MMLU/ROUGE parity는 심판 변별력 한계 판단(07-22)에 따라 본문 축이 아니라 appendix 후보(do-no-harm 보조) | **R4 gsm50k5 Tier A seed0 완주**(overview §3.2.7 — noisy T2 flirds 1위·frzero 회수 1.000; 1-seed 방향) — LLM selection 본문 축의 확정 수치는 gnoise 신정의 `gn_full`·Tier B/C에 의존(§5; 그 전 LLM 서술은 R4 seed0+R3 silo5-noisy 한정, R2 std50k5는 미사용) |
+| E6 | 기여도의 가치: 부호-게이팅·경쟁·탐지 | ① frzero 온라인 자동배제 recovery 1.000(오배제 0)+clean 무발화 = null-player 공리의 배포 실증 ② 점수원 경쟁(같은 정책·8종): exact-0 계열 생존 vs renorm free-rider 붕괴, zero-semantics 트레이드오프 + **CNN 오염 회복의 절대 acc 증거**(경쟁 표가 담당 — C2 개입 표는 07-22 미사용) — **LLM 축 심판은 R4 GSM8K(확정 무대; Tier A seed0 첫 실측 = T2 flirds 1위·순위정보 +4.7pt)** ③ 탐지: noisy/FR 1.0 vs 전용 탐지기, frdelta 정직 한계 | §3.2.3 · §3.2.6–7 · §3.3.1–5(+§3.3.4) | §1 실효성 층의 명시 열거 + 기여 3(정확 0 → 온라인 정산) + §2 "각자가 설계된 위협에서" 탐지기 비교; "다른 정의로 똑같은 실험" 경쟁이 기여도 정의의 실효 우열 증명. §1이 열거한 "selection"은 top-k 재학습 대신 **게이팅(온라인 참여-배제 = selection의 배포형)이 커버**(phase1 top-k·C2 softmax-선택은 미사용 07-22 — §1 문구도 이에 맞춰 조정 권고; LLM std20 `flirds_sel`만 잔존). §3.2.1의 MMLU/ROUGE parity는 심판 변별력 한계 판단(07-22)에 따라 본문 축이 아니라 appendix 후보(do-no-harm 보조) | **R4 gsm50k5 Tier A seed0 완주 + gnoise γ축 종결(negative result) + P5-soft ◐**(overview §3.2.7 — noisy T2 flirds 1위·frzero 회수 1.000; 1-seed 방향) — LLM selection 본문 축의 확정 수치는 Tier B/C에 의존(§5; 그 전 LLM 서술은 R4 seed0+R3 silo5-noisy 한정, R2 std50k5는 미사용) |
 
 > 순서 논리: 프로토콜(E1) → 1차 주장(E2) → 그 주장의 해석 조건(E3) → 별도 참값과의 관계(E4) →
 > 비용(E5) → 실효성(E6). 프로젝트 위계(1차 fidelity → 2차 성능 → 탐지)와 §1 검증 2겹(추정기 층
@@ -81,7 +81,7 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 | Taylor 물리잔차(P3) | 1차/2차 잔차·3차 무이득·φ 정합 1e-10 | §5.5 **[overview 보류 항목]** | 기여 3(bound)의 물리 실증 — 수학 appendix와 연결(보류 중) | 없음 |
 | 신호-크기 진단 확장 | A/B축 종합 판정·noise probe·CNN probe 전표 | §5.3·§4.2(b4)·§4.3 | E3·ablation A축의 배경 진단 | 선택 |
 | 탐지 보조 표 | CNN C1 ladder AUROC·C2 arm AUROC·frdelta 상세·3B 1-seed 전표 | §3.3.3–5 | E6-⑤의 보조(본문은 silo5·device100 중심) | 3B 3-seed(P5 계획) 후 승격 가능 |
-| 게이팅·경쟁 상세 | Track G 전 arm val-loss·recovery 표, V2w 불승격 판정, Track H 정책×시점 전 표, 예측표(H·HP·HS·DP) 대조 | §3.2.3–4·§3.2.6–7·§4.8 | E6은 대표 수치만 — 사전등록 예측 대조표는 appendix가 자연스러움 | R4 Tier A seed0 착지(overview §3.2.7 — H-8~11 대조 포함); Tier B/C 후 LLM 전표 추가 |
+| 게이팅·경쟁 상세 | Track G LLM 전 arm val-loss·recovery 표, Track H 정책×시점 전 표, 예측표(H·HP·HS·DP) 대조, gnoise negative result | §3.2.3·§3.2.6–7·§4.8 | E6은 대표 수치만 — 사전등록 예측 대조표는 appendix가 자연스러움 | R4 Tier A seed0 착지(overview §3.2.7 — H-8~11 대조·gnoise γ축 종결 포함); P5s 잔여 4런·Tier B/C 후 LLM 전표 추가 |
 | Scale 완전참여·Dyn 재추첨 | 100/100 무대(coalition arm 부재 증명 포함)·라운드-오염 null-무대 do-no-harm | §4.8.2–3 | E5(비용: k-선형 주장)와 E6(게이트 한계 정직 보고)의 극한 검증 — appendix | 없음 |
 | 프로토콜 상세·재현성 | seed·환경·git 증빙, H1 재현성 정정과 P0/P1 재실행 계획, β provenance | §6.2 caveat 9·13·§4.7 | 기여 2(프로토콜)의 재현성 조항; RERUN 문서와 연동 | **P0 재실행 완료 여부가 "재현 가능" 문구를 결정** |
 | 검증-전용(비게재) | LR sweep·TF32 A/B·계측 세부(timing·microbench·acct)·E3 스모크 | §6.3 | 논문 비게재 — 내부 기록만(게재 불필요 판단) | – |
@@ -96,7 +96,10 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 - **std50k5 selection 계열**(Track H Tier 3·R2·track_g std50k5-mixed 파일럿): 미사용(overview
   §3.2 서두 ③) — LLM selection 무대는 R4 gsm8k로 대체. std50k5의 *fidelity* 결과(§4.2
   부분참여 probe, E3 소속)는 별개 축이라 **유지 확정**(07-22 후속 — 지양은 selection 축 한정).
-- **phase1 retrain×top-k selection**: 미사용(2026-07-22; overview §3.2.5 제외 표기) — phase1의
+- **CNN C2 개입 표(구 overview §3.2.2)·track_g CNN 게이트 그리드+V2w·V3(구 §3.2.4)**: 미사용
+  (2026-07-22 — overview에서 절 삭제, §6.2-14) — CNN 개입·게이팅 증거는 **Track H 경쟁
+  (§3.2.6)·확증 런(§4.8)으로 일원화**. C2 rundir는 §3.3.5 탐지 주석·§4.3.2 probe 기준점으로만.
+- **phase1 retrain×top-k selection**: 미사용(2026-07-22; overview §6.2-14) — phase1의
   탐지 AUROC(§6.1)만 존속. §1 서론의 "selection 실험" 열거 문구는 게이팅/softmax-선택 기준으로
   조정 권고.
 - **alpaca/MMLU/ROUGE 심판의 LLM selection 표**(§3.2.1): 성능 차이 변별력 부족 판단(07-22) —
@@ -118,7 +121,7 @@ paper §1–§3에서 실험이 반드시 실증해야 하는 주장:
 
 ## 6. 매핑 요약 (overview 신 구조 → 논문)
 
-- **본문**: §3.1.1·§3.1.3(→E2) / §3.1.5·§5.4요지·§3.1.4·§4.2(b2)(→E3) / §3.1.1(a)·§3.1.2·§4.4요약(→E4) / §3.4(→E5) / §3.2(§3.2.5 제외)·§3.3(→E6) / §3.1.1(a)세팅류(→E1)
+- **본문**: §3.1.1·§3.1.3(→E2) / §3.1.5·§5.4요지·§3.1.4·§4.2(b2)(→E3) / §3.1.1(a)·§3.1.2·§4.4요약(→E4) / §3.4(→E5) / §3.2(§3.2.1·3·6·7)·§3.3(→E6) / §3.1.1(a)세팅류(→E1)
 - **ablation**: §4.1·§4.8.1·§4.7·§4.2–4.3·§4.5
-- **appendix**: §4.4–4.5 상세·§5.4·§5.5·§5.3·§3.3.3–5·§3.2.3–4/§3.2.6/§4.8 상세·§4.8.2–3·§6.2(9·13)
+- **appendix**: §4.4–4.5 상세·§5.4·§5.5·§5.3·§3.3.3–5·§3.2.3/§3.2.6–7/§4.8 상세·§4.8.2–3·§6.2(9·13)
 - **비게재**: §6.3
