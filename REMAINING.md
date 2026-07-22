@@ -191,6 +191,12 @@ lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon �
   2×2 표의 스택 경계(감사 M1: 기존=torch 2.12/B200, 신규=2.11/RTX3090) 제거할지
   ② 예산 압박 시 5-arm 축소안 사용 여부(현재는 9-arm 대칭 유지).
 - 완료 후: overview §3.2.4 skew-분해·fmnist 블록 + §3.2 커버리지 매트릭스 + §8 갱신.
+- **07-22 확장 확정(제출됨)**: ① label_flip **strmain** 셀(rate~U(0.5,1)) 18런(1860471) —
+  fidelity 강도응답 ruler + C2 lf 같은-셀 대조 확보 ② **Track H strmain** 51런(1860727;
+  17셀타입×3s, P5 경계-클라 첫 시험 무대; `runs/track_h/sbatch_strmain.sh`) ③ **CNN fidelity
+  leg 설계 확정**(C2 무대 동결 궤적 × 9방법 vs (b)-perround oracle; (a) 포기·Ripple/Banzhaf
+  제외·Fed-LOO 포함) — 구현 대기 + 1셀 파일럿 게이트. **종합 계획·교차검증 핸드오프 =
+  루트 `CNN_CAMPAIGN_PLAN_2026-07-22.md`** (열린 질문 7건 포함).
 
 ### 1.5 seed-추가 잔여 3건 (**조건부** — Yonghee 2026-07-22)
 
