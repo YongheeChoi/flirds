@@ -1,0 +1,19 @@
+{
+  "name": "1B_device100-a0.01_frrand",
+  "git_sha": "97316acfaf4bffd918bc82e421287fe51728b74e",
+  "git_dirty": true,
+  "git_diff_stat": "",
+  "env_hash": "812a656f211f80ca",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.3",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200"
+  }
+}

@@ -69,12 +69,19 @@ EM 0.3342270 vs 0.3351206 = 1문항): LLM 트랙은 conv-free라 `cudnn_determin
 - `#DROPPED-poison` **3셀 영구 제외**: device100 a0.5/a0.0 + 3B_silo5. `#PAUSED-0723` **10셀 보류**
   (device100 7 + 3B silo5 3, ~36 GPU-h) — 접두어만 지우면 그대로 재개.
 
-| GPU | 셀 | 시작 | 완료(예상) |
+**드레인 완주 확인 — `[2026-07-23_02:46:20] MULTI-DRIVER DONE: consumed 48 cells`**, GPU 4장 유휴·러너 0.
+
+| GPU | 셀 | 시작 | 완료(실측) |
 |---|---|---|---|
-| 1 | `p5s_gsm_clean_t2` | 07-22 06:41 | ~00:20 (fedif 1소스 잔여) |
-| 2 | `1B_device100-a0.01_noisy` | 07-22 20:32 | ~01:00 |
-| 3 | `1B_device100-a0.01_frrand` | 07-22 20:49 | ~01:20 |
-| 0 | `p5s_gsm_frzero_t2` | 07-22 08:56 | **~03:00** ← 드라이버 종료 시각 |
+| 1 | `p5s_gsm_clean_t2` | 07-22 06:41 | 00:28:17 |
+| 2 | `1B_device100-a0.01_noisy` | 07-22 20:32 | 01:45:04 |
+| 3 | `1B_device100-a0.01_frrand` | 07-22 20:49 | 01:50:35 |
+| 0 | `p5s_gsm_frzero_t2` | 07-22 08:56 | 02:46:03 ← 드라이버 종료 |
+
+> 드라이버 로그 결함(무해): **마지막 셀은 `done[ok]` 줄이 안 남는다**. 루프가 매 회 앞에서
+> `consumed>=N && !running`을 먼저 검사해 GPU 리핑 전에 빠져나가기 때문. `p5s_gsm_frzero_t2`의
+> 성공 근거는 셀 로그의 `TRACK G DONE` + rundir 5개 영속(fedif metrics.json 02:46:03)이다.
+> 완주 판정을 `grep 'done\[ok\]'`에만 의존하지 말 것(큐 헤더의 재개 절차 1)이 이 함정에 걸린다).
 
 **poison 제외의 부작용(기록 필수)**: `runs/phase2_matrix/rundirs/`의 poison 5셀 중 device100 2 +
 3B_silo5 1은 mtime 06-12 = **β0.5 원본 그대로**(재실행 안 됨), 1B_silo5(07-20)·1B_iid5(07-06)만
@@ -88,10 +95,16 @@ poison 열을 다시 쓰게 되면 β 일관성부터 확인할 것(§1.4 '1B·C
 β0.5 원본은 git 히스토리에만). a0.1_noisy·a0.1_frrand·silo5 4셀은 애초에 config가 같아 자동 덮어씀 —
 **β가 config에 없어 가드가 β0.5 원본을 지켜주지 못한다**는 점은 그대로 유효(위 poison 항과 같은 안건).
 
-**남은 후처리(무GPU, 순서대로)**: ①P5-soft 6런 완주 → `make_analysis` → P1 vs P5s EM 표
-(vanilla/oracle 앵커) + RUN_P5.md §4 HP 대조(LLM 몫: HP-3·5·6 재판정, hard-측 HP-1·2·4는
-N/A) → rundir+분석 커밋 ②이번 세션 β 완주 3셀(a0.1_frzero·a0.01_noisy·a0.01_frrand) rundir 커밋
-③gnoise negative result 서술(§2-8) ④push는 Yonghee 결정 대기.
+**해시 접미사 3건 미결(덮어쓰기 여부 = Yonghee 판단 대기)** — 같은 스키마 증가로 이번에도 비켜 씀.
+커밋은 **해시 이름 그대로**(비파괴) 해 두었으니, canonical 통합은 지시 후 일괄 처리:
+`1B_device100-a0.01_noisy_31132ce3` / `1B_device100-a0.01_frrand_72cbf7a2` /
+`gsm50k5_frzero_observer_seed0_1073ceb7`(track_h; 이건 β와 무관한 track_g 쪽 중복 = §1.0 위
+'중복 rundir' 항목과 동일 사안이라 `make_analysis` 채택 확인 필요).
+
+**남은 후처리(무GPU, 순서대로)**: ①**P5-soft 6런 완주(07-23 02:46 DONE)** → `make_analysis` →
+P1 vs P5s EM 표(vanilla/oracle 앵커) + RUN_P5.md §4 HP 대조(LLM 몫: HP-3·5·6 재판정, hard-측
+HP-1·2·4는 N/A) → 분석 커밋 ~~②β 완주 3셀 rundir 커밋~~ **(DONE)** ③gnoise negative result
+서술(§2-8) ④해시 접미사 3건 canonical 통합 여부(위) ⑤push는 Yonghee 결정 대기.
 
 **이번 세션 스케줄 회고(다음 캠페인 반영)**: 큐 재배열(3B 먼저·LPT)은 이득 0이었음 — 셀 수 ≫ GPU
 수라 GPU가 쉬지 않고 makespan이 총량에 지배됨. **진짜 비효율은 t2 셀의 내부 직렬화**: 한 프로세스가
