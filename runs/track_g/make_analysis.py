@@ -356,7 +356,8 @@ def skew_tables(cm):
             parts = [p for p in PARTS if p in set(g["partition"])]
             if not parts:
                 continue
-            tag = f"{thr}" + (f"@{dose:g}" if pd.notna(dose) else "")
+            tag = f"{thr}" + (f"@{dose:g}" if pd.notna(dose) else
+                              "@strmain" if thr == "label_flip" else "")
             md += [f"", f"**{ds} / {tag}** — 절대 acc (recovery; 분모<{RECOVERY_MIN_GAP} → 공란)", ""]
             md += ["| arm | " + " | ".join(parts) + " |", "|" + "---|" * (len(parts) + 1)]
             for arm in sorted(set(g["arm"])):
