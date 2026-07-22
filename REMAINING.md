@@ -209,7 +209,17 @@ hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이�
    07-19 커밋 메시지의 정정-전 수치 인용 금지). 잔여 = paper 반영. LLM 경쟁 무대 = R4.
 7. **부수분석**: 3.1 loss-heur 정본화(CSV/rundir) · oracle noisy AUROC 0.604/0.660 불일치 확정 ·
    bootstrap CI(B=1000) · momentum 열화(0.73 vs 0.81) 정본 rundir 위치.
-8. **NEW gnoise negative result 서술**: "CNN 표준 grad-noise 위협이 LLM LoRA에서는 무대 미성립"
+8. **STD-DAGMM 보고 캐비엇(07-23 확정, 조치 없음 = Yonghee "평균이 크게 안 변했으면 됐다")**:
+   **단일 seed 값은 재현되지 않는다.** device100-a0.01 재실행에서 같은 seed인데 AUROC가
+   noisy s0 0.918→0.505 등 **평균 |Δ|=0.177**(2위 ComFedSV 0.021의 8배). 원인 = 코드 변경 아님
+   (`std_dagmm.py` 무수정, run seed 정상 전달) — ①같은 입력 교란을 7배 증폭(φ median 변화
+   Flirds 3.9% vs STD-DAGMM 28%; AE+GMM 200-epoch 비볼록 + energy=음의 로그밀도) ②오염/정상
+   점수 분포가 겹쳐 **순위 여유 0**(Flirds는 AUROC 변화가 눈금 1/(5·93)의 정확히 1칸 = 순위
+   1건, STD-DAGMM은 ~192칸). **3-seed 평균은 안정**(noisy 0.652→0.600, frrand 0.925→0.892)
+   → 논문 인용 시 **3-seed mean±std 병기 필수 + 단일 seed 재현 불가 caveat**.
+   (미분리: φ가 애초에 4% 움직인 원인 = LLM 비결정성 vs 188커밋 중 수치 변경. 확인하려면
+   현 코드로 같은 seed 2회 = device100 1셀 ~5h.)
+9. **NEW gnoise negative result 서술**: "CNN 표준 grad-noise 위협이 LLM LoRA에서는 무대 미성립"
    — 근거·수치·문헌대조 전부 `runs/track_h/gnoise_diag/README.md`에 정리됨(그대로 인용 가능).
    배치 후보 = paper §5 한계/negative 또는 부록 1문단. **인용 금지 항목 주의**(Krum σ=200,
    arXiv 2509.09097·2602.19926·2605.07961 = 검증 실패). H-10은 CNN 결과로만 서술.
