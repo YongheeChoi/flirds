@@ -17,6 +17,7 @@ crisp; soft predictions stay "report" (misses are shown as-is, spec §6).
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -30,6 +31,14 @@ OUT = ROOT / "analysis"
 SIGN_GATES = ("flirds_gate_v1", "flirds_gate_v2", "lossheur_gate_v2",
               "oracleb_gate_v2", "shapleyfl_gate_v2", "flirds_gatew_v2")
 CLEAN_PARITY_ACC = 0.006          # C2 clean-parity band (spec §5-2, reused)
+# 2026-07-22 skew-axis extension (README "확장 ②"):
+RECOVERY_MIN_GAP = 0.02           # |oracle_excl - vanilla| below this -> recovery is
+                                  # noise (lf@0.15 measured 0.003-0.006 -> seed-std 3.1)
+V2_CUM_GATES = ("flirds_gate_v2", "flirds_gatew_v2")     # cum > tau participation gate
+V1_RAW_GATES = ("flirds_gate_v1", "flirds_gatew_v1")     # per-round raw > tau screen
+CNN_GATE_DEFAULT = dict(burn_in=10, tau=0.0, min_obs=2)  # README gate defaults -- the
+# fallback for the first 36 cells, whose config.yaml predates the self-describing
+# `gate` block (track_c2 now records it whenever a gate arm runs).
 
 
 # --------------------------------------------------------------- §2.1 predictions
@@ -165,33 +174,92 @@ def load_cnn(sub):
         return cells
     for d in sorted(rd.iterdir()):
         if (d / "metrics.json").exists():
-            cells.append(dict(cell=d.name, cfg=yaml.safe_load((d / "config.yaml").read_text()),
+            cells.append(dict(cell=d.name, dir=d,
+                              cfg=yaml.safe_load((d / "config.yaml").read_text()),
                               m=json.loads((d / "metrics.json").read_text())))
     return cells
 
 
+def _dose(cell, cfg):
+    """Fixed label-flip dose.  `flip_rate` only entered config.yaml on 2026-07-21,
+    so the first 36 grid cells carry it in the rundir NAME only -- without this
+    backfill the three dose points collapse into one averaged row."""
+    if cfg.get("flip_rate") is not None:
+        return float(cfg["flip_rate"])
+    m = re.search(r"_fr([0-9.]+)_", cell)
+    return float(m.group(1)) if m else None
+
+
+def cnn_gate_excl(d, corrupt, gate, arm, n_rounds):
+    """Reconstruct a sign gate's excluded set per round from phi_rounds and score it
+    against the true corrupt mask (the CNN cells have no `gate` metrics block; the
+    LLM runner writes one, track_c2 does not).  Exact for the two sign-gate families:
+
+      V2 (participation): round r excludes {c: n_obs<r> >= min_obs and cum<r> <= tau}
+          for r >= burn_in, reading the END-OF-ROUND-(r-1) snapshot the select seam
+          sees (intervene._gate_select_fn).  Probation rotates ONE excluded client
+          back per `probation_every` rounds -- it does not change the excluded set,
+          so these counts are the gate's decisions, not realized non-participation.
+      V1 (aggregation): a participant is screened out in round r iff raw <= tau.
+
+    Returns micro pair counts (round, client) + the distinct clients ever excluded.
+    """
+    p = d / "phi_rounds.parquet"
+    if not p.exists():
+        return {}
+    df = pd.read_parquet(p)
+    if "arm" in df.columns:
+        df = df[df["arm"] == arm]
+    if df.empty:
+        return {}
+    tau = gate.get("tau", 0.0)
+    if arm in V1_RAW_GATES:
+        ex = df[df["participated"] & (df["raw"] <= tau)][["round", "client"]]
+    else:
+        burn_in, min_obs = gate.get("burn_in", 0), gate.get("min_obs", 2)
+        prev = df.copy()
+        prev["round"] = prev["round"] + 1                  # state as seen by the next round
+        ex = prev[(prev["round"] >= burn_in) & (prev["round"] < n_rounds)
+                  & (prev["n_obs"] >= min_obs) & (prev["cum"] <= tau)][["round", "client"]]
+    bad = set(int(c) for c in corrupt)
+    hit = ex["client"].isin(bad)
+    return dict(n_excluded_pairs=int(len(ex)),
+                false_excl_pairs=int((~hit).sum()),
+                excl_precision=(float(hit.mean()) if len(ex) else None),
+                excl_clients=int(ex["client"].nunique()),
+                false_excl_clients=int(ex.loc[~hit, "client"].nunique()))
+
+
 def analyze_cnn(cells):
     """track_c2-schema cells: per-arm final_acc/auroc/rtt + delta vs vanilla +
-    recovery vs oracle_excl (accuracy axis: recovery=(arm-van)/(oracle-van))."""
+    recovery vs oracle_excl (accuracy axis: recovery=(arm-van)/(oracle-van)).
+    `gap` = that denominator; recovery is BLANKED when |gap| < RECOVERY_MIN_GAP."""
     rows = []
     for c in cells:
         m, cfg = c["m"], c["cfg"]
         arms = m.get("arms", {})
         van = (arms.get("vanilla") or {}).get("final_acc")
         orc = (arms.get("oracle_excl") or {}).get("final_acc")
+        gap = (orc - van) if None not in (orc, van) else None
+        corrupt = [i for i, v in enumerate(m.get("corrupt", [])) if v]
         for arm, a in arms.items():
             acc = a.get("final_acc")
             delta = (acc - van) if None not in (acc, van) else None
-            rec = (delta / (orc - van) if None not in (delta, orc, van) and orc != van
-                   else None)
+            rec = (delta / gap if None not in (delta, gap)
+                   and abs(gap) >= RECOVERY_MIN_GAP else None)
             pred, _ = prediction("clean" if m.get("threat") == "clean" else m.get("threat"),
                                  arm, None)
-            rows.append(dict(cell=c["cell"], dataset=m.get("dataset"),
-                             partition=m.get("partition"), threat=m.get("threat"),
-                             strength=m.get("strength"),
-                             flip_rate=cfg.get("flip_rate"), seed=m.get("seed"),
-                             arm=arm, final_acc=acc, delta_acc=delta, recovery=rec,
-                             auroc=a.get("auroc"), rounds_to_target=a.get("rounds_to_target")))
+            row = dict(cell=c["cell"], dataset=m.get("dataset"),
+                       partition=m.get("partition"), threat=m.get("threat"),
+                       strength=m.get("strength"), flip_rate=_dose(c["cell"], cfg),
+                       seed=m.get("seed"), arm=arm, final_acc=acc, delta_acc=delta,
+                       gap=gap, recovery=rec, auroc=a.get("auroc"),
+                       rounds_to_target=a.get("rounds_to_target"))
+            if arm in V2_CUM_GATES + V1_RAW_GATES and c.get("dir"):
+                row.update(cnn_gate_excl(c["dir"], corrupt,
+                                         cfg.get("gate") or CNN_GATE_DEFAULT, arm,
+                                         (cfg.get("cfg") or {}).get("rounds", 0)))
+            rows.append(row)
     return pd.DataFrame(rows)
 
 
@@ -221,6 +289,166 @@ def v2w_promotion(cnn):
         return "NOT EVALUABLE (missing V2/V2w pairs)", []
     return ("PROMOTE (add flirds_gatew_v2 to LLM ARMS)" if ok1 and ok2 else
             "DO NOT PROMOTE (report CNN-only -- an honest finding)"), lines
+
+
+# ------------------------------------------------- 2026-07-22 skew-axis extension
+PARTS = ("iid", "shard", "qskew", "dir1")            # no-skew / label / size / both
+
+
+def _cellmean(cnn):
+    """Per (dataset, partition, threat, dose, arm) 3-seed mean/std of the axes."""
+    if cnn.empty:
+        return cnn
+    g = cnn.groupby(["dataset", "partition", "threat", "flip_rate", "arm"], dropna=False)
+    out = g.agg(final_acc=("final_acc", "mean"), delta_acc=("delta_acc", "mean"),
+                gap=("gap", "mean"), recovery=("recovery", "mean"),
+                rec_sd=("recovery", "std"), auroc=("auroc", "mean"),
+                false_excl_pairs=("false_excl_pairs", "mean"),
+                excl_precision=("excl_precision", "mean"), seeds=("seed", "nunique"))
+    return out.reset_index()
+
+
+def skew_tables(cm):
+    """The 2x2 decomposition view: one block per (dataset, threat, dose), partitions
+    across the columns.  Absolute accuracy is the headline (project convention);
+    recovery follows only where the denominator survived the guard."""
+    md = []
+    for ds in sorted(cm["dataset"].dropna().unique()):
+        for (thr, dose), g in cm[cm.dataset == ds].groupby(["threat", "flip_rate"],
+                                                           dropna=False):
+            parts = [p for p in PARTS if p in set(g["partition"])]
+            if not parts:
+                continue
+            tag = f"{thr}" + (f"@{dose:g}" if pd.notna(dose) else "")
+            md += [f"", f"**{ds} / {tag}** — 절대 acc (recovery; 분모<{RECOVERY_MIN_GAP} → 공란)", ""]
+            md += ["| arm | " + " | ".join(parts) + " |", "|" + "---|" * (len(parts) + 1)]
+            for arm in sorted(set(g["arm"])):
+                cells = []
+                for p in parts:
+                    r = g[(g.partition == p) & (g.arm == arm)]
+                    if r.empty or pd.isna(r.final_acc.iloc[0]):
+                        cells.append("")
+                        continue
+                    s = f"{r.final_acc.iloc[0]:.4f}"
+                    if pd.notna(r.recovery.iloc[0]):
+                        s += f" ({r.recovery.iloc[0]:+.2f})"
+                    cells.append(s)
+                md.append(f"| {arm} | " + " | ".join(cells) + " |")
+            gaps = [f"{p}={g[(g.partition == p)].gap.dropna().mean():.4f}" for p in parts
+                    if g[(g.partition == p)].gap.notna().any()]
+            if gaps:
+                md.append("")
+                md.append(f"gap(oracle_excl−vanilla): {', '.join(gaps)}")
+    return md
+
+
+def _get(cm, ds, part, thr, dose, arm, col):
+    q = cm[(cm.dataset == ds) & (cm.partition == part) & (cm.threat == thr)
+           & (cm.arm == arm)]
+    q = q[q.flip_rate.isna()] if dose is None else q[q.flip_rate == dose]
+    return None if q.empty or pd.isna(q[col].iloc[0]) else float(q[col].iloc[0])
+
+
+def prereg_verdicts(cm):
+    """Mechanical checks for the pre-registered H-K1..H-K6 (README 확장 ②).
+    Missing cells report 'pending'; misses are printed as-is (spec §6)."""
+    L, V2 = [], "flirds_gate_v2"
+    def line(hid, txt, ok):
+        L.append(f"- **{hid}** {txt} -> " +
+                 ("pending" if ok is None else ("**HIT**" if ok else "**MISS**")))
+
+    for ds in sorted(cm["dataset"].dropna().unique()):
+        # H-K1 free_rider recovery is partition-invariant
+        recs = {p: _get(cm, ds, p, "free_rider", None, V2, "recovery") for p in PARTS}
+        have = {p: v for p, v in recs.items() if v is not None}
+        new = [p for p in ("shard", "qskew") if have.get(p) is not None]
+        line("H-K1", f"{ds} free_rider V2 recovery " +
+             ", ".join(f"{p}={v:+.2f}" for p, v in have.items()),
+             None if not new else
+             (all(have[p] >= 0.6 for p in new)
+              and (max(have.values()) - min(have.values())) < 0.35))
+        # H-K2 frrand caught like frzero (2nd-order curvature term)
+        fr = _get(cm, ds, "iid", "frrand", None, V2, "recovery")
+        fz = _get(cm, ds, "iid", "free_rider", None, V2, "recovery")
+        alt = ("" if None in (fr, fz) else
+               f" (frzero={fz:+.2f}; ratio={fr / fz:+.2f} — <=0.6이면 LLM 감사의 코인플립과 일치)")
+        line("H-K2", f"{ds} iid frrand V2 recovery={'' if fr is None else f'{fr:+.2f}'}{alt}",
+             None if fr is None else fr >= 0.7)
+        # H-K3 clean false-fire worst on shard
+        fe = {p: _get(cm, ds, p, "clean", None, V2, "false_excl_pairs") for p in PARTS}
+        da = {p: _get(cm, ds, p, "clean", None, V2, "delta_acc") for p in PARTS}
+        feh = {p: v for p, v in fe.items() if v is not None}
+        line("H-K3", f"{ds} clean 오발화 pairs " +
+             ", ".join(f"{p}={v:.0f}" for p, v in feh.items()) + " | V2 dAcc " +
+             ", ".join(f"{p}={v:+.4f}" for p, v in da.items() if v is not None),
+             None if "shard" not in feh or len(feh) < 2 else
+             (feh["shard"] == max(feh.values())
+              and (da.get("qskew") is None or abs(da["qskew"]) < CLEAN_PARITY_ACC)))
+        # H-K4 seed spread largest on qskew
+        for thr in ("free_rider", "grad_noise"):
+            sd = {p: _get(cm, ds, p, thr, None, V2, "rec_sd") for p in ("iid", "qskew")}
+            line("H-K4", f"{ds} {thr} recovery seed-sd " +
+                 ", ".join(f"{p}={v:.3f}" for p, v in sd.items() if v is not None),
+                 None if None in sd.values() or not sd["iid"] else
+                 sd["qskew"] > 1.5 * sd["iid"])
+        # H-K5 lf@0.15 denominator collapses everywhere
+        gaps = {p: _get(cm, ds, p, "label_flip", 0.15, "vanilla", "gap") for p in PARTS}
+        gh = {p: v for p, v in gaps.items() if v is not None}
+        line("H-K5", f"{ds} lf@0.15 gap " + ", ".join(f"{p}={v:.4f}" for p, v in gh.items()),
+             None if not gh else all(abs(v) < RECOVERY_MIN_GAP for v in gh.values()))
+    # H-K6 fmnist keeps the ratio, shrinks the gap
+    pairs = []
+    for p in PARTS:
+        for thr, dose in (("free_rider", None), ("frrand", None), ("grad_noise", None),
+                          ("label_flip", 0.35), ("label_flip", 0.70)):
+            a = _get(cm, "cifar10", p, thr, dose, V2, "recovery")
+            b = _get(cm, "fmnist", p, thr, dose, V2, "recovery")
+            if None not in (a, b):
+                pairs.append((f"{p}/{thr}", a, b, abs(a - b)))
+    line("H-K6", "fmnist↔cifar10 recovery diff " +
+         (", ".join(f"{k}={d:.2f}" for k, _, _, d in pairs) or "(no comparable cells)"),
+         None if not pairs else all(d <= 0.15 for *_, d in pairs))
+    return L
+
+
+def c2_soft_compare(cm):
+    """Same-cell contrast with the C2 soft-weight grid (runs/track_c/c2, read-only).
+    Only {clean, free_rider, grad_noise} strmain cells are the SAME cell; C2's
+    label_flip is FedCorr rate~U(0.5,1), NOT a fixed dose -> excluded here."""
+    c2 = ROOT.parent / "track_c" / "c2"
+    if not c2.exists() or cm.empty:
+        return ["(runs/track_c/c2 없음 — 대조 생략)"]
+    rows = []
+    for d in sorted(c2.iterdir()):
+        f = d / "metrics.json"
+        if not f.exists():
+            continue
+        m = json.loads(f.read_text())
+        if m.get("strength") != "main" or m.get("threat") not in ("clean", "free_rider",
+                                                                  "grad_noise"):
+            continue
+        for arm in ("vanilla", "flirds_mult"):
+            a = (m.get("arms") or {}).get(arm) or {}
+            if a.get("final_acc") is not None:
+                rows.append(dict(dataset=m["dataset"], partition=m["partition"],
+                                 threat=m["threat"], arm=arm, acc=a["final_acc"]))
+    if not rows:
+        return ["(대응 C2 셀 없음)"]
+    c2m = pd.DataFrame(rows).groupby(["dataset", "partition", "threat", "arm"])["acc"].mean()
+    md = ["| dataset | partition | threat | C2 vanilla | G vanilla | C2 flirds_mult | "
+          "G flirds_gate_v2 | 비고 |", "|" + "---|" * 8]
+    for (ds, part, thr), _ in c2m.groupby(level=[0, 1, 2]):
+        g_van = _get(cm, ds, part, thr, None, "vanilla", "final_acc")
+        g_v2 = _get(cm, ds, part, thr, None, "flirds_gate_v2", "final_acc")
+        if g_van is None:
+            continue
+        note = "same cell" if part in PARTS else ""
+        md.append(f"| {ds} | {part} | {thr} | {c2m.get((ds, part, thr, 'vanilla')):.4f} | "
+                  f"{g_van:.4f} | {c2m.get((ds, part, thr, 'flirds_mult')):.4f} | "
+                  f"{'' if g_v2 is None else f'{g_v2:.4f}'} | {note} |")
+    md += ["", "⚠️ qskew·frrand는 C2 대응 셀 없음. label_flip은 C2가 strmain"
+           "(rate~U(0.5,1))이라 Track G의 고정 dose와 같은 셀이 아니어서 제외."]
+    return md
 
 
 def _md_table(df, cols):
@@ -283,9 +511,22 @@ def main():
     md += _md_table(cnn.sort_values(["dataset", "partition", "threat", "seed", "arm"])
                     if not cnn.empty else cnn,
                     ["dataset", "partition", "threat", "strength", "flip_rate", "seed",
-                     "arm", "final_acc", "delta_acc", "recovery", "auroc"])
+                     "arm", "final_acc", "delta_acc", "gap", "recovery", "auroc",
+                     "false_excl_pairs", "excl_precision"])
     status, lines = v2w_promotion(cnn)
     md += ["", f"## V2w promotion gate (spec §5-2): **{status}**", ""] + lines
+    if not cnn.empty:                       # 2026-07-22 skew-axis extension
+        cm = _cellmean(cnn)
+        cm.to_csv(OUT / "cnn_cellmean.csv", index=False)
+        md += ["", "## CNN skew 분해 (2×2: iid=skew없음 / shard=label만 / qskew=size만 "
+               "/ dir1=둘다) — 3-seed 평균", "",
+               "> ⚠️ 가법 분해 아님: shard의 label-skew(1.95 클래스/클라)는 dir1(9.87)보다, "
+               "qskew의 size-skew(24×)는 dir1(6.2×)보다 세다. 축 귀속만 읽는다."]
+        md += skew_tables(cm)
+        md += ["", "## 사전등록 예측 대조 (README 확장 ②; MISS 그대로 보고)", ""]
+        md += prereg_verdicts(cm)
+        md += ["", "## C2 소프트-arm 같은-셀 대조 (runs/track_c/c2, read-only)", ""]
+        md += c2_soft_compare(cm)
     v3 = load_cnn("rundirs_cnn_v3")
     if v3:
         md += ["", "## CNN V3 (track_c1 C1_V3 cells)", ""]

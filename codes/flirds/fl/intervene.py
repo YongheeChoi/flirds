@@ -177,12 +177,30 @@ def make_dismissal_weights_fn(scorer, round_raw_fn, sample_nums, q):
     return weights_fn
 
 
+def _benign_matched_scale(delta):
+    """U(-s, s) has variance s^2/3, so s = sqrt(3) * std(honest delta) makes the
+    fabricated update's per-entry std equal the benign one (Lin et al. 2019 tune
+    the free-rider scale to the benign-update std for detection evasion).  The LLM
+    leg measures that std once from a warm-up (`track_g._benign_std(warm)*sqrt(3)`);
+    the CNN leg reads it off the attacker's OWN would-be update, which needs no
+    warm-up round and matches per (client, round) instead of on average."""
+    v = torch.cat([t.reshape(-1).float() for t in delta.values()])
+    return float(v.std()) * (3 ** 0.5)
+
+
 def make_delta_transform(malicious, threat, std=0.1, seed=0):
     """`delta_transform(c, r, delta)` for `fl.server` update-level C2 threats:
-    `malicious` clients get free_rider (zero delta) or grad_noise (Gaussian std);
+    `malicious` clients get free_rider (zero delta), frrand (a PURE random update
+    replacing the honest one) or grad_noise (honest update PLUS Gaussian std);
     honest clients pass through.  Per-(client, round) generator -> reproducible.
     `malicious` is a static id iterable OR a callable r -> id-set (per-round
-    dynamic corruption, C2_DYN 2026-07-21)."""
+    dynamic corruption, C2_DYN 2026-07-21).
+
+    `std` is the Gaussian sigma for grad_noise, and for frrand the AMPLITUDE
+    MULTIPLE of the benign-matched scale (1.0 = norm-indistinguishable; the
+    `DOSE_MULT` knob of the LLM leg).  The three update-level threats form a
+    signal/noise ladder: free_rider = no signal no noise, frrand = no signal all
+    noise, grad_noise = signal + noise."""
     mal = malicious if callable(malicious) else (lambda r, _s=set(malicious): _s)
 
     def transform(c, r, delta):
@@ -191,9 +209,13 @@ def make_delta_transform(malicious, threat, std=0.1, seed=0):
         g = torch.Generator().manual_seed(seed + 1000 * c + r)
         if threat == "free_rider":
             return free_rider(delta, mode="zero")
+        if threat == "frrand":                       # Lin et al. "random" mode (LLM leg parity)
+            return free_rider(delta, mode="random", generator=g,
+                              scale=_benign_matched_scale(delta) * std)
         if threat == "grad_noise":
             return grad_noise(delta, std=std, generator=g)
-        raise ValueError(f"delta_transform threat must be free_rider|grad_noise, got {threat!r}")
+        raise ValueError("delta_transform threat must be free_rider|frrand|grad_noise, "
+                         f"got {threat!r}")
 
     return transform
 

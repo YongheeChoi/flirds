@@ -170,6 +170,25 @@ PY=$PY PP=<repo>/codes HOME=… HF_HOME=… HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE
 lr·steps intervention 2차검증(무GPU 재분석) · 1B·CNN β-불변 canon 확인.
 (E5 N=10 oracle 확장(seeds1·2·(a) 2¹⁰) = 미진행 확정, Yonghee 07-22 — 시간 제약.)
 
+### 1.4b Track G CNN skew-축 확장 + fmnist + frrand (**즉시 실행 대상**; Slurm 서버, 2026-07-22)
+
+컨테이너 48h 큐와 **독립**(yonsei Slurm `base_suma_rtx3090`, torch 2.11.0 env). 지시 = Yonghee
+2026-07-22. 구현·스모크·사전등록 **완료(로컬 커밋, push 안 함)** — 남은 것은 제출·분석·문서.
+
+- **그리드 90런/30셀** = ① cifar10×{shard(label만),qskew(size만)} ② fmnist×{iid,dir1}
+  각각 × {clean, free_rider, **frrand**, grad_noise, label_flip@{0.15,0.35,0.70}} × 3-seed
+  + ③ cifar10×{iid,dir1}×frrand 백필 6런. 기존 36런 rundir는 **read-only**.
+- **제출**: `sbatch --array=0-29%8 runs/track_g/sbatch_cnn_skew.sh`(seed0 파일럿 30셀)
+  → 실측 GPU-h 보고 → `--array=30-89%8`(seeds 1·2). 인덱스는 seed-major.
+- **예상 비용**: 총 30–38 GPU-h(cifar10 실측 앵커 3.5분/scoring-arm, fmnist 미측정 0.5–1.0×),
+  8-GPU 동시 → wall 4–5h.
+- **사전등록 H-K1~H-K6** = `runs/track_g/README.md` "확장 ②". 완료 후
+  `python runs/track_g/make_analysis.py` → 2×2 분해표·예측 대조·C2 같은-셀 대조 자동 생성.
+- **Yonghee 결정 대기 2건**: ① cifar10 {iid,dir1} 12셀 동일-스택 재실행(+18 GPU-h)로
+  2×2 표의 스택 경계(감사 M1: 기존=torch 2.12/B200, 신규=2.11/RTX3090) 제거할지
+  ② 예산 압박 시 5-arm 축소안 사용 여부(현재는 9-arm 대칭 유지).
+- 완료 후: overview §3.2.4 skew-분해·fmnist 블록 + §3.2 커버리지 매트릭스 + §8 갱신.
+
 ### 1.5 seed-추가 잔여 3건 (**조건부** — Yonghee 2026-07-22)
 
 > ⚠ **실행 조건: 해당 결과가 논문에 실리는 것으로 확정될 때만 돌린다.** 현재는 수록

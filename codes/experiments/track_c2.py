@@ -3,8 +3,12 @@
 The ADDITIONAL track's MAIN experiment: does valuation-driven intervention improve
 FL under data threats, at the prior-art N=100 cross-device scale?  CIFAR-10 /
 FMNIST, N=100, C=0.1, T=100-150, E=5, SGD mom=0, batch=64, 5 seeds; partitions
-{IID, Dirichlet(alpha=1) label+size skew, McMahan 2-shard}; threats {clean,
-label-flip(FedCorr (rho,tau)), free-rider(zero-delta), grad-noise(FedIF sigma)}.
+{IID, Dirichlet(alpha=1) label+size skew, McMahan 2-shard label skew, GTG
+quantity skew `qskew` (size skew only, labels IID -- the 2x2 skew decomposition
+added 2026-07-22 for the Track G gate grid)}; threats {clean,
+label-flip(FedCorr (rho,tau)), free-rider(zero-delta), frrand(pure random update
+at the benign per-entry std -- the LLM leg's frrand ported 2026-07-22),
+grad-noise(FedIF sigma)}.
 
 Each METHOD ARM runs its OWN intervened FedAvg trajectory (shared seam in
 `fl.server`/`fl.intervene`) and is scored on the same axes:
@@ -55,7 +59,8 @@ from flirds.fl.intervene import (OnlineScorer, SignAccumulator, _conf_keep,
                                  make_signgate_weights_fn, make_softmax_select_fn,
                                  make_weights_fn, make_zgate_select_fn,
                                  make_zgate_weights_fn, shapleyfl_round_raw_fn)
-from flirds.fl.partition import (dirichlet_partition, iid_partition,
+from flirds.fl.partition import (dirichlet_partition, gtg_quantity_ratios,
+                                 iid_partition, quantity_skew_partition,
                                  shard_partition)
 from flirds.fl.score_providers import SOURCES as TH_SOURCES
 from flirds.fl.score_providers import provider_round_raw_fn
@@ -65,8 +70,8 @@ from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
 
 DATASET = os.environ.get("C2_DATASET", "cifar10")        # cifar10 | fmnist
-PARTITION = os.environ.get("C2_PARTITION", "iid")        # iid | dir1 | shard
-THREAT = os.environ.get("C2_THREAT", "clean")            # clean | label_flip | free_rider | grad_noise
+PARTITION = os.environ.get("C2_PARTITION", "iid")        # iid | dir1 | shard | qskew
+THREAT = os.environ.get("C2_THREAT", "clean")            # clean | label_flip | free_rider | frrand | grad_noise
 STRENGTH = os.environ.get("C2_STRENGTH", "main")         # 'main' | float (grid point)
 SEED = int(os.environ.get("C2_SEED", "0"))
 MODE = os.environ.get("C2_MODE", "smoke")
@@ -151,6 +156,7 @@ MODEL_FN = partial({"cifar10": FedSVCNN, "fmnist": LeNet5}[DATASET], width=WIDTH
 MAL_FRAC = 0.4                                            # noisy/malicious client fraction (main)
 TAU = 0.5                                                 # FedCorr per-client rate lower bound
 GAMMA_GRADNOISE = 0.1                                     # FedIF main sigma
+FRRAND_MULT = 1.0                                         # frrand amplitude / benign std (1 = norm-matched)
 
 
 def _strength(default):
@@ -218,6 +224,8 @@ def build():
         idx = dirichlet_partition(labels, n, alpha=1.0, seed=seed)   # label + size skew
     elif PARTITION == "shard":
         idx = shard_partition(labels, n, shards_per_client=2, seed=seed)
+    elif PARTITION == "qskew":                                       # size skew ONLY (labels IID)
+        idx = quantity_skew_partition(labels, n, gtg_quantity_ratios(n), seed=seed)
     else:
         raise ValueError(f"unknown partition {PARTITION!r}")
 
@@ -225,7 +233,7 @@ def build():
     corrupt = np.zeros(n, dtype=int)
     delta_transform = None
     mal_ids, dyn_mask = [], None
-    if DYN and THREAT in ("label_flip", "free_rider", "grad_noise"):
+    if DYN and THREAT in ("label_flip", "free_rider", "frrand", "grad_noise"):
         # C2_DYN: the corrupt set is re-drawn every round (fixed count = the
         # static fr/gn count); no client is statically corrupt -> corrupt stays
         # all-zero and the client-level AUROC block self-skips.
@@ -234,7 +242,7 @@ def build():
         m = max(1, int(round(_strength(MAL_FRAC) * n)))
         dyn_mask = make_roundwise_mask(n, m, seed)
         _DYN["mask_at"], _DYN["clock"] = dyn_mask, _RoundClock()
-    elif THREAT in ("label_flip", "free_rider", "grad_noise"):
+    elif THREAT in ("label_flip", "free_rider", "frrand", "grad_noise"):
         mal = rng.random(n) < _strength(MAL_FRAC) if THREAT == "label_flip" else \
             set(rng.choice(n, size=max(1, int(round(MAL_FRAC * n))), replace=False).tolist())
         if THREAT == "label_flip":                       # FedCorr (rho,tau): noisy mask + rate~U(tau,1)
@@ -264,6 +272,9 @@ def build():
     mal_arg = dyn_mask if dyn_mask is not None else mal_ids
     if THREAT == "free_rider":
         delta_transform = make_delta_transform(mal_arg, "free_rider", seed=seed)
+    elif THREAT == "frrand":                             # pure random update, benign-matched
+        delta_transform = make_delta_transform(mal_arg, "frrand",
+                                               std=_strength(FRRAND_MULT), seed=seed)
     elif THREAT == "grad_noise":
         delta_transform = make_delta_transform(mal_arg, "grad_noise",
                                                std=_strength(GAMMA_GRADNOISE), seed=seed)
@@ -641,9 +652,11 @@ def run():
                                                 threat=THREAT, strength=STRENGTH, seed=SEED, mode=MODE,
                                                 width=WIDTH, flip_rate=FLIP_RATE,   # always recorded (dose knob)
                                                 **({"dyn": dyn_info} if dyn_info else {}),
-                                                **({"gate": C2GATE,
-                                                    "extra_arms": EXTRA_ARMS}
-                                                   if (EXTRA_ARMS or th_active) else {}),
+                                                **({"gate": C2GATE,      # self-describing:
+                                                    "extra_arms": EXTRA_ARMS}   # record the
+                                                   if (EXTRA_ARMS or th_active   # gate HP for
+                                                       or any(a in _GATE_ARMS    # ANY gate arm
+                                                              for a in arms)) else {}),
                                                 **({"track_h": {"t2": TH_T2,
                                                                 "t2_p5": TH_T2_P5,
                                                                 "t2_legacy": TH_T2_LEGACY,
