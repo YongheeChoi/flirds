@@ -557,24 +557,37 @@ def _cell_name(arm, seed):
     return os.environ.get("RUN_NAME") or f"{REGIME}_{THREAT}{nr}_{arm}_seed{seed}"
 
 
+# Rundir identity (protocol §1.7) = exactly what _cell_name encodes (regime/threat/nr/
+# arm/seed) PLUS scale+model, which it does not -- so a 3B re-run of a 1B cell fails
+# loudly instead of silently overwriting it.  Everything else in `config` is provenance
+# and may grow without forking the rundir (the old whole-config compare forked on
+# dose_mult/mmlu/obs_sources/t2_csign being added, all irrelevant to which cell this is).
+IDENTITY = ("track", "regime", "threat", "noisy_rate", "arm", "seed", "scale", "model")
+
+
+def _config(arm, seed, corrupt_cfg):
+    return {"track": "G", "regime": REGIME, "threat": THREAT, "arm": arm, "seed": seed,
+            "scale": SCALE, "model": MODEL, "rcfg": {k: (sorted(v) if isinstance(v, set)
+                                                        else v) for k, v in RCFG.items()},
+            "mcfg": MCFG, "lora": {"r": LORA_R, "alpha": LORA_ALPHA},
+            "gate": GATE, "corrupt": corrupt_cfg, "noisy_rate": NOISY_RATE,
+            "dose_mult": float(os.environ.get("DOSE_MULT", "1.0")),   # frrand amplitude (self-describing)
+            "mmlu": {"limit": MMLU_LIMIT, "batch": MMLU_BATCH},
+            "obs_sources": [s for s in os.environ.get(
+                "OBS_SOURCES", "flirds,flirds1st,lossheur,fedif").split(",") if s],
+            "synth_data": SYNTH, "downstream": DOWNSTREAM, "t2": T2, "t2_p5": T2_P5,
+            "t2_csign": T2_CSIGN,
+            "orientation": {"phi.parquet": "suspicion (good->low; repo convention)",
+                            "phi_rounds.parquet": "raw/cum contribution (good->high = -phi)"}}
+
+
 def persist(arm, seed, metrics, rows, acc, timing, corrupt_cfg):
     if os.environ.get("PERSIST", "1") != "1":
         return
-    config = {"track": "G", "regime": REGIME, "threat": THREAT, "arm": arm, "seed": seed,
-              "scale": SCALE, "model": MODEL, "rcfg": {k: (sorted(v) if isinstance(v, set)
-                                                          else v) for k, v in RCFG.items()},
-              "mcfg": MCFG, "lora": {"r": LORA_R, "alpha": LORA_ALPHA},
-              "gate": GATE, "corrupt": corrupt_cfg, "noisy_rate": NOISY_RATE,
-              "dose_mult": float(os.environ.get("DOSE_MULT", "1.0")),   # frrand amplitude (self-describing)
-              "mmlu": {"limit": MMLU_LIMIT, "batch": MMLU_BATCH},
-              "obs_sources": [s for s in os.environ.get(
-                  "OBS_SOURCES", "flirds,flirds1st,lossheur,fedif").split(",") if s],
-              "synth_data": SYNTH, "downstream": DOWNSTREAM, "t2": T2, "t2_p5": T2_P5,
-              "t2_csign": T2_CSIGN,
-              "orientation": {"phi.parquet": "suspicion (good->low; repo convention)",
-                              "phi_rounds.parquet": "raw/cum contribution (good->high = -phi)"}}
+    config = _config(arm, seed, corrupt_cfg)
     try:
-        rl = RunLogger(RUNDIR_ROOT, _cell_name(arm, seed), config, repo_root=_CODES)
+        rl = RunLogger(RUNDIR_ROOT, _cell_name(arm, seed), config, repo_root=_CODES,
+                       identity=IDENTITY)
         if acc is not None:                            # final cumulative, repo orientation
             rl.save_phi([{"seed": seed, "arm": arm, "client": int(c),
                           "phi": -float(acc.cum[c]), "n_obs": int(acc.n_obs[c])}
@@ -610,6 +623,15 @@ def main():
           f"nr={NOISY_RATE:g} | gate={GATE} | arms={arms} | seeds={seeds} "
           f"| downstream={DOWNSTREAM} V3={V3} T2={T2} T2_P5={T2_P5} T2_CSIGN={T2_CSIGN} ===",
           flush=True)
+
+    if os.environ.get("PERSIST", "1") == "1":          # fail fast: RunLogger is built in
+        for s in seeds:                                # persist(), i.e. AFTER a ~16 h arm --
+            for a in arms:                             # run the §1.7 identity guard now.
+                RunLogger.precheck(RUNDIR_ROOT, _cell_name(a, s),
+                                   _config(a, s, corrupt_cfg), IDENTITY)
+    # (derived T2 arms are not prechecked: they share every identity field but `arm`,
+    #  which their name embeds by construction -- a mismatch there means the whole cell
+    #  is misnamed, which the loop above already catches.)
 
     tok, model, init, pkeys = _load(device)
     for seed in seeds:

@@ -33,6 +33,57 @@ def _git(args, cwd):
         return ""
 
 
+class RunDirIdentityError(RuntimeError):
+    """A rundir name already holds a DIFFERENT experiment -- see `_identity_diff`."""
+
+
+_ABSENT = "<absent>"
+
+
+def _identity_diff(old, new, identity):
+    """Identity fields that disagree -> {field: (old, new)}.
+
+    A field ABSENT from the stored config counts as a disagreement: a rundir written
+    before the field existed cannot be claimed to have run with the current value.
+    That absence is exactly what let beta 0.5 -> 0.3 overwrite silently (beta was a
+    source literal, so the config bytes were identical)."""
+    return {k: (old.get(k, _ABSENT), new.get(k, _ABSENT))
+            for k in identity if old.get(k, _ABSENT) != new.get(k, _ABSENT)}
+
+
+def check_identity(root, name, config, identity):
+    """Guard `root/name` BEFORE any compute (protocol §1.7).
+
+    `identity` names the fields that DEFINE the experiment -- keep it equal to what the
+    run NAME encodes, so "same name, different identity" is by construction a
+    name-generation bug.  Same identity -> return (the re-run overwrites; the previous
+    version stays in git).  Different -> raise, rather than forking a phantom
+    `<name>_<hash>` dir that later analysis would silently pick one of.
+
+    Provenance fields (everything not listed) may grow freely without tripping this --
+    the old whole-config comparison mis-fired on exactly that (5 phantom dirs in
+    2026-07), while staying silent on the one change that mattered.
+
+    RUNDIR_REPLACE=1 overwrites deliberately (needed once per cell when a semantic
+    field like `beta` is first promoted into the identity)."""
+    cfg_path = os.path.join(root, name, "config.yaml")
+    if not os.path.exists(cfg_path):
+        return
+    with open(cfg_path) as f:
+        old = yaml.safe_load(f) or {}
+    diff = _identity_diff(old, config, identity)
+    if not diff:
+        return
+    if os.environ.get("RUNDIR_REPLACE") == "1":
+        print(f"[RunLogger] RUNDIR_REPLACE=1 -> overwriting {name!r} despite identity "
+              f"change {diff}", flush=True)
+        return
+    raise RunDirIdentityError(
+        f"rundir {name!r} already holds a DIFFERENT experiment: {diff} (stored -> new). "
+        f"The NAME should have differed -- fix the name generator.  Set RUNDIR_REPLACE=1 "
+        f"to overwrite on purpose (the previous version stays in git).")
+
+
 def _env_fingerprint():
     """(sha256 of `pip freeze`, key package versions, full freeze text) -- the
     reproducibility anchor.  The full freeze is written verbatim to the run-dir so the
@@ -65,16 +116,26 @@ class RunLogger:
 
     `name` is the run identity (caller makes it unique, e.g. includes seed); `repo_root`
     is where the git SHA is read from (default cwd, i.e. run from codes/).
+
+    `identity` (recommended) = the config fields that DEFINE the experiment; see
+    `check_identity`.  Runners still passing `identity=None` keep the legacy
+    whole-config guard, which mis-fires whenever a provenance key is added.
+    Call `RunLogger.precheck(...)` at process start so the guard fails in seconds
+    instead of after the run (RunLogger is constructed at persist time).
     """
 
-    def __init__(self, root, name, config, repo_root="."):
+    precheck = staticmethod(check_identity)
+
+    def __init__(self, root, name, config, repo_root=".", identity=None):
         new_yaml = yaml.safe_dump(config, sort_keys=False)
         self.dir = os.path.join(root, name)
-        # Collision guard (repro): a name that already holds a DIFFERENT config gets a
-        # config-hash suffix so distinct configs never silently overwrite each other;
-        # an identical config re-uses the dir (intended idempotent re-run).
         cfg_path = os.path.join(self.dir, "config.yaml")
-        if os.path.exists(cfg_path) and open(cfg_path).read() != new_yaml:
+        if identity is not None:
+            check_identity(root, name, config, identity)   # same identity -> overwrite
+        elif os.path.exists(cfg_path) and open(cfg_path).read() != new_yaml:
+            # Legacy guard (un-migrated runners): a name that already holds a DIFFERENT
+            # config gets a config-hash suffix so distinct configs never silently
+            # overwrite each other; an identical config re-uses the dir.
             h = hashlib.sha256(new_yaml.encode()).hexdigest()[:8]
             self.dir = os.path.join(root, f"{name}_{h}")
             print(f"[RunLogger] name {name!r} exists with a different config -> "

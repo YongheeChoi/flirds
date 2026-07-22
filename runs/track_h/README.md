@@ -154,7 +154,7 @@ Track H의 Flirds-점수원 arm과 통제 arm은 **track_g Phase B가 이미 동
 | H-10 | R4 grad-noise | 1차 estimator(flirds1st/fedif) 실명 vs Flirds(2차) 포착의 LLM 재현; 단 LoRA 소스텝 레짐이라 Taylor 정확 → CNN과 달리 **clean 오발화 없이** 잡을 것 | Tier 1 GN + Taylor 잔차(§3.1.7) |
 | H-11 | R4 clean | LLM 무발화 전례 유지(누적 φ 전원 양수 — CNN clean 오발화와 대비 = 레짐 효과 확증) | overview §3.2.2 |
 | H-12 | R4 Tier C 재실행 {noisy, frzero} × seeds 0·1·2 (fix-후 코드; 사전등록 2026-07-23) | pre-fix seed0(4c40e30; H1 미적용 git `fa5fc6e`)의 구조 재현: T2 점수원 순위 flirds ≥ lossheur > 1st=fedif + frzero kept=oracle-동일 + vs 동일예산 random **+4pt대 유지**. flirds↔lossheur 격차(+0.36pt)는 seed-분산 안 — 뒤집히면 "exact-0 계열 동률"로 완화 보고(MISS 아님·격차 주장만 철회) | P-1 판정(REMAINING §1.5-1: seed0 git_sha=`fa5fc6e`=fix-전) + Tier A 관측(overview §3.2.4) |
-| H-13 | R4 (b)-fidelity 셀(phase2_matrix REGIME=gsm50k5; noisy nr0.7 → clean; 사전등록 2026-07-23) | same-game 계열(Flirds/1st/loss-heur/Fed-LOO) vs (b) per-round Spearman ≈ 1.0(가산 축퇴) vs **renorm·uniform(GTG/FedSV/ShapleyFL/ComFedSV/FedIF) 유의미 하락 = std50k5 부분참여 붕괴 패턴의 GSM 재현**; noisy 셀 탐지는 \|AUROC(Flirds) − AUROC((b))\| ≤ 0.05(같은 게임 추적 — 절대값이 아니라 oracle-동행이 주장); runtime 우위는 K_r=5 조건부(vs (b) ~5×)로만 서술 | std50k5 probe(overview §4.2)·원리 4(min-max+EMA)·T3/T5 |
+| H-13 | R4 (b)-fidelity 셀(phase2_matrix REGIME=gsm50k5; noisy nr0.7 → clean; 사전등록 2026-07-23; **Fed-LOO 는 비교 제외 = Yonghee 07-23 결정, 실행 전 등록**) | same-game 계열(Flirds/1st/loss-heur) vs (b) per-round Spearman ≈ 1.0(가산 축퇴) vs **renorm·uniform(GTG/FedSV/ShapleyFL/ComFedSV/FedIF) 유의미 하락 = std50k5 부분참여 붕괴 패턴의 GSM 재현**; noisy 셀 탐지는 \|AUROC(Flirds) − AUROC((b))\| ≤ 0.05(같은 게임 추적 — 절대값이 아니라 oracle-동행이 주장); runtime 우위는 K_r=5 조건부(vs (b) ~5×)로만 서술 | std50k5 probe(overview §4.2)·원리 4(min-max+EMA)·T3/T5 |
 
 ## 3. 판정 지표 — **우열 기준은 학습 성능만** (탐지 아님)
 

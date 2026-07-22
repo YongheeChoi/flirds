@@ -76,7 +76,7 @@ from flirds.baselines.fldetector import fldetector_from_logs
 from flirds.baselines.fltrust import fltrust_from_logs
 from flirds.baselines.gtg import gtg_from_logs
 from flirds.baselines.ripple import _flat
-from flirds.baselines.shapleyfl import shapleyfl_from_logs
+from flirds.baselines.shapleyfl import BETA as SFL_BETA, shapleyfl_from_logs
 from flirds.baselines.std_dagmm import std_dagmm_from_logs
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.corruptors import BACKDOOR_TRIGGER
@@ -84,7 +84,7 @@ from flirds.data.llm import build, build_alpaca_iid, build_crossdevice, build_gs
 from flirds.eval.generate import backdoor_asr
 from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference, pearson
 from flirds.fl.llm_server import client_optimizer, run_llm_fedavg_logs
-from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_perround,
+from flirds.oracle.in_run_sv import (in_run_shapley, in_run_shapley_perround,
                                      in_run_singletons)
 from flirds.repro import seed_everything
 from flirds.hf_pin import rev
@@ -356,7 +356,7 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
         phi_f, t_f = _timed(lambda: fedsv_from_logs(logs, None, n, None, device, seed=seed,
                             loss_fn=loss_fn, pkeys=pkeys, trunc_eps=0.0), device)
         out.append(("FedSV", "val", np.asarray(phi_f), t_f))
-        phi_s, t_s = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
+        phi_s, t_s = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=SFL_BETA,
                             loss_fn=loss_fn, pkeys=pkeys), device)
         out.append(("ShapleyFL", "val", -np.asarray(phi_s, dtype=float), t_s))   # good->high -> negate
         if silo:                                                                 # Banzhaf = 2^N -> silo only
@@ -373,8 +373,6 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
 
     phi_h, t_h = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
     out.append(("loss-heur", "val", phi_h, t_h))
-    phi_lo, t_lo = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO
-    out.append(("Fed-LOO", "val", np.asarray(phi_lo), t_lo))   # marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
 
     # ---- detectors (AUROC only) ----
     fld, t_fld = _timed(lambda: fldetector_from_logs(logs, n, device="cpu"), device)
@@ -511,6 +509,17 @@ def report(threat, methods, corrupt, logs, asr):
     return res
 
 
+# Rundir identity (protocol §1.7).  First block = exactly what the cell NAME encodes, so
+# "same name, different identity" is by construction a name-generation bug.  Second block =
+# semantic knobs the name does NOT carry (sfl_beta was a source literal, removal/client_opt
+# arrived later): listing them makes a change fail at launch instead of silently
+# overwriting the canonical run -- which is how beta 0.5 -> 0.3 got in unannounced.
+# Re-running a cell whose stored config predates one of these needs RUNDIR_REPLACE=1 once.
+IDENTITY = ("scale", "model", "regime", "alpha", "threats", "seeds", "oracle_b",
+            "coalition", "noisy_rate", "dose_mult",
+            "sfl_beta", "removal", "client_opt")
+
+
 def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=None):
     """Save the cell's per-client phi vectors + metrics + config + git/env provenance to a
     RunLogger run-dir (protocol §6) so any re-analysis needs no method re-run.  Best-effort:
@@ -530,7 +539,7 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "alpha": ALPHA,
               "threats": threats, "seeds": seeds, "oracle_b": oracle_b, "coalition": coalition,
               "noisy_rate": NOISY_RATE, "dose_mult": DOSE_MULT, "removal": REMOVAL,
-              "client_opt": os.environ.get("CLIENT_OPT", "sgd"),
+              "client_opt": os.environ.get("CLIENT_OPT", "sgd"), "sfl_beta": SFL_BETA,
               "poison": {"bd_target": BD_TARGET, "poison_train": POISON_TRAIN,   # poison-cell knobs (self-describing)
                          "attacker_lr": ATTACKER_LR, "attacker_epochs": ATTACKER_EPOCHS},
               "rcfg": rcfg, "mcfg": MCFG,
@@ -539,7 +548,7 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=
                        "PER_CLIENT", "VAL", "NOISY_RATE", "DOSE_MULT", "REMOVAL", "CLIENT_OPT",
                        "REMOVAL_METHODS") if k in os.environ}}
     try:
-        rl = RunLogger(RUNDIR_ROOT, name, config, repo_root=_CODES)
+        rl = RunLogger(RUNDIR_ROOT, name, config, repo_root=_CODES, identity=IDENTITY)
         try:
             rl.save_phi(phi_rows)                                  # parquet (protocol convention)
         except Exception:                                         # CSV fallback if no parquet engine

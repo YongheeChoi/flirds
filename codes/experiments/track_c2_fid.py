@@ -8,7 +8,8 @@ C=0.1, R=120, partitions {iid,dir1,shard,qskew}, the C2 threat set incl. frrand
 and strmain label_flip), ONE frozen vanilla trajectory (no selection, no
 intervention -- the C1 convention), ground truth = the (b) in-run per-round
 oracle ONLY ((a) 2^N retrains are infeasible at N=100), methods = the C1 battery
-minus {Banzhaf (2^N), Ripple (own trajectory)} plus Fed-LOO; metrics = the C1
+minus {Banzhaf (2^N), Ripple (own trajectory), Fed-LOO (dropped from the
+comparison -- Yonghee 2026-07-23)}; metrics = the C1
 set + the spearman_vs_rate pair (all-client / corrupt-only).
 
 CAVEAT (plan §4.5): at 10/100 participation a client joins ~12/120 rounds, so
@@ -48,13 +49,13 @@ from flirds.baselines.comfedsv import comfedsv_from_logs
 from flirds.baselines.fedif import fedif_from_logs
 from flirds.baselines.fedsv import fedsv_from_logs
 from flirds.baselines.gtg import gtg_from_logs
-from flirds.baselines.shapleyfl import shapleyfl_from_logs
+from flirds.baselines.shapleyfl import BETA as SFL_BETA, shapleyfl_from_logs
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.corruptors import CNN_CORRUPTORS
 from flirds.eval.metrics import (cosine_distance, detection_auroc,
                                  euclidean_distance, max_difference, pearson)
 from flirds.fl.server import fedavg
-from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley_perround,
+from flirds.oracle.in_run_sv import (in_run_shapley_perround,
                                      in_run_singletons, in_run_utility)
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
@@ -215,13 +216,12 @@ def run():
                                                        pkeys=pkeys, partial=True),
                 negate=True)                           # loss-decrease util -> negate
             add("ShapleyFL", lambda: shapleyfl_from_logs(logs, None, n, None, device,
-                                                         beta=0.3, loss_fn=loss_fn,
+                                                         beta=SFL_BETA, loss_fn=loss_fn,
                                                          pkeys=pkeys),
                 negate=True)                           # good->high -> negate
             add("FedIF", lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device),
                 negate=True)                           # influence good->HIGH -> negate
             add("loss-heur", lambda: in_run_singletons(logs, n, loss_fn, pkeys, device))
-            add("Fed-LOO", lambda: in_run_loo(logs, n, loss_fn, pkeys, device))
 
     # ---- metrics (C1 set; good->low everywhere) ----
     gt = {"b": methods[0][1]} if (ORACLE_B and b_slice is None) else {}

@@ -45,6 +45,7 @@ from torch.utils.data import DataLoader, Subset, TensorDataset
 
 from flirds.backends.cnn import make_cnn_loss
 from flirds.baselines.sfedavg import SFedAvgSelector
+from flirds.baselines.shapleyfl import BETA as SFL_BETA
 from flirds.data.cnn import _STATS, get_dataset, get_labels
 from flirds.data.corruptors import CNN_CORRUPTORS
 from flirds.fl.intervene import (OnlineScorer, SignAccumulator, _conf_keep,
@@ -440,7 +441,7 @@ def _run_arm(arm, loaders, corrupt, dtf, vx, vy, test_loader, nums, device, rows
             wts_fn = make_scoreonly_weights_fn(scorer, raw, nums)
             sel_fn = make_softmax_select_fn(scorer)
     elif arm == "shapleyfl":
-        scorer = OnlineScorer(n, beta=0.3)            # the ShapleyFL paper value (Def 4.3)
+        scorer = OnlineScorer(n, beta=SFL_BETA)       # the ShapleyFL paper value (Def 4.3)
         wts_fn = make_weights_fn(scorer, shapleyfl_round_raw_fn(MODEL_FN().to(device),
                                  DataLoader(TensorDataset(vx, vy), batch_size=512), device),
                                  nums, "replacement")

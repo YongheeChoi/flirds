@@ -41,7 +41,7 @@ from flirds.baselines.fedsv import fedsv_from_logs
 from flirds.baselines.fldetector import fldetector_from_logs
 from flirds.baselines.gtg import gtg_from_logs
 from flirds.baselines.ripple_llm import ripple_shapley_llm
-from flirds.baselines.shapleyfl import shapleyfl_from_logs
+from flirds.baselines.shapleyfl import BETA as SFL_BETA, shapleyfl_from_logs
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.llm import build, build_val_batches
 from flirds.eval.metrics import detection_auroc
@@ -62,7 +62,7 @@ CFG = dict(train=200, val=20, rounds=10, max_steps=10, lr=1e-3, batch=16,
            # per-step val-grad + Hessian HVPs are the cost -- kept modest so a seed is ~20min
            # (val=20/domain -> 10 chunks; runtime is itself the reported Ripple metric).
            rip_rounds=4, rip_steps=4, rip_k=3, rip_m=20, rip_hess_bs=2,
-           sfl_beta=0.3)   # ShapleyFL surrogate-FSV EMA rate (Def 4.3; paper value)
+           sfl_beta=SFL_BETA)   # ShapleyFL surrogate-FSV EMA rate (Def 4.3; paper value)
 
 
 def _timed(fn, device):

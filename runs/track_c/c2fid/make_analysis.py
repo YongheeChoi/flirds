@@ -37,14 +37,14 @@ EXTRA = ["stage", "partition", "threat", "flip_rate", "cell", "kendall_b",
          "cos_b", "euc_b", "maxdiff_b", "auroc", "spearman_vs_rate",
          "spearman_vs_rate_corrupt", "runtime_s"]
 METHODS = ["Flirds", "Flirds1st", "GTG", "FedSV", "ComFedSV", "ShapleyFL",
-           "FedIF", "loss-heur", "Fed-LOO"]
+           "FedIF", "loss-heur"]                       # Fed-LOO dropped (Yonghee 2026-07-23)
 # F-1 families (code-grounded; README "사전등록 F-1"): uniform 1/|S| subset synthesis
 # vs n-proportional reconstruction vs Taylor vs direct-game.
 UNIFORM = ["ShapleyFL", "ComFedSV"]
 NPROP = ["GTG", "FedSV"]
 TAYLOR = ["Flirds", "Flirds1st", "FedIF"]
-DIRECT = ["loss-heur", "Fed-LOO"]
-EXACT0 = ["Flirds", "Flirds1st", "loss-heur", "Fed-LOO", "FedIF"]    # + (b): zero-delta -> exact 0
+DIRECT = ["loss-heur"]
+EXACT0 = ["Flirds", "Flirds1st", "loss-heur", "FedIF"]              # + (b): zero-delta -> exact 0
 
 
 def _tag(m):

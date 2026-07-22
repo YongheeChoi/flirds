@@ -55,7 +55,7 @@ from flirds.baselines.fedif import fedif_from_logs
 from flirds.baselines.fedsv import fedsv_from_logs
 from flirds.baselines.gtg import gtg_from_logs
 from flirds.baselines.ripple import ripple_shapley
-from flirds.baselines.shapleyfl import shapleyfl_from_logs
+from flirds.baselines.shapleyfl import BETA as SFL_BETA, shapleyfl_from_logs
 from flirds.backends.cnn import make_cnn_loss
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.cnn import _STATS, get_dataset, get_labels
@@ -67,7 +67,7 @@ from flirds.fl.partition import (gtg_quantity_ratios, iid_partition,
 from flirds.fl.server import evaluate, fedavg
 from flirds.models.cnn import FedSVCNN, LeNet5
 from flirds.oracle.exact_sv import exact_shapley, subset_utility_valloss
-from flirds.oracle.in_run_sv import in_run_loo, in_run_shapley, in_run_singletons
+from flirds.oracle.in_run_sv import in_run_shapley, in_run_singletons
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
 from flirds.timing import PhaseTimer
@@ -299,15 +299,13 @@ def run_seed(seed, device="cuda"):
         methods.append(("ComFedSV", -np.asarray(phi, dtype=float), t))   # loss-decrease util -> negate
         (phi, _), t = _timed(lambda: in_run_banzhaf(logs, n, loss_fn, pkeys, device), device)
         methods.append(("Banzhaf", np.asarray(phi), t))
-        phi, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
+        phi, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=SFL_BETA,
                         loss_fn=loss_fn, pkeys=pkeys), device)
         methods.append(("ShapleyFL", -np.asarray(phi, dtype=float), t))  # good->high -> negate
         phi, t = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device), device)
         methods.append(("FedIF", -np.asarray(phi, dtype=float), t))      # influence good->HIGH -> negate
         phi, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
         methods.append(("loss-heur", phi, t))
-        phi, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
-        methods.append(("Fed-LOO", phi, t))
     if RIPPLE:
         rp = CFG["ripple"]
         with pt.phase("ripple-own-trajectory"):        # §15.1/C1: Ripple retrains -> NOT from-logs valuation

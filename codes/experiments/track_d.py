@@ -57,7 +57,7 @@ from flirds.baselines.comfedsv import comfedsv_from_logs
 from flirds.baselines.fedif import fedif_from_logs
 from flirds.baselines.fedsv import fedsv_from_logs
 from flirds.baselines.gtg import gtg_from_logs
-from flirds.baselines.shapleyfl import shapleyfl_from_logs
+from flirds.baselines.shapleyfl import BETA as SFL_BETA, shapleyfl_from_logs
 from flirds.core.flirds_estimator import flirds_values
 from flirds.data.llm import build_alpaca_iid, build_val_batches
 from flirds.eval.generate import generate_completions, score_records
@@ -69,7 +69,7 @@ from flirds.fl.intervene import (OnlineScorer, fedif_round_raw_fn, flirds_round_
 from flirds.fl.llm_server import run_llm_fedavg_logs
 from flirds.oracle.exact_sv import exact_shapley
 from flirds.oracle.exact_sv_llm import _final_lora_state
-from flirds.oracle.in_run_sv import (in_run_loo, in_run_shapley, in_run_shapley_perround,
+from flirds.oracle.in_run_sv import (in_run_shapley, in_run_shapley_perround,
                                      in_run_singletons)
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
@@ -110,7 +110,7 @@ MMLU_BATCH = int(os.environ.get("MMLU_BATCH", "16"))
 ARMS = os.environ.get("ARMS", "1") == "1"              # 0 = phase-1 fidelity only
 FIDELITY = os.environ.get("FIDELITY", "1") == "1"      # 0 = arm-only (cheap re-run; no (a)/coalition cost)
 ORACLE_A = os.environ.get("ORACLE_A", "1" if REGIME == "anchor5" else "0") == "1"
-# METHODS="Flirds,Flirds1st,loss-heur,Fed-LOO" -> run only these (+ the (b) oracle, always).
+# METHODS="Flirds,Flirds1st,loss-heur" -> run only these (+ the (b) oracle, always).
 # Empty/unset = full suite.  E4/E5 light re-runs: coalition baselines off without code edits.
 METHODS = frozenset(m for m in os.environ.get("METHODS", "").split(",") if m)
 
@@ -223,7 +223,7 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
                           loss_fn=loss_fn, pkeys=pkeys, partial=not anchor), device)
         out.append(("ComFedSV", -np.asarray(phi_c, dtype=float), t))   # loss-decrease util -> negate
     if _want("ShapleyFL"):
-        phi_s, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=0.3,
+        phi_s, t = _timed(lambda: shapleyfl_from_logs(logs, None, n, None, device, beta=SFL_BETA,
                           loss_fn=loss_fn, pkeys=pkeys), device)
         out.append(("ShapleyFL", -np.asarray(phi_s, dtype=float), t))  # good->high -> negate
     if _want("FedIF"):
@@ -236,9 +236,6 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
     if _want("loss-heur"):
         phi_h, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
         out.append(("loss-heur", phi_h, t))
-    if _want("Fed-LOO"):
-        phi_lo, t = _timed(lambda: in_run_loo(logs, n, loss_fn, pkeys, device), device)  # Fed-LOO: marginal U(N)-U(N\{i}) anchor (!= singleton loss-heur)
-        out.append(("Fed-LOO", phi_lo, t))
     return out, u_a
 
 
@@ -321,7 +318,7 @@ def build_arms(model, loss_fn, pkeys, lc, nums, device):
         raw2 = _guard(model, flirds_round_raw_fn(loss_fn, pkeys, n, device, loss_chunks=lc))
         arms.append(("flirds_sel", make_softmax_select_fn(sc2),
                      make_scoreonly_weights_fn(sc2, raw2, nums)))
-    sc3 = OnlineScorer(n, beta=0.3)                # the ShapleyFL paper value (Def 4.3)
+    sc3 = OnlineScorer(n, beta=SFL_BETA)           # the ShapleyFL paper value (Def 4.3)
     raw3 = _guard(model, shapleyfl_round_raw_fn(None, None, device, loss_fn=loss_fn, pkeys=pkeys))
     arms.append(("shapleyfl_w", None, make_weights_fn(sc3, raw3, nums, "replacement")))
     sc4 = OnlineScorer(n, beta=0.7)                # 1 - gamma(0.3), the FedIF paper value

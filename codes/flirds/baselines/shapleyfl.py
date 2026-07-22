@@ -24,11 +24,20 @@ plan task 7), where the full per-round 2^N sweep is infeasible (cf. ComFedSV def
 """
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import torch
 
 from ..fl.server import evaluate
 from ..oracle.exact_sv import exact_shapley
+
+# EMA rate beta (Def 4.3; paper value 0.3).  SINGLE source of truth: beta used to be a
+# source literal repeated across 7 call sites, so it never reached any runner's `config`
+# -- the rundir guard could not see a 0.5 -> 0.3 change and silently overwrote the old
+# canonical run (protocol §1.7 prescription 2).  Runners log this value and put it in
+# their rundir identity, so changing it now fails at launch instead.
+BETA = float(os.environ.get("SFL_BETA", "0.3"))
 
 
 def _uniform_submodel_cnn(gb, dm, subset, device):
@@ -97,7 +106,7 @@ def _round_nsv(gb, dm, players, model, test_loader, device, loss_fn, pkeys):
                                        loss_fn, pkeys))
 
 
-def shapleyfl_from_logs(logs, model, n_clients, test_loader, device, beta=0.3,
+def shapleyfl_from_logs(logs, model, n_clients, test_loader, device, beta=BETA,
                         loss_fn=None, pkeys=None):
     """Surrogate federated SV (SSV_i^T) from a shared FedAvg trajectory.  Returns phi[n].
 
