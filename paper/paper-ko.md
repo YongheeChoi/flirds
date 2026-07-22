@@ -344,11 +344,12 @@ IID와 non-IID로 둘 있음에 주의한다. **CNN 대조 트랙**(MNIST/CIFAR-
 개입 실험용 $N{=}100$ 구성을 둔다. 데이터 구성·라운드 수·참여율·하이퍼파라미터 전체는
 부록 D에 있다.
 
-**측정 규율.** 한 셀 안의 모든 방법은 같은 고정 궤적과 같은 손실 구현을 소비한다. seed는
-헤드라인 트랙 전부 셀당 3개이며, 유일한 예외인 LLM $N{=}10$ 전수-열거 셀($2^{10}$ 열거가
-seed당 32.7 GPU-시간)은 seed 0 단독임을 인용처마다 명시한다. 셀마다 설정·클라이언트별
-$\phi$·방법별 wall-clock을 run 디렉토리로 영속화하며, 모든 표·그림은 여기서 재생성된다.
-정밀도·optimizer·attention 구현 등 수치 세부는 부록 D에 있다.
+**측정 규율.** 한 셀 안의 모든 방법은 같은 고정 궤적과 같은 손실 구현을 소비한다. 로컬
+학습은 두 트랙 모두 momentum 없는 plain SGD·상수 학습률이다(Taylor 전개와 업데이트의
+대응이 정의되는 레짐; §6). seed는 헤드라인 트랙 전부 셀당 3개이며, 유일한 예외인 LLM
+$N{=}10$ 전수-열거 셀($2^{10}$ 열거가 seed당 32.7 GPU-시간)은 seed 0 단독임을 인용처마다
+명시한다. 셀마다 설정·클라이언트별 $\phi$·방법별 wall-clock을 run 디렉토리로 영속화하며,
+모든 표·그림은 여기서 재생성된다. 정밀도·attention 구현 등 수치 세부는 부록 D에 있다.
 
 **평가 지표.** 순위는 rank correlation(Spearman $\rho$, Kendall $\tau$), 값 수준은 Pearson
 상관으로 잰다. 값 수준이 따로 필요한 이유는 근사-가법 세팅에서 순위 지표가 포화하기
@@ -892,8 +893,9 @@ CNN의 (a) exact retrain 자기-일치도(시나리오별 $-0.28$–$+0.97$)는
 `runs/track_c/figures/a_oracle_xseed_stability.csv`에 정본화했다(§5.3의 발산 논의).
 ### 부록 D. 프로토콜 상세와 재현성
 
-**D.1 세팅별 하이퍼파라미터.** 전 LLM 세팅 공통: plain SGD(momentum 0)·상수 lr(warmup 없음),
-LoRA target = q/k/v/o/gate/up/down proj, dropout 0, completion-only loss, utility 평가 fp32.
+**D.1 세팅별 하이퍼파라미터.** 전 세팅 공통(LLM·CNN 두 트랙): 로컬 optimizer는 plain
+SGD(momentum 0)·상수 lr(warmup 없음). LLM 세팅 공통: LoRA target = q/k/v/o/gate/up/down
+proj, dropout 0, completion-only loss, utility 평가 fp32.
 
 | 세팅 | 모델 | LoRA $r/\alpha$ | lr | 로컬 스텝 | 배치 | seq len | $R$ | 참여 | seeds |
 |---|---|---|---|---|---|---|---|---|---|
