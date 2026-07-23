@@ -28,8 +28,19 @@ meta-llama gated 재취득 불가(유효 토큰 무) → 해시 교차검증된 
 
 L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 큐 정본 =
 `$BATCH/runlogs/queue_L1.txt`(리포 기록 = `runs/track_h/QUEUE_L1_2026-07-23.txt`).
-- **순서**: seed0 패치(진행) → seed1 → **L2((b)-fidelity 2셀, seed2보다 앞으로 이동** =
-  fidelity 1차·마감 방어) → seed2. 드라이버 = `run_multi_driver.sh`(pid 20798, 단일).
+> **⚠ seed 정책 (2026-07-24 Yonghee): 전 실험 예외 없이 3-seed.** 이 결정이 아래 및
+> `QUEUE_L1L2_2026-07-23.md` §2·§3의 seed 범위를 **대체**한다(그 문서의 "L2 seed0 2셀"·"L1 noisy·frzero"
+> 표기는 이 노트로 무효화). 두 가지 변경:
+> - **L2 → noisy·clean × seed{0,1,2} = 6셀**(종전 seed0 2셀). frzero-(b)는 free-rider φ=0 정의상
+>   **해석적 exact-0**이라 측정 seed 셀이 아님 — seed 미달이 아니라 정의상 상수(§5.4 frzero = 해석값 + L1 3-seed 개입으로 충족).
+> - **L1에 clean threat 추가 → clean·noisy·frzero × seed{0,1,2}.** 이유 = §5.3 clean 열(오발화 대조·
+>   "R4 clean T1 −1.0pt")의 3-seed 정본 소스가 **전무**하기 때문. clean 개입 EM은 `track_g THREAT=clean`
+>   에서만 나오는데(L2=phase2_matrix는 fidelity·탐지만 산출, 게이트 arm 미생성) L1이 noisy·frzero만 돌아
+>   고아 상태 — 현존 clean 개입 = 제외된 seed0 파일럿뿐. clean 셀 = L1 레시피에서 THREAT=clean,
+>   **oracle_excl/random_excl 없음**(제외 대상 부재) + **T2 clean은 kept=전원→`equals_vanilla`로 스킵**
+>   → 실질 신규 = T1(online) 게이트 arm뿐 = 저비용.
+- **순서**: seed0 패치(진행) → seed1 → **L2((b)-fidelity 6셀, seed2보다 앞으로 이동** =
+  fidelity 1차·마감 방어) → seed2. clean threat은 L1 각 seed에 동반. 드라이버 = `run_multi_driver.sh`(pid 20798, 단일).
 - **사전절차 완료**: pre-fix Tier A(git_sha==`fa5fc6e`) 20 rundir → `runs/track_h/rundirs_llm_prefixh1/`
   아카이브·커밋 — make_analysis의 pre-fix 오채택 위험 해소.
 - **seed0 패치 = 옛코드 포크 이슈**: 패치 셀이 rundir 정체성 가드 커밋 **직전** 디스패치돼 옛 레거시
@@ -39,31 +50,45 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
   워처가 `noisy_obs_t2`(pid 20802) 완주 감지 후 자동 실행(`$BATCH/runlogs/consolidate_watch.log`).
 - **완료 후**: rundir 커밋 + `make_analysis.py` 재생성 + H-12/H-13 대조 → paper I1·F2·D1 ⬚ 채움.
 
-| L2 셀 | 명령 |
+| L2 셀 (각 × seed s∈{0,1,2}) | 명령 |
 |---|---|
-| noisy (nr 기본 0.7) → `1B_gsm50k5_noisy_nr0.7_s0` | `REGIME=gsm50k5 THREAT=noisy SEED=0 CUDA_VISIBLE_DEVICES=<g> PYTHONPATH=. $PY -u experiments/phase2_matrix.py` |
-| clean (포화 대조) → `1B_gsm50k5_clean_s0` | `REGIME=gsm50k5 THREAT=clean SEED=0 CUDA_VISIBLE_DEVICES=<g> PYTHONPATH=. $PY -u experiments/phase2_matrix.py` |
+| noisy (nr 기본 0.7) → `1B_gsm50k5_noisy_nr0.7_s{s}` | `REGIME=gsm50k5 THREAT=noisy SEED=<s> CUDA_VISIBLE_DEVICES=<g> PYTHONPATH=. $PY -u experiments/phase2_matrix.py` |
+| clean (포화 대조) → `1B_gsm50k5_clean_s{s}` | `REGIME=gsm50k5 THREAT=clean SEED=<s> CUDA_VISIBLE_DEVICES=<g> PYTHONPATH=. $PY -u experiments/phase2_matrix.py` |
 
 L2 = `phase2_matrix.py REGIME=gsm50k5`(nr 0.7·(b) per-round 2⁵·9방법[Fed-LOO 제외]·탐지기 4종·timing.json);
-산출은 c2fid 열-호환 스키마 롤업(CNN fidelity leg와 공용 표). frzero 셀은 예산 여유 시만((b)-frzero exact-0 자명).
+산출은 c2fid 열-호환 스키마 롤업(CNN fidelity leg와 공용 표). **frzero-(b) fidelity/탐지는 해석적 exact-0**
+(free-rider φ=0)이라 측정 seed 셀 불요 — 3-seed 의무의 예외가 아니라 정의상 상수(§5.4 frzero 행 = 이 해석값 + L1 3-seed 개입).
 
 ## 2. 대기 큐 — L4·L5·L6·L7
 
 | # | 셀 | 비용(GPU-h) | 상태 |
 |---|---|---|---|
-| **L4** | R4 Tier B **T2-only**(renorm 4점수원 × noisy·frzero) | ~150 | **Yonghee 승인 게이트** — L1·L2 순항 후 |
+| **L4** | R4 Tier B **T2-only**(renorm 4점수원 × **clean·noisy·frzero** × 3-seed) | ~200–230 | **Yonghee 승인 게이트** — L1·L2 순항 후 |
+| **L11** | R4 §5.3 online 완성 | 7 non-flirds(flirds1st·lossheur·fedif·gtg·fedsv·comfedsv·shapleyfl) T1 부호-게이트 × clean·noisy·frzero × 3-seed = **63 run** — 기존 observer cum φ 재사용(신규 FL run만·관찰자 재실행 0) | ~250–300 | **신규**(seed=3; CNN 8방법 parity, 2026-07-24 확정·GO 대기) |
 | L5 | 비등n silo5 1셀(4:2:1:1:1, clean+noisy, 3-seed) — CNN qskew fidelity와 P5c 쌍 | ~10–15 | 여유 시 |
 | L6 | silo5 graded-noisy(nr~U(0.5,1), `answer_swap_graded`) — spearman_vs_rate LLM 대응 | ~6–12 | 여유 시(L4 우선) |
 | **L7** | **R4 P1w**(w∝max(cum,0)·합-1 재정규화; flirds-only) × {clean,noisy,frzero} × 3-seed × {T1,T2} = 18런 — 스펙·H-14 = `paper/workplan/T3-p1w-llm-impl.md`; **실행 런북 = §2a** | ~80 | **코드 구현 완료**(2026-07-23·이 세션; 커밋·push 후 실행) — 순서 L2 뒤·**L4 앞** |
 
+- **L4 clean (2026-07-24 Yonghee)**: renorm-4도 §5.3 **clean 오발화 열**이 필요 → L4 = clean·noisy·frzero
+  × 3-seed(종전 noisy·frzero만). flirds와 달리 renorm은 clean에서도 음수 φ로 **오발화(false-firing)** 가능
+  → clean T2가 `equals_vanilla` 스킵 안 되고 실제 재학습 발생(비용 산입). §5.3 clean 열의 renorm-4 칸 = 이걸로 채움.
+  **online 표 8방법 = 확정(2026-07-24 Yonghee "당연히")**: R4 §5.3은 CNN처럼 **online·retrain 두 표 각 8방법**.
+  현재 online = flirds만(L1) → 나머지 **7방법**(flirds1st·lossheur·fedif·gtg·fedsv·comfedsv·shapleyfl) T1-online = **신규 L11**(아래).
+  (retrain 8방법 = L1 4 exact-0 + L4 renorm-4로 이미 완성.)
 - **하지 않는 것(재제안 금지)**: gnoise류 LLM 재시도(종결 = `runs/track_h/gnoise_diag/README.md`) ·
   LIE/sign-flip · (a) 3B/7B · P0 전면 소급 · **Fed-LOO**(양 무대 공통 제외; 러너 산출은 무해·미게재) ·
   **poison**(양 무대 공통, 영구 제외) · P5h/P5s(rundir는 보존) · std20/anchor5-vs(b) 재실행 ·
   E5 N=10 확장 · **β0.3 잔여 재실행(device100·3B·7B — 대상 표 전부 논문 제외로 폐기 07-23;
   부활 시 목록 = `runs/rerun_beta03/RESUME_AFTER_MIGRATION.md`)**.
   (※ R4 frrand는 07-23 번복 → §3 L9로 부활.)
-- 예산: 필수(L1+L2+L7) 220–248 → +L4 370–398 / B200×4 5일 ≈480 GPU-h(명목).
-  vast.ai는 B200 초과 시 **비-timing seed 복제만** 예외(timing/canonical 셀 이관 금지).
+- 예산(3-seed·full-8 반영, 2026-07-24): 필수(L1[+clean]+L2 3-seed+L7) ≈ **275–335** → +L4(~200–230)
+  +**L11 online 완성(~250–300)** ≈ **725–865**(≈ B200×4 **7.5–9일**) / 5일 명목 480 **대폭 초과**.
+  ⟹ **§5.3 clean·noisy·frzero full-8(online+retrain)·3-seed는 5일 예산 밖** — Yonghee 스케줄 결정 필요(연장 or vast.ai seed-복제 예외).
+  ※ **frrand(L9)=full-8 확정(2026-07-24)**: renorm 붕괴를 random-FR서도 시연(8방법×{T1,T2}×3seed, ~200 = +~150 vs flirds-족).
+  **strmain(L10)=fidelity-leg 유지**(downstream full-8 아님; spearman_vs_rate·vs(b)). ⟹ **전체 ≈ 960–1100 GPU-h ≈ 10–11.5일**(B200×4) → vast.ai 병행 필수(아래).
+  **vast.ai 활성(2026-07-24 Yonghee)**: 5일 초과분 vast.ai로 — 단 **seed0(canonical 앵커)+전 timing 셀은
+  B200 고정**(스택-일관·hw 측정), **seeds 1-2의 non-timing fidelity/downstream 복제만 vast.ai**(Spearman·recovery
+  스택-강건 = W-A). **timing.json은 vast.ai 산출 사용 금지**(§5.5 cost는 B200 실측만).
 
 ### 2a. L7 실행 런북 — R4 P1w (코드 구현 완료 2026-07-23·이 세션·로컬 Windows; 커밋·push·서버 pull 후 실행)
 
@@ -129,8 +154,8 @@ REGIME=gsm50k5 THREAT=<clean|noisy|frzero> SEED=<0|1|2> \
 
 | # | 셀 | 내용 | 비용(GPU-h, 추정) | 상태 |
 |---|---|---|---|---|
-| **L9** | R4 frrand | free-rider-random(zero 대신 무작위 업데이트) × {T1,T2} × 3-seed — L1 frzero-leg에 위협 훅만 교체 | ~50–70(L1 frzero-leg 동형) | **신규**(Yonghee: 우선순위·seed 수 판단 대기) |
-| **L10** | R4 strmain류 per-client noisy-dose | answer-swap rate $\sim U(0.5,1)$ 클라별 변조(=FedCorr `strmain` 기본 draw) × 3-seed — **지표 = spearman_vs_rate(φ↔per-client dose) + vs (b) fidelity** | ~30–45(L2형 per-seed ~10–15) | **신규**(Yonghee 판단 대기) |
+| **L9** | R4 frrand **full-8** | free-rider-random(zero 대신 무작위) × **8방법**(same-game 3+FedIF+renorm-4) × {T1 online, T2 retrain} × 3-seed — clean·noisy·frzero 열과 동일 구성(L1+L4+L11 machinery에 frrand threat 추가); renorm 붕괴를 random-FR서도 시연 | ~200 | **신규**(seed=3·full-8 확정 2026-07-24; 우선순위·GO만 대기) |
+| **L10** | R4 strmain류 per-client noisy-dose | answer-swap rate $\sim U(0.5,1)$ 클라별 변조(=FedCorr `strmain` 기본 draw) × 3-seed — **지표 = spearman_vs_rate(φ↔per-client dose) + vs (b) fidelity** | ~30–45(L2형 per-seed ~10–15) | **신규**(seed=3; GO 대기) |
 
 - **기대**: (i) **L9** → free-rider가 zero/random 양쪽서 exact-0 계열 생존·renorm 붕괴 재현.
   (ii) **L10** → 오염 클라마다 dose를 $U(0.5,1)$로 벌려 순위 축퇴 완화 → F-4(strmain dose-해상도)의

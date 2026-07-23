@@ -55,7 +55,7 @@
 
 | # | 셀 | 내용 | 비용(GPU-h, 추정) | 상태 |
 |---|---|---|---|---|
-| **C-fr** | C2(CNN) frrand 완성 | cnn_competition frrand을 flirds-only → **full-method**(gtg·fedsv·comfedsv·shapleyfl·flirds1st·lossheur·fedif) **+ retrain(T2)** — dir1 × 3-seed(논문 §5.3 무대); frzero 셀과 동형 | ~15–30(dir1 3-seed online+retrain) | **레시피 확정 — Yonghee GO + seed 수만 대기**(기술 블로커 없음) |
+| **C-fr** | C2(CNN) frrand 완성 | cnn_competition frrand을 flirds-only → **full-method**(gtg·fedsv·comfedsv·shapleyfl·flirds1st·lossheur·fedif) **+ retrain(T2)** — dir1 × 3-seed(논문 §5.3 무대); frzero 셀과 동형 | ~15–30(dir1 3-seed online+retrain) | **레시피 확정 — seed=3 확정(2026-07-24); GO만 대기**(기술 블로커 없음) |
 
 - **구현**: 기존 `track_c2` competition에 frrand threat을 전-방법으로 확장 + `C2_T2`(retrain) = 신규 코드 없이 threat 커버리지만 확장.
 - **채우는 overview ⬚**: §5.3 CNN 8점수원 표의 **frrand¹ 열**(현재 flirds 외 "–" → 7방법+retrain 채움) + §5.4 CNN frrand 탐지 AUROC(observer가 source별 `auroc` emit — `cnn_competition.csv` auroc 열).
@@ -137,6 +137,8 @@ PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py     # canonical ⋈ *_aonly
 - 헤드라인(T5 §2): silo5 `(b)oracle` 행의 `rho_a` = 두 오라클의 **실재 신호 일치**(목표 clean +0.87 / noisy +0.93; overview §5.4).
 
 **4) 완료 후**: rundir 커밋 → overview §3.1.1 이웃 신규 소절 기입 → paper §5.2 sub 표(T1)·T2 F2 갱신.
+  **⚠ 방법 범위(2026-07-24 기준)**: gsm5·silo5 (a) retrain 표 = **전 방법**(renorm-4+FedIF 포함) · **vs (b) 열은 same-game 3만**
+  (flirds·flirds1st·lossheur; cross-game은 in-run 오라클과 다른 게임이라 vs (b) 미채점). rundir은 전 방법 φ 산출(무해) — 표기만 제한.
 **사전기대(T5 §1·§2)는 실행 전 커밋**, HIT/MISS 그대로 보고. 3B/7B (a)는 하지 않음.
 - **채우는 overview ⬚**: §5.2 sub gsm5(주표)·silo5 (a)-leg.
 

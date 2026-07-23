@@ -13,7 +13,7 @@ tags: [flirds, paper, results, dashboard]
 > **스코프 규약**: 미수록 실험(poison·Banzhaf·Ripple·Fed-LOO·수렴축·std20-vs(b)·B축 신호실재성·3B/7B·std50k5 selection·Track G 게이팅 표 등)은 **넣지 않는다**. 위협축 = noise·free-rider·label-flip류만.
 > **정본 순서 = `paper/workplan/00-INDEX.md` §0** (구조·수록/제외 결정) + `T1-paper-section5.md`(표 스펙).
 
-**마커**: ● 실측 값 기입 · ◐ 부분/1-seed(정본 아님) · ⬚ 미실행(경로만) · – 해당없음. **비교군 9종** 위계 = same-game(Flirds·Flirds-1st·loss-heur) ↔ cross-game(GTG·FedSV·ComFedSV·ShapleyFL·FedIF). 본문 fidelity는 **same-game만 vs (b)**, vs (a)는 전 방법(방법-중립 참값). seed = 3-seed mean±std(std=ddof0), 예외는 ◐ 명시.
+**마커**: ● 실측 값 기입 · ◐ 부분/1-seed(정본 아님) · ⬚ 미실행(경로만) · – 해당없음. **비교군 9종** 위계 = same-game(Flirds·Flirds-1st·loss-heur) ↔ cross-game(GTG·FedSV·ComFedSV·ShapleyFL·FedIF). fidelity는 **same-game만 vs (b)**(본문·부록 공통 — cross-game은 in-run 오라클과 다른 게임이라 vs (b) 미채점), vs (a)는 전 방법(방법-중립 참값). seed = 3-seed mean±std(std=ddof0), 예외는 ◐ 명시.
 
 ---
 
@@ -265,7 +265,7 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 - 무대별 하이퍼 표 · 위협 구현 정의(answer_swap/frzero/frrand/gn/lf + 라벨-플립 $(\rho,\tau)$ 규약[§5.1]) · 데이터 분배(GSM8K val=공식 test 카브) · 환경 1줄("fp32; cuDNN conv TF32; 스택 내 결정론") · ComFedSV per-round 대용 caveat · ShapleyFL β=0.3 각주 · **LLM에 grad-noise 없는 이유 2문장**(등방 노이즈는 LoRA 기하에서 gradient-방향 대비 응답 수십분의 일 → 무대 미성립).
 
 **부록 C — fidelity 확장** (부분)
-- cross-game 전 방법 vs (b)(c2fid·R4-L2 전표 ⬚ + **C1 vs (b) 시나리오 표** ●) · vs (a) 전 방법(C1 시나리오·anchor5 ●) · Kendall/거리 3종 · std50k5 부분참여 probe. **출처**: `runs/track_c/fidelity.csv`·`runs/track_d/rundirs/*`.
+- **same-game 3 vs (b)** 확장(c2fid·R4-L2 ⬚; Kendall·거리 3종) — **cross-game은 vs (b) 미비교**(2026-07-24 기준: in-run은 same-game 오라클이라 동일-게임 방법만 채점; cross-game 판정은 vs (a)에서만) · **vs (a) 전 방법**(C1 시나리오·anchor5 ● · gsm5/silo5 ⬚) · std50k5 부분참여 probe. **출처**: `runs/track_c/fidelity.csv`·`runs/track_d/rundirs/*`.
 
 **부록 D — stability** ● (수록 무대 한정)
 
