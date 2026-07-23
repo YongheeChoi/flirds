@@ -181,7 +181,7 @@ tags: [flirds, paper, results, dashboard]
 | comfedsv | .5963 | **.3918** | – | .5871 | .5152 |
 | shapleyfl | .6045 | **.4020** | – | .6115 | .5278 |
 
-> ¹ **frrand = flirds 단독 leg** — CNN competition에서 free-rider-random은 flirds·앵커만 실행(다른 7 방법·retrain 미실행) → 열 대부분 "–". flirds .5895(vanilla .5876·random_excl .5839 위, oracle_excl .6195 근처)로 frzero(.6148)와 같은 exact-0 생존 계열. **R4(LLM) frrand는 미실행 = 신규 계획**(REMAINING §1.6a L9).
+> ¹ **frrand = 현재 flirds 단독 leg** — CNN competition에서 free-rider-random은 flirds·앵커만 실행(다른 7 방법·retrain 미실행) → 열 대부분 "–". flirds .5895(vanilla .5876·random_excl .5839 위, oracle_excl .6195 근처)로 frzero(.6148)와 같은 exact-0 생존 계열. ⚠ **완전한 축(7 방법+retrain)으로 만들려면 CNN도 추가 실험 필요**(REMAINING §1.6a **C-fr**; random free-rider서도 renorm 붕괴가 나는지 = frzero 대칭 확인) · **R4(LLM) frrand는 전무 = 신규 계획**(§1.6a L9).
 
 **P1 · retrain** (관찰자 최종 부호로 kept → init부터 재학습; frrand는 online-only라 부재)
 
