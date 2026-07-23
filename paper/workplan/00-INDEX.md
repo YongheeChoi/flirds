@@ -40,7 +40,7 @@ P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본�
 | T3 | `T3-p1w-llm-impl.md` | R4 P1w 구현+테스트+스모크+큐 등재(H-14 사전등록 포함) | 없음(코드 세션) | ☐ |
 | T4 | `T4-p1w-cnn-relay.md` | CNN 서버 세션 전달 스펙(W-A 재사용 판정 + W-B twin leg) | 없음(전달) | ☐ |
 | T5 | `T5-retrain-a-suite.md` | gsm5 무대 신설 + (a) 러너 배선 + silo5 (a)-leg + 3090 배치 | 없음(코드→3090) | ☐ |
-| T1 | `T1-paper-section5.md` | paper-ko §5·부록 B–E 실작성(기존값 기입 + ⬚ 골격) + 초록/§1/부록A 수정 | 없음(기존값부) | ☐ |
+| T1 | `T1-paper-section5.md` | paper-ko §5·부록 B–E 실작성(기존값 기입 + ⬚ 골격) + 초록/§1/부록A 수정 | 없음(기존값부) | ☑ 07-23 (§5.1–5.6·부록 B–E·§6 스텁·전역수정 A-1~6 완료; CNN dir1 수치는 † = W-A 드리프트 확인 대기, ⬚ = F1·F2·F3·silo5(a)·I1·D1·비용실측·F-4) |
 | T2 | `T2-results-overview-page.md` | 논문-순서 결과 overview 위키 페이지 + 시각화(figures) | T1 구조(권장) | ☐ |
 
 권장 순서: **T3·T4·T5 먼저**(GPU가 크리티컬 패스 — 서버/3090 가동) ∥ T1 병행 → T2.
