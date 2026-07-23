@@ -643,3 +643,16 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
   ③ device100 a0.01 noisy·frrand β0.3 정본화(frzero는 미재실행 = 혼재 명기), β 캠페인 종료 상태 갱신.
   ④ **Fed-LOO 논문 비게재 결정(Yonghee)** → overview 전 표·서술에서 제거, caveat 15 신설(rundir 존속·
   러너는 계속 산출 → 집계 단계 필터), placement plan E2 문구 동반 수정.
+
+## [2026-07-23] note | 신규 실험 반영(c2fid P13·strmain) + Track G CNN 그리드 완주해도 미게재 재확인 + §3.1.3 복원
+
+- touched: [[survey/flirds-experiment-results-overview]] · memory `paper-threat-stage-scope`
+- note: b8ab238 이후 서버 착지 반영. ① **c2fid (b)-fidelity 파일럿 1셀**(b31666f) = 1.05 GPU-h/셀 →
+  144셀 본런 ≈151 GPU-h GO-게이트, F-3 MISS(loss-heur .989 > FedSV .870 > Flirds .846; 부분참여 1셀 인용불가)
+  → §2 P13 행. ② **track_h strmain 24/24**(bd15fa1) = §3.2.3 경쟁 새 stage → (b1′): flirds P1 online +0.72·
+  retrain +0.98, renorm online 파국→retrain 회복 = dir1@0.70 동형. ③ **Track G CNN 그리드 144/144 완주**
+  (570a93f+373a1d8)이나 **표 미게재 유지** — Yonghee 재확인("§3.2.3 경쟁과 중복", caveat 14 = 일원화 결정
+  불변); 한 번 §3.2.2 CNN 절을 넣었다가 사용자 정정으로 revert(net-zero). skew 2×2 분해·V2w DO-NOT-PROMOTE·
+  prereg H-K 대부분 MISS는 `track_g/analysis`·rundir 존속. ④ **§3.1.3 복원**(git checkout) — 작업트리에 있던
+  커밋-없는 삭제(Fed-LOO로 오인)는 실은 E5 N=10 exact 2¹⁰ oracle + caveat 11 정본이라 非-Fed-LOO → dangling
+  20곳 해소. runs/ 읽기전용·GPU 미실행·paper/ 무수정·로컬 커밋만.

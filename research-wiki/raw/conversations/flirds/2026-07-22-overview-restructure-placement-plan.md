@@ -308,3 +308,36 @@ a0.1_frzero β0.3 canonical) · 48734fc(track_g CNN skew 31 rundir 중간 스냅
 - 신규 수치 전부 rundir `metrics.json`/`timing.json` 직접 집계(anaconda python; ddof=0):
   gsm50k5 44 rundir(EM·kept·dedup_shared·git_sha·GPU-h) + device100 a0.01 2셀 3-seed 전후 대조.
 - runs/ 읽기 전용 · GPU 0 · paper/ 무수정 · 로컬 커밋만(push = Yonghee).
+
+---
+
+## 추가 지시 (10차, 2026-07-23) — 신규 실험 반영 + Track G 재게재→미게재 복귀
+
+Yonghee: "새로 완료된 실험들 overview에 업데이트 해줘." (b8ab238 이후 서버 착지분 반영)
+
+### 착지분 (b8ab238 이후)
+
+- **Track G CNN 부호-게이팅 그리드 COMPLETE — 144/144**(570a93f + restack 373a1d8): {cifar10,fmnist}×{iid,dir1,qskew,shard}×8위협{clean·fr·frrand·gn·lf@.15/.35/.70/strmain}×3seed.
+- **track_h strmain 24/24 완주**(bd15fa1): 경계 label-flip(rate~U(.5,1)) 경쟁 stage.
+- **track_c2 c2fid (b)-fidelity 파일럿 1셀**(b31666f): GPU-h 게이트용.
+- (인프라) 러너 4종서 Fed-LOO 코드 제거(87491bb·0f2e918) — caveat 15의 "러너가 계속 산출" 경고를 부분 해소(향후 rundir엔 열 안 생김) / pre-H1 rundir 20개 아카이브(e61835f).
+
+### 처리 판단 (2문항 → 사용자 확답)
+
+- **§3.1.3 삭제 발견**: overview 작업트리에 §3.1.3(E4·E5) 통째 삭제가 커밋 없이 있었음(git diff = 0 insert/31 delete, 유일 삭제 heading). 논문에도 미이관. → **git checkout으로 복원**(byte-exact). 근거: Fed-LOO 내용은 지난 세션에 이미 제거·재정의됨 → 남은 건 **E5 N=10 exact 2¹⁰ oracle**(P6 'N=5 coarse' 반박) + **caveat 11 loss-heur post-fix 657/2199s 정본**(6곳 인용) = 非-Fed-LOO. 사용자 Q1 답("fed-loo라 지운 듯, 필요없지?")에 이 사실을 회신, 복원 유지.
+- **Track G 범위 Q2**: 사용자 "왜 안 쓴다고 했지? 전부 다 넣어줘" → §3.2.2 CNN 그리드 절 신설(skew 2×2 분해·V2w DO-NOT-PROMOTE·prereg MISS)까지 작성. **직후 사용자 정정**: "내용이 중복이라서 뺀거면 이전 결정 그대로 생략" — caveat 14(§3.2.3 경쟁과 중복 = 일원화)를 설명하자 **원 07-22 미게재 결정 재확인**. → **§3.2.2 CNN 절·row24 번복·인라인 노트 전부 revert**(net-zero).
+
+### 최종 반영 (overview)
+
+1. **§3.1.3 복원**(git checkout) — dangling 20곳 해소.
+2. **c2fid P13 행**(§2): 파일럿 1셀 = **1.05 GPU-h/셀**(oracle-b 824s+valuation 2669s) → 144셀 본런 ≈ **151 GPU-h** GO-게이트. F-1/2/4 = 단일셀 nan, **F-3 MISS**(loss-heur .989 > FedSV .870 > GTG .861 > Flirds .846 > … ; 부분참여 1셀 = 인용 불가).
+3. **strmain → §3.2.3 (b1′) 경쟁 확장**(중복 아님 = 경쟁의 새 stage_cell): P1 online flirds +0.72 1위, retrain +0.98; renorm은 online 파국(fedsv −0.32)→retrain 0.60~0.74 회복 = dir1@0.70 동형. estimator>renorm 재현.
+4. **Track G CNN 144 완주 = 표 미게재 유지**: row24·P14·§8 커버리지·caveat 14에 "완주하되 §3.2.3 중복이라 미게재(07-23 재확인)" 기록. skew 2×2 분해·V2w DO-NOT-PROMOTE·prereg H-K 대부분 MISS는 `track_g/analysis`·rundir 존속.
+5. **카운트/헤더**: track_h rundirs_cnn 204→**228**(+strmain 24) · track_g rundirs_cnn **144**+restack 36 · git HEAD 5309981→**373a1d8**.
+
+### 검증
+
+- 제거된 §3.2.2 CNN 절로의 dangling 참조 0(grep) · §3.1.3 present(L355) · strmain (b1′) present(L630) · 절 번호 연속(3.2.2 LLM→3.2.3→3.2.4).
+- P13·P14 행 컬럼 정합(11열) · 신규 수치 전부 rundir metrics/timing.json 직접(cnn_cellmean·competition_score·c2fid fidelity·timing.json; ddof0).
+- runs/ 읽기 전용 · GPU 미실행 · paper/ 무수정 · 로컬 커밋만(push = Yonghee).
+- 메모리 갱신: `paper-threat-stage-scope` 항목6 + 인덱스 = "track_g 완주해도 미게재(재게재 금물)".
