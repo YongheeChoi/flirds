@@ -41,7 +41,7 @@ P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본�
 | T4 | `T4-p1w-cnn-relay.md` | CNN 서버 세션 전달 스펙(W-A 재사용 판정 + W-B twin leg) | 없음(전달) | ◐ 구현 완료 07-23(W-A 판정=드리프트≈0 귀속·FedIF 역전 확인 / W-B sbatch·분석·H-15 선등록) — **GPU 실행 대기**(RTX3090); 인수인계 = `runs/track_h/RUN_P1W_CNN.md` |
 | T5 | `T5-retrain-a-suite.md` | gsm5 무대 신설 + (a) 러너 배선 + silo5 (a)-leg + 3090 배치 | 없음(코드→3090) | ☐ |
 | T1 | `T1-paper-section5.md` | paper-ko §5·부록 B–E 실작성(기존값 기입 + ⬚ 골격) + 초록/§1/부록A 수정 | 없음(기존값부) | ☑ 07-23 (§5.1–5.6·부록 B–E·§6 스텁·전역수정 A-1~6 완료; CNN dir1 수치는 † = W-A 드리프트 확인 대기, ⬚ = F1·F2·F3·silo5(a)·I1·D1·비용실측·F-4) |
-| T2 | `T2-results-overview-page.md` | 논문-순서 결과 overview 위키 페이지 + 시각화(figures) | T1 구조(권장) | ☐ |
+| T2 | `T2-results-overview-page.md` | 논문-순서 결과 overview 위키 페이지 + 시각화(figures) | T1 구조(권장) | ✅ (2026-07-23; `survey/flirds-paper-results-overview.md` + figs, F1/2/5/7/8/9 생성·자립형) |
 
 권장 순서: **T3·T4·T5 먼저**(GPU가 크리티컬 패스 — 서버/3090 가동) ∥ T1 병행 → T2.
 
@@ -50,4 +50,4 @@ P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본�
 - 수치는 rundir/analysis 재생성 값만(수기 금지). **R4 Tier A seed0(pre-fix `fa5fc6e`) 인용 금지** — L1 3-seed가 정본.
 - CNN dir1 기존 수치(§3.2.3·P2)는 **캠페인 restack 드리프트 표 확인 후** 기입/귀속.
 - 사전등록(예측 행)은 실행 전 커밋. 결과는 overview(§3.x)에 먼저, paper·T2 페이지는 그로부터.
-- push는 Yonghee 직접. 실행 큐 정본 = `REMAINING.md` §1.6 + `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
+- push는 Yonghee 직접. 실행 큐 정본 = `REMAINING-b200.md`(LLM R4)·`REMAINING-slurm.md`(CNN + 작은-N LLM) + `runs/track_h/QUEUE_L1L2_2026-07-23.md`.

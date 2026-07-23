@@ -130,8 +130,3 @@ PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py     # canonical ⋈ *_aonly
 - **잔여**: ① `track_c1`·`track_c2`·`track_c2_fid`·`track_d`·`phase1_*`는 아직 `identity=None`
   (레거시 통짜 비교) — 이들 config에 `sfl_beta`를 추가하려면 identity 배선을 함께 해야 함
   (§4 C1 재실행은 이 배선 없이 `RUNDIR_REPLACE=1`로 우회). ② 처방 3(`superseded.json`) 미착수.
-
-## 7. P0(H1) 소급 재실행 스코프 (무GPU·장기)
-
-- 논문 인용 셀 한정으로 판단(그룹 카탈로그 = git 히스토리의 `RERUN_AFTER_REPRO_FIX_2026-07-21.md`).
-  (TF32-on CNN canon 관련이 다수라 CNN 파일에 둠; 실행 시 LLM 셀 포함 여부는 스코프 확정 후 판단.)
