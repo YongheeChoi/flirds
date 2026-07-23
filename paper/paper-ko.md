@@ -607,7 +607,10 @@ val-loss 게임의 정직한 답은 "기여함"이고, 이는 추정 실패가 �
 스코어를 그대로 쓴다.
 
 표 [D1] — LLM 주무대(`gsm50k5`) AUROC ⬚(◐)
-<!-- 채움: L2 rundir metrics.json auroc — H-13 대조(oracle-동행 기준) 포함 -->
+<!-- 채움: L2 rundir metrics.json auroc — H-13 대조(oracle-동행 기준) 포함.
+     ⚠ STD-DAGMM은 단일 seed 값이 재현되지 않음(같은 seed 재실행 AUROC 평균 |Δ|=0.177 —
+     AE+GMM 비볼록 + 오염/정상 점수분포 겹침으로 순위 여유 0; 3-seed 평균은 안정) →
+     반드시 3-seed mean±std로 기입 + 단일-seed 재현 불가 caveat 각주 -->
 
 | method | noisy | free-rider |
 |---|---|---|
@@ -692,7 +695,7 @@ best-first는 올린다(−0.0084~−0.0015); Flirds·Flirds-1st·loss-heur·(b)
 <!-- 스텁 — 실험 완주 후 작성. 확정 재료 목록(T1 스펙):
  - 궤적-특이 utility의 공리화 미해결 — IRDS로부터의 승계(§3.3·부록 A.8); 공리 성립 주장은 frozen 게임 한정.
  - per-sample→per-client 브리지의 LLM 한계: token-mean CE에서 분모 불일치로 비성립(부록 A.7) — LLM valuation을 per-sample 합으로 근거짓지 않음.
- - LLM 위협 축의 스코프: grad-noise는 LoRA 기하에서 무대 미성립(부록 B.6) — LLM 쪽 update-공격은 free-rider 계열로 한정.
+ - LLM 위협 축의 스코프: grad-noise는 LoRA 기하에서 무대 미성립(부록 B.6) — LLM 쪽 update-공격은 free-rider 계열로 한정. 서술 근거·수치 = runs/track_h/gnoise_diag/README.md(그대로 인용 가능; 단 그 안의 Krum σ=200·arXiv 3편은 검증 실패 = 인용 금지 목록 동봉).
  - "기여도≠탐지"의 게임-공통 사례 1문장: delta-재활용 free-rider(frdelta)는 val-loss를 실제로 낮춰 (b) oracle 자신이 "기여함"으로 답함 — 탐지는 update-패턴 탐지기의 몫.
  - 공정 분배·보상 스킴(fairness/reward)으로의 연결은 향후 과제.
  - 1-seed 항목 명시: N=10 2^10(부록 E), gsm50k5 (b)-fidelity 셀(◐).
