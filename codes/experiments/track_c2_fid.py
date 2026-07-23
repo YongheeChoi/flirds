@@ -8,8 +8,7 @@ C=0.1, R=120, partitions {iid,dir1,shard,qskew}, the C2 threat set incl. frrand
 and strmain label_flip), ONE frozen vanilla trajectory (no selection, no
 intervention -- the C1 convention), ground truth = the (b) in-run per-round
 oracle ONLY ((a) 2^N retrains are infeasible at N=100), methods = the C1 battery
-minus {Banzhaf (2^N), Ripple (own trajectory), Fed-LOO (dropped from the
-comparison -- Yonghee 2026-07-23)}; metrics = the C1
+minus {Banzhaf (2^N), Ripple (own trajectory), Fed-LOO (dropped 07-23)}; metrics = the C1
 set + the spearman_vs_rate pair (all-client / corrupt-only).
 
 CAVEAT (plan §4.5): at 10/100 participation a client joins ~12/120 rounds, so
@@ -149,6 +148,10 @@ def run():
           f"seed={c2.SEED} n={n} corrupt={int(corrupt.sum())} "
           f"rates[corrupt min/max]={min(cr, default=0.0):.2f}/{max(cr, default=0.0):.2f}",
           flush=True)
+    if c2._EMPTY_CLIENTS:                                # mirror track_c2.run()'s guard
+        print(f"  [WARN] {len(c2._EMPTY_CLIENTS)} empty client(s) backfilled "
+              f"{c2._EMPTY_CLIENTS} -- rates are no longer partition-independent",
+              flush=True)
 
     # frozen vanilla trajectory == the downstream twin's vanilla arm (join §4.9):
     # same fedavg call + observe-only on_round; logs CPU-forced at capture.
@@ -222,6 +225,8 @@ def run():
             add("FedIF", lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device),
                 negate=True)                           # influence good->HIGH -> negate
             add("loss-heur", lambda: in_run_singletons(logs, n, loss_fn, pkeys, device))
+            # Fed-LOO dropped from the comparison (Yonghee 2026-07-23) before this leg
+            # ever ran -- no rundir on disk carries it.
 
     # ---- metrics (C1 set; good->low everywhere) ----
     gt = {"b": methods[0][1]} if (ORACLE_B and b_slice is None) else {}

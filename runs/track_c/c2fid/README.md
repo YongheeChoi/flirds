@@ -15,8 +15,8 @@
   `test_trajectory_join_logged_equals_unlogged`가 비트동일 강제).
 - 정답 = **(b) in-run per-round oracle만**(`in_run_shapley_perround` 동치 증명 경로;
   (a) 2^100 재학습 불가). 셀당 Σ_r 2^{|P_r|} = 120×2^10 = 122,880 평가.
-- 방법 8종 = C1 11종 − Banzhaf(2^N) − Ripple(자체궤적) − Fed-LOO
-  (**Fed-LOO 비교 제외 = Yonghee 2026-07-23 결정**; 러너·분석에서 제거, 본런 실행 전 등록).
+- 방법 8종 = C1 11종 − Banzhaf(2^N) − Ripple(자체궤적) − **Fed-LOO**(비교 제외, Yonghee
+  2026-07-23 — 이 leg 실행 전 결정이라 rundir에 열 자체가 없음).
   부호 전부 good→low (ComFedSV·ShapleyFL·FedIF 는 negate).
 - 지표 = C1 세트(Spearman/Kendall/Pearson + 거리 3종 + wall-clock) + AUROC(오염 셀)
   + **spearman_vs_rate 양변형**(`spearman_vs_rate`=전클라·C1 호환 /

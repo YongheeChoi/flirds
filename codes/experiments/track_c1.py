@@ -306,6 +306,8 @@ def run_seed(seed, device="cuda"):
         methods.append(("FedIF", -np.asarray(phi, dtype=float), t))      # influence good->HIGH -> negate
         phi, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
         methods.append(("loss-heur", phi, t))
+        # Fed-LOO dropped from the comparison (Yonghee 2026-07-23).  The estimator
+        # `flirds.oracle.in_run_sv.in_run_loo` stays so existing rundirs replay.
     if RIPPLE:
         rp = CFG["ripple"]
         with pt.phase("ripple-own-trajectory"):        # §15.1/C1: Ripple retrains -> NOT from-logs valuation

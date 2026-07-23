@@ -39,7 +39,10 @@ plt.rcParams.update({"figure.dpi": 130, "savefig.dpi": 130, "font.size": 8.5,
                      "axes.spines.top": False, "axes.spines.right": False})
 
 METHOD_ORDER = ["Flirds", "Flirds1st", "FedIF", "GTG", "FedSV", "ShapleyFL",
-                "Banzhaf", "ComFedSV", "Fed-LOO", "loss-heur"]
+                "Banzhaf", "ComFedSV", "loss-heur"]
+# Dropped from the comparison (Yonghee 2026-07-23).  Filtered in method_sort rather
+# than merely removed from METHOD_ORDER: unknown names fall through to its tail.
+METHOD_DROP = {"Fed-LOO"}
 METHOD_COLOR = {"(b)oracle": "#000000", "Flirds": "#0072B2", "Flirds1st": "#56B4E9",
                 "GTG": "#E69F00", "FedSV": "#009E73", "ShapleyFL": "#D55E00",
                 "Banzhaf": "#CC79A7", "FedIF": "#B8A000", "loss-heur": "#8C510A",
@@ -52,7 +55,7 @@ C2_GROUPS = [("w", 0.5, "f", 0.1), ("w", 1.0, "f", 0.05), ("w", 1.0, "f", 0.1),
 
 
 def method_sort(ms):
-    ms = list(ms)
+    ms = [m for m in ms if m not in METHOD_DROP]
     return [m for m in METHOD_ORDER if m in ms] + sorted(set(ms) - set(METHOD_ORDER))
 
 

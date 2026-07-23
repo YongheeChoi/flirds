@@ -33,18 +33,18 @@ OUT_DIR = os.path.join(HERE, "analysis")
 TRUTH = "(b)oracle"
 C1_COLS = ["dataset", "scenario", "seed", "method",                 # c1 fidelity.csv order
            "spearman_b", "pearson_b", "spearman_a", "pearson_a"]
-EXTRA = ["stage", "partition", "threat", "flip_rate", "cell", "kendall_b",
+EXTRA = ["stage", "partition", "threat", "flip_rate", "cell", "n_corrupt", "kendall_b",
          "cos_b", "euc_b", "maxdiff_b", "auroc", "spearman_vs_rate",
          "spearman_vs_rate_corrupt", "runtime_s"]
 METHODS = ["Flirds", "Flirds1st", "GTG", "FedSV", "ComFedSV", "ShapleyFL",
-           "FedIF", "loss-heur"]                       # Fed-LOO dropped (Yonghee 2026-07-23)
+           "FedIF", "loss-heur"]                     # Fed-LOO dropped 07-23
 # F-1 families (code-grounded; README "사전등록 F-1"): uniform 1/|S| subset synthesis
 # vs n-proportional reconstruction vs Taylor vs direct-game.
 UNIFORM = ["ShapleyFL", "ComFedSV"]
 NPROP = ["GTG", "FedSV"]
 TAYLOR = ["Flirds", "Flirds1st", "FedIF"]
 DIRECT = ["loss-heur"]
-EXACT0 = ["Flirds", "Flirds1st", "loss-heur", "FedIF"]              # + (b): zero-delta -> exact 0
+EXACT0 = ["Flirds", "Flirds1st", "loss-heur", "FedIF"]               # + (b): zero-delta -> exact 0
 
 
 def _tag(m):
@@ -133,6 +133,10 @@ def rows_from(cells):
                          "partition": m["partition"], "threat": m["threat"],
                          "flip_rate": m.get("flip_rate", ""), "scenario": _tag(m),
                          "seed": m["seed"], "method": name,
+                         # Realized corrupt-set size: label_flip is a FedCorr Bernoulli
+                         # draw (39/48/47 by seed), the update-level threats are pinned
+                         # at 40 -- state it, never imply a flat 40% (audit 07-23).
+                         "n_corrupt": int(sum(m["corrupt"])),
                          "spearman_b": mm.get("spearman_b", ""), "pearson_b": mm.get("pearson_b", ""),
                          "spearman_a": "", "pearson_a": "",          # (a) infeasible at N=100
                          "kendall_b": mm.get("kendall_b", ""), "cos_b": mm.get("cos_b", ""),

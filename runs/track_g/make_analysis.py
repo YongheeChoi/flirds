@@ -254,7 +254,12 @@ def analyze_cnn(cells):
                        strength=m.get("strength"), flip_rate=_dose(c["cell"], cfg),
                        seed=m.get("seed"), arm=arm, final_acc=acc, delta_acc=delta,
                        gap=gap, recovery=rec, auroc=a.get("auroc"),
-                       rounds_to_target=a.get("rounds_to_target"))
+                       rounds_to_target=a.get("rounds_to_target"),
+                       # Realized corrupt-set size.  label_flip draws it Bernoulli per
+                       # FedCorr, so it moves with the seed (39/48/47) while the
+                       # update-level threats are pinned at 40 -- carry the number so
+                       # tables state it instead of implying a flat 40% (audit 07-23).
+                       n_corrupt=len(corrupt))
             if arm in V2_CUM_GATES + V1_RAW_GATES and c.get("dir"):
                 row.update(cnn_gate_excl(c["dir"], corrupt,
                                          cfg.get("gate") or CNN_GATE_DEFAULT, arm,
@@ -341,7 +346,8 @@ def _cellmean(cnn):
                 gap=("gap", "mean"), recovery=("recovery", "mean"),
                 rec_sd=("recovery", "std"), auroc=("auroc", "mean"),
                 false_excl_pairs=("false_excl_pairs", "mean"),
-                excl_precision=("excl_precision", "mean"), seeds=("seed", "nunique"))
+                excl_precision=("excl_precision", "mean"), seeds=("seed", "nunique"),
+                n_corrupt=("n_corrupt", "mean"))     # label_flip: 44.7 mean, not 40
     return out.reset_index()
 
 
@@ -549,8 +555,8 @@ def main():
     md += _md_table(cnn.sort_values(["dataset", "partition", "threat", "seed", "arm"])
                     if not cnn.empty else cnn,
                     ["dataset", "partition", "threat", "strength", "flip_rate", "seed",
-                     "arm", "final_acc", "delta_acc", "gap", "recovery", "auroc",
-                     "false_excl_pairs", "excl_precision"])
+                     "n_corrupt", "arm", "final_acc", "delta_acc", "gap", "recovery",
+                     "auroc", "false_excl_pairs", "excl_precision"])
     status, lines = v2w_promotion(cnn)
     md += ["", f"## V2w promotion gate (spec §5-2): **{status}**", ""] + lines
     if not cnn.empty:                       # 2026-07-22 skew-axis extension

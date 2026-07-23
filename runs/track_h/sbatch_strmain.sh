@@ -7,15 +7,15 @@
 # corrupt clients (rate ~ 0.5), i.e. the first real test of P5's design intent
 # (confidence gates should spare borderline variance, not just confident harm).
 #
-# 17 cell types x 3 seeds = 51 runs, mirroring the existing per-threat block:
+# P5 (both P5h `_cgate`/`t2_csign_*` and P5s `_pweight`/`t2_pw_*`) was DROPPED from the
+# comparison on 2026-07-23 (Yonghee), so the P5 cells and the obsp5 cell are gone and
+# this leg is 8 cell types x 3 seeds = 24 runs (was 17 x 3 = 51):
 #   J 0-6   P1 cells  (7 sources; NO flirds -- flirds P1 arms live in the Track G
 #            grid, whose strmain cells are already queued as job 1860471)
 #            arms = <src>_gate_v2,<src>_gatew_v2,<src>_mult,<src>_zgate_v2
-#   J 7-14  P5 cells  (8 sources)  arms = <src>_cgate,<src>_pweight
-#   J 15    obs    = observer + T2 legacy retrains (C2_T2=1)
-#   J 16    obsp5  = observer + T2 P5 retrains (C2_T2=1 C2_T2_P5=1 C2_T2_LEGACY=0)
+#   J 7     obs    = observer + T2 legacy retrains (C2_T2=1)
 #
-# Submit:  sbatch runs/track_h/sbatch_strmain.sh          (seed-major: 0-16 = seed0)
+# Submit:  sbatch runs/track_h/sbatch_strmain.sh          (seed-major: 0-7 = seed0)
 #
 #SBATCH --job-name=hstrmain
 #SBATCH --partition=base_suma_rtx3090
@@ -23,7 +23,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=05:00:00
-#SBATCH --array=0-50%8
+#SBATCH --array=0-23%8
 #SBATCH --output=/home/chyoyhr/projects/flirds/runs/track_h/p5/logs/%x_%A_%a.out
 
 set -u
@@ -31,23 +31,16 @@ REPO=${REPO:-/home/chyoyhr/projects/flirds}
 PY=${PY:-/home/chyoyhr/anaconda3/envs/lora4cl/bin/python}
 
 SRCS_P1=(flirds1st lossheur gtg fedsv comfedsv shapleyfl fedif)
-SRCS_P5=(flirds flirds1st lossheur gtg fedsv comfedsv shapleyfl fedif)
 
 IDX=${SLURM_ARRAY_TASK_ID}
-SEED=$((IDX / 17)); J=$((IDX % 17))             # seed-major: 17 cell types per seed
+SEED=$((IDX / 8)); J=$((IDX % 8))               # seed-major: 8 cell types per seed
 EXTRA=()
 if [ "$J" -lt 7 ]; then
   SRC=${SRCS_P1[$J]}
   ARMS="${SRC}_gate_v2,${SRC}_gatew_v2,${SRC}_mult,${SRC}_zgate_v2"
   TAG=$SRC
-elif [ "$J" -lt 15 ]; then
-  SRC=${SRCS_P5[$((J - 7))]}
-  ARMS="${SRC}_cgate,${SRC}_pweight"
-  TAG="${SRC}p5"
-elif [ "$J" -eq 15 ]; then
-  ARMS=observer; TAG=obs;   EXTRA+=(C2_T2=1)
 else
-  ARMS=observer; TAG=obsp5; EXTRA+=(C2_T2=1 C2_T2_P5=1 C2_T2_LEGACY=0)
+  ARMS=observer; TAG=obs;   EXTRA+=(C2_T2=1)
 fi
 
 NAME="cifar10_dir1_label-flip_strmain_${TAG}_seed${SEED}"

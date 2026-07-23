@@ -31,11 +31,15 @@ plt.rcParams.update({"figure.dpi": 130, "savefig.dpi": 130, "font.size": 8.5,
                      "axes.spines.top": False, "axes.spines.right": False})
 
 METHOD_ORDER = ["Flirds", "Flirds1st", "FedIF", "GTG", "FedSV", "ShapleyFL",
-                "Banzhaf", "ComFedSV", "Fed-LOO", "loss-heur", "Ripple", "FLDetector"]
+                "Banzhaf", "ComFedSV", "loss-heur", "Ripple", "FLDetector"]
+# Dropped from the comparison (Yonghee 2026-07-23).  Filtered here rather than merely
+# removed from METHOD_ORDER: unknown names fall through to the tail of method_sort, so
+# an order-only edit would still plot it.  Existing rundirs keep the column.
+METHOD_DROP = {"Fed-LOO"}
 
 
 def method_sort(ms):
-    ms = list(ms)
+    ms = [m for m in ms if m not in METHOD_DROP]
     return [m for m in METHOD_ORDER if m in ms] + sorted(set(ms) - set(METHOD_ORDER))
 
 

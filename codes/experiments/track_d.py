@@ -236,6 +236,8 @@ def compute_fidelity(logs, model, tok, clients, init, loss_fn, pkeys, lc, device
     if _want("loss-heur"):
         phi_h, t = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
         out.append(("loss-heur", phi_h, t))
+    # Fed-LOO dropped from the comparison (Yonghee 2026-07-23).  The estimator
+    # `flirds.oracle.in_run_sv.in_run_loo` stays so existing rundirs replay.
     return out, u_a
 
 

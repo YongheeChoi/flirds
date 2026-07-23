@@ -373,6 +373,8 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
 
     phi_h, t_h = _timed(lambda: in_run_singletons(logs, n, loss_fn, pkeys, device), device)
     out.append(("loss-heur", "val", phi_h, t_h))
+    # Fed-LOO dropped from the comparison (Yonghee 2026-07-23).  The estimator
+    # `flirds.oracle.in_run_sv.in_run_loo` stays so existing rundirs replay.
 
     # ---- detectors (AUROC only) ----
     fld, t_fld = _timed(lambda: fldetector_from_logs(logs, n, device="cpu"), device)

@@ -79,7 +79,9 @@ def per_round(method, K, N):
 
 
 METHODS = ["Flirds", "Flirds-1st", "FedIF", "loss-heur", "loss-heur(pre-fix)",
-           "Fed-LOO", "ShapleyFL", "(b)/Banzhaf", "FedSV", "GTG"]
+           "ShapleyFL", "(b)/Banzhaf", "FedSV", "GTG"]   # Fed-LOO dropped 07-23
+# NOTE: this list drives tab:opcount in the paper -- dropping the row here removes
+# Fed-LOO from that table too.  The per-op formula below is kept for replay.
 
 
 def comfedsv_forwards(R, K, N):
