@@ -173,17 +173,17 @@ tags: [flirds, paper, results, dashboard]
 | oracle_excl (천장) | – | .6203 | .6195 | .6203 | .6236 |
 | random_excl (무작위) | – | .5838 | .5839 | .2590 | .5018 |
 | **flirds** | .6315 | .6148 | .5895 | **.5668** | .5712 |
-| flirds1st | .6384 | .6216 | – | .2479 | .5717 |
-| lossheur | .6264 | .6114 | – | .5981 | .5670 |
-| fedif | .6386 | .6143 | – | .2479 | .5728 |
-| gtg | .6051 | **.3915** | – | .5972 | .5479 |
-| fedsv | .5982 | **.3966** | – | .5972 | .5164 |
-| comfedsv | .5963 | **.3918** | – | .5871 | .5152 |
-| shapleyfl | .6045 | **.4020** | – | .6115 | .5278 |
+| flirds1st | .6384 | .6216 | ⬚ | .2479 | .5717 |
+| lossheur | .6264 | .6114 | ⬚ | .5981 | .5670 |
+| fedif | .6386 | .6143 | ⬚ | .2479 | .5728 |
+| gtg | .6051 | **.3915** | ⬚ | .5972 | .5479 |
+| fedsv | .5982 | **.3966** | ⬚ | .5972 | .5164 |
+| comfedsv | .5963 | **.3918** | ⬚ | .5871 | .5152 |
+| shapleyfl | .6045 | **.4020** | ⬚ | .6115 | .5278 |
 
-> ¹ **frrand = 현재 flirds 단독 leg** — CNN competition에서 free-rider-random은 flirds·앵커만 실행(다른 7 방법·retrain 미실행) → 열 대부분 "–". flirds .5895(vanilla .5876·random_excl .5839 위, oracle_excl .6195 근처)로 frzero(.6148)와 같은 exact-0 생존 계열. ⚠ **완전한 축(7 방법+retrain)으로 만들려면 CNN도 추가 실험 필요**(REMAINING §1.6a **C-fr**; random free-rider서도 renorm 붕괴가 나는지 = frzero 대칭 확인) · **R4(LLM) frrand는 전무 = 신규 계획**(§1.6a L9).
+> ¹ **frrand = 현재 flirds 단독 leg** — CNN competition에서 free-rider-random은 flirds·앵커만 실행(다른 7 방법·retrain 미실행) → **7 방법 셀 = ⬚**(C-fr 착지 시 채움; 앵커·flirds만 ● 값). flirds .5895(vanilla .5876·random_excl .5839 위, oracle_excl .6195 근처)로 frzero(.6148)와 같은 exact-0 생존 계열. ⚠ **완전한 축(7 방법+retrain)으로 만들려면 CNN도 추가 실험 필요**(REMAINING §1.6a **C-fr**; random free-rider서도 renorm 붕괴가 나는지 = frzero 대칭 확인) · **R4(LLM) frrand는 전무 = 신규 계획**(§1.6a L9).
 
-**P1 · retrain** (관찰자 최종 부호로 kept → init부터 재학습; frrand는 online-only라 부재)
+**P1 · retrain** (관찰자 최종 부호로 kept → init부터 재학습; **frrand retrain = C-fr 계획**[⬚], 현재 online만 실행)
 
 | arm | clean | frzero | grad-noise | label-flip@.70 |
 |---|---|---|---|---|
@@ -210,9 +210,11 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 | 셀 | Flirds AUROC | (b) AUROC | 탐지기 4종 | 상태 |
 |---|---|---|---|---|
 | R4 gsm50k5 (noisy·frzero) | ⬚ | ⬚ | ⬚ | 채움 = `runs/phase2_matrix/rundirs/1B_gsm50k5_*`(L2) |
-| c2fid (CNN C2) | ⬚ | ⬚ | – | 채움 = `runs/track_c/c2fid/…/metrics.json` |
+| R4 gsm50k5 (**frrand**) | ⬚ | ⬚ | ⬚ | **신규 축** = L9(§1.6a) — random free-rider 탐지 |
+| c2fid (CNN C2, grad-noise) | ⬚ | ⬚ | – | 채움 = `runs/track_c/c2fid/…/metrics.json` |
+| CNN (**frrand**) | ⬚ | ⬚ | – | **신규 축** = C-fr(§1.6a) — random free-rider 탐지 |
 
-> H-13 판정 기준: 주장은 절대값이 아니라 **oracle-동행** $|\mathrm{AUROC(Flirds)}-\mathrm{AUROC((b))}|\le 0.05$.
+> H-13 판정 기준: 주장은 절대값이 아니라 **oracle-동행** $|\mathrm{AUROC(Flirds)}-\mathrm{AUROC((b))}|\le 0.05$. **frrand 탐지 2행 = 신규 축**(free-rider-random도 oracle-동행 잡는지; R4=L9·CNN=C-fr, REMAINING §1.6a) · (strmain-dose 탐지는 부차 — dose-변조 하 오염 클라 flag; 필요 시 별도 판단).
 > ![[flirds-paper-results-overview-figs/f6_detection_auroc.png]] ⬚ *(F6 = 탐지 AUROC — L2/c2fid 착지 후 생성)*
 
 ---
@@ -237,7 +239,7 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 **① 2차항(HVP)의 기여 — Flirds vs Flirds-1st** ●
 - **부분참여 fidelity**: CNN C1 label-flip k=0.2에서 Flirds **0.891** vs Flirds-1st **0.305**(k=0.5 .979/.765·full .993/.940; 전 72셀 pool Flirds 0.953). → 2차 Hessian 항이 partial 참여에서 값을 함.
 - **grad-noise 개입**: Track H에서 Flirds GN acc **.567~.607**(online .5668/retrain .6065) vs **1차-계열 실명** — Flirds-1st .248/.244·FedIF .248/.244(≈vanilla .244), loss-heur 부분 .598/.452 — 1차 정보만으론 noise 클라 불가시.
-- (c2fid F-4 dose 해상도 = 착지 후 추가)
+- **dose-해상도 변별(F-4)**: CNN c2fid strmain = ⬚(착지 후) · **R4 strmain-dose에서 spearman_vs_rate(φ↔per-client dose) Flirds ≳ Flirds-1st = ⬚**(L10; §5.2 F-4 각주의 LLM 대응 — near-additive 밖에서 2차항 기여 재확인).
 > ![[flirds-paper-results-overview-figs/f9_second_order_ksweep.png]]
 
 **② A축 lever probe** ●
