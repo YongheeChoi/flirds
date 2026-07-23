@@ -55,10 +55,27 @@
 
 | # | 셀 | 내용 | 비용(GPU-h, 추정) | 상태 |
 |---|---|---|---|---|
-| **C-fr** | C2(CNN) frrand 완성 | cnn_competition frrand을 flirds-only → **full-method**(gtg·fedsv·comfedsv·shapleyfl·flirds1st·lossheur·fedif) **+ retrain(T2)** — dir1 × 3-seed(논문 §5.3 무대); frzero 셀과 동형 | ~15–30(dir1 3-seed online+retrain) | **신규**(Yonghee 판단 대기) |
+| **C-fr** | C2(CNN) frrand 완성 | cnn_competition frrand을 flirds-only → **full-method**(gtg·fedsv·comfedsv·shapleyfl·flirds1st·lossheur·fedif) **+ retrain(T2)** — dir1 × 3-seed(논문 §5.3 무대); frzero 셀과 동형 | ~15–30(dir1 3-seed online+retrain) | **레시피 확정 — Yonghee GO + seed 수만 대기**(기술 블로커 없음) |
 
 - **구현**: 기존 `track_c2` competition에 frrand threat을 전-방법으로 확장 + `C2_T2`(retrain) = 신규 코드 없이 threat 커버리지만 확장.
-- **채우는 overview ⬚**: §5.3 CNN 8점수원 표의 **frrand¹ 열**(현재 flirds 외 "–" → 7방법+retrain 채움).
+- **채우는 overview ⬚**: §5.3 CNN 8점수원 표의 **frrand¹ 열**(현재 flirds 외 "–" → 7방법+retrain 채움) + §5.4 CNN frrand 탐지 AUROC(observer가 source별 `auroc` emit — `cnn_competition.csv` auroc 열).
+
+### 실행 레시피 (확정 — 추측 없음)
+
+> ⚠ **frrand 참조 셀이 "없다"는 진단은 오진.** 아래가 복제할 frzero-동형 sibling과 러너·템플릿이며 전부 리포에 있음.
+
+- **frzero 참조 셀**(mirror 대상, 완전 명세): `runs/track_h/rundirs_cnn/cifar10_dir1_free-rider_<src>_seed{0,1,2}`
+  (rundir 토큰은 `frzero`가 아니라 **`free-rider`**). config = n100·frac0.1·R120·ep5·lr0.01·b64·val2000·test8000·target0.6,
+  gate{burn_in10·tau0·min_obs2·probation_every5·z_c1.5·alpha_w1}, `sources=[flirds,flirds1st,lossheur,gtg,fedsv,comfedsv,shapleyfl,fedif]`.
+- **러너**: `experiments/track_c2.py`, `C2_THREAT=frrand`(1급 배선 확인 — track_c2.py L75 threat 목록·L293 `make_delta_transform(...,"frrand")`·L161 `FRRAND_MULT`). `C2_MODE=full`.
+- **템플릿 = `runs/track_h/sbatch_strmain.sh`** — **이 dir1 competition에 새 threat 한 열을 RTX3090에서 추가한 선례**(label_flip strmain 편입). C-fr = 그 sbatch에서 `C2_THREAT=label_flip`→`frrand`로 바꾸고 strmain 특유 부분(strength=main) 제거. 나머지 동일:
+  - `SRCS_P1=(flirds1st lossheur gtg fedsv comfedsv shapleyfl fedif)` 7소스, arms=`<src>_gate_v2,<src>_gatew_v2,<src>_mult,<src>_zgate_v2`
+  - +1 `obs` 셀 = `C2_ARMS=observer` + `C2_T2=1`(T2 retrain) → **8 셀타입 × 3seed = 24 run**(strmain과 동형).
+  - `C2_RUN_ROOT=$REPO/runs/track_h/rundirs_cnn`, `C2_RUN_NAME=cifar10_dir1_frrand_<tag>_seed<seed>`.
+  - **P5 arms(`cgate`/`pweight`) 제외**(2026-07-23 P5 드롭) — `cnn_competition.csv`의 P5h/P5s 행은 레거시.
+- **flirds 열은 이미 있음**: `runs/track_g/rundirs_cnn/cifar10_dir1_frrand_g_seed{0,1,2}`(track_g gate 그리드) → `make_analysis.py`가 셀키 병합.
+- **스택 캐비엇**(이미 처리됨): 참조 frzero = B200/torch2.12, C-fr = RTX3090/torch2.11 — strmain이 동일 조건으로 이미 편입됐고 W-A가 recovery-정규화하 드리프트 무시가능(mean|Δ|≤0.006) 판정. 절대값 병치는 recovery로 읽음.
+- **분석**: `python runs/track_h/make_analysis.py` → `cnn_competition.csv`에 frrand 7방법+retrain 행 추가. **파일럿-우선**(seed0=array 0-7 → GPU-h 보고 → GO 후 seeds 1-2 = 8-23), 다른 Slurm 항목(§1 c2fid·§2 W-B·§4 C1)과 우선순위는 Yonghee.
 
 ## 4. C1 30셀 β0.3 재실행 (ShapleyFL β 감사 — anchor5는 `REMAINING-b200.md` §4)
 
