@@ -43,9 +43,13 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
 
 - **P0(H1) 소급 재실행 스코프**: 논문 인용 셀 한정으로 판단(그룹 카탈로그 = git 히스토리의
   `RERUN_AFTER_REPRO_FIX_2026-07-21.md`).
-- **ShapleyFL β-출처 확인**: 부록 B.5가 β=0.3을 명기하는데, 논문이 인용하는 기존 셀
-  (CNN C1·anchor5)의 값이 β0.3 canon인지 미확보("값 동일/β-불변" 주장 검증 안 됨) —
-  rundir meta git_sha로 확인, 어긋나면 해당 셀만 재계산/재실행 판단.
+- **ShapleyFL β-출처 = 불일치 확정(07-23 감사 완료)**: 논문 인용 ShapleyFL 값은 실제 **β=0.5**.
+  C1 30셀(git_sha `5cb927b`, 06-12)·1B_anchor5 3셀(`39a0a97`, 06-15) 모두 β0.5→0.3 변경
+  (`e89af94`, 06-25) **이전** rundir — 그 커밋이 계획한 β0.3 전면 재실행이 두 셋엔 미반영
+  (phase2_matrix 일부·3B만 반영). paper B.5 "β=0.3" 서술과 모순(경고 주석 삽입 완료).
+  **해소 = ① 두 셋 β0.3 재실행**(C1 30 = RTX3090 / 1B_anchor5 3 = LLM; rerun_beta03 계획분)
+  **또는 ② 실측 β로 B.5 정정** — **Yonghee 결정 대기**. 영향 = §5.2 F4(cross-game vs (a))·
+  부록 C(C1 전표)뿐 — same-game 본문 주장엔 무영향(ShapleyFL은 cross-game 비교군).
 
 ### 1.4b CNN Slurm 잔여 — c2fid 본런 GO 대기 (07-22 캠페인은 완주 — `570a93f`·`373a1d8`)
 
