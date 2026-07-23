@@ -341,3 +341,12 @@ Yonghee: "새로 완료된 실험들 overview에 업데이트 해줘." (b8ab238 
 - P13·P14 행 컬럼 정합(11열) · 신규 수치 전부 rundir metrics/timing.json 직접(cnn_cellmean·competition_score·c2fid fidelity·timing.json; ddof0).
 - runs/ 읽기 전용 · GPU 미실행 · paper/ 무수정 · 로컬 커밋만(push = Yonghee).
 - 메모리 갱신: `paper-threat-stage-scope` 항목6 + 인덱스 = "track_g 완주해도 미게재(재게재 금물)".
+
+### (10차 후속) §3.1.3 = E5-only 슬림화 — E4(Fed-LOO 비교 leg) 제거
+
+Yonghee 재지적: "§3.1.3은 fed-loo 비교 재실험(E4) 아니냐? fed-loo 안 쓰면 불필요." → E4 = 맞음(폴더 `rundirs_e4_fedloo`, 원 목적 Fed-LOO 비교). 회신: 단 **E5(N=10 exact 2¹⁰ oracle)는 Fed-LOO 무관**(P6 'N=5 coarse' 반박, 결론 §5 인용) + **caveat 11 정본(loss-heur 657/2199s)이 E4 rundir에 삶**.
+
+- **결정(질문 답)**: "E4만 제거, E5 슬림 유지" — E4 절 제거 + loss-heur 657/2199s를 **caveat 11 본문으로 이관**(rundir 존속).
+- **실행**: §3.1.3 → 'N=10 exact 2¹⁰ oracle (E5)'로 재작성(E4 std20/anchor5 fidelity·runtime 열 삭제; b1=N=10 Sp/Pe, b2=N=10 runtime). **E4 참조 13곳 정합**: caveat 11(정본 홈, rundir 소싱)·caveat 15(§3.1.3 E4 제거 반영)·§2 row19(runtime 정본으로 repurpose)·§2.1 매핑·소스노트(§29)·ddof 주(§25)·§5 결론 2곳(1360 loss-heur cheaper·1377 std20 역전 = `rundirs_e4_fedloo` 존속 소싱)·§3.4.2 caveat(939)·timing(1515)·repro(1541)·§8 커버리지(1556).
+- **검증**: 고아 E4 숫자 0(3568/1535 삭제; 2943/4703/657/716은 rundir-소싱 유지) · row19 11열 · §3.1.3 count 16 전부 E5-valid · dangling 참조 0.
+- runs/ 읽기전용 · GPU 미실행 · paper/ 무수정 · 로컬 커밋만(push = Yonghee).

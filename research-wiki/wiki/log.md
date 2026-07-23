@@ -656,3 +656,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
   prereg H-K 대부분 MISS는 `track_g/analysis`·rundir 존속. ④ **§3.1.3 복원**(git checkout) — 작업트리에 있던
   커밋-없는 삭제(Fed-LOO로 오인)는 실은 E5 N=10 exact 2¹⁰ oracle + caveat 11 정본이라 非-Fed-LOO → dangling
   20곳 해소. runs/ 읽기전용·GPU 미실행·paper/ 무수정·로컬 커밋만.
+
+## [2026-07-23] note | §3.1.3 E4(Fed-LOO leg) 제거 → E5(N=10 oracle)-only 슬림화
+
+- touched: [[survey/flirds-experiment-results-overview]]
+- note: (앞 항목 후속) Yonghee 재지적 — §3.1.3의 E4 leg는 Fed-LOO 비교용(폴더 `rundirs_e4_fedloo`)이라 Fed-LOO 비게재 시 불필요. 결정 "E4만 제거, E5 슬림 유지": §3.1.3을 'N=10 exact 2¹⁰ oracle(E5)'로 재작성(E4 std20/anchor5 열 삭제), E5는 P6 'N=5 coarse' 반박이라 유지. loss-heur post-fix 657/2199s 정본은 **caveat 11 본문으로 이관**(rundir 존속). E4 참조 13곳 재소싱(caveat 11 홈·§2 row19 repurpose·§2.1 매핑·§5 결론 rundir-소싱·timing·repro·커버리지). 고아 숫자 0·컬럼 정합·dangling 0 확인. runs/ 읽기전용·paper/ 무수정·로컬 커밋만.
