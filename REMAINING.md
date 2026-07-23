@@ -182,12 +182,16 @@ hf_pin을 `$BATCH/hf_home` snapshot-SHA로 고정 → pre-fix Tier A 아카이�
 | **L4** | R4 Tier B **T2-only**(renorm 4점수원 × noisy·frzero) | ~150 | **Yonghee 승인 게이트**(§3) — L1·L2 순항 확인 후 |
 | L5 | 비등n silo5 1셀(4:2:1:1:1, clean+noisy, 3-seed; phase2_matrix 분배만 변경) — CNN qskew fidelity와 P5c 쌍 | ~10–15 | 여유 시 |
 | L6 | silo5 graded-noisy(per-client nr~U(0.5,1), `answer_swap_graded`) — spearman_vs_rate의 LLM 대응(CNN strmain 거울) | ~6–12 | 여유 시(L4와 경합 시 L4 우선) |
+| **L7** | **R4 P1w**(크기-가중 w∝max(cum,0)·합-1 재정규화; flirds-only) × {clean, noisy, frzero} × 3-seed × {T1, T2} = 18런 — 스펙·사전등록 H-14 = `paper/workplan/T3-p1w-llm-impl.md`(구현 후 실행; H-14 선커밋) | ~80 | **확정(07-23)** — 순서 L2 뒤·**L4 앞** |
+| **L8** | **retrain-(a) 스위트**: gsm5 신설(R4-정합 N=5 무대, dual (a)+(b), clean·noisy×3-seed) + silo5 (a)-leg 3셀(기존 canonical rundir에 (a)만 조인) — 스펙 = `paper/workplan/T5-retrain-a-suite.md` | gsm5 ~60 + silo5 ~26(B200-등가) | **확정(07-23)** — **RTX3090×8 몫**(B200 비점유; Yonghee 직접 가동 가능) |
 
 - (L3 = 3B silo5 β0.3 4셀은 §1.2 β 재개 큐 몫 — 착지 시 git_sha만 확인.)
 - **하지 않는 것**: gnoise 재개·등방 노이즈류 LLM 재시도·LIE/sign-flip(위협 스코프 게이트)·
-  (a) retrain 3B/7B(P2/P3)·R4 frrand 추가(frzero와 실질 동일)·P0 전면 소급(§1.4).
-- 예산: 필수(L1+L2) 140–168 → +L4 290–318 → 최대 ~345 / B200×4 5일 ≈480 GPU-h(명목).
+  (a) retrain 3B/7B(P2/P3; 여유 시 재논의)·R4 frrand 추가(frzero와 실질 동일)·P0 전면 소급(§1.4)·
+  **Fed-LOO(논문 전면 제외 07-23 — L2 러너의 Fed-LOO 산출은 무해·미게재)**·std20/anchor5-vs(b) 스위트 재실행(논문 삭제).
+- 예산: 필수(L1+L2+L7) 220–248 → +L4 370–398 / B200×4 5일 ≈480 GPU-h(명목); L8은 3090 별도 풀.
   vast.ai는 B200 초과 시 **비-timing seed 복제만** 예외(timing/canonical 셀 이관 금지).
+- **논문 작업 분할 정본 = `paper/workplan/00-INDEX.md`**(07-23 확정 구조·수록/제외·T1~T5).
 
 ### 1.7 rundir 정체성 설계 수정 (**처방 1+2 구현 완료 07-23**; 잔여 배선은 아래 "잔여")
 

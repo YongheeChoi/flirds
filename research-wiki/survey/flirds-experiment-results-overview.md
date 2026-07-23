@@ -314,6 +314,38 @@ tags: [survey, results, experiments, master, fidelity, detection, cost]
 
 > mnist는 cifar10보다 vs (b) fidelity가 약간 낮고(신호 작음) vs (a) 일치는 높다. 시나리오별 개별 값은 바로 위 시나리오 표 + `fidelity.csv`.
 
+**시나리오별 vs (a) retrain oracle — Spearman ↑** (3-seed 평균; 2026-07-23 재집계 — paper §5.2 retrain-특성화 표 선정용. Banzhaf·Ripple 열은 전역 제외[§6.2 caveat 12]로 미표기, 값은 fidelity.csv에 존재)
+
+| dataset/scenario | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
+|---|---|---|---|---|---|---|---|---|
+| cifar10 / feature_noise | **+0.63** | +0.50 | +0.56 | +0.44 | +0.18 | +0.39 | +0.28 | +0.40 |
+| cifar10 / iid | -0.23 | -0.13 | -0.18 | -0.20 | -0.18 | +0.30 | +0.00 | +0.07 |
+| cifar10 / label_flip | +0.52 | +0.59 | +0.58 | +0.45 | +0.41 | +0.32 | +0.29 | +0.36 |
+| cifar10 / label_skew | -0.18 | -0.07 | +0.14 | +0.44 | +0.40 | +0.28 | +0.12 | +0.19 |
+| cifar10 / quantity_skew | +0.57 | +0.56 | +0.57 | +0.70 | +0.70 | +0.72 | +0.81 | -0.03 |
+| mnist / feature_noise | +0.33 | +0.44 | +0.44 | +0.40 | -0.07 | -0.07 | +0.60 | +0.66 |
+| mnist / iid | +0.36 | +0.52 | +0.48 | +0.19 | -0.11 | -0.09 | +0.66 | +0.74 |
+| mnist / label_flip | **+0.96** | +0.97 | +0.97 | +0.97 | +0.96 | +0.94 | +0.96 | +0.96 |
+| mnist / label_skew | -0.28 | -0.06 | -0.16 | -0.22 | -0.14 | -0.04 | +0.28 | +0.54 |
+| mnist / quantity_skew | **+0.85** | +0.77 | +0.84 | +0.56 | +0.68 | +0.65 | +0.51 | -0.09 |
+
+**시나리오별 vs (a) retrain oracle — Pearson ↑** (동일 재집계)
+
+| dataset/scenario | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
+|---|---|---|---|---|---|---|---|---|
+| cifar10 / feature_noise | +0.60 | +0.51 | +0.57 | +0.43 | +0.19 | +0.44 | +0.31 | +0.47 |
+| cifar10 / iid | -0.18 | -0.06 | -0.02 | -0.14 | -0.20 | +0.46 | +0.05 | +0.09 |
+| cifar10 / label_flip | +0.44 | +0.46 | +0.49 | +0.32 | +0.26 | +0.33 | +0.28 | +0.42 |
+| cifar10 / label_skew | -0.15 | -0.08 | +0.01 | +0.23 | +0.17 | +0.05 | +0.05 | +0.03 |
+| cifar10 / quantity_skew | +0.60 | +0.55 | +0.60 | +0.72 | +0.63 | +0.71 | +0.72 | -0.04 |
+| mnist / feature_noise | +0.42 | +0.52 | +0.46 | +0.22 | -0.10 | -0.17 | +0.63 | +0.63 |
+| mnist / iid | +0.42 | +0.59 | +0.54 | +0.32 | -0.09 | -0.15 | +0.69 | +0.70 |
+| mnist / label_flip | +0.99 | +0.99 | +0.99 | +0.98 | +0.97 | +0.94 | +1.00 | +0.98 |
+| mnist / label_skew | -0.17 | +0.05 | -0.02 | -0.22 | -0.23 | -0.13 | +0.29 | +0.55 |
+| mnist / quantity_skew | +0.59 | +0.60 | +0.61 | +0.45 | +0.55 | +0.63 | +0.42 | -0.15 |
+
+> 읽기(2026-07-23): pool 0.35((b1))는 **신호-부재 칸(iid·label_skew)이 깎은 값** — 신호-강 칸(label_flip·quantity_skew·feature_noise)에선 두 게임이 수렴하고 Flirds vs (a) +0.52~+0.96, **전 방법 1위 2칸**(cifar10/feature_noise +0.63 · mnist/quantity_skew +0.85), mnist/label_flip은 전 방법 +0.94~0.97 동수렴. renorm-족 유리 칸도 존재(cifar10/quantity_skew ShapleyFL +0.81 · cifar10/label_skew GTG +0.44 — (a) 재정규화-게임 심판이 renorm-족에 유리한 구조[T10]). **출처**: `runs/track_c/fidelity.csv`의 `spearman_a`/`pearson_a`를 (dataset, scenario, method)로 3-seed 평균(재집계 스크립트 없음 — 열 그대로 group-mean).
+
 **vs (b) Kendall + 거리 pool** (10 scenario × 3 seed; c1 rundir의 φ에서 파생 계산 — metrics.json 저장 키는 `phi`·`runtime`(+ladder 셀 `auroc`·`spearman_vs_rate`)이고 Kendall·거리 3종은 저장 φ에서 재계산):
 
 | method | Kendall_b ↑ | cosine_d ↓ | euclid_d ↓ | max_diff ↓ |

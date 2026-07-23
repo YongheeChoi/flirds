@@ -9,6 +9,10 @@ tags: [survey, paper, placement, experiments]
 
 # 논문 실험 배치안 (본문 실험 절 / ablation / appendix)
 
+> **⚠ SUPERSEDED (2026-07-23)**: 이 배치안(E1–E6)은 07-23 설계 세션에서 전면 개정·확정됨 —
+> **정본 = `paper/workplan/00-INDEX.md`**(구조 v4: 주무대 쌍 메인 통일, 본문 fidelity same-game만,
+> P1 확정, std20·anchor5-vs(b)·B축·3B/7B·Fed-LOO 등 제외, 신규 L7/L8/W-B). 본 문서는 이력 참조용.
+
 > **근거 스코프**: `paper/paper-ko.md`의 **§4 이전만** — 초록·§1 서론·§2 관련연구·§3 배경이 세운
 > 논증(두 한계·기여 3종·FL 조건 ①–⑤·검증 2겹·관련연구 공백)에 비추어, 재구조화된
 > [[flirds-experiment-results-overview]](2026-07-22판, 이하 overview)의 각 실험을 배치한다.
