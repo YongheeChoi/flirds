@@ -64,7 +64,23 @@
   아님). `make_analysis`는 arm별 dup 중 하나만 채택하므로 중복집계는 없으나,
   **분석 시 어느 rundir이 채택됐는지 확인**할 것.
 
-### 1.1 P5-soft 분석 (무GPU; 즉시 실행 대상)
+### 1.0b 진행 중 캠페인 (2026-07-23 세션 — B200×4 컨테이너, 마감 07-25 03:27)
+
+L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 큐 정본 =
+`$BATCH/runlogs/queue_L1.txt`(리포 기록 = `runs/track_h/QUEUE_L1_2026-07-23.txt`).
+- **순서**: seed0 패치(진행) → seed1 → **L2((b)-fidelity 2셀, seed2보다 앞으로 이동** =
+  fidelity 1차·마감 방어) → seed2. 드라이버 = `run_multi_driver.sh`(pid 20798, 단일).
+- **seed0 패치 = 옛코드 포크 이슈**: 패치 셀이 §1.7 가드 커밋 **직전** 디스패치돼 옛 레거시
+  가드로 돈다. `noisy_obs_t2`가 `t2_sign_{flirds1st,lossheur,fedif}`·`t2_random_k37`을
+  persist 시 해시로 갈라짐(숫자는 가드-후와 동일 — FL/스코어링/T2 경로 불변). **정리 =
+  `runs/track_h/consolidate_hash_dirs.py --apply`**(canonical별 최신본 유지·해시본 제거).
+  워처가 `noisy_obs_t2`(pid 20802) 완주 감지 후 자동 실행(`$BATCH/runlogs/consolidate_watch.log`).
+- **완료 후**: rundir 커밋 + `make_analysis.py` 재생성 + H-12/H-13 대조.
+
+### 1.1 P5-soft 분석 (무GPU; ~~즉시 실행 대상~~ → **P5s 중단으로 폐기**, 2026-07-23 Yonghee)
+
+기존 seed0 P5s rundir(flirds_pweight·t2_pw_*)는 보존만(삭제 안 함). P1-vs-P5s EM 표는
+목표에서 제외. 아래 원문은 히스토리 참조용.
 
 6런 완주(07-23 02:46; rundir 커밋 완료). `python runs/track_h/make_analysis.py` →
 **P1 vs P5s EM 표**(vanilla/oracle_excl 앵커 포함) + `runs/track_h/p5/RUN_P5.md` §4 HP 대조 →

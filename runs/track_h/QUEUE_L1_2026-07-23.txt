@@ -33,6 +33,17 @@ track_g.py|L1_s1_noisy_online|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 ARMS=
 track_g.py|L1_s1_frzero_online|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
 #
 # ============ D. seed 2 (마감이 절단하면 여기부터) ============
+#DEFER-seed2 track_g.py|L1_s2_noisy_obs_t2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=observer T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
+#DEFER-seed2 track_g.py|L1_s2_frzero_obs_t2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARMS=observer T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
+#DEFER-seed2 track_g.py|L1_s2_noisy_online|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
+#DEFER-seed2 track_g.py|L1_s2_frzero_online|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
+# ============ B' L2 재-append (2026-07-23 13:4x) ============
+# 원 B(26-27줄)은 드라이버가 consumed=30 으로 점프하며 주석으로 스킵함(§1.7 작업 중 GPU 유휴).
+# Fed-LOO 제거 커밋(0f2e918) 완료 = 조건 충족. phase2_matrix 는 신-가드(identity=IDENTITY) 코드.
+# 자기생성 rundir = runs/phase2_matrix/rundirs/1B_gsm50k5_{noisy_nr0.7,clean}_s0 (fresh -> 충돌無).
+phase2_matrix.py|L2_gsm50k5_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0
+phase2_matrix.py|L2_gsm50k5_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0
+# ============ D' seed2 재-append (L2 뒤로 이동 = fidelity 우선; 36-39 주석) ============
 track_g.py|L1_s2_noisy_obs_t2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=observer T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
 track_g.py|L1_s2_frzero_obs_t2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARMS=observer T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
 track_g.py|L1_s2_noisy_online|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
