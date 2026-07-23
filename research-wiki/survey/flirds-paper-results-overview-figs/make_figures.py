@@ -50,9 +50,10 @@ def fam_color(m):
     return C_ESTIM if m in ESTIM else C_RENORM
 
 
-def save(fig, name):
+def save(fig, name, tight=True):
     out = os.path.join(HERE, name)
-    fig.tight_layout()
+    if tight:
+        fig.tight_layout()
     fig.savefig(out, bbox_inches="tight")
     plt.close(fig)
     print(f"  [ok] {name}")
@@ -84,34 +85,44 @@ def f1():
         print("  [skip] F1: missing track_c/fidelity.csv"); return False
     df = pd.read_csv(csv)
     df = df[~df["method"].isin(EXCLUDE)]
-    piv = (df.groupby(["dataset", "scenario", "method"])["spearman_a"]
-             .mean().reset_index())
+    # per dataset block: corruption scenarios first (signal), no-corruption last
     scen_order = ["feature_noise", "label_flip", "quantity_skew", "label_skew", "iid"]
     rows = ([("cifar10", s) for s in scen_order] + [("mnist", s) for s in scen_order])
-    M = [m for m in M8 if m in piv["method"].unique()]
-    grid = np.full((len(rows), len(M)), np.nan)
-    for i, (d, s) in enumerate(rows):
-        for j, m in enumerate(M):
-            sel = piv[(piv.dataset == d) & (piv.scenario == s) & (piv.method == m)]
-            if len(sel):
-                grid[i, j] = sel["spearman_a"].values[0]
+    M = [m for m in M8 if m in df["method"].unique()]
 
-    fig, ax = plt.subplots(figsize=(7.4, 6.2))
-    im = ax.imshow(grid, cmap="RdBu_r", vmin=-1, vmax=1, aspect="auto")
-    ax.set_xticks(range(len(M))); ax.set_xticklabels(M, rotation=35, ha="right")
-    ax.set_yticks(range(len(rows)))
-    ax.set_yticklabels([f"{d}/{s}" for d, s in rows], fontsize=8)
-    ax.axhline(len(scen_order) - 0.5, color="k", lw=1.0)
-    for i in range(len(rows)):
-        for j in range(len(M)):
-            v = grid[i, j]
-            if not np.isnan(v):
-                ax.text(j, i, f"{v:+.2f}", ha="center", va="center", fontsize=7,
-                        color="white" if abs(v) > 0.55 else "black")
-    ax.set_title("F1 · CNN C1 fidelity vs (a) retrain oracle — Spearman\n"
-                 "(3-seed mean; signal-strong rows top, iid control bottom)", fontsize=9)
-    fig.colorbar(im, ax=ax, fraction=0.045, pad=0.02, label="Spearman vs (a)")
-    return save(fig, "f1_cnn_c1_vs_a_heatmap.png")
+    def build(col):
+        piv = df.groupby(["dataset", "scenario", "method"])[col].mean()
+        g = np.full((len(rows), len(M)), np.nan)
+        for i, (d, s) in enumerate(rows):
+            for j, m in enumerate(M):
+                try:
+                    g[i, j] = piv.loc[(d, s, m)]
+                except KeyError:
+                    pass
+        return g
+
+    fig, axes = plt.subplots(1, 2, figsize=(14.6, 6.4), sharey=True)
+    im = None
+    for ax, (col, name) in zip(axes, [("spearman_a", "Spearman"), ("pearson_a", "Pearson")]):
+        grid = build(col)
+        im = ax.imshow(grid, cmap="RdBu_r", vmin=-1, vmax=1, aspect="auto")
+        ax.set_xticks(range(len(M))); ax.set_xticklabels(M, rotation=35, ha="right")
+        ax.axhline(len(scen_order) - 0.5, color="k", lw=1.0)   # cifar10 | mnist split
+        for i in range(len(rows)):
+            for j in range(len(M)):
+                v = grid[i, j]
+                if not np.isnan(v):
+                    ax.text(j, i, f"{v:+.2f}", ha="center", va="center", fontsize=6.5,
+                            color="white" if abs(v) > 0.55 else "black")
+        ax.set_title(f"{name} vs (a)", fontsize=9.5)
+    axes[0].set_yticks(range(len(rows)))
+    axes[0].set_yticklabels([f"{d}/{s}" for d, s in rows], fontsize=8)
+    fig.subplots_adjust(left=0.065, right=0.9, top=0.9, bottom=0.12, wspace=0.05)
+    cax = fig.add_axes([0.923, 0.12, 0.012, 0.78])
+    fig.colorbar(im, cax=cax, label="corr vs (a)")
+    fig.suptitle("F1 · CNN C1 fidelity vs (a) retrain oracle  (3-seed mean; per dataset: "
+                 "corruption scenarios top, no-corruption label_skew/iid foot)", fontsize=9.5)
+    return save(fig, "f1_cnn_c1_vs_a_heatmap.png", tight=False)
 
 
 # ---------------------------------------------------------------------------

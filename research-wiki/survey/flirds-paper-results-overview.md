@@ -48,18 +48,21 @@ tags: [flirds, paper, results, dashboard]
 
 ### (C) 오염/위협 축 — 주무대 통일 규약
 
-> **주무대 쌍(R4·C2)은 오염 *클래스*를 통일한다**: 둘 다 {clean · 라벨-오염 · free-rider}를 오염 클라 **~40%** 로 주입. 축이 *달라 보이는* 이유 = (i) 모달리티별 구현 이름(생성 EM엔 "라벨 뒤집기"가 없어 답 뒤섞기로 구현) + (ii) CNN이 값싸(full 2ᴺ) dose를 더 촘촘히 깐 **grid-depth 차이**뿐, 클래스는 1:1 대응.
+> **주무대 쌍(R4·C2)은 오염 *클래스*를 통일한다**: 둘 다 {clean · 라벨-오염 · free-rider}를 오염 클라 **~40%** 로 주입, 클래스는 1:1 대응. 라벨-오염의 구현 이름만 모달리티별로 다르다(생성 EM엔 "라벨 뒤집기"가 없어 **answer-swap** = 분류의 label-flip).
 
 | 오염 클래스 | 주-LLM `R4` | 주-CNN `C2` | 대응 · 비고 |
 |---|---|---|---|
 | (통제) clean | clean | clean | 오발화 대조 |
-| **라벨-오염** | answer-swap@0.7 | label-flip@{.15,.35,.70} (+strmain 경계 dose) | **같은 클래스** — 생성 EM의 answer-swap = 분류의 label-flip. dose 사다리는 CNN만(값싼 무대) |
-| **free-rider** | frzero | fr(zero) + frrand | zero/random-update. random 변형은 CNN만 |
+| **라벨-오염** | answer-swap@0.7 (단일 dose) | label-flip@{.15,.35,.70} + **strmain** | 같은 클래스. **strmain** = FedCorr 기본 draw = 오염 클라마다 flip rate $\sim U(0.5,1)$ = **per-client 강도 변조**(고정-dose 셀은 전원 한 rate) |
+| **free-rider** | frzero | fr(zero) + frrand | zero/random-update free-rider |
 | **grad-noise** | ✗ (무대 미성립) | gn | LLM LoRA 기하선 등방 노이즈 응답이 gradient-방향 대비 수십분의 1 → **LLM 배제**(부록 B); CNN에선 **2차항 판별 핵심 셀**(§5.6①) |
 
-> - **통일 = 오염-클래스 레벨**(세 클래스 다 양 주무대 존재). 두 비대칭은 **원칙적**이라 유지: ① grad-noise = 모달리티 필연(LLM 불가) · ② dose-depth = 비용 여유(CNN full 2ᴺ이라 촘촘). LLM 주무대는 클래스별 **대표 1점**(answer-swap 1 dose + frzero), CNN 주무대는 **풀 grid**.
-> - **오염 집합 추출**(위협별 규약, 부록 B): label-flip = FedCorr $(\rho,\tau)$ 베르누이 → 오염 클라 **수가 시드마다 변동**(표엔 명목 $\rho$ 대신 **실현 수**; 라벨 잡음률 $\tau\sim U(0.5,1)$, 고정-dose 셀은 $\{.15,.35,.70\}$) · update-level(free-rider·grad-noise) = 정확 $\lfloor\rho N\rceil$ = 40% 비복원. **R4는 오염 클라 0–19 고정**(40%). 한 시드는 데이터·분배·dose에 걸쳐 같은 오염 집합.
-> - **sub 무대 위협이 서로 다른 건 목적이 달라서**(통일 규약은 *주무대끼리*만 적용): silo5 = 탐지·removal(noisy·frrand·frzero) · CNN C1 = GTG-Shapley 5-시나리오 fidelity(iid·label_skew·quantity_skew·label_flip·feature_noise) · anchor5/gsm5 = (a)-oracle 특성화(clean·noisy).
+> **설계 노트 — 비대칭의 성격(필연 vs 선택; 07-23 Yonghee 지적 반영, 초판 "grid-depth=비용" 프레이밍 정정)**:
+> - **필연 1건 = grad-noise만**: LLM 모달리티상 불가(부록 B). 원리적 배제는 이것뿐.
+> - **나머지는 전부 설계 선택**(비용·모달리티 필연 아님): ① **frrand**는 LLM에도 값싸게 넣을 수 있다 — 현재 R4가 free-rider 대표로 frzero만 쓰는 건 선택. ② **per-client 강도 변조**(CNN이 쓰는 strmain $U(0.5,1)$ / C1 사다리 `_pair_ladder` 0–20%)는 오염 dose를 클라마다 달리해 **기여도 스프레드를 만드는 fidelity 도구**이고 **계산량과 무관** — 현 LLM 무대(R4·anchor5·silo5)는 전원 균일-강도라 이 도구를 안 쓴다. ③ 고정-dose를 여러 셀 스윕하는 **grid-depth**만 CNN이 full 2ᴺ이라 값싸서 촘촘한 부분.
+> - ⟹ **엄밀 대칭을 원하면 R4에 frrand + strmain류 per-client 변조를 추가**하는 게 맞다(값쌈 · 새 런 = L-큐 결정). fidelity 포화 완화에도 이롭다(strmain의 F-4 dose-해상도에서 Flirds ≳ 1st). 단 LLM fidelity 포화의 **주원인은 near-additive 레짐**(전 방법 ≈ exact라 순위 포화)이라 dose 변조가 이를 *완전히* 깨진 못할 수 있음(부분 개선 기대). → **Yonghee 판단 대기**.
+> - **오염 집합 추출**(위협별 규약, 부록 B): label-flip = FedCorr $(\rho,\tau)$ 베르누이 → 오염 클라 **수가 시드마다 변동**(표엔 명목 $\rho$ 대신 **실현 수**; rate $\tau\sim U(0.5,1)$, 고정-dose 셀은 $\{.15,.35,.70\}$) · update-level(free-rider·grad-noise) = 정확 $\lfloor\rho N\rceil$ = 40% 비복원. **R4는 오염 클라 0–19 고정**(40%). 한 시드는 데이터·분배·dose에 걸쳐 같은 오염 집합.
+> - **sub 무대 위협이 다른 건 목적 차이**(통일 규약은 *주무대끼리*만): silo5 = 탐지·removal(noisy·frrand·frzero) · CNN C1 = GTG-Shapley 5-시나리오 fidelity(iid·label_skew·quantity_skew·label_flip·feature_noise; 오염 사다리는 label_flip·feature_noise만) · anchor5/gsm5 = (a)-oracle 특성화(clean·noisy).
 
 ### (D) 비교군 · 프로토콜 · 지표
 
@@ -105,19 +108,42 @@ tags: [flirds, paper, results, dashboard]
 **LLM gsm5 (신설, 주표) — dual (a)+(b), clean·noisy** ⬚ · **LLM silo5 (a)-leg (비IID 보조)** ⬚
 - 채움 = `runs/track_d/rundirs/gsm5_*`(L8 신설) · `runs/track_d/rundirs/1B_silo5_*_aleg`(L8). gsm5 = 주무대와 데이터·위협·오염비율·val·하이퍼 동일, N=5 full·R=30만 축소("라운드-cohort 축소판").
 
-**CNN C1 시나리오별 vs (a) retrain oracle — Spearman** ● (3-seed 평균; 대표 칸, 전 10칸 = F1)
+**CNN C1 시나리오별 vs (a) retrain oracle** ● (3-seed 평균; 전 10칸 = cifar10·mnist × 5 시나리오, 전 8 방법)
+
+> **오염 구조 (칸마다 신호가 다른 이유 + 데이터셋별 오염군)**: C1의 오염은 **클라 index 사다리** `_pair_ladder`(pair p → 5p%, N=10 → **0/0/5/5/10/10/15/15/20/20%**)이고, **`label_flip`·`feature_noise` 두 시나리오에만** 적용 = strmain류 **per-client 강도 변조**(클라마다 오염 dose가 다름). **`iid`·`label_skew`·`quantity_skew`는 오염 0**(순수 파티션 이질성)이라 vs (a) 신호가 약한 **신호-부재 칸**. ⚠ **오염 사다리는 데이터셋·seed 무관 동일**(client index로만 결정) → cifar10↔mnist의 값 차이는 *오염군이 달라서가 아니라* 과제 난이도 차이다(아래 읽기 iii).
+
+**Spearman vs (a)** (전 10칸; 신호-강 위 / 신호-부재 아래)
 
 | dataset/scenario | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | cifar10 / feature_noise | **+0.63** | +0.50 | +0.56 | +0.44 | +0.18 | +0.39 | +0.28 | +0.40 |
 | cifar10 / label_flip | +0.52 | +0.59 | +0.58 | +0.45 | +0.41 | +0.32 | +0.29 | +0.36 |
-| cifar10 / quantity_skew | +0.57 | +0.56 | +0.57 | +0.70 | +0.70 | +0.72 | **+0.81** | −0.03 |
+| cifar10 / quantity_skew | +0.57 | +0.56 | +0.57 | +0.70 | +0.70 | +0.72 | **+0.81** | -0.03 |
+| mnist / feature_noise | +0.33 | +0.44 | +0.44 | +0.40 | -0.07 | -0.07 | +0.60 | +0.66 |
 | mnist / label_flip | **+0.96** | +0.97 | +0.97 | +0.97 | +0.96 | +0.94 | +0.96 | +0.96 |
-| mnist / quantity_skew | **+0.85** | +0.77 | +0.84 | +0.56 | +0.68 | +0.65 | +0.51 | −0.09 |
-| (신호-부재) cifar10·mnist / iid·label_skew | −0.28~+0.36 | … | … | … | … | … | … | … |
+| mnist / quantity_skew | **+0.85** | +0.77 | +0.84 | +0.56 | +0.68 | +0.65 | +0.51 | -0.09 |
+| cifar10 / label_skew *(오염0)* | -0.18 | -0.07 | +0.14 | +0.44 | +0.40 | +0.28 | +0.12 | +0.19 |
+| cifar10 / iid *(오염0)* | -0.23 | -0.13 | -0.18 | -0.20 | -0.18 | +0.30 | +0.00 | +0.07 |
+| mnist / label_skew *(오염0)* | -0.28 | -0.06 | -0.16 | -0.22 | -0.14 | -0.04 | +0.28 | +0.54 |
+| mnist / iid *(오염0)* | +0.36 | +0.52 | +0.48 | +0.19 | -0.11 | -0.09 | +0.66 | +0.74 |
 
-> 본문 클레임: same-game 3종 × 전 10칸 + "**신호-강 칸(lf·qskew·fn)에서만 두 게임 수렴**, 1위 2칸(cifar10/fn +0.63·mnist/qskew +0.85), mnist/lf 전 방법 동수렴". renorm-유리 칸(cifar10/qskew ShapleyFL +0.81·label_skew GTG)은 부록 C(각주 T10 — (a) 재정규화-게임 심판). **출처**: `runs/track_c/fidelity.csv`(`spearman_a`, (dataset,scenario,method) 3-seed 평균).
-> ![[flirds-paper-results-overview-figs/f1_cnn_c1_vs_a_heatmap.png]]
+**Pearson vs (a)** (전 10칸; 같은 순서)
+
+| dataset/scenario | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
+|---|---|---|---|---|---|---|---|---|
+| cifar10 / feature_noise | +0.60 | +0.51 | +0.57 | +0.43 | +0.19 | +0.44 | +0.31 | +0.47 |
+| cifar10 / label_flip | +0.44 | +0.46 | +0.49 | +0.32 | +0.26 | +0.33 | +0.28 | +0.42 |
+| cifar10 / quantity_skew | +0.60 | +0.55 | +0.60 | +0.72 | +0.63 | +0.71 | +0.72 | -0.04 |
+| mnist / feature_noise | +0.42 | +0.52 | +0.46 | +0.22 | -0.10 | -0.17 | +0.63 | +0.63 |
+| mnist / label_flip | +0.99 | +0.99 | +0.99 | +0.98 | +0.97 | +0.94 | **+1.00** | +0.98 |
+| mnist / quantity_skew | +0.59 | +0.60 | +0.61 | +0.45 | +0.55 | +0.63 | +0.42 | -0.15 |
+| cifar10 / label_skew *(오염0)* | -0.15 | -0.08 | +0.01 | +0.23 | +0.17 | +0.05 | +0.05 | +0.03 |
+| cifar10 / iid *(오염0)* | -0.18 | -0.06 | -0.02 | -0.14 | -0.20 | +0.46 | +0.05 | +0.09 |
+| mnist / label_skew *(오염0)* | -0.17 | +0.05 | -0.02 | -0.22 | -0.23 | -0.13 | +0.29 | +0.55 |
+| mnist / iid *(오염0)* | +0.42 | +0.59 | +0.54 | +0.32 | -0.09 | -0.15 | +0.69 | +0.70 |
+
+> 읽기: (i) **신호-강 칸(label_flip·feature_noise·quantity_skew)**서 두 게임 수렴 — same-game 3종 1위 2칸(cifar10/fn·mnist/qskew), mnist/label_flip은 전 방법 Sp +0.94~+0.97·Pe +0.94~+1.00 동수렴. (ii) **신호-부재 칸(iid·label_skew, 오염0)**은 대부분 0~음수(파티션 이질성만 있어 (a) 재학습-게임이 순위를 재현 못 함); 이런 칸선 renorm-족이 소폭 우위(cifar10/qskew ShapleyFL Sp +0.81·label_skew GTG +0.44 = (a) 재정규화-게임 심판이 renorm에 유리, 부록 C 각주 T10). (iii) **데이터셋 차 = 난이도**: 같은 오염 사다리인데 mnist/label_flip +0.96 > cifar10/label_flip +0.52 = mnist가 더 분리적(쉬운 과제)이라 오염 신호가 (a)에도 뚜렷 — 오염군이 다른 게 아니다. (iv) **Spearman↔Pearson 정합**(순위·값 수준 대체로 일치; renorm-유리 칸서만 소폭 갈림). **출처**: `runs/track_c/fidelity.csv`(`spearman_a`/`pearson_a`, (dataset,scenario,method) 3-seed 평균).
+> ![[flirds-paper-results-overview-figs/f1_cnn_c1_vs_a_heatmap.png]] *(좌=Spearman·우=Pearson 2-panel)*
 
 ---
 
