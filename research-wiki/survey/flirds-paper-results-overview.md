@@ -19,23 +19,54 @@ tags: [flirds, paper, results, dashboard]
 
 ## §5.1 실험 세팅 (작성 가능)
 
-**주무대 쌍 + sub 무대**
+> 무대는 **질문 위계(1차 fidelity → 2차① downstream → 2차③ detection)별로 목적이 다르고**, 주무대 쌍(LLM `R4` · CNN `C2`)이 세 목적을 모두 잇는다. **오염 축은 주무대끼리 오염-클래스로 통일**((C)), sub 무대는 목적별로 다르다.
 
-| 역할 | 무대 | 모델 | N · 참여 · R | 오염/위협 | 심판(지표) | 상태 |
-|---|---|---|---|---|---|---|
-| **주(LLM)** | `R4 gsm50k5` | Llama-3.2-1B-Instruct (LoRA r16/α32) | N=50 · 5/50 · R=200 | 오염 40%(클라 0–19): clean·noisy(answer-swap@.7)·frzero | 공식 test 1,119 **EM** | ◐ seed0(정본=L1 3-seed ⬚) |
-| **주(CNN)** | `C2 캠페인` | FedSVCNN / LeNet5 (전체학습) | N=100 · 10/100 · R=120 | clean·fr·frrand·gn·lf@{.15,.35,.70}·strmain | test **acc** | ● (dir1 restack 확인) |
-| sub | `gsm5` (신설, §5.2용) | 1B | N=5 full · R=30 | clean·noisy | dual (a)+(b) | ⬚ (L8) |
-| sub | `silo5` | 1B | N=5 full · R=10 | noisy·frrand·frzero | (b) 2⁵ | ● (탐지=§5.4 스코프) |
-| sub | `anchor5` | 1B/3B/7B | N=5 full · R=30 | clean | (a) 2⁵ + (b) 2⁵ | ● (1B (a)) |
-| sub | `CNN C1` | LeNet5/FedSVCNN | N=10 full · R=10 | 5 시나리오×{mnist,cifar10} | (a) 2¹⁰ + (b) 2¹⁰ | ● |
-| sub | `Scale 100/100` (부록 E) | CNN | N=100 full · R=120 | clean·lf | test acc | ● |
+### (A) 무대 상세 — 논문 역할별
+
+| 무대 | 논문 역할 | 모델 | N · 참여 · R | oracle · 심판 | 상태 |
+|---|---|---|---|---|---|
+| **R4 gsm50k5** (주-LLM) | fidelity(§5.2 L2) · **downstream**(§5.3) · detection(§5.4) | Llama-3.2-1B-Instruct · LoRA r16/α32 | 50 · 5/50 · 200 | (b) per-round[L2 ⬚] · **EM** 1,119 | ◐ seed0(정본 L1 ⬚) |
+| **C2 캠페인** (주-CNN) | fidelity(§5.2 c2fid) · **downstream**(§5.3) · detection(§5.4) | FedSVCNN(cifar)/LeNet5(fmnist) · 전체학습 | 100 · 10/100 · 120 | (b) per-round · **acc** | ● (dir1 restack 확인) |
+| anchor5 | fidelity sub · (a) 특성화(§5.2) | 1B/3B/7B · LoRA | 5 · full · 30 | (a)+(b) 2⁵ · val-loss | ● (1B (a)) |
+| gsm5 (신설) | fidelity sub · retrain-(a) **주표**(§5.2) | 1B | 5 · full · 30 | (a)+(b) dual | ⬚ (L8) |
+| silo5 | fidelity (a)-leg(§5.2) · removal(§5.6③) | 1B | 5 · full · 10 | (b) 2⁵ · val-loss | ● / (a)-leg ⬚ |
+| CNN C1 | fidelity sub · 듀얼오라클(§5.2) · removal(§5.6③) | LeNet5(mnist)/FedSVCNN(cifar) | 10 · full · 10 | (a)+(b) 2¹⁰ | ● |
+| device100 · Scale 100/100 | 비용·규모 보조(부록 E) | 1B / CNN | 100 · (10/100 또는 full) · 30/120 | (b) anchor · AUROC/acc | ● |
+
+### (B) 데이터셋
+
+| 데이터셋 | 과제 (모델) | non-IID/분배 축 | 쓰는 무대 | 규모 |
+|---|---|---|---|---|
+| **GSM8K** | 초등수학 word-problem · 생성 · **EM** (1B-Instruct LoRA) | IID(149문항/클라) | R4(N=50) · gsm5(N=5) | train 7,473 · **test 1,119 EM** · val 200 |
+| **Alpaca-GPT4** | 범용 instruction · 생성 · val-loss (1B/3B/7B LoRA) | IID 균등 shard | anchor5(N=5) · std20(N=20) | 20k · val 200 / test 1000 |
+| **5-도메인 silo** | 의료·법률·금융·수리·일반 instruction (1B LoRA) | **cross-silo**(1 도메인 = 1 클라) | silo5(N=5) | 도메인당 train 200 / val 20 / test 40 |
+| **CIFAR-10** | 이미지 분류 (FedSVCNN · 전체학습) | iid · **Dir dir1(α=1)** · **2-shard**(label-skew) · **qskew**(quantity) | C2 캠페인(N=100) · C1(N=10) | C1 val 2000 / test 8000 |
+| **MNIST** | 숫자 분류 (LeNet5 · 전체학습) | 5 시나리오(GTG-Shapley) | C1(N=10) | val 2000 / test 8000 |
+| **Fashion-MNIST** | 의류 분류 (LeNet5) | iid · dir1 | C2 캠페인(N=100) | — |
+
+> silo5 도메인 원천: medical=medical_meadow_flashcards · legal=ibunescu legal-QA · finance=FiQA · math=AQUA-RAT · general=Dolly(전부 free-form instruction→response, size 균등=B1 통제). C1 5-시나리오 = iid·label_skew·quantity_skew·label_flip·feature_noise(GTG-Shapley 무대 이식). **출처**: `codes/flirds/data/llm.py` · `codes/flirds/fl/partition.py` · `codes/flirds/models/cnn.py`.
+
+### (C) 오염/위협 축 — 주무대 통일 규약
+
+> **주무대 쌍(R4·C2)은 오염 *클래스*를 통일한다**: 둘 다 {clean · 라벨-오염 · free-rider}를 오염 클라 **~40%** 로 주입. 축이 *달라 보이는* 이유 = (i) 모달리티별 구현 이름(생성 EM엔 "라벨 뒤집기"가 없어 답 뒤섞기로 구현) + (ii) CNN이 값싸(full 2ᴺ) dose를 더 촘촘히 깐 **grid-depth 차이**뿐, 클래스는 1:1 대응.
+
+| 오염 클래스 | 주-LLM `R4` | 주-CNN `C2` | 대응 · 비고 |
+|---|---|---|---|
+| (통제) clean | clean | clean | 오발화 대조 |
+| **라벨-오염** | answer-swap@0.7 | label-flip@{.15,.35,.70} (+strmain 경계 dose) | **같은 클래스** — 생성 EM의 answer-swap = 분류의 label-flip. dose 사다리는 CNN만(값싼 무대) |
+| **free-rider** | frzero | fr(zero) + frrand | zero/random-update. random 변형은 CNN만 |
+| **grad-noise** | ✗ (무대 미성립) | gn | LLM LoRA 기하선 등방 노이즈 응답이 gradient-방향 대비 수십분의 1 → **LLM 배제**(부록 B); CNN에선 **2차항 판별 핵심 셀**(§5.6①) |
+
+> - **통일 = 오염-클래스 레벨**(세 클래스 다 양 주무대 존재). 두 비대칭은 **원칙적**이라 유지: ① grad-noise = 모달리티 필연(LLM 불가) · ② dose-depth = 비용 여유(CNN full 2ᴺ이라 촘촘). LLM 주무대는 클래스별 **대표 1점**(answer-swap 1 dose + frzero), CNN 주무대는 **풀 grid**.
+> - **오염 집합 추출**(위협별 규약, 부록 B): label-flip = FedCorr $(\rho,\tau)$ 베르누이 → 오염 클라 **수가 시드마다 변동**(표엔 명목 $\rho$ 대신 **실현 수**; 라벨 잡음률 $\tau\sim U(0.5,1)$, 고정-dose 셀은 $\{.15,.35,.70\}$) · update-level(free-rider·grad-noise) = 정확 $\lfloor\rho N\rceil$ = 40% 비복원. **R4는 오염 클라 0–19 고정**(40%). 한 시드는 데이터·분배·dose에 걸쳐 같은 오염 집합.
+> - **sub 무대 위협이 서로 다른 건 목적이 달라서**(통일 규약은 *주무대끼리*만 적용): silo5 = 탐지·removal(noisy·frrand·frzero) · CNN C1 = GTG-Shapley 5-시나리오 fidelity(iid·label_skew·quantity_skew·label_flip·feature_noise) · anchor5/gsm5 = (a)-oracle 특성화(clean·noisy).
+
+### (D) 비교군 · 프로토콜 · 지표
 
 - **비교군 9종**: Flirds / Flirds-1st / loss-heur(same-game) · GTG / FedSV / ComFedSV / ShapleyFL(β=0.3) / FedIF(cross-game). 제외 각주 = Banzhaf·Ripple·poison·Fed-LOO. **전용 탐지기 4종**(FLDetector/FLTrust/STD-DAGMM/FedDQC)은 §5.4.
 - **고정-궤적 채점**: 한 셀 안 모든 방법이 **같은 동결 궤적·같은 손실 구현**을 소비. 로컬 = plain SGD mom=0·상수 lr. **공정성**: zero-semantics도 채점 대상, 셀별 튜닝 금지(P1 τ=0 parameter-free).
-- **지표**: 순위 Spearman/Kendall · 값 Pearson(본문) · 거리 3종(부록 C) · 탐지 AUROC · 절대 EM/acc · recovery. **target self-stability**(exact (b) 자기 cross-seed 일치도) 병기.
-- **라벨-플립 비율**: 오염 강도는 FedCorr $(\rho,\tau)$ 잡음 모델 공식 구현을 따라 클라이언트별 독립 $\gamma_s\sim\mathrm{Bin}(1,\rho)$로 오염 여부를, 라벨 잡음률 $\tau\sim U(0.5,1)$로 뽑되(고정-dose 사다리 셀은 $\{0.15,0.35,0.70\}$ 지정) — 오염 클라 수가 시드마다 변동하므로 표에는 명목 $\rho$가 아니라 실현 오염 수를 병기(상세 부록 B).
-- **출처**: `runs/track_h/rundirs_llm/gsm50k5_*`(주-LLM) · `runs/track_h/rundirs_cnn/`(주-CNN) · `runs/track_c/c1`·`runs/track_d/rundirs/1B_anchor5_*`(sub).
+- **지표**: 순위 Spearman/Kendall · 값 Pearson(본문) · 거리 3종(부록 C) · 탐지 AUROC · 절대 EM/acc · recovery. **target self-stability**(exact (b) 자기 cross-seed 일치도) 병기. seed = 3-seed mean±std(ddof0), 예외는 ◐.
+- **출처**: `runs/track_h/rundirs_llm/gsm50k5_*`(주-LLM) · `runs/track_h/rundirs_cnn/`(주-CNN) · `runs/track_c/{c1,c2fid}` · `runs/track_d/rundirs/1B_anchor5_*` · `runs/phase2_matrix/rundirs/1B_silo5_*`(sub).
 
 ---
 
