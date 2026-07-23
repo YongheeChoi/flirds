@@ -1,147 +1,28 @@
-# REMAINING — 남은 실험 인수인계 (상시 현행; 완료·폐기 항목은 지우고 git 히스토리로만 남김)
+# REMAINING — 남은 실험 인수인계 (라우터)
 
-> 갱신 2026-07-23(3차 — 스코프 원복: **이 파일 = 덜 돌린 실험을 다른 세션에 전달하는 용도 전용**).
-> 논문·문서 작업의 정본 = `paper/workplan/00-INDEX.md`(⬚·† 해소 원장 = T1 행; push는 Yonghee 직접).
-> 파일-canon: rundir → overview → paper. 실행 큐 정본 = §1.6 + `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
+> 2026-07-24: 실행처별로 **2개 파일로 분리**. 세션은 자기 하드웨어 파일만 보면 된다.
+> 이 파일 = 라우터(공통·무GPU + 포인터)뿐. push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 
-## 1. 실험 (GPU)
+## 실행처별 파일
 
-- **환경(컨테이너 공통; 2026-07-20 재구축)**:
-  `BATCH=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds_batch` 기준
-  `PY=$BATCH/venv/bin/python`, `HOME=$BATCH/home`,
-  `HF_HOME=$BATCH/hf_home HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1`, `codes/`에서 `PYTHONPATH=.`.
-  현 컨테이너=B200 4장(0–3). venv는 기존 rundir meta.json과 **동일 버전 고정**(torch 2.12.0+cu130,
-  transformers 5.9.0, trl 1.5.1, peft 0.19.1, accelerate 1.13.0, datasets 4.8.5, numpy 2.4.6).
-  meta-llama gated 재취득 불가(유효 토큰 무) → 해시 교차검증된 공개 미러로 캐시 재구성 —
-  검증 체인·근거는 `$BATCH/PROVENANCE.md`.
+| 파일 | 실행처 | 담는 실험 | 현재 상태 |
+|---|---|---|---|
+| **`REMAINING-b200.md`** | B200 컨테이너 | LLM 주무대 R4(gsm50k5, 1B): L1·L2·L4·L5·L6·L7·L9·L10 + anchor5 β0.3 재실행 | **R4 L1·L2 진행 중** |
+| **`REMAINING-slurm.md`** | yonsei Slurm RTX3090 | CNN(c2fid·W-B·C-fr·C1 재실행) + 작은-N LLM(L8 gsm5·silo5 a-leg) | **유휴 — 전량 대기** |
 
-### 1.0 드라이버·큐 운용 교훈 (차기 캠페인 공통; QUEUE 문서들이 참조)
+- **ShapleyFL β0.3 재실행**은 두 파일에 걸침(같은 07-23 감사): anchor5 3셀 = B200(`REMAINING-b200.md` §4) ·
+  C1 30셀 = Slurm(`REMAINING-slurm.md` §4). 둘 다 착지해야 paper B.5 주석 삭제로 완결.
+- **구 §번호 매핑**(외부 문서 참조 완충): 구 REMAINING `§1.6`(LLM 캠페인) → `REMAINING-b200.md` ·
+  구 `§1.4b/d`·`§1.6a(C-fr)`·`§1.6b(L8)` → `REMAINING-slurm.md` · 구 `§1.4c(β)` → 양 파일 §4.
 
-- **큐 정지는 줄 삭제가 아니라 주석 처리.** 드라이버는 매 루프 큐를 다시 읽고 `consumed`
-  **인덱스**로 위치를 추적하므로, 줄을 지우면 인덱스가 밀려 오배치가 난다. 줄 수를 보존해야 안전.
-- **러너는 셀 단위 원자적** — 중도 kill = 전손. 정지는 드레인(실행 중 셀 완주 후 드라이버 종료).
-- **마지막 셀은 `done[ok]` 줄이 안 남는다**(루프가 리핑 전에 종료 조건에서 빠져나감) → 완주 판정을
-  `grep 'done\[ok\]'` 단독으로 하지 말 것 — 셀 로그의 `TRACK G DONE`/`MATRIX DONE` + rundir mtime 교차 확인.
-- **내부 직렬화가 긴 arm(t2 다점수원 등)은 큐 레벨로 분할 노출**(셀 하나 17h 점유 방지) — L1 큐에 반영 완료.
+## 공통 (무GPU·실행처 무관)
 
-### 1.0b 진행 중 — B200 L1·L2 캠페인 (2026-07-23 기동, 마감 07-25 03:27)
-
-L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 큐 정본 =
-`$BATCH/runlogs/queue_L1.txt`(리포 기록 = `runs/track_h/QUEUE_L1_2026-07-23.txt`).
-- **순서**: seed0 패치(진행) → seed1 → **L2((b)-fidelity 2셀, seed2보다 앞으로 이동** =
-  fidelity 1차·마감 방어) → seed2. 드라이버 = `run_multi_driver.sh`(pid 20798, 단일).
-- **사전절차 완료**: pre-fix Tier A(git_sha==`fa5fc6e`) 20 rundir → `runs/track_h/rundirs_llm_prefixh1/`
-  아카이브·커밋 — make_analysis의 pre-fix 오채택 위험 해소.
-- **seed0 패치 = 옛코드 포크 이슈**: 패치 셀이 §1.7 가드 커밋 **직전** 디스패치돼 옛 레거시
-  가드로 돈다. `noisy_obs_t2`가 `t2_sign_{flirds1st,lossheur,fedif}`·`t2_random_k37`을
-  persist 시 해시로 갈라짐(숫자는 가드-후와 동일 — FL/스코어링/T2 경로 불변). **정리 =
-  `runs/track_h/consolidate_hash_dirs.py --apply`**(canonical별 최신본 유지·해시본 제거).
-  워처가 `noisy_obs_t2`(pid 20802) 완주 감지 후 자동 실행(`$BATCH/runlogs/consolidate_watch.log`).
-- **완료 후**: rundir 커밋 + `make_analysis.py` 재생성 + H-12/H-13 대조 → paper I1·F2·D1 ⬚ 채움.
-
-### 1.4 P0(H1) 소급 재실행 스코프 (무GPU~저비용; 장기)
+### P0(H1) 소급 재실행 스코프 (장기)
 
 - 논문 인용 셀 한정으로 판단(그룹 카탈로그 = git 히스토리의 `RERUN_AFTER_REPRO_FIX_2026-07-21.md`).
 
-### 1.4b CNN Slurm 잔여 — c2fid 본런 GO 대기 (07-22 캠페인은 완주 — `570a93f`·`373a1d8`)
+### rundir 정체성 가드 (양 파일 β재실행이 사용)
 
-- **잔여 ① c2fid 본런 143셀**: 파일럿 `cifar10_dir1_grad-noise_fid_seed0` 완주·커밋 —
-  **실측 1.05 GPU-h/셀**(3,777s = 궤적 재생 284 + (b) 2¹⁰×120 오라클 824 + 8방법 2,669;
-  peak 3.3 GiB) → 본런 **≈150 GPU-h**(RTX3090 기준; fmnist 셀은 더 낮음, 8-GPU wall ~19h).
-  **Yonghee GO 후** `sbatch runs/track_c/c2fid/sbatch_fid.sh` → `make_analysis` →
-  F-1~F-4 사전등록 대조(MISS 포함 보고) → paper F1·c2fid AUROC ⬚ 채움.
-- 잔여 ② 완주분 overview 결과 블록 반영: §3.2.4 skew·fmnist·strmain + restack drift 표
-  (570a93f 분석 기준; W-A drift **판정 = T4 완료 → §1.4d**·`runs/track_h/RUN_P1W_CNN.md`).
-
-### 1.4c ShapleyFL β0.3 재실행 — 인용 셀 33개 (**확정 07-23 Yonghee**)
-
-논문 인용 ShapleyFL 값이 실제 **β=0.5** rundir 산출로 판명(감사 07-23): C1 30셀
-(git_sha `5cb927b`, 06-12)·1B_anchor5 3셀(`39a0a97`, 06-15) 모두 β0.5→0.3 변경
-(`e89af94`, 06-25) **이전** — 그 커밋이 계획한 β0.3 전면 재실행이 두 셋엔 미반영
-(phase2_matrix 일부·3B만 반영). paper B.5 "β=0.3" 서술과 불일치 → **β0.3 재실행 확정**.
-
-- **셀 = ① C1 30셀**(track_c1; cifar10·mnist × 5시나리오 × 3seed) = **RTX3090** 몫
-  **② 1B_anchor5 3셀**(track_d; seeds 0·1·2) = **B200** 몫. 오케스트레이터 = `rerun_beta03/` 재사용.
-- 실행 = `SFL_BETA=0.3`(현 소스 기본값이 이미 0.3 — 단일 소스 `shapleyfl.BETA`) + 셀당 `RUNDIR_REPLACE=1`
-  (β0.5 원본을 명시 교체; §1.7 정체성 가드). 착지 rundir git_sha = fix-후 커밋 확인.
-- 완료 후: rundir 교체 커밋 + `make_analysis`/`make_fidelity` 재생성 → overview §3.1.1(anchor5)·
-  §3.1.2(C1) ShapleyFL 행 갱신 → paper §5.2 F4·부록 C 값 갱신 + **B.5 재실행-대기 주석 삭제**.
-- 영향 = cross-game 비교표만(F4 vs (a)·부록 C 전표) — same-game 본문 주장엔 무영향.
-
-### 1.4d T4 W-B — CNN P1w twin leg (RTX3090 Slurm; W-A 판정 완료·W-B 실행 대기)
-
-> **정본 = `runs/track_h/RUN_P1W_CNN.md`**(W-A 판정·실행 절차·비용·수록 규칙). 스펙 =
-> `paper/workplan/T4-p1w-cnn-relay.md`. 커밋 `93ee942`(무GPU 산출물). **P1w ≡ 기존 P2**
-> (`gatew_v2`/`t2_signw`) — 신규 코드 없음, 신규 실행은 **T2 재학습 leg만**(T1 = skew 캠페인 재사용).
-
-- **W-A 완료(무GPU, 로컬)**: restack 드리프트 312쌍 — recovery 앵커(oracle_excl 0.0010·
-  vanilla 0.0024)·P1w(`flirds_gatew_v2` 0.0063) mean|Δ| 전부 분석 밴드 내 → **dir1 P2를 P1w로
-  귀속, 재실행 불필요**(최대 0.233은 미사용 V1 게이트; grad-noise seed-민감하나 3-seed 평균서 상쇄).
-  dir1 canon rundir 재생성 = overview §3.2.3 일치(P1w-T1 오염평균 .5913 / P1w-T2 .5959).
-  **FedIF 역전 확인**(P1w on .6011 / re .6159 > flirds) = 수록 규칙 '타 소스 역전' 발동.
-- **W-B 실행(신규 = T2 leg)**: `sbatch runs/track_h/sbatch_cnn_p1w.sh` = flirds-only observer +
-  `C2_T2=1`, 확장 90셀({cifar10 shard/qskew/iid, fmnist iid/dir1} × {clean,fr,frrand,gn,lf@0.70,
-  strmain} × 3seed). `track_h/rundirs_cnn` 착지 → skew T1과 셀키 병합. 게이트 HP = R1 verbatim.
-  1. `mkdir -p runs/track_h/_logs` → **파일럿** `sbatch --array=0-29%8 …`(seed0, 30셀 ~10–11 GPU-h).
-  2. 완주 후 병합 검증: `python runs/track_h/make_p1w_cnn_table.py`(T2 rows>0·dir1 canon 재현) +
-     GPU-h 실측 → **Yonghee GO 게이트**.
-  3. `sbatch --array=30-89%8 …`(seeds 1-2) → `make_analysis.py` + `make_p1w_cnn_table.py`.
-  4. 보고: W-B 표(P1 vs P1w, 위협×파티션) + H-15 대조 + **FedIF 확장 재현 = W-D 대기**(flirds-only) +
-     수록 의견 — **W-B 단독 판정 금지**(L7·W-A 종합 후 Yonghee 확정). 비용 전체 **~30–32 GPU-h**.
-- **규칙**: 수치 = rundir/analysis 재생성 값만 · push 금지(Yonghee) · 결과 = overview §3.2.3 이웃
-  신규 소절 → paper·T2는 그로부터 · cifar10 iid는 stack-caveat(clean/fr/gn/lf T1 앵커=B200; recovery로 읽기) ·
-  다른 세션 파일 커밋 금지(이 leg 산출물 = rundir + `analysis/p1w_cnn*`만).
-- **W-D(후순위·별도 승인)**: 확장 무대 비-flirds 점수원 8종 → FedIF 역전 확장 재현 판정용.
-
-### 1.6 LLM L1–L8 캠페인 (Yonghee 07-23: 최우선)
-
-**실행 절차·명령 정본 = `runs/track_h/QUEUE_L1L2_2026-07-23.md`**. 사전등록 =
-`runs/track_h/README.md` H-12·H-13(+H-14는 T3에서 선커밋).
-
-| # | 셀 | 비용(GPU-h) | 상태 |
-|---|---|---|---|
-| **L1** | R4 Tier C: {noisy nr0.7, frzero} × **seeds 0·1·2** 전체 재실행(pre-fix seed0 비-canonical; T2 4점수원 = 소스별 프로세스 분할) | ~120–138 | **실행 중**(§1.0b) |
-| **L2** | R4 (b)-fidelity: `phase2_matrix.py REGIME=gsm50k5`(nr 0.7·(b) per-round 2⁵·9방법·탐지기 4종·timing.json) — noisy→clean 각 seed0; 산출은 c2fid 열-호환 스키마 롤업 | ~10–15/셀 | 큐 등재(§1.0b — seed1 뒤·seed2 앞) |
-| **L4** | R4 Tier B **T2-only**(renorm 4점수원 × noisy·frzero) | ~150 | **Yonghee 승인 게이트** — L1·L2 순항 후 |
-| L5 | 비등n silo5 1셀(4:2:1:1:1, clean+noisy, 3-seed) — CNN qskew fidelity와 P5c 쌍 | ~10–15 | 여유 시 |
-| L6 | silo5 graded-noisy(nr~U(0.5,1), `answer_swap_graded`) — spearman_vs_rate LLM 대응 | ~6–12 | 여유 시(L4 우선) |
-| **L7** | **R4 P1w**(w∝max(cum,0)·합-1 재정규화; flirds-only) × {clean,noisy,frzero} × 3-seed × {T1,T2} = 18런 — 스펙·H-14 = `paper/workplan/T3-p1w-llm-impl.md` | ~80 | **확정** — 순서 L2 뒤·**L4 앞** |
-| **L8** | **retrain-(a) 스위트**: gsm5 신설(dual (a)+(b), clean·noisy×3-seed) + silo5 (a)-leg 3셀 — 스펙 = `paper/workplan/T5-retrain-a-suite.md` · **실행 런북 = §1.6b** | gsm5 ~60 + silo5 ~26 | **코드 구현 완료**(이 세션·로컬; 커밋·push·서버 pull 후 실행) — **RTX3090×8 몫**(B200 비점유) |
-
-- **하지 않는 것(재제안 금지)**: gnoise류 LLM 재시도(종결 = `runs/track_h/gnoise_diag/README.md`) ·
-  LIE/sign-flip · (a) 3B/7B · P0 전면 소급 · Fed-LOO · poison · P5h/P5s(rundir는 보존) ·
-  ~~R4 frrand~~(07-23 번복 → §1.6a로 이관) ·
-  std20/anchor5-vs(b) 재실행 · E5 N=10 확장 · **β0.3 잔여 재실행(10셀+deferred 9셀 — 대상 표 전부
-  논문 제외로 폐기 07-23; 부활 시 목록 = `runs/rerun_beta03/RESUME_AFTER_MIGRATION.md`)**.
-- 예산: 필수(L1+L2+L7) 220–248 → +L4 370–398 / B200×4 5일 ≈480 GPU-h(명목); L8은 3090 별도 풀.
-  vast.ai는 B200 초과 시 **비-timing seed 복제만** 예외(timing/canonical 셀 이관 금지).
-
-### 1.6a R4 위협-대칭 확장 — frrand + strmain류 per-client dose (2026-07-23 Yonghee 신규)
-
-> **종전 "R4 frrand 재제안 금지"를 번복**(§1.6 하단 제외목록에서 삭제). 주무대 R4(gsm50k5)는 free-rider를
-> frzero만·라벨-오염을 answer-swap@0.7 단일 dose만 써서 주-CNN(C2: frzero+frrand · label-flip 3-dose+strmain)과
-> **위협 대칭이 깨져 있다**. 둘 다 **값싸고 모달리티 제약 없음**(원리적 배제는 grad-noise 하나뿐) →
-> 대칭 복원 + fidelity 변별(per-client dose-스프레드로 순위 축퇴 완화)이 목적.
-
-| # | 셀 | 내용 | 비용(GPU-h, 추정) | 상태 |
-|---|---|---|---|---|
-| **L9** | R4 frrand | free-rider-random(zero 대신 무작위 업데이트) × {T1,T2} × 3-seed — L1 frzero-leg에 위협 훅만 교체 | ~50–70(L1 frzero-leg 동형) | **신규**(Yonghee: 우선순위·seed 수 판단 대기) |
-| **L10** | R4 strmain류 per-client noisy-dose | answer-swap rate ~U(0.5,1) 클라별 변조(=CNN strmain 대응; 고정 0.7 대비) × 3-seed, **fidelity(vs (b)) 중심** | ~30–45(L2형 per-seed ~10–15) | **신규**(Yonghee 판단 대기) |
-
-- **기대**: (i) L9 frrand → free-rider 클래스가 zero/random 양쪽서 exact-0 계열 생존·renorm 붕괴 재현
-  (CNN flirds leg가 이미 시사: flirds frrand .5895 > vanilla .5876·random_excl .5839). (ii) L10 strmain-dose →
-  F-4(strmain dose-해상도)의 LLM 대응 = Flirds ≳ Flirds-1st 변별. **caveat**: R4 fidelity 포화의 주원인은
-  near-additive 레짐이라 dose 변조로 **부분 개선**만 될 수 있음.
-- **구현 재사용**: L10은 silo5 graded-noisy(L6, `answer_swap_graded`, nr~U(0.5,1))를 **주무대로 승격** ·
-  L9는 CNN `track_c2` frrand 위협 훅의 LLM 대응(free-rider 무작위 업데이트). 신규 러너 최소.
-- **overview 반영 완료**: `survey/flirds-paper-results-overview.md` §5.1(C) 위협표 · §5.2 F-4 각주 ·
-  §5.3 R4 개입표에 ⬚ 축으로 등재.
-
-### 1.7 rundir 정체성 — 잔여 배선
-
-처방 1+2 구현 완료(07-23): 정체성 allow-list(`check_identity`/`precheck`; 우회 `RUNDIR_REPLACE=1`) +
-β 단일화(`shapleyfl.BETA = env SFL_BETA, 기본 0.3`). 배선 완료 = `track_g`·`phase2_matrix`,
-테스트 6개. 상세 진단 = git 히스토리.
-- **잔여**: ① `track_c1`·`track_c2`·`track_c2_fid`·`track_d`·`phase1_*`는 아직 `identity=None`
-  (레거시 통짜 비교) — 이들 config에 `sfl_beta`를 추가하려면 identity 배선을 함께 해야 함.
-  ② 처방 3(`superseded.json`) 미착수.
+정체성 allow-list(`check_identity`/`precheck`; 우회 `RUNDIR_REPLACE=1`) + β 단일화
+(`shapleyfl.BETA = env SFL_BETA, 기본 0.3`). 배선 완료 = `track_g`·`phase2_matrix`, 테스트 6개.
+**잔여 배선**(track_c1/c2/c2_fid/track_d/phase1 = `identity=None`)은 CNN track 몫 → `REMAINING-slurm.md` §6.
