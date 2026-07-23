@@ -15,6 +15,11 @@ so the matrix shows each detector winning on-threat and losing off-threat):
 
 REGIMES (env REGIME):
   silo5      N=5 cross-silo, full participation; (b)=exact 2^N, all coalition baselines run.
+  gsm5       L8/T5 retrain-(a) stage: N=5 full-part GSM8K IID (R4 hypers, 149/client, R=30),
+             the R4 main-stage twin at the oracle-precision point.  DUAL oracle -- (b) exact
+             2^N + (a) exact 2^N retrain (val-loss game; ORACLE_A on by default) -- so every
+             method is scored vs BOTH.  threats = clean / noisy (answer_swap@0.7, clients {0,1}
+             = 40%).  runs on RTX3090 (B200-free); poison/free-rider out of scope.
   gsm50k5    Track H R4 stage (N=50 IID GSM8K, K=5/round; spec runs/track_h/README.md §1.6).
              (b)=per-round decomposition (2^K=32/round -> exact), full method suite incl.
              coalition baselines by default -- the R4 fidelity cell (EXPERIMENT_PLAN L2).
@@ -54,6 +59,19 @@ Run from codes/ (env-parameterized per cell; seeds shard across GPUs 0-3 like ph
   ... REGIME=device100 ALPHA=0.5 ORACLE_B=1 COALITION=1 SEED=0 python -u experiments/phase2_matrix.py
   # R4 fidelity cell (gsm50k5; nr defaults to the R4 dose 0.7; one threat/seed per process):
   ... REGIME=gsm50k5 THREAT=noisy SEED=0 python -u experiments/phase2_matrix.py
+  # L8/T5 gsm5 dual-oracle cell (one threat/seed per process; (a) retrain oracle on by default).
+  # gsm5 auto-sets val_chunk=2 (24 GiB RTX3090 fit -- the default 1B val_chunk=10 OOMs there:
+  # the 2nd-order HVP needs ~38 GiB; chunk-sum is EXACT so this is memory-only, phi unchanged).
+  # Measured peak ~22 GiB, completes.  Add expandable_segments to avoid fragmentation:
+  PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+    REGIME=gsm5 THREAT=clean SEED=0 python -u experiments/phase2_matrix.py
+  PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+    REGIME=gsm5 THREAT=noisy SEED=0 python -u experiments/phase2_matrix.py
+  # gsm5 fidelity-only (skip the hours-long (a) retrains -- vs (b) only):
+  ... REGIME=gsm5 THREAT=clean SEED=0 ORACLE_A=0 python -u experiments/phase2_matrix.py
+  # gsm5 wiring smoke (tiny model, few rounds, no persist -- code path only):
+  SMOKE_MODEL=gpt2 REGIME=gsm5 THREAT=noisy SEED=0 ROUNDS=2 MAX_STEPS=2 VAL=8 PER_CLIENT=6 \
+    BATCH=2 VAL_CHUNK=4 VAL_MAXLEN=64 PERSIST=0 python -u experiments/phase2_matrix.py
 """
 import os
 import time
@@ -84,6 +102,8 @@ from flirds.data.llm import build, build_alpaca_iid, build_crossdevice, build_gs
 from flirds.eval.generate import backdoor_asr
 from flirds.eval.metrics import cosine_distance, euclidean_distance, max_difference, pearson
 from flirds.fl.llm_server import client_optimizer, run_llm_fedavg_logs
+from flirds.oracle.exact_sv import exact_shapley
+from flirds.oracle.exact_sv_llm import subset_valloss_utility
 from flirds.oracle.in_run_sv import (in_run_shapley, in_run_shapley_perround,
                                      in_run_singletons)
 from flirds.repro import seed_everything
@@ -94,13 +114,17 @@ from flirds.timing import PhaseTimer
 MODEL = os.environ.get("SMOKE_MODEL", "meta-llama/Llama-3.2-1B-Instruct")
 SCALE = ("7B" if "Llama-2-7b" in MODEL else
          MODEL.split("-")[-2] if "Llama-3.2-" in MODEL else MODEL.split("/")[-1])  # "1B"/"3B"/"7B"
-TARGET = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+TARGET = (["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+          if "llama" in MODEL.lower() else None)   # None -> peft per-arch default (gpt2 smoke: c_attn)
 ORDER = ["medical", "legal", "finance", "math", "general"]
 
 REGIME = os.environ.get("REGIME", "silo5")
-SILO_LIKE = REGIME in ("silo5", "iid5")    # N=5 full-participation: (b)=exact 2^N, Banzhaf on, no ComFedSV.
+GSM5 = REGIME == "gsm5"                     # L8/T5 stage: N=5 full-part GSM8K IID fidelity + dual (a)+(b) oracle
+EXACT5 = REGIME in ("silo5", "iid5", "gsm5")  # N=5 full-participation: (b)=exact 2^N, Banzhaf on, no ComFedSV.
+SILO_LIKE = REGIME in ("silo5", "iid5")    # cross-silo/iid N=5 config (train=200/val=20/test=40, R=10)
 #   silo5 = 5-domain non-IID stage; iid5 = alpaca IID stage (same N=5 config, only the data builder differs)
 #   -> the corruption-axis x non-IID-axis matrix: {iid5, silo5} x {clean, noisy, free-rider, poison}.
+#   gsm5 = the R4 main-stage twin at N=5 (GSM8K, R=30, 149/client) -- its own config, adds the (a) oracle.
 GSM_LIKE = REGIME == "gsm50k5"             # R4 stage: partial participation -> per-round (b), ComFedSV partial.
 ALPHA = float(os.environ.get("ALPHA", "0.5"))
 BD_TARGET = os.environ.get("BD_TARGET", "delicious")       # single-token target (D1/D2 install regime)
@@ -113,8 +137,9 @@ ATTACKER_LR = float(os.environ.get("ATTACKER_LR", "2e-3"))  # attacker install l
 
 # --- C-1~C-5 mitigation experiments (removal_dose; all default to no-op = current behavior) ---
 NOISY_RATE = float(os.environ.get("NOISY_RATE",            # Exp B: graded answer_swap dose (1.0 = full swap = current)
-                                  "0.7" if GSM_LIKE else "1.0"))   # gsm50k5 default = the R4 dose (nr0.7)
+                                  "0.7" if (GSM_LIKE or GSM5) else "1.0"))   # gsm50k5/gsm5 default = the R4 dose (nr0.7)
 DOSE_MULT = float(os.environ.get("DOSE_MULT", "1.0"))      # Exp B: free-rider-random amplitude multiplier
+ORACLE_A = os.environ.get("ORACLE_A", "1" if GSM5 else "0") == "1"   # L8/T5: (a) exact 2^N retrain oracle (gsm5 default on)
 REMOVAL = os.environ.get("REMOVAL", "0") == "1"            # Exp A2: removal/selection curve (extra retrains; silo only)
 REMOVAL_METHODS = [m for m in os.environ.get("REMOVAL_METHODS", "").split(",") if m]  # [] = all val methods
 
@@ -124,6 +149,12 @@ MODEL_CFG = {"1B": dict(batch=16, val_chunk=10, val_maxlen=384),
              "3B": dict(batch=8, val_chunk=5, val_maxlen=384),
              "7B": dict(batch=4, val_chunk=2, val_maxlen=320)}
 MCFG = dict(MODEL_CFG.get(SCALE, MODEL_CFG["1B"]))
+if GSM5 and SCALE == "1B":
+    # gsm5 runs on RTX3090 (24 GiB; T5/L8), NOT the B200 the 1B default val_chunk=10 was tuned
+    # for.  The estimator's 2nd-order HVP (jvp o grad over eager attn) needs ~38 GiB at chunk=10
+    # and OOMs on 24 GiB; chunk-sum is exact so this is memory-only (phi UNCHANGED).  Measured:
+    # val_chunk=2 -> ~22 GiB peak, completes.  env VAL_CHUNK overrides (set 10 on a B200 for speed).
+    MCFG["val_chunk"] = 2
 
 # per-regime trajectory config (env-overridable; the corrupt sets place the threat).
 SILO = dict(n_clients=5, train=200, val=20, test=40, rounds=10, max_steps=10, lr=1e-3,
@@ -140,7 +171,14 @@ DEVICE = dict(n_clients=100, per_client=300, pool=7000, val=10, test=40, rounds=
 GSM = dict(n_clients=50, val=200, test=0, rounds=200, max_steps=10, lr=1e-3,
            maxlen=512, k_frac=0.1, warmup=3,
            noisy=set(range(20)), freerider=set(range(20)), attacker=0)
-RCFG = dict(SILO if SILO_LIKE else GSM if GSM_LIKE else DEVICE)   # iid5 shares silo5's N=5 config (only the data builder differs)
+# L8/T5 gsm5: the R4 main-stage config at the N=5 oracle-precision point -- GSM8K, R4
+# hypers verbatim (LoRA r16/a32, SGD lr1e-3, 10 steps, maxlen512, warmup3), N=5 FULL
+# participation (round-cohort size 5), 149/client (R4's per-client size; 745 of 7,473),
+# val=200 carved from the official test split.  Corrupt = clients {0,1} = 40% (the R4
+# MAL_FRAC mirror); freerider empty (gsm5 threats = clean/noisy only).
+GSM5CFG = dict(n_clients=5, per_client=149, val=200, test=0, rounds=30, max_steps=10, lr=1e-3,
+               maxlen=512, k_frac=1.0, warmup=3, noisy={0, 1}, freerider=set(), attacker=0)
+RCFG = dict(GSM5CFG if GSM5 else SILO if SILO_LIKE else GSM if GSM_LIKE else DEVICE)   # iid5 shares silo5's N=5 config (only the data builder differs)
 for k in ("rounds", "max_steps", "train", "per_client", "pool", "val", "test", "warmup"):
     if os.environ.get(k.upper()):
         RCFG[k] = int(os.environ[k.upper()])
@@ -187,6 +225,10 @@ def _build_clients(seed, noisy=frozenset(), backdoor=frozenset(), train=None):
                                 n_val=RCFG["val"] * n, n_test=RCFG["test"] * n, seed=seed,
                                 noisy=noisy, backdoor=backdoor, noisy_rate=NOISY_RATE,
                                 backdoor_kwargs=dict(target=BD_TARGET, poison_frac=POISON_FRAC))
+    if GSM5:                                      # L8/T5: N=5 GSM8K IID, 149/client (745 of 7,473 used)
+        return build_gsm8k_iid(RCFG["n_clients"], n_val=RCFG["val"], n_test=RCFG["test"],
+                               seed=seed, noisy=noisy, noisy_rate=NOISY_RATE,
+                               per_client=RCFG["per_client"])
     if GSM_LIKE:                                  # R4 loader (no backdoor seam -- poison out of scope)
         return build_gsm8k_iid(RCFG["n_clients"], n_val=RCFG["val"], n_test=RCFG["test"],
                                seed=seed, noisy=noisy, noisy_rate=NOISY_RATE)
@@ -277,8 +319,9 @@ def build_trajectory(threat, seed, model, tok, init, pkeys, device, exclude=froz
         return logs, clients, corrupt, None, val
 
     if threat == "poison":                                         # D2b synthesis
-        if GSM_LIKE:
-            raise ValueError("poison is out of scope for gsm50k5 (threat scope: clean/noisy/freerider_zero)")
+        if GSM_LIKE or GSM5:
+            raise ValueError(f"poison is out of scope for {REGIME} (GSM8K loader has no backdoor seam; "
+                             "threat scope: clean/noisy)")
         a = RCFG["attacker"]
         corrupt = {a}
         ptrain = POISON_TRAIN if SILO_LIKE else None               # device100 attacker is per_client-sized
@@ -333,7 +376,7 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
     methods.  (b) is exact 2^N at silo5, per-round at device100."""
     n = RCFG["n_clients"]
     out = []
-    silo = SILO_LIKE                                 # N=5 full-participation -> exact 2^N (b), Banzhaf, no ComFedSV
+    silo = EXACT5                                    # N=5 full-participation -> exact 2^N (b), Banzhaf, no ComFedSV (silo5/iid5/gsm5)
 
     if oracle_b:
         b_fn = in_run_shapley if silo else in_run_shapley_perround
@@ -386,6 +429,21 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
     model.load_state_dict(init, strict=False)                # FedDQC scores with the base model (smoke-matched)
     fdq, t_fdq = _timed(lambda: feddqc_scores(score_clients, model, tok, device, seed=seed), device)
     out.append(("FedDQC", "det", np.asarray(fdq), t_fdq))
+
+    if ORACLE_A and silo:                            # (a) exact 2^N retrain oracle -- gsm5 dual GT (L8/T5)
+        # RUN LAST: the 2^N SFTTrainer retrains leave the model in train mode + re-register
+        # the embedding hook (both forbidden to the estimator's functorch HVP), so every
+        # frozen-log method (Flirds/FedIF/FLTrust ...) must already be done.  Same-game
+        # val-loss utility (eq. 5; the (b)/estimator game); good->HIGH -> negate to the repo
+        # suspicion orientation, exactly like (b)oracle.  score_clients carry the threat
+        # (noisy data), so the retrain deploys it -- deployment semantics.
+        util = subset_valloss_utility(model, init, score_clients, tok, device,
+                                      rounds=RCFG["rounds"], lr=RCFG["lr"],
+                                      max_steps=RCFG["max_steps"], batch_size=MCFG["batch"],
+                                      max_length=RCFG["maxlen"], seed=seed,
+                                      val_loss_fn=loss_fn, pkeys=pkeys)
+        phi_a, t_a = _timed(lambda: exact_shapley(n, util), device)
+        out.append(("(a)oracle", "val", -np.asarray(phi_a, dtype=float), t_a))
     return out
 
 
@@ -511,6 +569,25 @@ def report(threat, methods, corrupt, logs, asr):
     return res
 
 
+def report_vs_a(methods, selected):
+    """gsm5 dual-oracle: every val method's Spearman + Pearson vs the (a) RETRAIN oracle
+    (both suspicion-oriented; the "(a)oracle" vector compute_methods appends).  Separate
+    from report()'s vs-(b) table so the hot path is untouched for every other regime.
+    Returns {'spearman_a': {m: r}, 'pearson_a': {m: r}} (empty when (a) did not run)."""
+    vecs = {name: vec for name, kind, vec, _ in methods if kind == "val"}
+    if "(a)oracle" not in vecs:
+        return {}
+    truth = vecs["(a)oracle"]
+    out = {"spearman_a": {}, "pearson_a": {}}
+    for name, vec in vecs.items():
+        if name == "(a)oracle":
+            continue
+        mv, tv = [vec[c] for c in selected], [truth[c] for c in selected]
+        out["spearman_a"][name] = float(spearmanr(mv, tv).correlation)
+        out["pearson_a"][name] = pearson(mv, tv)
+    return out
+
+
 # Rundir identity (protocol §1.7).  First block = exactly what the cell NAME encodes, so
 # "same name, different identity" is by construction a name-generation bug.  Second block =
 # semantic knobs the name does NOT carry (sfl_beta was a source literal, removal/client_opt
@@ -531,8 +608,8 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=
     _abbr = {"freerider_random": "frrand", "freerider_zero": "frzero",
              "freerider_delta": "frdelta"}                               # canonical condition tokens
     _cond = "-".join(_abbr.get(t, t) for t in threats)
-    _setting = REGIME if (SILO_LIKE or GSM_LIKE) else f"{REGIME}-a{ALPHA}"   # silo5 / iid5 / gsm50k5 / device100-a0.5
-    _anchor = "_anchor" if (not SILO_LIKE and not GSM_LIKE and oracle_b and coalition) else ""
+    _setting = REGIME if (EXACT5 or GSM_LIKE) else f"{REGIME}-a{ALPHA}"   # silo5 / iid5 / gsm5 / gsm50k5 / device100-a0.5
+    _anchor = "_anchor" if (not EXACT5 and not GSM_LIKE and oracle_b and coalition) else ""
     _dose = ((f"_nr{NOISY_RATE:g}" if NOISY_RATE != 1.0 else "")     # Exp B dose tokens (default: none)
              + (f"_dm{DOSE_MULT:g}" if DOSE_MULT != 1.0 else ""))
     _seedtok = f"_s{seeds[0]}" if os.environ.get("SEED") else ""   # 1-seed/process shard -> distinct dir (else silent overwrite)
@@ -540,6 +617,7 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=
     rcfg = {k: (sorted(v) if isinstance(v, (set, frozenset)) else v) for k, v in RCFG.items()}
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "alpha": ALPHA,
               "threats": threats, "seeds": seeds, "oracle_b": oracle_b, "coalition": coalition,
+              "oracle_a": ORACLE_A,                                # L8/T5: (a) retrain oracle ran (gsm5)
               "noisy_rate": NOISY_RATE, "dose_mult": DOSE_MULT, "removal": REMOVAL,
               "client_opt": os.environ.get("CLIENT_OPT", "sgd"), "sfl_beta": SFL_BETA,
               "poison": {"bd_target": BD_TARGET, "poison_train": POISON_TRAIN,   # poison-cell knobs (self-describing)
@@ -568,16 +646,18 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     pt = PhaseTimer(device, n_gpus=int(os.environ.get("N_GPUS", "1")))   # §15.1 timing.json substrate
     threats = ([os.environ["THREAT"]] if os.environ.get("THREAT")
+               else ["clean", "noisy"] if GSM5                    # L8/T5: clean + noisy (40% @ nr0.7)
                else ["clean", "noisy", "freerider_zero"] if GSM_LIKE
                else ["noisy", "freerider_random", "freerider_zero", "poison"])
     seeds = [int(os.environ["SEED"])] if os.environ.get("SEED") else [0, 1, 2]
-    oracle_b = os.environ.get("ORACLE_B", "1" if (SILO_LIKE or GSM_LIKE) else "0") == "1"
-    coalition = os.environ.get("COALITION", "1" if (SILO_LIKE or GSM_LIKE) else "0") == "1"
+    oracle_b = os.environ.get("ORACLE_B", "1" if (EXACT5 or GSM_LIKE) else "0") == "1"
+    coalition = os.environ.get("COALITION", "1" if (EXACT5 or GSM_LIKE) else "0") == "1"
 
-    print(f"=== step5 MATRIX | {SCALE} {REGIME}" + (f" alpha={ALPHA}" if not SILO_LIKE else "")
+    print(f"=== step5 MATRIX | {SCALE} {REGIME}"
+          + (f" alpha={ALPHA}" if not EXACT5 and not GSM_LIKE else "")
           + f" | R={RCFG['rounds']} K_frac={RCFG['k_frac']} lr={RCFG['lr']} batch={MCFG['batch']} "
-          f"val_chunk={MCFG['val_chunk']} | ORACLE_B={oracle_b} COALITION={coalition} | "
-          f"threats={threats} seeds={seeds} ===", flush=True)
+          f"val_chunk={MCFG['val_chunk']} | ORACLE_B={oracle_b} COALITION={coalition} "
+          f"ORACLE_A={ORACLE_A} | threats={threats} seeds={seeds} ===", flush=True)
 
     tok, model, init, pkeys = _load(device)
     agg = {t: [] for t in threats}                                # per-threat list of per-seed res dicts
@@ -606,6 +686,12 @@ def main():
                 "runtime": res["runtime"],
                 "corrupt": sorted(int(x) for x in corrupt), "selected": [int(c) for c in sel],
                 "asr": asr}
+            va = report_vs_a(methods, sel)                        # gsm5 dual-oracle: vs the (a) retrain oracle
+            if va:
+                run_metrics[f"{threat}_seed{seed}"].update(va)
+                print("  vs (a)retrain: " + "  ".join(f"{m}={va['spearman_a'][m]:+.3f}"
+                      for m in ("(b)oracle", "Flirds", "Flirds1st", "loss-heur")
+                      if m in va["spearman_a"]), flush=True)
             if REMOVAL and SILO_LIKE:                             # Exp A2: removal/selection curves (extra retrains)
                 mk = f"{threat}_seed{seed}"
                 if threat == "poison":

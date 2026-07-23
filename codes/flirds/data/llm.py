@@ -305,7 +305,7 @@ def _fmt_gsm8k(ex):
 
 
 def build_gsm8k_iid(n_clients, n_val=200, n_test=0, seed=0, noisy=frozenset(),
-                    noisy_rate=1.0):
+                    noisy_rate=1.0, per_client=None):
     """Track H R4 loader (gsm50k5 accuracy stage; spec runs/track_h/README.md §1.6).
 
     train = ALL official train (7,473) -> shuffle(seed) -> equal contiguous chunks
@@ -316,7 +316,12 @@ def build_gsm8k_iid(n_clients, n_val=200, n_test=0, seed=0, noisy=frozenset(),
     official split, so corrupted client data can never leak into either.
     Test records carry domain="gsm8k" + the normalized gold number as `answer`
     (eval.generate.score_records numeric exact-match).  `noisy` = answer-swap
-    clients (rate<1 -> answer_swap_graded; the R4 dose is 0.7)."""
+    clients (rate<1 -> answer_swap_graded; the R4 dose is 0.7).
+
+    `per_client` (T5/L8 gsm5 stage): keep only the first `per_client * n_clients`
+    shuffled train records so each client gets exactly `per_client` (remainder
+    dropped) -- the N=5 "round-cohort" sub-stage reuses R4's 149-per-client size
+    (149*5=745 of the 7,473 used).  None (default) = the full R4 behaviour."""
     from ..eval.metrics import gsm8k_answer
     tr = load_dataset(_GSM8K_ID, "main", split="train", revision=rev(_GSM8K_ID)).shuffle(seed=seed).to_list()
     te = load_dataset(_GSM8K_ID, "main", split="test", revision=rev(_GSM8K_ID)).shuffle(seed=seed).to_list()
@@ -333,6 +338,8 @@ def build_gsm8k_iid(n_clients, n_val=200, n_test=0, seed=0, noisy=frozenset(),
     for ex in tr:
         p, c = _fmt_gsm8k(ex)
         train.append({"prompt": p, "completion": c})
+    if per_client is not None:                         # gsm5: 149/client -> 745 of 7,473 used (rest dropped)
+        train = train[:per_client * n_clients]
     chunk = len(train) // n_clients
     clients = []
     for cid in range(n_clients):

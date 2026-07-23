@@ -49,6 +49,45 @@ def _mean_rouge(generated, records):
     return sum(d["rouge_l"] for d in scored.values()) / len(scored)
 
 
+def subset_valloss_utility(model, init_lora, clients, tokenizer, device, *, rounds, lr,
+                           max_steps, batch_size, max_length, seed, val_loss_fn, pkeys,
+                           free_riders=frozenset(), free_rider_mode="zero", timing=None):
+    """Return `utility(S)` = -val-loss(FedAvg-retrained-on-S) for the (a) SAME-GAME
+    retrain oracle (the val-loss game -- eq. (5) -- shared by the (b) oracle and the
+    estimator; the task-6 lesson).  Val-loss ONLY (no generation), so it is the cheap,
+    apples-to-apples (a) leg used by the L8/T5 gsm5 stage and the silo5 (a)-leg
+    (track_d.make_a_utility generalized; `llm_subset_utility` stays for the ROUGE
+    dual-utility figure).
+
+    utility(S): reset `model` to `init_lora`, FedAvg-retrain on the clients in S (global
+    indices; free-riders remapped to subset-local positions -- deployment semantics), then
+    score the deployed global LoRA state's val loss.  Empty S -> the init adapter's loss.
+    `val_loss_fn` is a make_llm_loss closure over THIS model; `pkeys` its LoRA param names.
+    NB coalition loss diffs are ~1e-2 < bf16 precision -> build `model` fp32 (the (b)-oracle
+    rationale).  If `timing` is a list, appends (|S|, retrain+eval seconds)."""
+    def utility(S):
+        t0 = perf_counter()
+        model.load_state_dict(init_lora, strict=False)                  # fresh adapter
+        if S:
+            subset = [clients[c] for c in S]
+            fr_local = frozenset(i for i, c in enumerate(S) if c in free_riders)
+            logs = run_llm_fedavg_logs(model, tokenizer, subset, rounds, lr, max_steps,
+                                       batch_size=batch_size, max_length=max_length,
+                                       seed=seed, free_riders=fr_local,
+                                       free_rider_mode=free_rider_mode)
+            final = _final_lora_state(logs)
+        else:
+            final = {n: init_lora[n].clone() for n in init_lora}
+        model.eval()                                       # SFTTrainer left train mode + re-registered
+        model.get_input_embeddings()._forward_hooks.clear()  # the embed hook (both value-forward-hostile)
+        with torch.no_grad():                              # value only -> no grad graph
+            u = -float(val_loss_fn({k: final[k].to(device) for k in pkeys}, {}))
+        if timing is not None:
+            timing.append((len(S), perf_counter() - t0))
+        return u
+    return utility
+
+
 def llm_subset_utility(model, init_lora, clients, tokenizer, test_records, device, *,
                        rounds, lr, max_steps, batch_size, max_length, seed,
                        free_riders=frozenset(), free_rider_mode="zero",
