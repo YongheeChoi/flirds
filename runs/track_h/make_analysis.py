@@ -24,10 +24,11 @@ semantics corrected -- see overview 3.2.6):
   - T2 arms skipped as `equals_vanilla` (kept=all -> retrain==vanilla by
     construction) count as delta=0/recovery=0 instead of vanishing from means.
   - The competition score is restricted to the Track H stage cells so every
-    source averages the SAME cells: CNN = R1 dir1 (lf only at the 0.70 dose;
-    reuse-only iid/dose cells stay in cnn_competition.csv but not the score),
-    LLM = R3 silo5 noisy nr1.0 (+ silo5 clean as parity anchor) and R2 std50k5
-    reported as separate stage_cell rows.
+    source averages the SAME cells: CNN = R1 dir1 fixed dose (lf only at 0.70)
+    and the strmain borderline-rate cell as a SEPARATE stage_cell (2026-07-23;
+    reuse-only iid/other-dose cells stay in cnn_competition.csv but not the
+    score), LLM = R3 silo5 noisy nr1.0 (+ silo5 clean as parity anchor) and R2
+    std50k5 reported as separate stage_cell rows.
 """
 from __future__ import annotations
 
@@ -215,10 +216,19 @@ def competition_score(llm, cnn):
         if df.empty:
             continue
         d = df[df["source"].notna()].copy()
-        if stage == "cnn":                 # R1: dir1, lf only at the 0.70 dose
-            d = d[(d["partition"] == "dir1")
-                  & ((d["threat"] != "label_flip") | (d["flip_rate"] == 0.7))]
+        if stage == "cnn":                 # dir1 stage, two dose regimes as SEPARATE cells:
+            #   "dir1"    = fixed dose (free-rider/frrand/grad-noise + lf@0.70); dir1 clean
+            #               is the parity anchor.
+            #   "strmain" = borderline lf, per-client rate ~U(.5,1) so flip_rate is NaN
+            #               (Track H's borderline test; no clean cell -> parity N/A).
+            # Kept apart so the confident-dose score is not diluted by the borderline
+            # regime.  Anchors (vanilla/oracle_excl/flirds) merge from the track_g
+            # gstrmain twin, which shares the (dir1, label_flip, NaN-flip_rate) key.
+            d = d[d["partition"] == "dir1"].copy()
+            strmain = d["threat"].eq("label_flip") & d["flip_rate"].isna()
+            d = d[(d["threat"] != "label_flip") | (d["flip_rate"] == 0.7) | strmain]
             d["stage_cell"] = "dir1"
+            d.loc[d["threat"].eq("label_flip") & d["flip_rate"].isna(), "stage_cell"] = "strmain"
         else:                              # R3 noisy nr1.0 (+clean parity anchor) | R2 std50k5
             d = d[(((d["regime"] == "silo5")
                     & d["threat"].isin(("clean", "noisy")) & (d["nr"] == 1.0))
