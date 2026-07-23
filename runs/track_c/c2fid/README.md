@@ -4,7 +4,7 @@
 > 기여 합 — **`runs/track_c/c1`(N=10 전원참여)과 다른 게임이므로 두 표의 수치를 직접 비교
 > 금지**. (b)가 이 게임의 exact 값이라 fidelity 정의는 자기완결 (계획 §4.5).
 
-설계·결정 전문: 루트 `CNN_CAMPAIGN_PLAN_2026-07-22.md` §4. 러너:
+설계·결정 전문: `CNN_CAMPAIGN_PLAN_2026-07-22.md` §4(`4399be3`에서 삭제 — git 히스토리 참조). 러너:
 `codes/experiments/track_c2_fid.py` (2026-07-23 구현; `tests/test_c2fid.py` 5개 green).
 
 ## 무대 (downstream 과 비트 동일)
