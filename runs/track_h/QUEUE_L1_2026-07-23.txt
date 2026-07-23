@@ -41,10 +41,18 @@ track_g.py|L1_s1_frzero_online|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ARM
 # 원 B(26-27줄)은 드라이버가 consumed=30 으로 점프하며 주석으로 스킵함(§1.7 작업 중 GPU 유휴).
 # Fed-LOO 제거 커밋(0f2e918) 완료 = 조건 충족. phase2_matrix 는 신-가드(identity=IDENTITY) 코드.
 # 자기생성 rundir = runs/phase2_matrix/rundirs/1B_gsm50k5_{noisy_nr0.7,clean}_s0 (fresh -> 충돌無).
-phase2_matrix.py|L2_gsm50k5_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0
-phase2_matrix.py|L2_gsm50k5_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0
-# ============ D' seed2 재-append (L2 뒤로 이동 = fidelity 우선; 36-39 주석) ============
 track_g.py|L1_s2_noisy_obs_t2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=observer T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
+phase2_matrix.py|L2_gsm50k5_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0
+# 재정렬 2026-07-24 00:12 (Yonghee 승인): ↑44 = s2_noisy_obs_t2(19.5h 최장셀)를 L2_noisy 앞으로 이동 => 마감(07-25 03:27)前 완주. L2_noisy는 47로. 줄수·인덱스 불변(내용 스왑만). 신규 dispatch 순: 44 monster -> 45 L2_clean -> 47 L2_noisy -> 48-50 seed2 나머지.
+phase2_matrix.py|L2_gsm50k5_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0
 track_g.py|L1_s2_frzero_obs_t2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARMS=observer T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
 track_g.py|L1_s2_noisy_online|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
 track_g.py|L1_s2_frzero_online|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
+# ============ L4 append (2026-07-24 Yonghee: "campaign 우선, GPU 비는 대로 L4") ============
+# R4 Tier B T2-only, renorm 4점수원(gtg,fedsv,comfedsv,shapleyfl). seed0=B200 canonical(vast.ai 정책).
+# 드라이버는 campaign 44-50 전부 dispatch 후에만 여기 도달 => campaign 100% 우선·co-locate 아님(각 GPU 1셀=경합0).
+# 별도 root rundirs_llm_l4 = canonical rundirs_llm 무충돌. 마감(03:27) 내 미완 셀은 다음 컨테이너 재개
+# (관찰자 완료분은 arm rundir 영속; 미완 관찰자는 재시작). seed1·2 + vast.ai 이관은 REMAINING(Yonghee)에서.
+track_g.py|L4_gsm50k5_noisy_renorm_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm_l4
+track_g.py|L4_gsm50k5_clean_renorm_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm_l4
+track_g.py|L4_gsm50k5_frzero_renorm_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm_l4

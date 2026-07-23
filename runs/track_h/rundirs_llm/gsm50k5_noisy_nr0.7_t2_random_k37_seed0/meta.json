@@ -1,7 +1,8 @@
 {
   "name": "gsm50k5_noisy_nr0.7_t2_random_k37_seed0",
-  "git_sha": "f5d40a714e13c52e00e9f3323c72279b2b381c3e",
+  "git_sha": "a9efd91e77f0c078b59a8b5f534a91ba64ccc467",
   "git_dirty": true,
+  "git_diff_stat": "",
   "env_hash": "812a656f211f80ca",
   "versions": {
     "torch": "2.12.0+cu130",
@@ -11,6 +12,8 @@
     "accelerate": "1.13.0",
     "datasets": "4.8.5",
     "numpy": "2.4.6",
-    "python": "3.12.3"
+    "python": "3.12.3",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200"
   }
 }

@@ -120,6 +120,7 @@ corrupt:
   fr_mode: zero
   gn_ids: []
   gn_gamma: null
+  gn_abs: null
   corrupt:
   - 0
   - 1
@@ -142,10 +143,20 @@ corrupt:
   - 18
   - 19
 noisy_rate: 0.7
+dose_mult: 1.0
+mmlu:
+  limit: 0
+  batch: 16
+obs_sources:
+- flirds
+- flirds1st
+- lossheur
+- fedif
 synth_data: false
 downstream: true
 t2: true
 t2_p5: false
+t2_csign: false
 orientation:
   phi.parquet: suspicion (good->low; repo convention)
   phi_rounds.parquet: raw/cum contribution (good->high = -phi)

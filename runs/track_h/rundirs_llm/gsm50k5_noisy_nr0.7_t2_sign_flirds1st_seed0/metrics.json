@@ -65,7 +65,7 @@
     48,
     49
   ],
-  "vanilla_target": 0.6088231801986694,
+  "vanilla_target": 0.6091606616973877,
   "gate_cfg": {
     "burn_in": 10,
     "tau": 0.0,
@@ -76,10 +76,10 @@
     "alpha_w": 1.0,
     "conf_z": 1.645
   },
-  "final_val_loss": 0.6050406098365784,
+  "final_val_loss": 0.6053898334503174,
   "downstream": {
-    "gsm8k_em": 0.34316353887399464,
-    "rouge_l": 0.3412700568882481
+    "gsm8k_em": 0.34405719392314565,
+    "rouge_l": 0.34217657319303413
   },
   "dedup_shared": false
 }
