@@ -80,10 +80,10 @@ from flirds.fl.intervene import (OnlineScorer, SignAccumulator, _conf_keep,
                                  lossheur_round_raw_fn, make_confgate_select_fn,
                                  make_fixed_excl_select_fn,
                                  make_gatedweight_weights_fn, make_observer_weights_fn,
-                                 make_probweight_weights_fn,
+                                 make_probweight_weights_fn, make_static_weights_fn,
                                  make_signgate_select_fn, make_signgate_weights_fn,
                                  make_weights_fn, make_zgate_select_fn,
-                                 make_zgate_weights_fn, _zscores)
+                                 make_zgate_weights_fn, signw_retrain_wvec, _zscores)
 from flirds.fl.llm_server import run_llm_fedavg_logs
 from flirds.fl.score_providers import (comfedsv_round_raw_fn, fedsv_round_raw_fn,
                                        gtg_round_raw_fn)
@@ -156,6 +156,7 @@ MMLU_BATCH = int(os.environ.get("MMLU_BATCH", "16"))
 V3 = os.environ.get("V3", "0") == "1"
 T2 = os.environ.get("T2", "0") == "1"                 # R4 observer->retrain block
 T2_P5 = os.environ.get("T2_P5", "0") == "1"           # + P5 retrains (t2_csign/t2_pw)
+T2_W = os.environ.get("T2_W", "0") == "1"             # + P1w(=P2) size-weighted retrain (t2_signw; spec T3/L7)
 T2_CSIGN = os.environ.get("T2_CSIGN", "1") == "1"     # 0 = P5-soft only: skip t2_csign_* + its ctrl
 T2_LEGACY = os.environ.get("T2_LEGACY", "1") == "1"   # 0 = skip t2_sign_* (already on disk)
 SYNTH = os.environ.get("SYNTH_DATA", "0") == "1"
@@ -170,8 +171,10 @@ DEFAULT_ARMS = (["observer", "oracle_excl", "random_excl", "flirds_gate_v2"]
                  "flirds_gate_v2", "flirds_zgate_v2", "flirds_w", "lossheur_gate_v2"]
                 + (["oracleb_gate_v2"] if REGIME == "silo5" else [])
                 + (["shapleyfl_gate_v2"] if REGIME == "std50k5" else []))
-# flirds_gatew_v2 (V2w) is DELIBERATELY absent: CNN-first, LLM only after the §5-2
-# promotion criteria pass -- then add it via ARMS explicitly.
+# flirds_gatew_v2 (V2w = paper P1w) is DELIBERATELY absent from the DEFAULT set:
+# CNN-first, LLM only after the §5-2 promotion criteria pass.  T3/L7 (2026-07-23)
+# promotes it for the R4 P1w leg -- run it via ARMS explicitly (+ T2_W=1 for the
+# t2_signw retrain twin).  No new arm code: the _gatew_v2 branch already builds it.
 ARMS = [a for a in os.environ.get("ARMS", "").split(",") if a] or DEFAULT_ARMS
 
 
@@ -576,7 +579,7 @@ def _config(arm, seed, corrupt_cfg):
             "obs_sources": [s for s in os.environ.get(
                 "OBS_SOURCES", "flirds,flirds1st,lossheur,fedif").split(",") if s],
             "synth_data": SYNTH, "downstream": DOWNSTREAM, "t2": T2, "t2_p5": T2_P5,
-            "t2_csign": T2_CSIGN,
+            "t2_csign": T2_CSIGN, "t2_w": T2_W,
             "orientation": {"phi.parquet": "suspicion (good->low; repo convention)",
                             "phi_rounds.parquet": "raw/cum contribution (good->high = -phi)"}}
 
@@ -621,7 +624,8 @@ def main():
     print(f"=== Track G | {SCALE} {REGIME} {THREAT} | N={n} K={RCFG['k_abs']}/round "
           f"R={RCFG['rounds']} lr={RCFG['lr']} | corrupt={sorted(corrupt)} fr_mode={fr_mode} "
           f"nr={NOISY_RATE:g} | gate={GATE} | arms={arms} | seeds={seeds} "
-          f"| downstream={DOWNSTREAM} V3={V3} T2={T2} T2_P5={T2_P5} T2_CSIGN={T2_CSIGN} ===",
+          f"| downstream={DOWNSTREAM} V3={V3} T2={T2} T2_P5={T2_P5} T2_W={T2_W} "
+          f"T2_CSIGN={T2_CSIGN} ===",
           flush=True)
 
     if os.environ.get("PERSIST", "1") == "1":          # fail fast: RunLogger is built in
@@ -709,6 +713,7 @@ def main():
             # T2_P5=1 adds t2_csign_<src> (UCB kept, intervene._conf_keep) and
             # t2_pw_<src> (static w ~ n * Phi(t) retrain) -- same fairness clause:
             # stats come only from the observer's own training-observed stream.
+            # T2_W=1 adds t2_signw_<src> (P1w: static w ~ n * max(cum,0)^alpha; L7).
             prim = next(iter(obs_accs))
             t2_kept = {s: [i for i in range(n) if a.cum[i] > GATE["tau"]]
                        for s, a in obs_accs.items()}
@@ -736,6 +741,15 @@ def main():
                     wvecs[f"t2_pw_{s}"] = wv
                 if T2_CSIGN:
                     ctrl_sizes.add(len(variants[f"t2_csign_{prim}"]))
+            if T2_W:                                   # P1w (=P2) size-weighted retrain
+                # w ~ n * max(cum, 0)^alpha over kept {cum > tau} -- the T2 twin of
+                # the online flirds_gatew_v2 gate (spec T3).  kept SET == t2_sign's
+                # (so the L1 matched random control at that size is reused, no new
+                # ctrl); the survivors' magnitude weighting is the only difference.
+                for s, a in obs_accs.items():
+                    wv = signw_retrain_wvec(a.cum, GATE["tau"], GATE["alpha_w"])
+                    variants[f"t2_signw_{s}"] = sorted(wv)
+                    wvecs[f"t2_signw_{s}"] = wv
             rng = np.random.default_rng(4000 + seed)
             for k_sz in sorted(ctrl_sizes):
                 if 0 < k_sz < n:
@@ -772,19 +786,9 @@ def main():
                     ks = sorted(kept)
                     kept_fr = frozenset(i for i, c in enumerate(ks) if c in fr_ids)
                     kept_gn = frozenset(i for i, c in enumerate(ks) if c in gn_ids)
-                    wf = None
-                    if wvec is not None:               # static Phi-weight aggregation
-                        fac = {i: float(wvec[c]) for i, c in enumerate(ks)}
-
-                        def wf(r, w_r, deltas_map, _fac=fac):
-                            players = sorted(deltas_map)
-                            w = np.array([deltas_map[p][1] * _fac.get(p, 0.0)
-                                          for p in players], dtype=float)
-                            if w.sum() <= 0:
-                                w = np.array([deltas_map[p][1] for p in players],
-                                             dtype=float)
-                            w /= w.sum()
-                            return dict(zip(players, w))
+                    wf = (make_static_weights_fn(          # t2_pw (Phi) / t2_signw (max cum)
+                        {i: float(wvec[c]) for i, c in enumerate(ks)})
+                        if wvec is not None else None)     # re-indexed to subset positions
                     logs_k, t_k = _timed(lambda: _fl(
                         model, tok, [clients[c] for c in ks], init, seed,
                         weights_fn=wf,

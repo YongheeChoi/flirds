@@ -446,6 +446,36 @@ def make_gatedweight_weights_fn(acc, raw_fn, nums, tau=0.0, alpha=1.0, sink=None
     return weights_fn
 
 
+def signw_retrain_wvec(cum, tau=0.0, alpha=1.0):
+    """P1w (=P2) retrain weight vector {client: max(cum, 0)^alpha} over the kept
+    (cum > tau) set -- the fixed-weight (T2) counterpart of the online V2w gate
+    make_gatedweight_weights_fn.  Fed through make_static_weights_fn it aggregates
+    w ~ n * max(cum, 0)^alpha, so the one-shot retrain reproduces the online gate's
+    weights.  Clients with cum <= tau are absent (weight 0 = excluded), making the
+    kept SET identical to P1's plain sign gate -- a frzero/exact-0 free-rider drops
+    out just the same (only the SURVIVORS' relative weighting differs from P1)."""
+    return {c: max(float(cum[c]), 0.0) ** alpha
+            for c in range(len(cum)) if cum[c] > tau}
+
+
+def make_static_weights_fn(fac):
+    """Fixed per-client aggregation weights for a T2 retrain leg: w_i ~ n_i * fac[i]
+    over the round's participants, with n_i read from the delta tuple so it stays
+    correct after the kept subset is re-indexed to 0..|kept|-1.  Keys absent from
+    `fac` get factor 0 (excluded); zero total mass -> plain n-weights fallback (the
+    same guard as the online weight fns).  This is the parameterized weight function
+    shared by the t2_pw (Phi(t)) and t2_signw (max(cum,0)^alpha) retrains -- swap
+    `fac`, same machine."""
+    def weights_fn(r, w_r, deltas_map):
+        players = sorted(deltas_map)
+        w = np.array([deltas_map[p][1] * fac.get(p, 0.0) for p in players], dtype=float)
+        if w.sum() <= 0:
+            w = np.array([deltas_map[p][1] for p in players], dtype=float)
+        w /= w.sum()
+        return dict(zip(players, w))
+    return weights_fn
+
+
 def make_rawweight_weights_fn(acc, raw_fn, nums, tau=0.0, alpha=1.0, sink=None):
     """V1w (CNN-only ablation): PER-ROUND-raw magnitude weighting -- everyone
     trains, weight_i ~ n_i * max(raw_i, 0)^alpha (negatives drop out via max).
