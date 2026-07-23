@@ -51,7 +51,7 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
   **Yonghee GO 후** `sbatch runs/track_c/c2fid/sbatch_fid.sh` → `make_analysis` →
   F-1~F-4 사전등록 대조(MISS 포함 보고) → paper F1·c2fid AUROC ⬚ 채움.
 - 잔여 ② 완주분 overview 결과 블록 반영: §3.2.4 skew·fmnist·strmain + restack drift 표
-  (570a93f 분석 기준; W-A drift **판정**은 T4 세션 몫).
+  (570a93f 분석 기준; W-A drift **판정 = T4 완료 → §1.4d**·`runs/track_h/RUN_P1W_CNN.md`).
 
 ### 1.4c ShapleyFL β0.3 재실행 — 인용 셀 33개 (**확정 07-23 Yonghee**)
 
@@ -68,6 +68,31 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
   §3.1.2(C1) ShapleyFL 행 갱신 → paper §5.2 F4·부록 C 값 갱신 + **B.5 재실행-대기 주석 삭제**.
 - 영향 = cross-game 비교표만(F4 vs (a)·부록 C 전표) — same-game 본문 주장엔 무영향.
 
+### 1.4d T4 W-B — CNN P1w twin leg (RTX3090 Slurm; W-A 판정 완료·W-B 실행 대기)
+
+> **정본 = `runs/track_h/RUN_P1W_CNN.md`**(W-A 판정·실행 절차·비용·수록 규칙). 스펙 =
+> `paper/workplan/T4-p1w-cnn-relay.md`. 커밋 `93ee942`(무GPU 산출물). **P1w ≡ 기존 P2**
+> (`gatew_v2`/`t2_signw`) — 신규 코드 없음, 신규 실행은 **T2 재학습 leg만**(T1 = skew 캠페인 재사용).
+
+- **W-A 완료(무GPU, 로컬)**: restack 드리프트 312쌍 — recovery 앵커(oracle_excl 0.0010·
+  vanilla 0.0024)·P1w(`flirds_gatew_v2` 0.0063) mean|Δ| 전부 분석 밴드 내 → **dir1 P2를 P1w로
+  귀속, 재실행 불필요**(최대 0.233은 미사용 V1 게이트; grad-noise seed-민감하나 3-seed 평균서 상쇄).
+  dir1 canon rundir 재생성 = overview §3.2.3 일치(P1w-T1 오염평균 .5913 / P1w-T2 .5959).
+  **FedIF 역전 확인**(P1w on .6011 / re .6159 > flirds) = 수록 규칙 '타 소스 역전' 발동.
+- **W-B 실행(신규 = T2 leg)**: `sbatch runs/track_h/sbatch_cnn_p1w.sh` = flirds-only observer +
+  `C2_T2=1`, 확장 90셀({cifar10 shard/qskew/iid, fmnist iid/dir1} × {clean,fr,frrand,gn,lf@0.70,
+  strmain} × 3seed). `track_h/rundirs_cnn` 착지 → skew T1과 셀키 병합. 게이트 HP = R1 verbatim.
+  1. `mkdir -p runs/track_h/_logs` → **파일럿** `sbatch --array=0-29%8 …`(seed0, 30셀 ~10–11 GPU-h).
+  2. 완주 후 병합 검증: `python runs/track_h/make_p1w_cnn_table.py`(T2 rows>0·dir1 canon 재현) +
+     GPU-h 실측 → **Yonghee GO 게이트**.
+  3. `sbatch --array=30-89%8 …`(seeds 1-2) → `make_analysis.py` + `make_p1w_cnn_table.py`.
+  4. 보고: W-B 표(P1 vs P1w, 위협×파티션) + H-15 대조 + **FedIF 확장 재현 = W-D 대기**(flirds-only) +
+     수록 의견 — **W-B 단독 판정 금지**(L7·W-A 종합 후 Yonghee 확정). 비용 전체 **~30–32 GPU-h**.
+- **규칙**: 수치 = rundir/analysis 재생성 값만 · push 금지(Yonghee) · 결과 = overview §3.2.3 이웃
+  신규 소절 → paper·T2는 그로부터 · cifar10 iid는 stack-caveat(clean/fr/gn/lf T1 앵커=B200; recovery로 읽기) ·
+  다른 세션 파일 커밋 금지(이 leg 산출물 = rundir + `analysis/p1w_cnn*`만).
+- **W-D(후순위·별도 승인)**: 확장 무대 비-flirds 점수원 8종 → FedIF 역전 확장 재현 판정용.
+
 ### 1.6 LLM L1–L8 캠페인 (Yonghee 07-23: 최우선)
 
 **실행 절차·명령 정본 = `runs/track_h/QUEUE_L1L2_2026-07-23.md`**. 사전등록 =
@@ -81,7 +106,7 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
 | L5 | 비등n silo5 1셀(4:2:1:1:1, clean+noisy, 3-seed) — CNN qskew fidelity와 P5c 쌍 | ~10–15 | 여유 시 |
 | L6 | silo5 graded-noisy(nr~U(0.5,1), `answer_swap_graded`) — spearman_vs_rate LLM 대응 | ~6–12 | 여유 시(L4 우선) |
 | **L7** | **R4 P1w**(w∝max(cum,0)·합-1 재정규화; flirds-only) × {clean,noisy,frzero} × 3-seed × {T1,T2} = 18런 — 스펙·H-14 = `paper/workplan/T3-p1w-llm-impl.md` | ~80 | **확정** — 순서 L2 뒤·**L4 앞** |
-| **L8** | **retrain-(a) 스위트**: gsm5 신설(dual (a)+(b), clean·noisy×3-seed) + silo5 (a)-leg 3셀 — 스펙 = `paper/workplan/T5-retrain-a-suite.md` | gsm5 ~60 + silo5 ~26 | **확정** — **RTX3090×8 몫**(B200 비점유) |
+| **L8** | **retrain-(a) 스위트**: gsm5 신설(dual (a)+(b), clean·noisy×3-seed) + silo5 (a)-leg 3셀 — 스펙 = `paper/workplan/T5-retrain-a-suite.md` · **실행 런북 = §1.6b** | gsm5 ~60 + silo5 ~26 | **코드 구현 완료**(이 세션·로컬; 커밋·push·서버 pull 후 실행) — **RTX3090×8 몫**(B200 비점유) |
 
 - **하지 않는 것(재제안 금지)**: gnoise류 LLM 재시도(종결 = `runs/track_h/gnoise_diag/README.md`) ·
   LIE/sign-flip · (a) 3B/7B · P0 전면 소급 · Fed-LOO · poison · P5h/P5s(rundir는 보존) ·
