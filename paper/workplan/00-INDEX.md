@@ -37,7 +37,7 @@ P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본�
 
 | # | 문서 | 내용 | 의존 | 상태 |
 |---|---|---|---|---|
-| T3 | `T3-p1w-llm-impl.md` | R4 P1w 구현+테스트+스모크+큐 등재(H-14 사전등록 포함) | 없음(코드 세션) | ☐ |
+| T3 | `T3-p1w-llm-impl.md` | R4 P1w 구현+테스트+스모크+큐 등재(H-14 사전등록 포함) | 없음(코드 세션) | ◐ 코드 구현 완료 07-23(T1 `flirds_gatew_v2`·T2 `t2_signw_flirds`[`T2_W=1`]; test_p1w 6종+회귀 green·offline 스모크 green·H-14 선등록) — **B200 L7 실행 대기**(런북 = `REMAINING-b200.md` §2a); 수록 규칙 판정 1줄은 실행 후 이 §1에 기록 |
 | T4 | `T4-p1w-cnn-relay.md` | CNN 서버 세션 전달 스펙(W-A 재사용 판정 + W-B twin leg) | 없음(전달) | ◐ 구현 완료 07-23(W-A 판정=드리프트≈0 귀속·FedIF 역전 확인 / W-B sbatch·분석·H-15 선등록) — **GPU 실행 대기**(RTX3090); 인수인계 = `runs/track_h/RUN_P1W_CNN.md` |
 | T5 | `T5-retrain-a-suite.md` | gsm5 무대 신설 + (a) 러너 배선 + silo5 (a)-leg + 3090 배치 | 없음(코드→3090) | ☐ |
 | T1 | `T1-paper-section5.md` | paper-ko §5·부록 B–E 실작성(기존값 기입 + ⬚ 골격) + 초록/§1/부록A 수정 | 없음(기존값부) | ☑ 07-23 (§5.1–5.6·부록 B–E·§6 스텁·전역수정 A-1~6 완료; CNN dir1 수치는 † = W-A 드리프트 확인 대기, ⬚ = F1·F2·F3·silo5(a)·I1·D1·비용실측·F-4) |

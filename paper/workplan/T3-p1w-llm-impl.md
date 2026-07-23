@@ -31,8 +31,20 @@
 - 비용 ~80 GPU-h(런당 ~4.5). 완료 후 `runs/track_h/make_analysis.py` 확장(P1w 행) → H-14 자동 대조 → rundir+분석 커밋.
 - W-D(비-flirds 점수원 P1w)는 **후순위 별도 승인**: L7 결과 보고 후 Yonghee 게이트(R4 T2 4소스 ≈ +27 GPU-h~).
 
+## 3.1 구현 노트 (2026-07-23·이 세션) — arm 라벨 확정
+
+> 위 §1·§3의 `flirds_p1w`/`t2_w_flirds`는 **논문/분석 표기(P1w)**. 실제 arm 식별자는 **T4 규약과 통일**해
+> **T1 = `flirds_gatew_v2`**(온라인 V2w; `build_arm`의 `_gatew_v2` 분기가 이미 빌드 = 신규 arm 코드 0),
+> **T2 = `t2_signw_flirds`**(`T2_W=1` 신규 블록)로 구현. 근거: `make_analysis.parse_arm`이
+> `gatew_v2`/`t2_signw`→policy **P2**로 매핑 → **LLM(L7)·CNN(W-B) P1w가 동일 정책으로 묶여** '전 범위
+> (W-A·W-B·L7) 승격' 규칙이 성립(신규 이름은 별도 policy가 되어 그 묶임을 깸). T4 문서 §매핑표와 일치.
+
 ## 4. 완료 조건
 
-- [ ] 코드+테스트 green+스모크 로그, H-14 커밋(실행 전), QUEUE/REMAINING 상태 갱신
-- [ ] 18런 rundir(fix-후 git_sha) + 분석 CSV + overview §3.2.4 이웃 절에 결과 기입
+- [x] 코드+테스트 green+스모크 로그 (2026-07-23·이 세션): `intervene.signw_retrain_wvec`+`make_static_weights_fn`,
+      `track_g` `T2_W`+`t2_signw` 블록(재학습 wf = `make_static_weights_fn`, t2_pw 비트동일), `tests/test_p1w.py`
+      6종 + 회귀(signgate 15·track_h 7·r4 4[Win `PYTHONUTF8=1`]) green, offline 스모크 green(noisy·clean).
+      **H-14 = `runs/track_h/README.md` §2 예측표에 등재**(commit·push는 Yonghee). QUEUE·REMAINING-b200 §2a·
+      00-INDEX §2 상태 갱신 완료.
+- [ ] 18런 rundir(fix-후 git_sha) + 분석 CSV + overview §3.2.4 이웃 절에 결과 기입 (B200 L7; 런북 = `REMAINING-b200.md` §2a)
 - [ ] 수록 규칙 판정 1줄(승/동률/미수록)을 00-INDEX §1에 기록

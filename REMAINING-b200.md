@@ -54,7 +54,7 @@ L2 = `phase2_matrix.py REGIME=gsm50k5`(nr 0.7·(b) per-round 2⁵·9방법[Fed-L
 | **L4** | R4 Tier B **T2-only**(renorm 4점수원 × noisy·frzero) | ~150 | **Yonghee 승인 게이트** — L1·L2 순항 후 |
 | L5 | 비등n silo5 1셀(4:2:1:1:1, clean+noisy, 3-seed) — CNN qskew fidelity와 P5c 쌍 | ~10–15 | 여유 시 |
 | L6 | silo5 graded-noisy(nr~U(0.5,1), `answer_swap_graded`) — spearman_vs_rate LLM 대응 | ~6–12 | 여유 시(L4 우선) |
-| **L7** | **R4 P1w**(w∝max(cum,0)·합-1 재정규화; flirds-only) × {clean,noisy,frzero} × 3-seed × {T1,T2} = 18런 — 스펙·H-14 = `paper/workplan/T3-p1w-llm-impl.md` | ~80 | **확정** — 순서 L2 뒤·**L4 앞** |
+| **L7** | **R4 P1w**(w∝max(cum,0)·합-1 재정규화; flirds-only) × {clean,noisy,frzero} × 3-seed × {T1,T2} = 18런 — 스펙·H-14 = `paper/workplan/T3-p1w-llm-impl.md`; **실행 런북 = §2a** | ~80 | **코드 구현 완료**(2026-07-23·이 세션; 커밋·push 후 실행) — 순서 L2 뒤·**L4 앞** |
 
 - **하지 않는 것(재제안 금지)**: gnoise류 LLM 재시도(종결 = `runs/track_h/gnoise_diag/README.md`) ·
   LIE/sign-flip · (a) 3B/7B · P0 전면 소급 · **Fed-LOO**(양 무대 공통 제외; 러너 산출은 무해·미게재) ·
@@ -64,6 +64,62 @@ L2 = `phase2_matrix.py REGIME=gsm50k5`(nr 0.7·(b) per-round 2⁵·9방법[Fed-L
   (※ R4 frrand는 07-23 번복 → §3 L9로 부활.)
 - 예산: 필수(L1+L2+L7) 220–248 → +L4 370–398 / B200×4 5일 ≈480 GPU-h(명목).
   vast.ai는 B200 초과 시 **비-timing seed 복제만** 예외(timing/canonical 셀 이관 금지).
+
+### 2a. L7 실행 런북 — R4 P1w (코드 구현 완료 2026-07-23·이 세션·로컬 Windows; 커밋·push·서버 pull 후 실행)
+
+> 스펙·사전등록 = `paper/workplan/T3-p1w-llm-impl.md` + `runs/track_h/README.md` **H-14**(실행 전 커밋).
+> **P1w ≡ Track H P2**(sign+크기가중) — 신규 게이트 없음. arm 라벨: **T1 `flirds_gatew_v2`**(온라인;
+> `build_arm`의 `_gatew_v2` 분기 이미 존재 = 신규 arm 코드 0) / **T2 `t2_signw_flirds`**(`T2_W=1` 신규 블록).
+> "P1w"는 분석 표기만(CNN W-B와 동일 규약; `make_analysis.parse_arm`이 `gatew_v2`/`t2_signw`→policy P2로 매핑
+> → LLM·CNN P1w가 같은 정책으로 묶여 '전 범위 승격' 규칙 성립).
+
+**구현 파일(이 세션·미커밋)**: `flirds/fl/intervene.py`(`signw_retrain_wvec`=max(cum,0)^α 가중벡터 +
+`make_static_weights_fn`=t2_pw/t2_signw 공용 정적-가중 함수) · `experiments/track_g.py`(`T2_W` 플래그 +
+`t2_signw_<src>` 방출 블록[관찰자 cum>0 kept, w∝n·max(cum,0)^α] + 재학습 wf를 `make_static_weights_fn`으로
+교체[t2_pw 비트동일] + `flirds_gatew_v2` 승격 주석 + config `t2_w` provenance) · `tests/test_p1w.py`(6종 신규).
+**테스트 전부 green**(로컬 fl_shapley env): `test_p1w`(6)·`test_signgate`(15 회귀)·`test_track_h`(7 회귀)·
+`test_r4`(4; **Windows는 `PYTHONUTF8=1` 필수** — trl import cp949 이슈, 리눅스 서버는 불요).
+**로컬 스모크 green**(GPU tiny-gpt2+SYNTH_DATA offline, `CI=1`로 trl telemetry 우회): noisy·clean 두 셀 오류 0 —
+T1 gatedweight 가중 로그 + T2 `t2_signw_flirds` 비어있지 않은 kept서 **재학습 실행 확인**(P1은 kept=전원→
+`equals_vanilla`, **P1w는 가중 불균등→재학습** = T3 의도된 P1↔P1w 차이).
+
+**셀**: {clean, noisy nr0.7, frzero} × seeds {0,1,2} = 9셀. 셀당 신규 = **T1 + T2 = 2런 → 18런**(~80 GPU-h, 런당 ~4.5).
+
+**서버 스모크(GPU 1장, 수 분; 실모델 배선 확인)** — `PERSIST=0`이라 rundir 미생성:
+```
+REGIME=gsm50k5 THREAT=noisy SEED=0 PERSIST=0 DOWNSTREAM=0 ROUNDS=3 VAL=20 MAX_STEPS=2 \
+  ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 \
+  CUDA_VISIBLE_DEVICES=0 PYTHONPATH=. $PY -u experiments/track_g.py
+```
+확인: `flirds_gatew_v2` 가중 로그 + `t2_signw_flirds` 산출 + 오류 0.
+
+**본 셀(GPU 1장/셀; seed-major 4-GPU 분산)** — L1 canonical(`rundirs_llm`) 무수정 위해 **별도 root 착지**:
+```
+RUNDIR_ROOT=<repo>/runs/track_h/rundirs_llm_p1w \
+REGIME=gsm50k5 THREAT=<clean|noisy|frzero> SEED=<0|1|2> \
+  ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 \
+  CUDA_VISIBLE_DEVICES=<g> PYTHONPATH=. $PY -u experiments/track_g.py
+```
+- noisy는 `NOISY_RATE=0.7` 기본, frzero는 THREAT=frzero(nr 무관). 이 명령은 **가장 단순·정확**(오늘 코드 그대로 동작).
+
+**⚠ 관찰자 재사용 vs 재실행 (Yonghee 실행 결정 — 예산에 직결)**:
+- T2 `t2_signw`는 **관찰자(vanilla 궤적)의 최종 cum**이 필요 → 위 명령은 셀마다 `observer`를 **동반 재실행**
+  (~4.5 GPU-h/셀 = estimator arm 등가). 총비용 ≈ 80(P1w 18런) + ~40(관찰자 9회) ≈ **~120 GPU-h**.
+- **T3 §3 예산 ~80은 "관찰자·통제 L1 재사용(재실행 0)" 전제.** noisy·frzero 관찰자는 L1 Tier C가 이미 산출
+  (`rundirs_llm/gsm50k5_{noisy_nr0.7,frzero}_observer_seed{0,1,2}`의 `metrics.json → observer_cum[flirds]`).
+  재사용하려면 **T2 블록이 그 cum을 읽어 obs_accs 구성하는 소형 로더가 필요**(현 코드 미구현 — cum-only라
+  `T2_W`/`T2_LEGACY`만 안전, `T2_P5` 병용 금지; 실 rundir로 스키마·경로 검증 필수). **clean 관찰자는 canonical
+  부재 가능**(L1 Tier C=noisy+frzero만; Tier A clean seed0은 pre-fix 비-canonical) → clean은 관찰자 신규 실행 불가피.
+- **권장**: (a) 예산 여유 → 위 명령대로 셀별 관찰자 동반(단순·정확, ~120) · (b) 예산 빠듯 → noisy·frzero만
+  L1 cum 재사용 로더 추가 + clean만 관찰자 실행(~80~90). **로더 추가 시 T1은 `ARMS=flirds_gatew_v2`만(관찰자 불요)로
+  분리 실행 → `rundirs_llm`에 직접 착지 가능**(P1w arm명 신규라 충돌 0, 별도 root 불필요).
+
+**분석 후속(실행 후)**: `runs/track_h/make_analysis.py` 확장 — ① 별도 root 착지 시 LLM 로더에
+`_load(ROOT/"rundirs_llm_p1w")` 추가(track_h dup-win 유지) ② `competition_score` LLM stage 필터에 gsm50k5
+편입(P1w 행) → **H-14 자동 대조**(pre-registered) → overview §3.2.4 이웃 신규 소절 기입 → paper §5.3·T2 페이지는 그로부터.
+
+**완료 조건(T3 §4)**: 18런 rundir(fix-후 git_sha) + 분석 CSV + overview §3.2.4 결과 +
+**수록 규칙 판정 1줄(승/동률/미수록)을 `paper/workplan/00-INDEX.md` §1에 기록**. push는 Yonghee 직접.
 
 ## 3. 주무대 위협-대칭 확장 — R4 frrand + strmain-dose (2026-07-23 Yonghee 신규)
 
