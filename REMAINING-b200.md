@@ -1,6 +1,6 @@
 # REMAINING (B200 풀) — LLM 주무대 R4 (gsm50k5, 1B)
 
-> 실행처별 인수인계 중 **B200 컨테이너** 몫. 짝 파일 = `REMAINING-slurm.md`(CNN + 작은-N LLM) · 라우터 = `REMAINING.md`.
+> 실행처별 인수인계 중 **B200 컨테이너** 몫. 짝 파일 = `REMAINING-slurm.md`(CNN + 작은-N LLM).
 > **현재: R4 L1·L2 진행 중(§1).** 마감 07-25 03:27. push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 실행 절차·명령 정본 = `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
 > 사전등록 = `runs/track_h/README.md` H-12·H-13(+H-14는 T3에서 선커밋).
