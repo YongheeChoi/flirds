@@ -39,17 +39,9 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
   워처가 `noisy_obs_t2`(pid 20802) 완주 감지 후 자동 실행(`$BATCH/runlogs/consolidate_watch.log`).
 - **완료 후**: rundir 커밋 + `make_analysis.py` 재생성 + H-12/H-13 대조 → paper I1·F2·D1 ⬚ 채움.
 
-### 1.4 논문-인용 셀 provenance 감사 2건 (무GPU~저비용; 장기)
+### 1.4 P0(H1) 소급 재실행 스코프 (무GPU~저비용; 장기)
 
-- **P0(H1) 소급 재실행 스코프**: 논문 인용 셀 한정으로 판단(그룹 카탈로그 = git 히스토리의
-  `RERUN_AFTER_REPRO_FIX_2026-07-21.md`).
-- **ShapleyFL β-출처 = 불일치 확정(07-23 감사 완료)**: 논문 인용 ShapleyFL 값은 실제 **β=0.5**.
-  C1 30셀(git_sha `5cb927b`, 06-12)·1B_anchor5 3셀(`39a0a97`, 06-15) 모두 β0.5→0.3 변경
-  (`e89af94`, 06-25) **이전** rundir — 그 커밋이 계획한 β0.3 전면 재실행이 두 셋엔 미반영
-  (phase2_matrix 일부·3B만 반영). paper B.5 "β=0.3" 서술과 모순(경고 주석 삽입 완료).
-  **해소 = ① 두 셋 β0.3 재실행**(C1 30 = RTX3090 / 1B_anchor5 3 = LLM; rerun_beta03 계획분)
-  **또는 ② 실측 β로 B.5 정정** — **Yonghee 결정 대기**. 영향 = §5.2 F4(cross-game vs (a))·
-  부록 C(C1 전표)뿐 — same-game 본문 주장엔 무영향(ShapleyFL은 cross-game 비교군).
+- 논문 인용 셀 한정으로 판단(그룹 카탈로그 = git 히스토리의 `RERUN_AFTER_REPRO_FIX_2026-07-21.md`).
 
 ### 1.4b CNN Slurm 잔여 — c2fid 본런 GO 대기 (07-22 캠페인은 완주 — `570a93f`·`373a1d8`)
 
@@ -60,6 +52,21 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
   F-1~F-4 사전등록 대조(MISS 포함 보고) → paper F1·c2fid AUROC ⬚ 채움.
 - 잔여 ② 완주분 overview 결과 블록 반영: §3.2.4 skew·fmnist·strmain + restack drift 표
   (570a93f 분석 기준; W-A drift **판정**은 T4 세션 몫).
+
+### 1.4c ShapleyFL β0.3 재실행 — 인용 셀 33개 (**확정 07-23 Yonghee**)
+
+논문 인용 ShapleyFL 값이 실제 **β=0.5** rundir 산출로 판명(감사 07-23): C1 30셀
+(git_sha `5cb927b`, 06-12)·1B_anchor5 3셀(`39a0a97`, 06-15) 모두 β0.5→0.3 변경
+(`e89af94`, 06-25) **이전** — 그 커밋이 계획한 β0.3 전면 재실행이 두 셋엔 미반영
+(phase2_matrix 일부·3B만 반영). paper B.5 "β=0.3" 서술과 불일치 → **β0.3 재실행 확정**.
+
+- **셀 = ① C1 30셀**(track_c1; cifar10·mnist × 5시나리오 × 3seed) = **RTX3090** 몫
+  **② 1B_anchor5 3셀**(track_d; seeds 0·1·2) = **B200** 몫. 오케스트레이터 = `rerun_beta03/` 재사용.
+- 실행 = `SFL_BETA=0.3`(현 소스 기본값이 이미 0.3 — 단일 소스 `shapleyfl.BETA`) + 셀당 `RUNDIR_REPLACE=1`
+  (β0.5 원본을 명시 교체; §1.7 정체성 가드). 착지 rundir git_sha = fix-후 커밋 확인.
+- 완료 후: rundir 교체 커밋 + `make_analysis`/`make_fidelity` 재생성 → overview §3.1.1(anchor5)·
+  §3.1.2(C1) ShapleyFL 행 갱신 → paper §5.2 F4·부록 C 값 갱신 + **B.5 재실행-대기 주석 삭제**.
+- 영향 = cross-game 비교표만(F4 vs (a)·부록 C 전표) — same-game 본문 주장엔 무영향.
 
 ### 1.6 LLM L1–L8 캠페인 (Yonghee 07-23: 최우선)
 

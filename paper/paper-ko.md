@@ -607,10 +607,7 @@ val-loss 게임의 정직한 답은 "기여함"이고, 이는 추정 실패가 �
 스코어를 그대로 쓴다.
 
 표 [D1] — LLM 주무대(`gsm50k5`) AUROC ⬚(◐)
-<!-- 채움: L2 rundir metrics.json auroc — H-13 대조(oracle-동행 기준) 포함.
-     ⚠ STD-DAGMM은 단일 seed 값이 재현되지 않음(같은 seed 재실행 AUROC 평균 |Δ|=0.177 —
-     AE+GMM 비볼록 + 오염/정상 점수분포 겹침으로 순위 여유 0; 3-seed 평균은 안정) →
-     반드시 3-seed mean±std로 기입 + 단일-seed 재현 불가 caveat 각주 -->
+<!-- 채움: L2 rundir metrics.json auroc — H-13 대조(oracle-동행 기준) 포함 -->
 
 | method | noisy | free-rider |
 |---|---|---|
@@ -878,16 +875,14 @@ GTG-Shapley의 5-시나리오 무대 이식이다.
 **B.5 baseline 재구현 주석.** ① 부호 규약은 전 방법 contribution orientation(도움 =
 양수)으로 통일했다(원 정의가 반대 방향이면 부호 반전만). ② ShapleyFL의 EMA는
 $\beta{=}0.3$이다($\beta{=}0.5$ 대비 차이가 같은 셀 재실행 노이즈 수준임을 확인).
-<!-- ⚠ 미해결(2026-07-23 확인, provenance 감사): 이 "β=0.3" 서술과 "β0.5 노이즈 수준 확인"은
-     논문이 인용하는 ShapleyFL 값과 아직 어긋난다. 인용 값 — 표 [F4] anchor5 vs (a)의 ShapleyFL
-     .767, 부록 C의 CNN C1 ShapleyFL — 은 전부 β=0.5 rundir 산출이다:
+<!-- ⚠ 재실행 대기(2026-07-23 Yonghee 결정 = β0.3 재실행): 현재 이 "β=0.3" 서술은 논문 인용
+     ShapleyFL 값과 잠정 불일치다 — 인용 값(표 [F4] anchor5 vs (a)의 .767, 부록 C의 CNN C1)은
+     아직 β=0.5 rundir 산출:
        · C1 30셀 = git_sha 5cb927b (2026-06-12), track_c1 shapleyfl_from_logs(beta=0.5)
        · 1B_anchor5 3셀 = git_sha 39a0a97 (2026-06-15), track_d shapleyfl_from_logs(beta=0.5)
-     β 0.5→0.3 변경은 e89af94(2026-06-25)이고, 그 커밋이 계획한 "ShapleyFL 든 전 셀 β0.3 재실행
-     (track_c1 30·track_d 18·…)"이 C1·1B_anchor5에는 반영되지 않았다(phase2_matrix 일부·3B만 반영).
-     해소 = ① 두 셋을 β0.3으로 재실행(rerun_beta03 계획분; C1 30=RTX3090, anchor5 3=LLM) 또는
-     ② 실측 β로 이 문안 정정. Yonghee 결정 대기(REMAINING §1.4). 본문 same-game(Flirds 계열)
-     주장에는 무영향 — ShapleyFL은 cross-game 비교군. -->
+     β 0.5→0.3 변경 e89af94(2026-06-25)의 재실행 계획이 이 두 셋엔 미반영이었음(phase2_matrix 일부·3B만).
+     해소 = β0.3 재실행 확정(REMAINING §1.4; C1 30=RTX3090, 1B_anchor5 3=B200). 착지 후 rundir 교체 +
+     F4·부록 C 값 갱신 + 이 주석 삭제. same-game 본문 주장엔 무영향(ShapleyFL=cross-game 비교군). -->
 ③
 ComFedSV의 utility 행렬 low-rank 완성은 사후 일괄 계산이 원형이므로, per-round 점수가
 필요한 개입 무대(§5.3)에서는 균등평균 submodel + 손실-감소 효용의 per-round 대용치(원 논문
