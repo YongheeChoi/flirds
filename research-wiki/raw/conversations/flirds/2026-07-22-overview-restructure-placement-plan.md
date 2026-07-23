@@ -350,3 +350,13 @@ Yonghee 재지적: "§3.1.3은 fed-loo 비교 재실험(E4) 아니냐? fed-loo �
 - **실행**: §3.1.3 → 'N=10 exact 2¹⁰ oracle (E5)'로 재작성(E4 std20/anchor5 fidelity·runtime 열 삭제; b1=N=10 Sp/Pe, b2=N=10 runtime). **E4 참조 13곳 정합**: caveat 11(정본 홈, rundir 소싱)·caveat 15(§3.1.3 E4 제거 반영)·§2 row19(runtime 정본으로 repurpose)·§2.1 매핑·소스노트(§29)·ddof 주(§25)·§5 결론 2곳(1360 loss-heur cheaper·1377 std20 역전 = `rundirs_e4_fedloo` 존속 소싱)·§3.4.2 caveat(939)·timing(1515)·repro(1541)·§8 커버리지(1556).
 - **검증**: 고아 E4 숫자 0(3568/1535 삭제; 2943/4703/657/716은 rundir-소싱 유지) · row19 11열 · §3.1.3 count 16 전부 E5-valid · dangling 참조 0.
 - runs/ 읽기전용 · GPU 미실행 · paper/ 무수정 · 로컬 커밋만(push = Yonghee).
+
+### (11차) T2 실행 — 논문-수록 결과 overview 페이지 + 시각화 신설
+
+Yonghee: "T2-results-overview-page 문서를 읽고 작업 수행. 완료되면 프롬프트 문서와 flirds-experiment-results-overview는 지워도 돼." → 진행 중 라벨-플립 문장 요청(다른 세션 혼동)으로 중단·회신만 후 취소, T2 재개. 확인 2건: ① overview 삭제 = **"그냥 남겨놔"(존치) + 새 페이지는 dependency 없이**(자립형) ② figure = **"로컬에 anaconda 있으니 그거 써"**(→ PNG 실제 생성).
+
+- **산출물**: `research-wiki/survey/flirds-paper-results-overview.md`(신규) = paper-ko §5 미러 대시보드(수록 실험만·⬚=미완+채울 rundir 경로·전량은 카탈로그 담당). `flirds-paper-results-overview-figs/make_figures.py` + PNG 6종.
+- **자립형**: 값 정본을 overview에 두지 않고 `runs/<track>/…` rundir·analysis CSV 직접 소싱(Yonghee "dependency 없이").
+- **figure(anaconda `C:\Users\chyoy\anaconda3\python.exe`, numpy/pandas/matplotlib/pyarrow/scipy)**: F1 CNN C1 vs(a) heatmap · F2 anchor5 vs(a) bar(±std) · F5 CNN dir1 P1 경쟁 · F7 비용(op-count+지수스케일) · F8 removal 곡선 · F9 2차항 k-sweep. F3(메인쌍 vs b)·F4(R4 EM)·F6(탐지)=데이터 미착지 → 스크립트 자동 skip, 페이지 ⬚ 유지. 값 대조 = overview와 일치(F2 0.933·F9 0.891/0.305·F7 160×/159×). loss-heur는 removal_dose rundir가 C6-pre-fix(165s)라 F7 Panel A서 제외(나머지 canon 일치).
+- **미삭제**: overview(존치 지시) + T2 프롬프트 문서(00-INDEX 참조 존속 — 삭제 permission은 있으나 재확인 안 됨 = 보류). 00-INDEX T2 상태 ☐→✅.
+- runs/ 읽기전용 · GPU 미실행 · paper/ 무수정 · 로컬 커밋만(push = Yonghee).

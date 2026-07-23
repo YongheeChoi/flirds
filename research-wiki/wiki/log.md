@@ -661,3 +661,8 @@ Both fixed; etymology updated in [[../CLAUDE]] and [[flirds]] and the previous t
 
 - touched: [[survey/flirds-experiment-results-overview]]
 - note: (앞 항목 후속) Yonghee 재지적 — §3.1.3의 E4 leg는 Fed-LOO 비교용(폴더 `rundirs_e4_fedloo`)이라 Fed-LOO 비게재 시 불필요. 결정 "E4만 제거, E5 슬림 유지": §3.1.3을 'N=10 exact 2¹⁰ oracle(E5)'로 재작성(E4 std20/anchor5 열 삭제), E5는 P6 'N=5 coarse' 반박이라 유지. loss-heur post-fix 657/2199s 정본은 **caveat 11 본문으로 이관**(rundir 존속). E4 참조 13곳 재소싱(caveat 11 홈·§2 row19 repurpose·§2.1 매핑·§5 결론 rundir-소싱·timing·repro·커버리지). 고아 숫자 0·컬럼 정합·dangling 0 확인. runs/ 읽기전용·paper/ 무수정·로컬 커밋만.
+
+## [2026-07-23] note | T2 실행 — 논문-수록 결과 overview 페이지 + figures 신설
+
+- touched: [[survey/flirds-paper-results-overview]] (신규), [[survey/flirds-experiment-results-overview]] (미수정 — 자립형 소싱)
+- note: paper/workplan T2 수행. `flirds-paper-results-overview.md` 신설 = paper-ko §5 순서 미러(5.1 세팅→5.2 fidelity→5.3 개입→5.4 탐지→5.5 비용→5.6 ablation→부록 B–E), 논문-수록 실험만·미완은 ⬚+채울 rundir 경로. **Yonghee 지시로 전량 카탈로그(overview)에 의존 안 하는 자립형**(값=rundir/analysis 직접 소싱). 시각화 폴더 `flirds-paper-results-overview-figs/` + `make_figures.py`(matplotlib, 리포 CSV/rundir 입력) 신설, **로컬 anaconda로 F1·F2·F5·F7·F8·F9 6종 PNG 실제 생성**(F3/F4/F6=데이터 미착지 ⬚ skip). 값 검증: F2 anchor5 vs(a) 0.933 동률·F9 k-sweep 0.891/0.305·F1 CNN vs(a)·F7 5×/160×/159× = overview 수치와 일치. runs/ 읽기전용·GPU 미실행·paper/ 무수정·로컬 커밋만.
