@@ -84,11 +84,33 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
 | **L8** | **retrain-(a) 스위트**: gsm5 신설(dual (a)+(b), clean·noisy×3-seed) + silo5 (a)-leg 3셀 — 스펙 = `paper/workplan/T5-retrain-a-suite.md` | gsm5 ~60 + silo5 ~26 | **확정** — **RTX3090×8 몫**(B200 비점유) |
 
 - **하지 않는 것(재제안 금지)**: gnoise류 LLM 재시도(종결 = `runs/track_h/gnoise_diag/README.md`) ·
-  LIE/sign-flip · R4 frrand · (a) 3B/7B · P0 전면 소급 · Fed-LOO · poison · P5h/P5s(rundir는 보존) ·
+  LIE/sign-flip · (a) 3B/7B · P0 전면 소급 · Fed-LOO · poison · P5h/P5s(rundir는 보존) ·
+  ~~R4 frrand~~(07-23 번복 → §1.6a로 이관) ·
   std20/anchor5-vs(b) 재실행 · E5 N=10 확장 · **β0.3 잔여 재실행(10셀+deferred 9셀 — 대상 표 전부
   논문 제외로 폐기 07-23; 부활 시 목록 = `runs/rerun_beta03/RESUME_AFTER_MIGRATION.md`)**.
 - 예산: 필수(L1+L2+L7) 220–248 → +L4 370–398 / B200×4 5일 ≈480 GPU-h(명목); L8은 3090 별도 풀.
   vast.ai는 B200 초과 시 **비-timing seed 복제만** 예외(timing/canonical 셀 이관 금지).
+
+### 1.6a R4 위협-대칭 확장 — frrand + strmain류 per-client dose (2026-07-23 Yonghee 신규)
+
+> **종전 "R4 frrand 재제안 금지"를 번복**(§1.6 하단 제외목록에서 삭제). 주무대 R4(gsm50k5)는 free-rider를
+> frzero만·라벨-오염을 answer-swap@0.7 단일 dose만 써서 주-CNN(C2: frzero+frrand · label-flip 3-dose+strmain)과
+> **위협 대칭이 깨져 있다**. 둘 다 **값싸고 모달리티 제약 없음**(원리적 배제는 grad-noise 하나뿐) →
+> 대칭 복원 + fidelity 변별(per-client dose-스프레드로 순위 축퇴 완화)이 목적.
+
+| # | 셀 | 내용 | 비용(GPU-h, 추정) | 상태 |
+|---|---|---|---|---|
+| **L9** | R4 frrand | free-rider-random(zero 대신 무작위 업데이트) × {T1,T2} × 3-seed — L1 frzero-leg에 위협 훅만 교체 | ~50–70(L1 frzero-leg 동형) | **신규**(Yonghee: 우선순위·seed 수 판단 대기) |
+| **L10** | R4 strmain류 per-client noisy-dose | answer-swap rate ~U(0.5,1) 클라별 변조(=CNN strmain 대응; 고정 0.7 대비) × 3-seed, **fidelity(vs (b)) 중심** | ~30–45(L2형 per-seed ~10–15) | **신규**(Yonghee 판단 대기) |
+
+- **기대**: (i) L9 frrand → free-rider 클래스가 zero/random 양쪽서 exact-0 계열 생존·renorm 붕괴 재현
+  (CNN flirds leg가 이미 시사: flirds frrand .5895 > vanilla .5876·random_excl .5839). (ii) L10 strmain-dose →
+  F-4(strmain dose-해상도)의 LLM 대응 = Flirds ≳ Flirds-1st 변별. **caveat**: R4 fidelity 포화의 주원인은
+  near-additive 레짐이라 dose 변조로 **부분 개선**만 될 수 있음.
+- **구현 재사용**: L10은 silo5 graded-noisy(L6, `answer_swap_graded`, nr~U(0.5,1))를 **주무대로 승격** ·
+  L9는 CNN `track_c2` frrand 위협 훅의 LLM 대응(free-rider 무작위 업데이트). 신규 러너 최소.
+- **overview 반영 완료**: `survey/flirds-paper-results-overview.md` §5.1(C) 위협표 · §5.2 F-4 각주 ·
+  §5.3 R4 개입표에 ⬚ 축으로 등재.
 
 ### 1.7 rundir 정체성 — 잔여 배선
 
