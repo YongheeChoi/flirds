@@ -851,7 +851,14 @@ $N{=}100$·10/100, $R{=}30$·5 steps, 클라당 300, Dirichlet $\alpha{=}0.5$, v
   스케일에 맞춘 무작위 delta 제출.
 - **grad-noise**(CNN): 정상 로컬 학습 후 업데이트에 가우시안 노이즈 주입.
 - **label-flip@rate**(CNN): rate 비율의 라벨을 무작위 교체. **strmain**: 오염 클라이언트별
-  rate를 $U(0.5, 1)$에서 추첨(연속 강도 무대). **feature-noise**: 입력에 데이터 표준편차
+  rate를 $U(0.5, 1)$에서 추첨(연속 강도 무대). 이때 label-flip의 오염 클라이언트 집합은
+  FedCorr의 $(\rho, \tau)$ 잡음 모델을 공식 구현 그대로 따른다: 오염 여부가 클라이언트별 독립
+  Bernoulli($\rho{=}0.4$)로 뽑혀 **오염 수가 시드마다 변동**하며($N{=}100$ 실현값 39/48/47,
+  평균 44.7% — 표에는 명목 $\rho$ 대신 실현 수를 병기), 위 strmain이 곧 FedCorr의 기본 강도
+  draw($\tau \sim U(0.5,1)$)이고 고정-dose 셀 $\{0.15, 0.35, 0.70\}$은 그 draw를 지정값으로
+  대체한 것이다(update-level 위협 — free-rider·frrand·grad-noise — 는 준거 문헌이 없어
+  정확히 $\lfloor \rho N \rceil{=}40$명 비복원 추출; 모든 대조는 위협을 고정한 채 이뤄지므로
+  두 규약이 한 비교 안에서 만나지 않는다). **feature-noise**: 입력에 데이터 표준편차
   대비 $\sigma$ 가우시안. **label/quantity-skew**(`c1`): 비IID 분배 자체가 시나리오(오염
   없음).
 
