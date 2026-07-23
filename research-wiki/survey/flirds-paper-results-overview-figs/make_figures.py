@@ -85,8 +85,9 @@ def f1():
         print("  [skip] F1: missing track_c/fidelity.csv"); return False
     df = pd.read_csv(csv)
     df = df[~df["method"].isin(EXCLUDE)]
-    # per dataset block: corruption scenarios first (signal), no-corruption last
-    scen_order = ["feature_noise", "label_flip", "quantity_skew", "label_skew", "iid"]
+    df = df[df["scenario"] != "label_skew"]              # dropped per Yonghee 07-23
+    # per dataset block: corruption scenarios first (signal), iid control last
+    scen_order = ["feature_noise", "label_flip", "quantity_skew", "iid"]
     rows = ([("cifar10", s) for s in scen_order] + [("mnist", s) for s in scen_order])
     M = [m for m in M8 if m in df["method"].unique()]
 
@@ -99,29 +100,32 @@ def f1():
                     g[i, j] = piv.loc[(d, s, m)]
                 except KeyError:
                     pass
-        return g
+        avg = np.nanmean(g, axis=0, keepdims=True)        # per-method mean over 8 cells
+        return np.vstack([g, avg])
 
-    fig, axes = plt.subplots(1, 2, figsize=(14.6, 6.4), sharey=True)
+    ylabels = [f"{d}/{s}" for d, s in rows] + ["avg (8-cell)"]
+    fig, axes = plt.subplots(1, 2, figsize=(14.6, 6.6), sharey=True)
     im = None
     for ax, (col, name) in zip(axes, [("spearman_a", "Spearman"), ("pearson_a", "Pearson")]):
         grid = build(col)
         im = ax.imshow(grid, cmap="RdBu_r", vmin=-1, vmax=1, aspect="auto")
         ax.set_xticks(range(len(M))); ax.set_xticklabels(M, rotation=35, ha="right")
         ax.axhline(len(scen_order) - 0.5, color="k", lw=1.0)   # cifar10 | mnist split
-        for i in range(len(rows)):
+        ax.axhline(len(rows) - 0.5, color="k", lw=1.4)         # data | avg split
+        for i in range(grid.shape[0]):
             for j in range(len(M)):
                 v = grid[i, j]
                 if not np.isnan(v):
                     ax.text(j, i, f"{v:+.2f}", ha="center", va="center", fontsize=6.5,
                             color="white" if abs(v) > 0.55 else "black")
         ax.set_title(f"{name} vs (a)", fontsize=9.5)
-    axes[0].set_yticks(range(len(rows)))
-    axes[0].set_yticklabels([f"{d}/{s}" for d, s in rows], fontsize=8)
+    axes[0].set_yticks(range(len(ylabels)))
+    axes[0].set_yticklabels(ylabels, fontsize=8)
     fig.subplots_adjust(left=0.065, right=0.9, top=0.9, bottom=0.12, wspace=0.05)
     cax = fig.add_axes([0.923, 0.12, 0.012, 0.78])
     fig.colorbar(im, cax=cax, label="corr vs (a)")
-    fig.suptitle("F1 · CNN C1 fidelity vs (a) retrain oracle  (3-seed mean; per dataset: "
-                 "corruption scenarios top, no-corruption label_skew/iid foot)", fontsize=9.5)
+    fig.suptitle("F1 · CNN C1 fidelity vs (a) retrain oracle  (3-seed mean; label_skew dropped; "
+                 "corruption top / iid foot; last row = per-method avg over 8 cells)", fontsize=9.2)
     return save(fig, "f1_cnn_c1_vs_a_heatmap.png", tight=False)
 
 

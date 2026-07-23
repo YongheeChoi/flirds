@@ -108,11 +108,11 @@ tags: [flirds, paper, results, dashboard]
 **LLM gsm5 (신설, 주표) — dual (a)+(b), clean·noisy** ⬚ · **LLM silo5 (a)-leg (비IID 보조)** ⬚
 - 채움 = `runs/track_d/rundirs/gsm5_*`(L8 신설) · `runs/track_d/rundirs/1B_silo5_*_aleg`(L8). gsm5 = 주무대와 데이터·위협·오염비율·val·하이퍼 동일, N=5 full·R=30만 축소("라운드-cohort 축소판").
 
-**CNN C1 시나리오별 vs (a) retrain oracle** ● (3-seed 평균; 전 10칸 = cifar10·mnist × 5 시나리오, 전 8 방법)
+**CNN C1 시나리오별 vs (a) retrain oracle** ● (3-seed 평균; 8칸 = cifar10·mnist × 4 시나리오 · 전 8 방법 · **label_skew 제외**)
 
-> **오염 구조 (칸마다 신호가 다른 이유 + 데이터셋별 오염군)**: C1의 오염은 **클라 index 사다리** `_pair_ladder`(pair p → 5p%, N=10 → **0/0/5/5/10/10/15/15/20/20%**)이고, **`label_flip`·`feature_noise` 두 시나리오에만** 적용 = strmain류 **per-client 강도 변조**(클라마다 오염 dose가 다름). **`iid`·`label_skew`·`quantity_skew`는 오염 0**(순수 파티션 이질성)이라 vs (a) 신호가 약한 **신호-부재 칸**. ⚠ **오염 사다리는 데이터셋·seed 무관 동일**(client index로만 결정) → cifar10↔mnist의 값 차이는 *오염군이 달라서가 아니라* 과제 난이도 차이다(아래 읽기 iii).
+> **오염 구조 (칸마다 신호가 다른 이유 + 데이터셋별 오염군)**: C1의 오염은 **클라 index 사다리** `_pair_ladder`(pair p → 5p%, N=10 → **0/0/5/5/10/10/15/15/20/20%**)로 **`label_flip`·`feature_noise`에만** 적용 = strmain류 **per-client 강도 변조**(클라마다 dose가 다름). `quantity_skew`=크기 이질성, **`iid`=오염0 신호-부재 대조군**. *(label_skew는 오염0 + (a)-게임 축퇴로 정보량 낮아 07-23 삭제.)* ⚠ **오염 사다리는 데이터셋·seed 무관 동일**(client index로만 결정) → cifar10↔mnist 값 차이는 *오염군이 달라서가 아니라* 과제 난이도(아래 읽기 iii).
 
-**Spearman vs (a)** (전 10칸; 신호-강 위 / 신호-부재 아래)
+**Spearman vs (a)** (신호-강 위 / iid 아래 / 방법별 평균)
 
 | dataset/scenario | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
@@ -122,12 +122,12 @@ tags: [flirds, paper, results, dashboard]
 | mnist / feature_noise | +0.33 | +0.44 | +0.44 | +0.40 | -0.07 | -0.07 | +0.60 | +0.66 |
 | mnist / label_flip | **+0.96** | +0.97 | +0.97 | +0.97 | +0.96 | +0.94 | +0.96 | +0.96 |
 | mnist / quantity_skew | **+0.85** | +0.77 | +0.84 | +0.56 | +0.68 | +0.65 | +0.51 | -0.09 |
-| cifar10 / label_skew *(오염0)* | -0.18 | -0.07 | +0.14 | +0.44 | +0.40 | +0.28 | +0.12 | +0.19 |
 | cifar10 / iid *(오염0)* | -0.23 | -0.13 | -0.18 | -0.20 | -0.18 | +0.30 | +0.00 | +0.07 |
-| mnist / label_skew *(오염0)* | -0.28 | -0.06 | -0.16 | -0.22 | -0.14 | -0.04 | +0.28 | +0.54 |
 | mnist / iid *(오염0)* | +0.36 | +0.52 | +0.48 | +0.19 | -0.11 | -0.09 | +0.66 | +0.74 |
+| **평균 (8칸)** | **+0.50** | **+0.53** | **+0.53** | **+0.44** | **+0.32** | **+0.39** | **+0.52** | **+0.38** |
+| _평균 (iid 제외 6칸)_ | _+0.64_ | _+0.64_ | _+0.66_ | _+0.59_ | _+0.48_ | _+0.49_ | _+0.58_ | _+0.38_ |
 
-**Pearson vs (a)** (전 10칸; 같은 순서)
+**Pearson vs (a)** (같은 순서)
 
 | dataset/scenario | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
@@ -137,13 +137,13 @@ tags: [flirds, paper, results, dashboard]
 | mnist / feature_noise | +0.42 | +0.52 | +0.46 | +0.22 | -0.10 | -0.17 | +0.63 | +0.63 |
 | mnist / label_flip | +0.99 | +0.99 | +0.99 | +0.98 | +0.97 | +0.94 | **+1.00** | +0.98 |
 | mnist / quantity_skew | +0.59 | +0.60 | +0.61 | +0.45 | +0.55 | +0.63 | +0.42 | -0.15 |
-| cifar10 / label_skew *(오염0)* | -0.15 | -0.08 | +0.01 | +0.23 | +0.17 | +0.05 | +0.05 | +0.03 |
 | cifar10 / iid *(오염0)* | -0.18 | -0.06 | -0.02 | -0.14 | -0.20 | +0.46 | +0.05 | +0.09 |
-| mnist / label_skew *(오염0)* | -0.17 | +0.05 | -0.02 | -0.22 | -0.23 | -0.13 | +0.29 | +0.55 |
 | mnist / iid *(오염0)* | +0.42 | +0.59 | +0.54 | +0.32 | -0.09 | -0.15 | +0.69 | +0.70 |
+| **평균 (8칸)** | **+0.48** | **+0.52** | **+0.53** | **+0.41** | **+0.28** | **+0.40** | **+0.51** | **+0.39** |
+| _평균 (iid 제외 6칸)_ | _+0.61_ | _+0.60_ | _+0.62_ | _+0.52_ | _+0.42_ | _+0.48_ | _+0.56_ | _+0.39_ |
 
-> 읽기: (i) **신호-강 칸(label_flip·feature_noise·quantity_skew)**서 두 게임 수렴 — same-game 3종 1위 2칸(cifar10/fn·mnist/qskew), mnist/label_flip은 전 방법 Sp +0.94~+0.97·Pe +0.94~+1.00 동수렴. (ii) **신호-부재 칸(iid·label_skew, 오염0)**은 대부분 0~음수(파티션 이질성만 있어 (a) 재학습-게임이 순위를 재현 못 함); 이런 칸선 renorm-족이 소폭 우위(cifar10/qskew ShapleyFL Sp +0.81·label_skew GTG +0.44 = (a) 재정규화-게임 심판이 renorm에 유리, 부록 C 각주 T10). (iii) **데이터셋 차 = 난이도**: 같은 오염 사다리인데 mnist/label_flip +0.96 > cifar10/label_flip +0.52 = mnist가 더 분리적(쉬운 과제)이라 오염 신호가 (a)에도 뚜렷 — 오염군이 다른 게 아니다. (iv) **Spearman↔Pearson 정합**(순위·값 수준 대체로 일치; renorm-유리 칸서만 소폭 갈림). **출처**: `runs/track_c/fidelity.csv`(`spearman_a`/`pearson_a`, (dataset,scenario,method) 3-seed 평균).
-> ![[flirds-paper-results-overview-figs/f1_cnn_c1_vs_a_heatmap.png]] *(좌=Spearman·우=Pearson 2-panel)*
+> 읽기: (i) **신호-강 칸(label_flip·feature_noise·quantity_skew)**서 두 게임 수렴 — same-game 3종 1위 2칸(cifar10/fn·mnist/qskew), mnist/label_flip은 전 방법 Sp +0.94~+0.97·Pe +0.94~+1.00 동수렴. (ii) **평균 읽는 법 — iid 희석 주의**: iid(오염0)은 대부분 0~음수(파티션만 있어 (a) 재학습-게임이 순위 재현 못 함)라 **평균(8칸)에 iid가 섞이면 same-game이 깎여 renorm과 붙어 보인다**(Flirds Sp +0.50 ≈ ShapleyFL +0.52). **실제 서열은 iid 제외 6칸**: same-game **0.64~0.66** > GTG 0.59 > ShapleyFL 0.58 > FedSV/ComFedSV 0.48~0.49 > FedIF 0.38. renorm-족이 신호-부재/크기 칸서 부분 우위(cifar10/qskew ShapleyFL Sp +0.81 = (a) 재정규화-게임 심판이 renorm 유리, 부록 C 각주 T10). (iii) **데이터셋 차 = 난이도**: 같은 오염 사다리인데 mnist/label_flip +0.96 > cifar10/label_flip +0.52 = mnist가 더 분리적(쉬운 과제)이라 오염 신호가 (a)에도 뚜렷 — 오염군이 다른 게 아니다. (iv) **Spearman↔Pearson 정합**(renorm-유리 칸서만 소폭 갈림). **출처**: `runs/track_c/fidelity.csv`(`spearman_a`/`pearson_a`, (dataset,scenario,method) 3-seed 평균, label_skew 제외).
+> ![[flirds-paper-results-overview-figs/f1_cnn_c1_vs_a_heatmap.png]] *(좌=Spearman·우=Pearson 2-panel; label_skew 제외 8칸 + 방법별 평균 행)*
 
 ---
 
