@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import json
 import re
-import shutil
 from pathlib import Path
 
 import pandas as pd
@@ -43,6 +42,12 @@ import yaml
 ROOT = Path(__file__).resolve().parent
 RUNS = ROOT.parent
 OUT = ROOT / "analysis"
+# The files main() regenerates.  Cleaned one-by-one instead of rmtree(OUT): the
+# analysis dir is shared with sibling tools, and a blanket rmtree silently wiped
+# r4's gsm50k5_tier_a.csv on every run until the 2026-07-23 audit caught it.  If
+# you add an output, add it here; never reintroduce rmtree(OUT).
+OWN_OUTPUTS = ("llm_competition.csv", "cnn_competition.csv",
+               "observer_zero_semantics.csv", "competition_score.csv", "README.md")
 
 SOURCES = ("flirds", "flirds1st", "lossheur", "gtg", "fedsv", "comfedsv",
            "shapleyfl", "fedif", "oracleb")
@@ -257,9 +262,9 @@ def competition_score(llm, cnn):
 
 
 def main():
-    if OUT.exists():
-        shutil.rmtree(OUT)
-    OUT.mkdir(parents=True)
+    OUT.mkdir(parents=True, exist_ok=True)
+    for name in OWN_OUTPUTS:                    # clean only our own stale outputs
+        (OUT / name).unlink(missing_ok=True)
     llm = analyze_llm()
     cnn, obs = analyze_cnn()
     sc = competition_score(llm, cnn)
