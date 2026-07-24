@@ -12,9 +12,23 @@
 # re-run those on this stack before pooling into one table, and don't juxtapose absolute
 # values across stacks (read cross-stack via recovery-normalization).
 #
+# --- base models (gated meta-llama).  HF cache is per-box, NOT shared → each box fetches
+#     these exact ids into its own HF_HOME.  Scale selected by SMOKE_MODEL env; unset = 1B.
+#     Code home: every experiments/*.py has a `SMOKE_MODEL` fallback = 1B; phase2_matrix.py
+#     §SCALE maps 1B/3B → Llama-3.2-{1B,3B}-Instruct, 7B → Llama-2-7b-hf.
+#   1B  meta-llama/Llama-3.2-1B-Instruct   # 주력 — 영속 rundir 대다수 (SMOKE_MODEL unset)
+#   3B  meta-llama/Llama-3.2-3B-Instruct   # 스케일 확인 부분 실행 (SMOKE_MODEL=meta-llama/Llama-3.2-3B-Instruct)
+#   7B  meta-llama/Llama-2-7b-hf           # FL-LLM 문헌 표준 7B(Llama-2 계열); 대체로 deferred
+#   Gated → download needs an accepted-license HF token (huggingface-cli login) or a
+#   hash-verified mirror (B200: $BATCH/PROVENANCE.md).  To FREEZE identical weights across
+#   boxes, pin commit SHAs in flirds/hf_pin.py REVISIONS (HfApi().model_info(id).sha).
+#
 # Python 3.11.15
-torch==2.12.0            # +cu130 build (CUDA 13.0); install from the matching index-url
-torchvision==0.27.0      # +cu130; pairs with torch 2.12.0. Needed only if this box also runs CNN data
+# torch/torchvision = cu130 wheels (only on the PyTorch index, not PyPI) → pin the +cu130
+# local version AND add the index so pip cannot silently fall back to a CPU wheel:
+--extra-index-url https://download.pytorch.org/whl/cu130
+torch==2.12.0+cu130
+torchvision==0.27.0+cu130   # pairs with torch 2.12.0. Needed only if this box also runs CNN data
 transformers==5.9.0
 peft==0.19.1
 trl==1.5.1

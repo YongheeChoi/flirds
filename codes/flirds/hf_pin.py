@@ -23,7 +23,10 @@ REVISIONS: dict[str, str] = {
     # "vicgalle/alpaca-gpt4": "<sha>",
     # "openai/gsm8k": "<sha>",
     # "cais/mmlu": "<sha>",
-    # "meta-llama/Llama-3.2-1B-Instruct": "<sha>",
+    # --- base models (scale via SMOKE_MODEL; full manifest = requirements-llm.txt) ---
+    # "meta-llama/Llama-3.2-1B-Instruct": "<sha>",   # 1B 주력 (SMOKE_MODEL unset)
+    # "meta-llama/Llama-3.2-3B-Instruct": "<sha>",   # 3B 스케일 확인
+    # "meta-llama/Llama-2-7b-hf": "<sha>",           # 7B 문헌표준(deferred)
 }
 
 
