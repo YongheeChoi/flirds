@@ -72,7 +72,7 @@ tags: [flirds, results, downstream]
 
 ### 완전참여·동적재추첨·신뢰게이트 확증 `[부록E]` ● 3-seed
 
-> Scale 100/100 완전참여(비용선형 확증)·Dyn 매라운드 오염 재추첨(신호파괴 한계)·P5 신뢰게이트. **P5-hard retrain(csign) = 오염-평균 0.6207 ≈ oracle_excl 0.6214**(P1 retrain 0.6107 대비 +0.010). 상세 수치 [[flirds-experiment-results-overview]] §4.8. (스코프상 보조 확증.)
+> Scale 100/100 완전참여(비용선형 확증)·Dyn 매라운드 오염 재추첨(신호파괴 한계)·P5 신뢰게이트. **P5-hard retrain(csign) = 오염-평균 0.6207 ≈ oracle_excl 0.6214**(P1 retrain 0.6107 대비 +0.010). 상세 수치는 구 카탈로그 §4.8(git 이력). (스코프상 보조 확증.)
 
 ### φ 부호-게이팅 그리드 `[제외]`
 
@@ -114,11 +114,11 @@ tags: [flirds, results, downstream]
 
 ### 표준 개입 무해성 (clean do-no-harm) `[본문·근거]` ● 3-seed
 
-> Llama-3.2-1B·N=20·alpaca IID. clean-IID에서 φ-가중/선택 arm이 성능을 **안 깎음**(MMLU·ROUGE parity; 게이트·V3 arm max Δ최종손실 0.00056). 오염이 없으면 개입 이득도 원리적 부재(효과 < 표본 SE) = 기대대로 do-no-harm. 수치 상세 [[flirds-experiment-results-overview]] §3.2.1.
+> Llama-3.2-1B·N=20·alpaca IID. clean-IID에서 φ-가중/선택 arm이 성능을 **안 깎음**(MMLU·ROUGE parity; 게이트·V3 arm max Δ최종손실 0.00056). 오염이 없으면 개입 이득도 원리적 부재(효과 < 표본 SE) = 기대대로 do-no-harm. 수치 상세는 구 카탈로그 §3.2.1(git 이력).
 
 ### 온라인 φ-게이팅 + 재학습 회수 `[제외 표 / R4로 흡수]` ● 3-seed(일부 seed0)
 
-> silo5·iid5 부호-게이팅: **frzero 자동배제 recovery 1.000 정확**(오배제 0쌍, oracle_excl과 최종손실 소수4자리 동일 = φ=0 공리의 배포 활용)·clean 게이트 무발화(max|Δ| 0.00056)·CNN grad-noise 회수 0.86~0.94. 독립 표는 제외(결과는 위 R4 online leg로 흡수). 상세 [[flirds-experiment-results-overview]] §3.2.2.
+> silo5·iid5 부호-게이팅: **frzero 자동배제 recovery 1.000 정확**(오배제 0쌍, oracle_excl과 최종손실 소수4자리 동일 = φ=0 공리의 배포 활용)·clean 게이트 무발화(max|Δ| 0.00056)·CNN grad-noise 회수 0.86~0.94. 독립 표는 제외(결과는 위 R4 online leg로 흡수). 상세는 구 카탈로그 §3.2.2(git 이력).
 
 ---
 
@@ -127,4 +127,4 @@ tags: [flirds, results, downstream]
 - CNN: `runs/track_h/analysis/cnn_competition.csv`(dataset=cifar10·partition=dir1; online arm=`<m>_gate_v2`·retrain=`t2_sign_<m>`) → (arm,threat) seed 평균.
 - LLM: `runs/track_h/analysis/llm_competition.csv`(regime=gsm50k5; gsm8k_em).
 - **⬚ 미실행**: fmnist·iid 경쟁(W-fm) · R4 renorm 4종(L4)·online 7방법(L11)·frrand·strmain 열.
-- 축 지도/전량 카탈로그: [[flirds-experiment-axis-map]] · [[flirds-experiment-results-overview]] §3.2.
+- 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §3.2 = git 이력)

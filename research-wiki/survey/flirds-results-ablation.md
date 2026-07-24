@@ -29,7 +29,7 @@ tags: [flirds, results, ablation]
 | fmnist/dir1 | **0.967±0.016** | <u>0.310±0.067</u> |
 | fmnist/iid | **0.972±0.007** | <u>0.358±0.027</u> |
 
-> **grad-noise서 Flirds-1st 전 파티션 붕괴(0.22~0.36)** vs Flirds 0.76~0.97 = 2차항 존재 이유. **다운스트림 재현**([[flirds-results-downstream]]): grad-noise 개입 acc Flirds .5668(online)/.6065(retrain) vs 1차계열 .244~.248 실명. **부분참여 k-sweep**(C1 label-flip, 파일럿): Flirds 0.891 vs Flirds-1st 0.305 @k=0.2 (k=0.5 .979/.765·full .993/.940) — 1차항은 클라당 참여 적으면 붕괴, 2차항이 방어(상세 [[flirds-experiment-results-overview]] §4.1). **출처**: `runs/track_c/c2fid`(grad-noise) + `runs/probe_signal/cnn_c1`(k-sweep).
+> **grad-noise서 Flirds-1st 전 파티션 붕괴(0.22~0.36)** vs Flirds 0.76~0.97 = 2차항 존재 이유. **다운스트림 재현**([[flirds-results-downstream]]): grad-noise 개입 acc Flirds .5668(online)/.6065(retrain) vs 1차계열 .244~.248 실명. **부분참여 k-sweep**(C1 label-flip, 파일럿): Flirds 0.891 vs Flirds-1st 0.305 @k=0.2 (k=0.5 .979/.765·full .993/.940) — 1차항은 클라당 참여 적으면 붕괴, 2차항이 방어(상세는 구 카탈로그 §4.1 = git 이력). **출처**: `runs/track_c/c2fid`(grad-noise) + `runs/probe_signal/cnn_c1`(k-sweep).
 
 ### A축 용량 lever probe — CNN `[본문 §5.6②]` ● 3-seed
 
@@ -68,7 +68,7 @@ tags: [flirds, results, ablation]
 | ShapleyFL | 음수 붕괴 |
 | FedIF | 음수 붕괴 |
 
-> 부분참여 5/50서 **Flirds/Flirds-1st만 +1.000 유지**, uniform-subset(ComFedSV/ShapleyFL)·FedIF는 음수로 붕괴 = 부분참여 스트레스에서 Taylor 계열 생존. LLM은 R=200으로 클라당 참여 횟수가 충분해 Flirds-1st도 버팀(CNN R=10 짧은 지평선 붕괴와 대비). 상세·수치 [[flirds-experiment-results-overview]] §4.2.
+> 부분참여 5/50서 **Flirds/Flirds-1st만 +1.000 유지**, uniform-subset(ComFedSV/ShapleyFL)·FedIF는 음수로 붕괴 = 부분참여 스트레스에서 Taylor 계열 생존. LLM은 R=200으로 클라당 참여 횟수가 충분해 Flirds-1st도 버팀(CNN R=10 짧은 지평선 붕괴와 대비). 상세·수치는 구 카탈로그 §4.2(git 이력).
 
 ### A축 용량 lever probe — LLM `[본문 §5.6②]` ● 핵심축 3-seed(나머지 seed0)
 
@@ -114,4 +114,4 @@ tags: [flirds, results, ablation]
 - lever: `runs/probe_signal/figures/{cnn_c1_realness,llm_probe_summary}.csv`.
 - removal: `runs/removal_dose/{rundirs,rundirs_cnn}`. Taylor: `runs/measured_2026-07/taylor`.
 - 감사: `runs/track_g/audit`. β: `runs/rerun_beta03`.
-- 축 지도/전량 카탈로그: [[flirds-experiment-axis-map]] · [[flirds-experiment-results-overview]] §4·§5.
+- 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §4·§5 = git 이력)

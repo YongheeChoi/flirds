@@ -203,7 +203,7 @@ tags: [flirds, results, fidelity]
 | iid(오염0) | 0.42±0.13 | 0.59±0.21 | 0.54±0.19 | 0.32±0.22 | -0.09±0.21 | -0.15±0.10 | <u>0.69±0.16</u> | **0.70±0.12** |
 | **평균(4시나리오)** | 0.60 | <u>0.68</u> | 0.65 | 0.49 | 0.33 | 0.31 | **0.68** | 0.54 |
 
-> **읽기**: 신호-강 칸(feature-noise·label-flip·quantity-skew)서 same-game 3종이 renorm과 수렴/우세. **iid(오염0)이 평균을 희석**(파티션만 있어 (a) 재학습-게임이 순위 재현 못 함) → 평균 행에서 ComFedSV/ShapleyFL이 앞서 보이는 건 iid·qskew 칸의 renorm-유리 때문(부록 C 각주). iid 제외 6칸 서열은 same-game 우세(상세 [[flirds-experiment-results-overview]] §3.1.2). mnist가 cifar10보다 분리적(쉬운 과제)이라 오염 신호가 (a)에도 뚜렷. **출처**: `runs/track_c/fidelity.csv`(3-seed 평균).
+> **읽기**: 신호-강 칸(feature-noise·label-flip·quantity-skew)서 same-game 3종이 renorm과 수렴/우세. **iid(오염0)이 평균을 희석**(파티션만 있어 (a) 재학습-게임이 순위 재현 못 함) → 평균 행에서 ComFedSV/ShapleyFL이 앞서 보이는 건 iid·qskew 칸의 renorm-유리 때문(부록 C 각주). iid 제외 6칸 서열은 same-game 우세(상세는 구 카탈로그 §3.1.2 = git 이력). mnist가 cifar10보다 분리적(쉬운 과제)이라 오염 신호가 (a)에도 뚜렷. **출처**: `runs/track_c/fidelity.csv`(3-seed 평균).
 
 ### 1B-LLM
 
@@ -271,4 +271,4 @@ tags: [flirds, results, fidelity]
 - LLM: `runs/track_d/rundirs/1B_anchor5_seed{0,1,2}/phi.parquet`(vs (a) 직접 계산) · `runs/phase2_matrix/rundirs/1B_silo5_*/phi.parquet`(vs (b)) · `runs/track_d/fidelity.csv`(std20).
 - 안정성: `runs/track_c/RESULTS.txt` · `runs/track_d/target_stability.csv`.
 - **⬚ 미실행**: R4-L2(gsm50k5 (b)) · silo5 (a)-leg — 착지 시 위 표 빈 칸을 mean±std로 교체.
-- 축 지도/전량 카탈로그: [[flirds-experiment-axis-map]] · [[flirds-experiment-results-overview]]
+- 축 지도: [[flirds-experiment-axis-map]] (전량 카탈로그는 git 이력)

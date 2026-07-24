@@ -122,7 +122,7 @@ tags: [flirds, results, detection]
 
 > **읽기**: **Flirds = (b) oracle-동행**(frzero·frrand·grad-noise Δ≤0.05 전 파티션). free-rider계열 (b)/Flirds는 0.68~0.95(약신호; benign φ<0로 순위) vs **renorm(GTG/FedSV/ShapleyFL)은 frzero/frrand 완전 붕괴**(0.00~0.29 — exact-0 실패). **shard(병적)이 최난**: (b) 자체 0.427(label-skew가 오염 신호와 교락)이나 **Flirds 0.526 > (b)**, FedIF 0.781 최고. Flirds-1st는 free-rider엔 강하나 grad-noise서 실명(0.46~0.52 = 2차항 필요). **출처**: `runs/track_c/c2fid/analysis/fidelity.csv`(auroc 열).
 
-> **교차-사일로 φ-AUROC (C1, N=10)** `[주석]`: C1 셀도 오염 클라 AUROC를 산출하나 §1의 fidelity 셀과 동일 rundir라 별표 없이 주석 처리(상세 [[flirds-experiment-results-overview]] §3.3.5).
+> **교차-사일로 φ-AUROC (C1, N=10)** `[주석]`: C1 셀도 오염 클라 AUROC를 산출하나 §1의 fidelity 셀과 동일 rundir라 별표 없이 주석 처리(상세는 구 카탈로그 §3.3.5 = git 이력).
 
 ---
 
@@ -219,4 +219,4 @@ tags: [flirds, results, detection]
 - CNN: `python runs/track_c/c2fid/make_analysis.py` → `analysis/fidelity.csv`(auroc 열) → seed 평균.
 - LLM: `runs/phase2_matrix/rundirs/1B_silo5_*/metrics.json`·`1B_device100-a*/metrics.json`·`3B_silo5_*/metrics.json`(auroc dict, 방법별).
 - **⬚ 미실행**: R4(gsm50k5 L2) — 착지 시 위 빈 표를 mean±std로 교체.
-- 축 지도/전량 카탈로그: [[flirds-experiment-axis-map]] · [[flirds-experiment-results-overview]] §3.3.
+- 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §3.3 = git 이력)

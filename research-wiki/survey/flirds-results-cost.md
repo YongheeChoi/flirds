@@ -82,4 +82,4 @@ tags: [flirds, results, cost]
 - microbench: `runs/measured_2026-07/microbench/summary.json`.
 - runtime: 각 rundir `runtime`/`timing.json` + `runs/measured_2026-07/{loss_heur_acct,timing_device100,e3_cost_smoke}/`.
 - ⚠ 런타임은 fp32·CPU·재구현 caveat 있는 단일/소수 측정 → **op-count가 하드웨어-독립 정본**. 상세 방법론 [[cost-comparison-methodology-2026-07/cost-comparison-methodology]].
-- 축 지도/전량 카탈로그: [[flirds-experiment-axis-map]] · [[flirds-experiment-results-overview]] §3.4.
+- 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §3.4 = git 이력)

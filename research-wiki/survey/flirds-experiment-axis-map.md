@@ -12,7 +12,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 > **왜**: 어떤 실험을 논문에 넣을지 고르려면, 수록 확정분뿐 아니라 **제외·보류·미실행까지 한 자리에서** 축별로 비교할 수 있어야 한다. 이 페이지가 그 전체 지형도다.
 > **수치는 여기 없다** — 이 페이지는 *구조·상태·추천*만 담는다. 실제 수치는 축별 결과 페이지가 담당한다:
 > - [[flirds-results-fidelity]] · [[flirds-results-downstream]] · [[flirds-results-detection]] · [[flirds-results-ablation]] · [[flirds-results-cost]]
-> - (구) 수록분 미러 [[flirds-paper-results-overview]] · 전량 카탈로그 [[flirds-experiment-results-overview]] — 위 5개 축별 페이지로 **대체 예정**.
+> - 이 축-지도 + 5개 결과 페이지가 구 overview 2종(수록분 미러·전량 카탈로그)을 **대체함**(구 문서·caveats·종합판정은 git 이력).
 >
 > 각 행 끝의 `출처`는 추적·재생성용으로 **작게** 병기했을 뿐, 분류·이름은 모두 개념/자연어 기준이다.
 
@@ -210,7 +210,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 ## 상호 링크
 - 축별 결과 페이지(수치 정본): [[flirds-results-fidelity]] · [[flirds-results-downstream]] · [[flirds-results-detection]] · [[flirds-results-ablation]] · [[flirds-results-cost]]
-- (구) 수록분 미러: [[flirds-paper-results-overview]] · 전량 카탈로그: [[flirds-experiment-results-overview]]
+- 구 overview 2종(수록분 미러·전량 카탈로그) = git 이력으로 대체됨
 - 승패 메커니즘 해석: [[flirds-principle-analysis]]
 - 선행연구 E1–E7 분류(CNN/LLM 트랙): [[prior-work-taxonomy/validation-experiments]] · [[prior-work-taxonomy/README]]
 - 논문 구조·수록/제외 결정 정본: `paper/workplan/00-INDEX.md`
