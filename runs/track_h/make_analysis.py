@@ -234,6 +234,13 @@ def competition_score(llm, cnn):
             d = d[(d["threat"] != "label_flip") | (d["flip_rate"] == 0.7) | strmain]
             d["stage_cell"] = "dir1"
             d.loc[d["threat"].eq("label_flip") & d["flip_rate"].isna(), "stage_cell"] = "strmain"
+            # fmnist competition (W-fm, 2026-07-25) shares partition=="dir1" but is a
+            # SEPARATE stage -> prefix so it is NOT pooled into cifar10's headline dir1
+            # score.  cifar10 stage_cell values stay byte-identical ("dir1"/"strmain").
+            # fmnist_iid, like cifar10_iid, stays in cnn_competition.csv (raw) but is
+            # reuse-only here (dir1 = the non-IID headline for both datasets).
+            fm = d["dataset"].eq("fmnist")
+            d.loc[fm, "stage_cell"] = "fmnist_" + d.loc[fm, "stage_cell"].astype(str)
         else:                              # R3 noisy nr1.0 (+clean parity anchor) | R2 std50k5
             d = d[(((d["regime"] == "silo5")
                     & d["threat"].isin(("clean", "noisy")) & (d["nr"] == 1.0))

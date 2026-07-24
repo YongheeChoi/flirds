@@ -10,7 +10,7 @@
 |---|---|---|
 | 5.1 세팅 | 주무대 쌍(LLM R4 gsm50k5 · CNN C2 캠페인 그리드) + sub 무대 · 비교군 9종 · 지표 · 고정-궤적 채점 프로토콜 (상세→부록 B) | 작성 가능 |
 | 5.2 Fidelity | **메인**: c2fid + R4-L2, **same-game만**(Flirds·Flirds-1st·loss-heur) vs (b) ⬚ · **sub**: retrain-(a) 특성화 = LLM **silo5 (a)-leg 단독** ⬚(2026-07-24: gsm5·anchor5 보류 — silo5=유일 (a)-무대; anchor5 0.933은 폴백 참조) + CNN C1 시나리오별 vs (a)(기존; overview §3.1.2 신규 표) | silo5 (a) ⬚ |
-| 5.3 개입 | **메인**: R4 P1 T1/T2 절대 EM ⬚(L1) + CNN 8점수원 P1 절대 acc(기존 §3.2.3; restack 드리프트 확인 후 기입) · P1w(크기-가중)는 결과 규칙부 수록 | R4 ⬚ |
+| 5.3 개입 | **메인**: R4 P1 T1/T2 절대 EM ⬚(L1) + CNN 8점수원 P1 절대 acc(cifar10/dir1 기존 §3.2.3 + **fmnist iid/dir1 신규 W-fm** ⬚; restack 드리프트 확인 후 기입) · P1w(크기-가중)는 결과 규칙부 수록 | R4·W-fm ⬚ |
 | 5.4 탐지 | R4 φ + 전용 탐지기 4종 ⬚(L2) + c2fid φ-AUROC ⬚ | ⬚ |
 | 5.5 비용 | op-count 모델 + 주무대 실측 runtime ⬚ · 소-cohort 조건부는 op-count 축 서술(std20 실측 삭제 여파) | 부분 ⬚ |
 | 5.6 Ablation | ① 2차항(HVP) 기여 ② A축 lever probe ③ removal-curve | 작성 가능 |
@@ -29,6 +29,7 @@
 | **L7** | R4 P1w(크기-가중) flirds-only {clean,noisy,frzero}×3-seed×{T1,T2} | ~80 | B200(L2 뒤·L4 앞) | T3 |
 | **W-B** | CNN 캠페인 그리드 P1w flirds twin leg (T1·T2) + W-A(dir1 기존 P2 재사용) | ~25–35(CNN측) | CNN 서버 | T4 |
 | **L8** | retrain-(a) 스위트: **silo5 (a)-leg만**({clean,noisy,frzero}×3seed) · **gsm5 보류**(2026-07-24) | silo5 ~26 (gsm5 ~60 보류) | **A6000 48GB**(HJ 계정; 24GB OOM→48GB) | T5 |
+| **W-fm** | **fmnist 다운스트림 competition**(신규 07-25): 8점수원 P1 = flirds[`_g`재사용]+비-flirds 7+obs × {fmnist iid,dir1}×6위협×3seed = 288 rundir + **c2fid fmnist seed2 16셀**(fidelity/탐지 완결) | ~30–55 | **YH lora4cl 3090**(torch2.11 전용=스택 정합; fmnist 전량·cifar10 competition 모두 2.11) | `REMAINING-slurm-YH.md` §3.5 |
 | W-D | P1w 비-flirds 점수원(CNN 확장무대·R4) | 조건부 | 게이트 | T3/T4 |
 
 P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본문 승격 / 동률 "부호가 가치의 대부분" ablation 1문장 / 열세·타 소스 역전 시 미수록(P1만; rundir 존속).
@@ -50,4 +51,4 @@ P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본�
 - 수치는 rundir/analysis 재생성 값만(수기 금지). **R4 Tier A seed0(pre-fix `fa5fc6e`) 인용 금지** — L1 3-seed가 정본.
 - CNN dir1 기존 수치(§3.2.3·P2)는 **캠페인 restack 드리프트 표 확인 후** 기입/귀속.
 - 사전등록(예측 행)은 실행 전 커밋. 결과는 overview(§3.x)에 먼저, paper·T2 페이지는 그로부터.
-- push는 Yonghee 직접. 실행 큐 정본 = `REMAINING-b200.md`(B200 HVP)·`REMAINING-slurm-{YH,HJ,JW,JB}.md`(Slurm 4계정: YH=CNN·HJ=silo5-a·L11·JW=L4·JB=L9-arms) + `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
+- push는 Yonghee 직접. 실행 큐 정본 = `REMAINING-b200.md`(B200 HVP)·`REMAINING-slurm-{YH,HJ,JW,JB}.md`(Slurm 4계정: YH=CNN+**fmnist**(W-fm)·HJ=silo5-a·L11·JW=L4·JB=L9-arms) + `runs/track_h/QUEUE_L1L2_2026-07-23.md`.

@@ -113,7 +113,7 @@ L2 = `phase2_matrix.py REGIME=gsm50k5`(nr 0.7·(b) per-round 2⁵·9방법[Fed-L
 | 서버 | GPU | 역할 | 정본 |
 |---|---|---|---|
 | **B200** | 4× B200 | HVP 전용: L1 관찰자 cum·flirds online·L2 fidelity·L7/L9/L10 flirds 관찰자·flirds 가중 T2(L7·L1)·**canonical timing** | 이 파일 |
-| **YH**(chyoyhr) | 3090→A6000 8-QOS | CNN(c2fid·W-B·C-fr·C1) 완주 → **L11 seed2**(21런 ~92) + work-steal | `REMAINING-slurm-YH.md` |
+| **YH**(chyoyhr) | 3090→A6000 8-QOS | CNN(c2fid·W-B·C-fr·C1) 완주 → **fmnist 완결**(신규: c2fid s2 16셀 + competition 288 rundir; ~30–55, **lora4cl 2.11 전용**) → **L11 seed2**(21런 ~92) + work-steal | `REMAINING-slurm-YH.md` §3.5 |
 | **HJ**(신규) | A6000 48GB 8-QOS | silo5-a + **L11 seed0·1**(42런; 계 ~210) | `REMAINING-slurm-HJ.md` |
 | **JW**(신규) | A6000 48GB 8-QOS | L4(renorm T2) | `REMAINING-slurm-JW.md` |
 | **JB**(신규) | A6000 48GB 8-QOS | L9 비-flirds arms(frrand) | `REMAINING-slurm-JB.md` |
@@ -151,13 +151,13 @@ L2 = `phase2_matrix.py REGIME=gsm50k5`(nr 0.7·(b) per-round 2⁵·9방법[Fed-L
 - **HJ**: silo5-a + L11 **seed0·1**(42런) — `REMAINING-slurm-HJ.md`. ≈ **~210 GPU-h**
 - **JW**: L4(renorm T2) — `REMAINING-slurm-JW.md`. ≈ **~215**
 - **JB**: L9 비-flirds arms(frrand) — `REMAINING-slurm-JB.md`. ≈ **~170**
-- **YH**: CNN 완주(~07-25) → **L11 seed2**(21런 ~92) + work-steal — `REMAINING-slurm-YH.md`.
+- **YH**: CNN 완주(~07-25) → **fmnist 완결**(c2fid s2 + competition; ~30–55, lora4cl 2.11 전용 = 스택 정합상 YH만 가능) → **L11 seed2**(21런 ~92) + work-steal — `REMAINING-slurm-YH.md` §3.5·§5.
 - **부하 균형**: 최대 물량 L11(63런)을 **seed 분할**(HJ=seed0·1 ~184 / YH=seed2 ~92) → 4계정 ~170–215로 평준화. 잔여는 빈 계정이 work-steal(arm-level idempotent; JB가 최소라 완주 후 HJ tail 흡수).
 - 전부 자체완결(B200 cum 독립) → cum 대기 없이 seed0부터 flood. 착지 root = `rundirs_llm_{yh,hj,jw}`(canonical `rundirs_llm` 무수정) → make_analysis dup-win 병합.
 
 ### 예산·타임라인
-- 전체 잔여 ≈ **~840–960 GPU-h**: HVP **~165–198**(B200 전량) + downstream **~675–780**(Slurm 48/24GB 전량).
-- **임계경로 = B200 HVP ~2일**(4장). Slurm(32 동시)은 여유 → **28일 완주, seed0 ~26일**.
+- 전체 잔여 ≈ **~870–1015 GPU-h**: HVP **~165–198**(B200 전량) + LLM downstream **~675–780**(Slurm 48/24GB) + **fmnist ~30–55**(YH 3090/lora4cl CNN — 신규 07-25; §1a YH행·`REMAINING-slurm-YH.md` §3.5).
+- **임계경로 = B200 HVP ~2일**(4장). Slurm(32 동시) + fmnist(YH 8슬롯 3090, wall ~반나절)은 그 하위 → **28일 완주, seed0 ~26일**. fmnist는 CNN 네이티브라 A6000 LLM 풀과 자원 비경합.
 - **canonical fidelity·timing = B200 실측만**(§5.5). Slurm(torch2.11) 산출 = recovery 정규화로만 병치·timing.json cost 금지.
 
 ## 2. 대기 큐 — L4·L5·L6·L7
