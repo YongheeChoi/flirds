@@ -16,7 +16,7 @@
 | §2 | W-B P1w observer(T2) | 🟡 파일럿 완주·게이트 대기 | seed0 파일럿 **29셀 완료**; `p1wgate`가 GPU 확보 시 판정 → 통과면 30-89 자동 |
 | §3 | C-fr frrand full-method | 🟡 파일럿 완주·게이트 대기 | seed0 8/8 EXIT=0·커밋(`80ebf30`); `frgate` PD(GPU 확보 시 seeds1-2 판정) |
 | §4 | C1 β0.3 재실행(30셀) | ✅ 완주·커밋 | β0.3 canonical **승격 커밋 `47680ec`**; ShapleyFL만 β0.5→0.3 변화 검증·타 10방법 비트동일 |
-| §5 | L8 **silo5 (a)-leg만**(gsm5 보류) | 🔴 파일럿 **OOM 실패** | silo5a SFT 재학습 24GB 초과(EXIT=1, ~1GB 부족) → **A6000 48GB 이전 필요**(결정 대기); `l8gate`는 fail-safe로 미확장. gsm5 취소 완료 |
+| §5 | L8 **silo5 (a)-leg만**(gsm5 보류) | ⏸ 3090 취소·A6000 이관 | 3090 SFT OOM 확인 → **A6000(48GB)서 다른 아이디로 실행**(별도); 이 환경 §5 잡 취소(silo5a 실패·l8gate scancel). gsm5 취소 완료 |
 
 - **한도**: 동시 8-GPU(QOSMaxGRESPerUser) + §1 array `%8`. 현재 §1 c2fid가 8슬롯 점유 → 게이트 3종(p1w·fr·l8) PD 대기(각 GPU 확보 시 발화).
 - **파일럿→GO 게이트**(§2·§3·§5)는 Slurm `--dependency`로 자동(세션 무관·fail-safe): 완주 시 GPU-h 실측 보고 후 잔여 leg 자동 제출.
@@ -25,7 +25,7 @@
   실행 순서 = §1 c2fid **seed-major**(s0 48셀✓) · §2/§3 seed0 파일럿→게이트 · §5 silo5-a **seed-major 정정** · §4 C1 저비용 dataset-major = **의도된 예외**.
   **전역 배리어(Q2)**: 게이트가 실험별이라 전역 seed0-우선은 자동 아님 → §1 seed1/2 hold 계획이었으나 **이제 무의미**
   (§1이 이미 110/144 = seed0·1 완료+seed2 진행). 남은 seed0 병목은 **§5뿐인데 그건 GPU 경합이 아니라 OOM**(§5) → hold 불요.
-- **gsm5 보류 = 취소 완료**(Yonghee, 2026-07-24): gsm5 파일럿(1866894)+게이트(1866895) scancel 됨. silo5a 파일럿(1866896)은 **OOM 실패**·게이트(1866897)는 fail-safe(미확장) → §5.
+- **gsm5 보류 = 취소 완료**(Yonghee, 2026-07-24): gsm5 파일럿(1866894)+게이트(1866895) scancel 됨. silo5a 파일럿(1866896)은 **OOM 실패**·게이트(1866897)는 **scancel**(이 환경 §5 실행 종료; A6000 다른 아이디로 이관) → §5.
 
 ## 0. 환경
 
@@ -113,16 +113,16 @@
   갱신 → paper §5.2 sub(C1 표)·부록 C 값 갱신 + **B.5 재실행-대기 주석 삭제**(anchor5 B200분 함께 착지해야 완결).
 - **갱신 대상 overview**(빈칸 아님 — 값 교체): §5.2 sub C1 vs (a) 표의 ShapleyFL 열(예: cifar10/qskew +0.81) · 부록 C.
 
-## 5. L8 — retrain-(a) 스위트 (작은-N LLM: **silo5 a-leg만** · gsm5 보류) — 🔴 파일럿 OOM 실패 → A6000 이전 결정 대기
+## 5. L8 — retrain-(a) 스위트 (작은-N LLM: **silo5 a-leg만** · gsm5 보류) — ⏸ 이 환경(3090) 실행 취소 → **A6000(다른 아이디)에서 실행**
 
 > **⚠ 스코프 변경 (2026-07-24 Yonghee): gsm5·anchor5 보류, silo5 (a)-leg만 활성.**
 > (a) retrain 오라클 = **silo5 단독**으로 확보. 근거·정리 = 아래 및 `paper/workplan/T5-retrain-a-suite.md` §1 보류 배너.
 > — **silo5**(non-IID)만이 실재 cross-seed 신호(clean +0.87 / noisy +0.93)를 갖는 유의미한 (a)-검증 무대.
 > — **gsm5**(IID, 주무대 데이터)는 near-additive·ρ≈0 축퇴 무대라 anchor5 기존 0.933과 정보 중복 → 보류(코드·캐시 존치, 부활 시 §5.1 그대로).
 > — **anchor5**(IID, Alpaca) 기존 0.933은 **보류 참조**(재실행 없음; `REMAINING-b200.md` §4 β0.3 재실행도 보류).
-> **실행 조치**: gsm5 파일럿+게이트 취소 완료(Yonghee). silo5a 파일럿(clean seed0) = **CUDA OOM 실패(EXIT=1, 17:42)** —
-> SFT 재학습이 24GB 초과(아래 메모리 절 정정). `l8gate`는 marker/rundir 부재로 **fail-safe 미확장**(정상). **→ A6000 48GB 이전 제안(결정 대기)**;
-> 이전 시 sbatch에 `--partition=suma_a6000 --qos=base_qos` 추가(fidelity leg=하드웨어 독립, seed-major 매핑 유지). seeds1-2도 A6000서 함께.
+> **실행 조치(2026-07-24 확정)**: gsm5 파일럿+게이트 취소 완료(Yonghee). silo5a 파일럿(clean seed0) = **CUDA OOM 실패(EXIT=1, 17:42)** —
+> SFT 재학습이 24GB 초과(아래 메모리 절). **→ 이 환경(3090) §5 실행 취소**(silo5a 실패 + `l8gate` scancel 1866897). **silo5 (a)-leg는
+> A6000(48GB)에서 다른 아이디로 실행 예정** — 이 리포에 A6000 sbatch 미배선(별도 진행). fidelity leg라 하드웨어 독립이므로 A6000 산출 φ·(a)-vs-(b)는 유효.
 > **⚠ 결과 여파**: silo5 (a)-leg 미완인 동안 §5.2 sub (a) 칸은 ⬚ 유지(anchor5 0.933은 보류 참조로 폴백 가능).
 
 > 스펙 = `paper/workplan/T5-retrain-a-suite.md`. 코드 **커밋 완료**(TRACKED·clean). **전 셀에 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`**(단편화 방지).
