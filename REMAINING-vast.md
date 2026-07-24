@@ -22,10 +22,11 @@
 **정책 (07-24 Yonghee)**: seed0(canonical 앵커) + **전 timing 셀은 B200 고정** · seeds 1-2의 non-timing
 fidelity/downstream 복제만 vast · **`timing.json`은 vast 산출 사용 금지**(§5.5 cost = B200 실측만).
 
-> ⚠ **정책 예외 = 승인 대기 항목**: B200 잔여 창(§2 note)이 HVP·fidelity만으로 이미 포화라
-> **downstream seed0까지 vast로 내려야 물리적으로 완주**함. downstream EM은 W-A에서 스택-강건 판정
-> (recovery 정규화하 mean|Δ|≤0.006)이고 대상이 foil(비-flirds) 레그라 근거는 있으나, **Yonghee 명시 승인 필요**.
-> 승인 전이면 §2의 **V-A(seeds1-2)만** 실행하고 V-B는 보류.
+> ✅ **정책 예외 = 승인됨 (2026-07-24 Yonghee "vast ai로 넘기자")**: B200 잔여 창(§2 note)이 HVP·fidelity만으로
+> 이미 포화라 **downstream seed0까지 vast로 내림**. 근거 = downstream EM이 W-A에서 스택-강건 판정
+> (recovery 정규화하 mean|Δ|≤0.006) + 대상이 foil(비-flirds) 레그.
+> ⟹ **V-A + V-B 전량 vast 실행**(~700–780 GPU-h). **fidelity·timing canonical은 B200 유지**(불변).
+> 이 승인으로 B200 미래 부하가 **~234–259 GPU-h(≈2.5일) 감소**.
 
 ## 1. 환경 (대여 박스 1회 구성 → 이미지로 구워 전 셀 재사용)
 
