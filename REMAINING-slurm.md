@@ -1,6 +1,7 @@
 # REMAINING (Slurm RTX3090 풀) — CNN + 작은-N LLM
 
-> 실행처별 인수인계 중 **yonsei Slurm RTX3090** 몫. 짝 파일 = `REMAINING-b200.md`(LLM 주무대 R4).
+> 실행처별 인수인계 **3부작** 중 **yonsei Slurm RTX3090** 몫.
+> 짝 = `REMAINING-b200.md`(HVP·fidelity·timing) · `REMAINING-vast.md`(R4 downstream SFT 물량).
 > **현재: Slurm 서버 유휴 — 전량 실행 대기.** push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 기존 rundir은 read-only.
 
