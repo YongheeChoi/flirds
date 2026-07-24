@@ -1,0 +1,19 @@
+{
+  "name": "cifar10_iid_free-rider_fid_seed2",
+  "git_sha": "fe2636ec07bb13172c0495b58eea2ba4951fe5ea",
+  "git_dirty": true,
+  "git_diff_stat": "REMAINING-slurm.md                   | 23 +++++++++++++++--------\n runs/phase2_matrix/sbatch_silo5_a.sh |  5 ++++-\n 2 files changed, 19 insertions(+), 9 deletions(-)",
+  "env_hash": "be4b11eda33078df",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "5.5.4",
+    "peft": "0.19.1",
+    "trl": "1.2.0",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.4",
+    "numpy": "2.4.4",
+    "python": "3.11.15",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  }
+}
