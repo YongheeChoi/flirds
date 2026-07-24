@@ -15,7 +15,7 @@
 | §2 | W-B P1w observer(T2) | 🟡 파일럿 완주·게이트 대기 | seed0 파일럿 **29셀 완료**; `p1wgate`가 GPU 확보 시 판정 → 통과면 30-89 자동 |
 | §3 | C-fr frrand full-method | ⚪ 파일럿 큐 대기 | seed0 파일럿(array 0-7) 제출·PD; §1/§4 뒤 backfill |
 | §4 | C1 β0.3 재실행(30셀) | 🟢 실행 중 | 8슬롯 가동(~1.6h/10h); canonical rundir 교체는 완주 시(현재 미변경) |
-| §5 | L8 gsm5+silo5 (a) | ⚪ 등록·큐 대기 | 코드 커밋·HF 캐시(model+gsm8k+5도메인) 완비; gsm5/silo5a 파일럿(각 array 0) PD, L8 게이트 dependency 대기 |
+| §5 | L8 **silo5 (a)-leg만**(gsm5 보류) | ⚪ 등록·큐 대기 | 코드 커밋·HF 캐시 완비; **gsm5 보류(2026-07-24 Yonghee)→gsm5 파일럿 취소 요**, silo5a 파일럿(array 0) PD 유지 |
 
 - **한도**: 동시 8-GPU(QOSMaxGRESPerUser) + §1/§4 array 각 `%8`. 현재 §4가 8슬롯 점유 → 나머지 그 뒤로 직렬화(§1-우선 depth-first).
 - **파일럿→GO 게이트**(§2·§3·§5)는 Slurm `--dependency`로 자동(세션 무관·fail-safe): 완주 시 GPU-h 실측 보고 후 잔여 leg 자동 제출.
@@ -104,7 +104,15 @@
   갱신 → paper §5.2 sub(C1 표)·부록 C 값 갱신 + **B.5 재실행-대기 주석 삭제**(anchor5 B200분 함께 착지해야 완결).
 - **갱신 대상 overview**(빈칸 아님 — 값 교체): §5.2 sub C1 vs (a) 표의 ShapleyFL 열(예: cifar10/qskew +0.81) · 부록 C.
 
-## 5. L8 — retrain-(a) 스위트 (작은-N LLM: gsm5 + silo5 a-leg) — ⚪ 등록·파일럿 큐 대기
+## 5. L8 — retrain-(a) 스위트 (작은-N LLM: **silo5 a-leg만** · gsm5 보류) — ⚪ 등록·파일럿 큐 대기
+
+> **⚠ 스코프 변경 (2026-07-24 Yonghee): gsm5·anchor5 보류, silo5 (a)-leg만 활성.**
+> (a) retrain 오라클 = **silo5 단독**으로 확보. 근거·정리 = 아래 및 `paper/workplan/T5-retrain-a-suite.md` §1 보류 배너.
+> — **silo5**(non-IID)만이 실재 cross-seed 신호(clean +0.87 / noisy +0.93)를 갖는 유의미한 (a)-검증 무대.
+> — **gsm5**(IID, 주무대 데이터)는 near-additive·ρ≈0 축퇴 무대라 anchor5 기존 0.933과 정보 중복 → 보류(코드·캐시 존치, 부활 시 §5.1 그대로).
+> — **anchor5**(IID, Alpaca) 기존 0.933은 **보류 참조**(재실행 없음; `REMAINING-b200.md` §4 β0.3 재실행도 보류).
+> **실행 조치**: 큐의 **gsm5 파일럿 취소**, silo5a 파일럿(array 0)만 진행 → 게이트 통과 시 silo5a 9 leg 자동.
+> **⚠ 결과 여파**: silo5 (a)-leg 미완인 동안 §5.2 sub (a) 칸은 ⬚ 유지(anchor5 0.933은 보류 참조로 폴백 가능).
 
 > 스펙 = `paper/workplan/T5-retrain-a-suite.md`. 코드 **커밋 완료**(TRACKED·clean). **전 셀에 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`**(단편화 방지).
 > **env(이 서버 확정 2026-07-24)**: CNN과 **동일** conda `lora4cl`(§0의 "venv 계열"은 B200 기준·무효). `HF_HOME=/scratch/chyoyhr/hf_home`
@@ -127,7 +135,7 @@ SMOKE_MODEL=gpt2 REGIME=gsm5 THREAT=noisy SEED=0 ROUNDS=2 MAX_STEPS=2 VAL=8 PER_
   BATCH=2 VAL_CHUNK=4 VAL_MAXLEN=64 PERSIST=0 PYTHONPATH=. $PY -u experiments/phase2_matrix.py
 ```
 
-**1) gsm5 무대(본문 주 표 후보) — {clean,noisy} × seed{0,1,2} = 6 leg, 1 GPU 1 job:**
+**1) gsm5 무대 — ⏸ 보류(2026-07-24; 실행 안 함, 부활 대비 스펙 존치):**
 ```
 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True REGIME=gsm5 THREAT=clean SEED=0 \
   PYTHONPATH=. $PY -u experiments/phase2_matrix.py     # THREAT∈{clean,noisy} × SEED∈{0,1,2}
@@ -137,7 +145,7 @@ PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True REGIME=gsm5 THREAT=clean SEED=0
   `metrics.json`=vs(b) + **vs(a)(spearman_a/pearson_a)** + timing.
 - **비용/시간**: 셀당 (a) **2⁵=32 retrain × R30**이 지배적 → 3090서 여러 시간/셀. vs(b)만 싸게 선(先)확인하려면 `ORACLE_A=0`.
 
-**2) silo5 (a)-leg(비IID 보조) — {clean,noisy,frzero} × seed{0,1,2} = 9 leg:**
+**2) silo5 (a)-leg(★활성 = 유일 (a)-무대) — {clean,noisy,frzero} × seed{0,1,2} = 9 leg:**
 ```
 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True REGIME=silo5 THREAT=frzero SEED=0 \
   PYTHONPATH=. $PY -u experiments/track_a_silo5.py     # THREAT∈{clean,noisy,frzero} × SEED∈{0,1,2}
@@ -154,10 +162,10 @@ PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py     # canonical ⋈ *_aonly
 - 헤드라인(T5 §2): silo5 `(b)oracle` 행의 `rho_a` = 두 오라클의 **실재 신호 일치**(목표 clean +0.87 / noisy +0.93; overview §5.4).
 
 **4) 완료 후**: rundir 커밋 → overview §3.1.1 이웃 신규 소절 기입 → paper §5.2 sub 표(T1)·T2 F2 갱신.
-  **⚠ 방법 범위(2026-07-24 기준)**: gsm5·silo5 (a) retrain 표 = **전 방법**(renorm-4+FedIF 포함) · **vs (b) 열은 same-game 3만**
+  **⚠ 방법 범위(2026-07-24 기준)**: silo5 (a) retrain 표 = **전 방법**(renorm-4+FedIF 포함) · **vs (b) 열은 same-game 3만**
   (flirds·flirds1st·lossheur; cross-game은 in-run 오라클과 다른 게임이라 vs (b) 미채점). rundir은 전 방법 φ 산출(무해) — 표기만 제한.
-**사전기대(T5 §1·§2)는 실행 전 커밋**, HIT/MISS 그대로 보고. 3B/7B (a)는 하지 않음.
-- **채우는 overview ⬚**: §5.2 sub gsm5(주표)·silo5 (a)-leg.
+**사전기대(T5 §2)는 실행 전 커밋**, HIT/MISS 그대로 보고. gsm5·3B/7B (a)는 하지 않음.
+- **채우는 overview ⬚**: §5.2 sub **silo5 (a)-leg**(gsm5 주표는 보류 → silo5가 유일 (a)-무대).
 
 ## 6. rundir 정체성 — 잔여 배선 (CNN track 관련)
 

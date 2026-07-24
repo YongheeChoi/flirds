@@ -108,14 +108,14 @@ allocated **~27 GiB 추정** → 32GB 네이티브 적재 → **vast**(상세·�
 | **L10** strmain dose | 3-seed | ~30–45 | HVP |
 | **L9 관찰자만** (arms는 vast) | 3 seed | ~30 | **프론트로드 필수** — vast V3a가 이 cum에 블록됨 |
 | **L7 관찰자** (arms는 vast) | — | ~40 | §2a 재사용 경로면 축소 가능 |
-| **anchor5** β0.3 재실행 | 3셀 | ~40 | §4 |
+| ~~anchor5 β0.3 재실행~~ | ~~3셀~~ | **0(보류)** | ⏸ **보류(2026-07-24 Yonghee)** — gsm5와 함께 보류, (a)-무대=silo5 단독. §4 |
 | L5 · L6 | — | ~16–27 | **여유 시**(창 초과 시 1순위 드롭) |
-| **합계** | | **~235–300** | |
+| **합계** | | **~195–260** | anchor5 ~40 회수 → 창 슬랙 소폭 |
 
 ### ⚠ 용량 결론 — downstream seed0도 vast로 내려야 완주
 
 B200 잔여 창 = 07-24 11:00 → 07-26 24:00 ≈ **61h × 4 GPU = ~244 GPU-wall-h**.
-위 B200 필수분(~235–300)은 **전부 HVP 계열 = 1셀/GPU라 팩킹 불가** → **창을 그대로 채움**.
+위 B200 필수분(~195–260, anchor5 보류로 −40)은 **전부 HVP 계열 = 1셀/GPU라 팩킹 불가** → **창을 거의 채움**.
 ⟹ downstream(L4·L11·L9-arms·L7-arms)은 **seed0까지 포함해 vast**로 가야 물리적으로 26일 완주.
 ✅ **예외 승인됨(2026-07-24 Yonghee "vast ai로 넘기자")** — 근거: downstream EM은 W-A 스택-강건
 (recovery 정규화하 mean|Δ|≤0.006) + 대상이 foil(비-flirds) 레그. **fidelity·timing canonical은 B200 유지**(불변).
@@ -145,8 +145,8 @@ B200 잔여 창 = 07-24 11:00 → 07-26 24:00 ≈ **61h × 4 GPU = ~244 GPU-wall
   (※ R4 frrand는 07-23 번복 → §3 L9로 부활.)
 - **예산·분할(2026-07-24 갱신 — 정본은 §1a)**: 전체 잔여 ≈ **960–1100 GPU-h**. B200 단독이면 ×4로
   10–11.5일 = 26일 마감 **불가** → **HVP/fidelity/timing만 B200(~235–300), downstream SFT는 vast**로 분할.
-  - **B200 몫**(§1a 표): L1-clean s1·2 · L2 잔여 · L10 · L9/L7 관찰자 · anchor5 (+여유 시 L5·L6).
-    창 ~244 GPU-wall-h를 **HVP 1셀/GPU**로 그대로 채움.
+  - **B200 몫**(§1a 표): L1-clean s1·2 · L2 잔여 · L10 · L9/L7 관찰자 (+여유 시 L5·L6). **anchor5 β0.3=보류**(silo5 단독 (a)).
+    창 ~244 GPU-wall-h를 **HVP 1셀/GPU**로 거의 채움.
   - **vast 몫**: L11(V1) · L4(V2) · L9-arms(V3) · L7-arms(V4) ≈ **~490(seeds1-2) / ~730(seed0 포함)**
     → 16× 5090 기준 **~1.9–2.9일 · ~$460–685**. 런북·환경·검증 = **`REMAINING-vast.md`**.
   - **정책**: seed0(canonical)+**전 timing 셀 B200 고정**, **`timing.json` vast 산출 사용 금지**(§5.5 = B200 실측만).
@@ -228,7 +228,14 @@ REGIME=gsm50k5 THREAT=<clean|noisy|frzero> SEED=<0|1|2> \
   `track_c2` frrand 위협 훅의 LLM 대응. 신규 러너 최소.
 - **overview 반영 완료**: `survey/flirds-paper-results-overview.md` §5.1(C)·§5.2 F-4·§5.3 R4 개입표(L9·L10 ⬚ 축).
 
-## 4. anchor5 β0.3 재실행 3셀 (ShapleyFL β 감사 — C1은 `REMAINING-slurm.md` §4)
+## 4. anchor5 β0.3 재실행 3셀 (ShapleyFL β 감사) — ⏸ 보류(2026-07-24)
+
+> **⚠ 보류 (2026-07-24 Yonghee): anchor5·gsm5 보류, (a) retrain 오라클 = silo5 단독.**
+> anchor5(IID, Alpaca)는 gsm5와 함께 보류 — silo5(non-IID)만이 실재 신호 무대라 (a)-검증을 담당.
+> 기존 0.933(β0.5 산출)은 **보류 참조**로 존치(부활 시 아래 절차 그대로; 근거·정리 = `REMAINING-slurm.md` §5 배너).
+> **anchor5 β0.3 재실행은 안 함** → B200 ~40 GPU-h 회수(§1a 반영). C1(β0.3, Slurm §4)은 별건 = 유지.
+> ⚠ **여파**: anchor5 0.933은 논문 §5.2 sub의 **폴백 참조**로만(주 (a)-결과는 silo5). paper B.5 "β=0.3" 서술은
+> anchor5 보류로 무영향(silo5·C1이 β 정합 담당) — B.5 재실행-대기 주석은 C1 착지 시 정리.
 
 논문 인용 ShapleyFL 값이 실제 **β=0.5** rundir 산출로 판명(감사 07-23): 1B_anchor5 3셀
 (git_sha `39a0a97`, 06-15)이 β0.5→0.3 변경(`e89af94`, 06-25) **이전** — 재실행 계획 미반영.

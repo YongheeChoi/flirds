@@ -9,7 +9,7 @@
 | 절 | 내용 | 수치 상태 |
 |---|---|---|
 | 5.1 세팅 | 주무대 쌍(LLM R4 gsm50k5 · CNN C2 캠페인 그리드) + sub 무대 · 비교군 9종 · 지표 · 고정-궤적 채점 프로토콜 (상세→부록 B) | 작성 가능 |
-| 5.2 Fidelity | **메인**: c2fid + R4-L2, **same-game만**(Flirds·Flirds-1st·loss-heur) vs (b) ⬚ · **sub**: retrain-(a) 특성화 = LLM(gsm5 신설 ⬚ 주 표 / silo5 (a) ⬚ 비IID 보조 / anchor5 기존 0.933 IID 참조) + CNN C1 시나리오별 vs (a)(기존; overview §3.1.2 신규 표) | 쌍·(a)신설 ⬚ |
+| 5.2 Fidelity | **메인**: c2fid + R4-L2, **same-game만**(Flirds·Flirds-1st·loss-heur) vs (b) ⬚ · **sub**: retrain-(a) 특성화 = LLM **silo5 (a)-leg 단독** ⬚(2026-07-24: gsm5·anchor5 보류 — silo5=유일 (a)-무대; anchor5 0.933은 폴백 참조) + CNN C1 시나리오별 vs (a)(기존; overview §3.1.2 신규 표) | silo5 (a) ⬚ |
 | 5.3 개입 | **메인**: R4 P1 T1/T2 절대 EM ⬚(L1) + CNN 8점수원 P1 절대 acc(기존 §3.2.3; restack 드리프트 확인 후 기입) · P1w(크기-가중)는 결과 규칙부 수록 | R4 ⬚ |
 | 5.4 탐지 | R4 φ + 전용 탐지기 4종 ⬚(L2) + c2fid φ-AUROC ⬚ | ⬚ |
 | 5.5 비용 | op-count 모델 + 주무대 실측 runtime ⬚ · 소-cohort 조건부는 op-count 축 서술(std20 실측 삭제 여파) | 부분 ⬚ |
@@ -20,7 +20,7 @@
 | 부록 D | stability(C1 방법 안정성 + (b) target 안정성 — 수록 무대 한정) | 작성 가능 |
 | 부록 E | 비용·규모 보조(**Scale 100/100 P1** + N=10 2¹⁰ 1/160 + device100 1/159) — 07-23 결정으로 본문→부록 | 작성 가능 |
 
-**전역 결정(07-22~23)**: 본문 fidelity=same-game만(vs (a)는 전 방법 허용 — 중립 참값) · 정책=P1 확정(P2~P5 미수록) · **std20·anchor5-vs(b)·신호실재성(B축)·3B/7B 삭제**(초록 "1B–7B ρ≥0.999" 문구 삭제; 3B/7B는 여유 시 재추가 후보) · **Fed-LOO 논문 전면 제외** · 기존 제외 유지(poison·Banzhaf·Ripple·수렴·std50k5 selection·MMLU/ROUGE·AdamW·frdelta[§6 한계 1문장 후보]·dose·Track G 게이팅 표·silo5 §3.3.1 표·device100 표·예측표 HIT/MISS).
+**전역 결정(07-22~23)**: 본문 fidelity=same-game만(vs (a)는 전 방법 허용 — 중립 참값) · 정책=P1 확정(P2~P5 미수록) · **std20·anchor5-vs(b)·신호실재성(B축)·3B/7B 삭제**(초록 "1B–7B ρ≥0.999" 문구 삭제; 3B/7B는 여유 시 재추가 후보) · **gsm5·anchor5 (a) 보류(2026-07-24 — silo5 단독 (a)-무대; anchor5 0.933=폴백 참조)** · **Fed-LOO 논문 전면 제외** · 기존 제외 유지(poison·Banzhaf·Ripple·수렴·std50k5 selection·MMLU/ROUGE·AdamW·frdelta[§6 한계 1문장 후보]·dose·Track G 게이팅 표·silo5 §3.3.1 표·device100 표·예측표 HIT/MISS).
 
 ## 1. 신규 실험 (승인 완료)
 
@@ -28,7 +28,7 @@
 |---|---|---|---|---|
 | **L7** | R4 P1w(크기-가중) flirds-only {clean,noisy,frzero}×3-seed×{T1,T2} | ~80 | B200(L2 뒤·L4 앞) | T3 |
 | **W-B** | CNN 캠페인 그리드 P1w flirds twin leg (T1·T2) + W-A(dir1 기존 P2 재사용) | ~25–35(CNN측) | CNN 서버 | T4 |
-| **L8** | retrain-(a) 스위트: gsm5 신설(dual (a)+(b), clean·noisy) + silo5 (a)-leg 3셀 | gsm5 ~60 + silo5 ~26 | **RTX3090×8**(B200 비점유) | T5 |
+| **L8** | retrain-(a) 스위트: **silo5 (a)-leg만**({clean,noisy,frzero}×3seed) · **gsm5 보류**(2026-07-24) | silo5 ~26 (gsm5 ~60 보류) | **RTX3090×8**(B200 비점유) | T5 |
 | W-D | P1w 비-flirds 점수원(CNN 확장무대·R4) | 조건부 | 게이트 | T3/T4 |
 
 P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본문 승격 / 동률 "부호가 가치의 대부분" ablation 1문장 / 열세·타 소스 역전 시 미수록(P1만; rundir 존속).
@@ -39,7 +39,7 @@ P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본�
 |---|---|---|---|---|
 | T3 | `T3-p1w-llm-impl.md` | R4 P1w 구현+테스트+스모크+큐 등재(H-14 사전등록 포함) | 없음(코드 세션) | ◐ 코드 구현 완료 07-23(T1 `flirds_gatew_v2`·T2 `t2_signw_flirds`[`T2_W=1`]; test_p1w 6종+회귀 green·offline 스모크 green·H-14 선등록) — **B200 L7 실행 대기**(런북 = `REMAINING-b200.md` §2a); 수록 규칙 판정 1줄은 실행 후 이 §1에 기록 |
 | T4 | `T4-p1w-cnn-relay.md` | CNN 서버 세션 전달 스펙(W-A 재사용 판정 + W-B twin leg) | 없음(전달) | ◐ 구현 완료 07-23(W-A 판정=드리프트≈0 귀속·FedIF 역전 확인 / W-B sbatch·분석·H-15 선등록) — **GPU 실행 대기**(RTX3090); 인수인계 = `runs/track_h/RUN_P1W_CNN.md` |
-| T5 | `T5-retrain-a-suite.md` | gsm5 무대 신설 + (a) 러너 배선 + silo5 (a)-leg + 3090 배치 | 없음(코드→3090) | ☐ |
+| T5 | `T5-retrain-a-suite.md` | **silo5 (a)-leg** + 3090 배치 (gsm5 무대 = **보류** 2026-07-24; 코드·캐시 존치) | 없음(코드→3090) | ◐ silo5만 실행 |
 | T1 | `T1-paper-section5.md` | paper-ko §5·부록 B–E 실작성(기존값 기입 + ⬚ 골격) + 초록/§1/부록A 수정 | 없음(기존값부) | ☑ 07-23 (§5.1–5.6·부록 B–E·§6 스텁·전역수정 A-1~6 완료; CNN dir1 수치는 † = W-A 드리프트 확인 대기, ⬚ = F1·F2·F3·silo5(a)·I1·D1·비용실측·F-4) |
 | T2 | `T2-results-overview-page.md` | 논문-순서 결과 overview 위키 페이지 + 시각화(figures) | T1 구조(권장) | ✅ (2026-07-23; `survey/flirds-paper-results-overview.md` + figs, F1/2/5/7/8/9 생성·자립형) |
 
