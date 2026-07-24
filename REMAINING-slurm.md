@@ -173,7 +173,8 @@ PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py     # canonical ⋈ *_aonly
 > **역할**: R4 downstream SFT(L11·L4·L9-arms·L7-arms)의 주력은 **B200 팩킹**(`REMAINING-b200.md` §1a).
 > 3090은 **CNN(§1-4)+L8(§5) 완주(~26일) 후** 놀지 않게 **seeds 1-2 overflow만** 받는 **조건부 보조** — B200가 28일 창에 못 담는 꼬리 흡수.
 
-- **왜 3090에 됨**: downstream = SFT(게이트·T2 재학습·online), estimator HVP 없음 → allocated **~27 GiB**로 **24GB에 네이티브**(gsm5 batch16·seq512가 3090 완주한 선례; T2 재학습·online 동일). **VAL_CHUNK 불요**(HVP 아님).
+- **왜 3090에 됨 (07-24 실측 정정)**: 24GB 적재 = **순수-SFT arm만** — T2 재학습·**cum 재사용** online-gate 적용·downstream eval = allocated **~15–18 GiB**(downstream 15.0·val-curve 17.7; T2 phase는 로깅 갭이나 구조상 동급). **VAL_CHUNK 불요**(HVP 아님).
+  - ⚠ **retrain-scoring arm**(gtg·fedsv·comfedsv·shapleyfl의 online/renorm **값 산출**, exclusion 재학습)은 **~32 GiB → 24GB 불가**. 이 값 산출은 **B200가 관찰자로 전담**하고, 3090엔 그 **cum을 재사용하는 순수-SFT arm만** 넘긴다(아래 cum 전제와 동일 조건). ⟹ L11/L4/L9-arms도 "cum 재사용" 형태로만 3090행.
 - **무엇을(우선순위)**: **seeds 1-2만**(seed0은 B200가 ~26일에 먼저 뽑음 = 논문 착수선). 큰 독립 물량 순 = **L11(online 42런) → L4(renorm T2 6셀) → L9-arms → L7-arms**.
 - **전제 = 관찰자 cum**: downstream은 관찰자 φ 재사용(HVP 재실행 0). **B200가 산출한 cum(`metrics.json`의 `observer_cum`, 수 KB)만 3090에 복사** → arms가 읽어 실행. L11=L1 cum·L9-arms=B200 L9관찰자 cum·L7-arms=§2a 경로.
 - **러너·명령**: `experiments/track_g.py`(B200과 동일 러너·코드). env = §0(작은-N LLM = conda `lora4cl`). 예:
