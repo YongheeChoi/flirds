@@ -70,7 +70,7 @@ Shapley 값이다(§4.1). 그러나 FL에서는 매 라운드 서로 다른 클�
 논문도 평가 대상을 같은 라운드 단위에 두며, 그 목표값이 §4에서 정의할 **exact in-run
 Shapley**다.
 
-**남은 두 한계: 지수적 계산의 우회, 그리고 검증되지 않은 대체 정의.** 이 라운드 단위
+**남은 두 한계.** 이 라운드 단위
 계보(FedSV, GTG-Shapley, ComFedSV, ShapleyFL 등)는 대부분 위 조건들 안에서 동작하도록
 설계되어 있다. 그러나 두 가지 한계가 남는다.
 첫째는 **계산**이다: 목표로 삼는 라운드별 Shapley 값을
@@ -86,11 +86,7 @@ Shapley**다.
 서버 집계 전략만 바꿔도 수십 %씩 출렁인다는 보고는 이 상태의 실무적 얼굴이다. 요컨대 이
 계보에서 Shapley 값을 겨냥한 방법들은 그 대가로 표본 분산과 조합 비용을 치렀고, 비용과
 결정론을 확보한 방법들은 그 대가로 공리를 내려놓았다 — 두 축을 동시에 만족한 방법은
-없었다. 반대편에서
-LLM 규모의 데이터 기여도 평가(In-Run Data Shapley(IRDS), DataInf, LESS 등)는 활발히 발전했지만 전부 데이터에 직접
-접근할 수 있는 중앙집중 세팅·샘플 단위의 방법이고, 이는 위에서 기술한 FL의 제약 안에서 이루어질 수 없는 방법들이다.
-
-우리의 접근이 겨냥하는 것이 정확히 이 두 한계다. In-Run Data Shapley가 중앙집중 학습에
+없었다. 우리의 접근이 겨냥하는 것이 정확히 이 두 한계다. In-Run Data Shapley가 중앙집중 학습에
 대해 제안한 closed-form Shapley 계산을 연합학습의
 라운드 구조로 확장하면 두 문제가 한꺼번에 풀린다. 조합 재평가가 통째로 사라져 지수적 계산을
 우회할 샘플링·절단이 애초에 필요 없어지고(계산), 목표와 근사가 모두 명시적이라 오차를
@@ -106,7 +102,7 @@ LLM 규모의 데이터 기여도 평가(In-Run Data Shapley(IRDS), DataInf, LES
 closed-form으로 계산한다. 즉 Flirds 역시 참값 자체가 아니라 그 근사를 계산하는 추정기다. 다만
 근사의 원천이 Taylor 절단 하나뿐이고 그 오차가 표본 추출 없이 결정론적으로 bound된다는
 점에서, 무작위 샘플링의 분산과 검증되지 않은 대체 정의가 겹겹이 끼는 선행 근사들과
-다르다(§4). 그 결과 라운드당 필요한 무거운 계산은 검증셋 위의 Hessian-vector product 한
+다르다. 그 결과 라운드당 필요한 무거운 계산은 검증셋 위의 Hessian-vector product 한
 번으로 고정되고, 참여자당 추가 비용은 내적 하나가 전부다: 재학습도, 부분집합별 모델
 재구성·재평가도, 추가 통신이나 클라이언트-측 연산도 필요 없다. 내적은 업데이트가 놓인
 파라미터 공간의 차원에만 비례하므로, 전체 모델을 학습하는 소형 네트워크부터 PEFT(LoRA)
@@ -378,7 +374,8 @@ FL"이라는 같은 구도를 공유한다. retrain GT가 필요한 비교는 $2
 성능 심판은 LLM-Main = GSM8K 공식 test의 잔여 1,119문항 exact-match(EM; greedy 디코딩),
 CNN = held-out test 정확도다. 학습은 두 트랙 모두 momentum 없는 plain SGD·상수
 학습률·stateless 클라이언트(부록 A.9의 가정 그대로)이고, LLM 트랙은 LoRA(r=16, α=32) 인자만
-교환한다(부록 A.10). 하이퍼파라미터 전량·데이터 분배 규칙은 부록 B. 부록 E의 보조
+교환한다(부록 A.10). 하이퍼파라미터 전량·데이터 분배 규칙은 부록 B. 표에서 위협 이름
+`lf@r`는 label-flip@r(라벨 오염 비율 $r$)의 축약이다. 부록 E의 보조
 무대(완전참여 100/100, $N{=}10$ LLM $2^{10}$, cross-device anchor)는 비용·규모 주장 전용이다.
 
 **비교 방법: 겨냥하는 게임으로 나눈다.** 기여도 방법 8종을 두 계열로 구분하며, 이 구분이
@@ -627,7 +624,7 @@ FedIF·individual utility도 차지한다. LLM 주무대에서 같은 구조가 
 실제로 낮추는 오염(예: 직전 라운드의 글로벌 업데이트를 재제출하는 free-rider 변형)에 대해
 val-loss 게임의 정직한 답은 "기여함"이고, 이는 추정 실패가 아니라 in-run GT 자신의 답이기도
 하다(§6). 따라서 주장 형식은 절대 AUROC가 아니라 **in-run GT 일치**이다 — 추정기가 in-run GT와 같은
-답을 주는가(사전 등록 기준: $|\mathrm{AUROC}(\text{Flirds}) - \mathrm{AUROC}(in-run GT)| \le
+답을 주는가(사전 등록 기준: $|\mathrm{AUROC}(\text{Flirds}) - \mathrm{AUROC}(\phi^{\mathrm{in}})| \le
 0.05$). φ-파생 탐지는 기여도 순위 하위 = 의심 규약의 AUROC이고, 전용 탐지기 4종은 각자의
 스코어를 그대로 쓴다.
 
@@ -653,11 +650,11 @@ CNN 주무대 φ-AUROC(오염 셀, 위협별 풀) ⬚
 
 **연산수 모델(하드웨어-독립).** 방법별 라운드-누적 지배 연산수는 해석적으로 닫힌다:
 Flirds = 라운드당 **HVP 1회**(cohort 크기와 무관), Flirds-1st = 라운드당 val-gradient 1회,
-individual utility = 라운드당 $1{+}|P_r|$ forward, in-run GT exact = 라운드당 $2^{|P_r|}$ forward. per-op
+individual utility = 라운드당 $1{+}|P_r|$ forward, in-run GT = 라운드당 $2^{|P_r|}$ forward. per-op
 실측(fp32·B200: forward 1.60s, HVP 10.36s — HVP/forward ≈ 6.5)과의 곱이 wall-clock을
 재현한다:
 
-| 무대 | Flirds | Flirds-1st | individual utility | in-run GT exact |
+| 무대 | Flirds | Flirds-1st | individual utility | in-run GT |
 |---|---|---|---|---|
 | Silo ($N{=}5$·$R{=}10$) | 10 HVP → 예측 104s / 실측 ~107s | 10 grad (~35s) | 60 fwd → 96s / 96.6–100.1s | 320 fwd → 512s / ~530s |
 | Anchor ($N{=}5$ 전원·$R{=}30$) | 30 HVP → 실측 707±16s | 30 grad (231±5s) | 180 fwd (657±19s) | 960 fwd (3,528±83s) |
@@ -673,7 +670,7 @@ individual utility = 라운드당 $1{+}|P_r|$ forward, in-run GT exact = 라운�
 160×로 벌어진다(부록 E). 반대로 라운드당 참여가 아주 작은 무대(예: 2명 → $2^2{=}4$ forward
 < 1 HVP ≈ 6.5 forward)에서는 in-run GT 직접 열거가 Flirds(2차)보다 싸다 — **Flirds의 비용 우위는
 "참여가 많아 전수 열거가 지수적으로 비싼" 무대의 것**이고, 그렇지 않은 무대에서도
-Flirds-1st(라운드당 gradient 1회)는 항상 최저가다. exact retrain retrain GT는 같은 무대에서 in-run GT의
+Flirds-1st(라운드당 gradient 1회)는 항상 최저가다. retrain GT는 같은 무대에서 in-run GT의
 ~9배다(Anchor: 30,817±244s vs 3,528±83s — $2^5$개 부분집합 × $R{=}30$ 재학습). CNN에서는
 valuation이 학습 자체보다 두 자릿수 싸다(CNN-Grid: Flirds 0.6~1.4s vs FL 학습 80~94s).
 
@@ -1015,7 +1012,7 @@ LoRA 인자 공간의 기하에서 검증-gradient 방향 성분이 미미해, C
 | ComFedSV | −0.109 | −0.125 | −0.081 |
 
 전원 참여 무대(anchor류)에서는 대부분 방법이 1.000으로 붕괴-동률이지만, 부분참여가 방법을
-가른다 — uniform-subset/1차-influence 계열(ComFedSV·ShapleyFL·FedIF)은 oracle 반대
+가른다 — uniform-subset/1차-influence 계열(ComFedSV·ShapleyFL·FedIF)은 in-run GT 반대
 순위(음수)로 붕괴하고, 같은-게임 계열은 rank와 무관하게 1.000을 유지한다(Flirds r16 3-seed
 +1.000±.000). §5.6-②의 "구별을 만드는 축은 참여 형태" 클레임의 전표다.
 
@@ -1037,7 +1034,7 @@ LoRA 인자 공간의 기하에서 검증-gradient 방향 성분이 미미해, C
 | ShapleyFL | 0.124±.431 |
 
 in-run GT 자체의 안정성이 0.518이다 — CNN 무대는 seed마다 클라이언트 기여가 실제로
-달라진다. Flirds(0.547)는 **oracle의 내재 안정성을 그대로 추종**하고, Monte-Carlo
+달라진다. Flirds(0.547)는 **in-run GT의 내재 안정성을 그대로 추종**하고, Monte-Carlo
 재구성 계열은 추가 분산으로 0.12~0.31까지 떨어진다.
 
 **D.2 in-run GT 타깃 자기-안정성(수록 무대).** fidelity의 매칭 대상인 in-run GT 자신이 seed를 넘어
@@ -1082,7 +1079,7 @@ test acc(3-seed):
 라운드당 $2^{10}{=}1{,}024$ coalition 완전 열거로 계산: 같은-게임 3종 모두 Spearman
 1.000(값 수준 Pearson 잔차만 분리 — Flirds $1{-}r \approx 9{\times}10^{-7}$로 최소).
 비용: **in-run GT 117,649s(32.7h) vs Flirds 733s = 1/160**(Flirds-1st 240s, individual utility 1,240s).
-$N{=}5$($2^5$)에서 $N{=}10$($2^{10}$)으로 갈 때 oracle 비용이 실증적으로 폭발하는 동안
+$N{=}5$($2^5$)에서 $N{=}10$($2^{10}$)으로 갈 때 in-run GT 비용이 실증적으로 폭발하는 동안
 Flirds는 라운드당 HVP 1회로 고정임을 보이는 규모 축 실측이다.
 
 **E.3 cross-device anchor($N{=}100$, 10/100, $R{=}30$).** in-run GT per-round $2^{10}$ ≈
