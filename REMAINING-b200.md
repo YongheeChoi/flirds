@@ -3,7 +3,7 @@
 > 실행처별 인수인계 **2부작** 중 **B200** 몫. 짝 = `REMAINING-slurm.md`(CNN + 작은-N LLM + LLM downstream overflow).
 > **~~vast 폐기~~(2026-07-24 Yonghee)** — downstream SFT는 **B200 팩킹 + Slurm 3090**으로 흡수(§1a). `REMAINING-vast.md` 삭제.
 > **마감(신): 실험 07-28 / 논문 07-29 21:00.** 전략 = **전 실험 seed0 우선 완주 → 작성 병행 seeds 1-2 보강**(§1a 2단계).
-> **현재(07-24 12:48): L1 seed0 6/6·seed1 4/4 완료(커밋 `20c3595`), seed2 부분+L2 seed0 진행 중(§1).** 현 컨테이너 하드컷 07-25 03:27.
+> **현재(07-24 23:12): L1 seed0·seed1 완료 + seed2 `obs_t2` 2/2 DONE(arm 12개; 커밋 `135342e`·`9f65bcd`); seed2 `online` 2셀·L2 seed0 2셀 진행 중(§1).** 현 컨테이너 하드컷 07-25 03:27.
 > **B200 담당 = HVP(flirds 2차 φ)·fidelity·timing 전담 + SFT 팩킹**. push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 실행 절차·명령 정본 = `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
 > 사전등록 = `runs/track_h/README.md` H-12·H-13(+H-14는 T3에서 선커밋).
@@ -43,19 +43,18 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
 >   **oracle_excl/random_excl 없음**(제외 대상 부재) + **T2 clean은 kept=전원→`equals_vanilla`로 스킵**
 >   → 실질 신규 = T1(online) 게이트 arm뿐 = 저비용.
 
-### 진행 상황 (07-24 12:48)
+### 진행 상황 (07-24 23:12)
 
 | 묶음 | 셀 | 상태 |
 |---|---|---|
-| L1 **seed0** | noisy/frzero `obs_t2`·`online` + **clean_obs·clean_online** | **6/6 DONE** — `rundirs_llm/*seed0` 41개, consolidate 완료·**커밋 `5cb21ec`** |
+| L1 **seed0** | noisy/frzero `obs_t2`·`online` + **clean**(11 arm) | **DONE** — `rundirs_llm/*seed0` 41개, **커밋 `5cb21ec`** |
 | L1 **seed1** | noisy/frzero `obs_t2`·`online` | **4/4 DONE**(08:34) — `*seed1` 18개 **커밋 `20c3595`** |
-| L1 seed1 **clean** | clean_obs·clean_online | **0/2** — 큐 [67][69] append(꼬리 팩킹); 워치독이 착수마감선 관리 |
-| L1 **seed2** | [44] noisy_obs_t2(03:13~, T2 중) · [48] frzero_obs_t2(08:34~) | 진행 — **완료 arm 2개 영속**(noisy `observer`+`t2_sign_flirds`, `20c3595`); 완주 ~21:30 / ~18:10 |
-| L1 seed2 대기 | [49] noisy_online(9.5h) · [50] frzero_online(8.8h) | 각 **17:57 / 18:40 이전 착수 시 완주** |
-| L1 seed2 **clean** | clean_obs·clean_online | **0/2** — 큐 [68][70] append |
-| **L2 seed0** | [45] clean(04:04~, valuation 6.7h째) · [47] noisy(06:48~, 4.0h째) | 진행 — rundir는 셀 끝 1회 persist라 **미생성**; 완주 시 L2 셀당 실측 GPU-h 확정 |
+| L1 **seed2** `obs_t2` | [44] noisy(→16:57) · [48] frzero(→18:03) | **2/2 DONE** — arm 12개(각 셀 `observer`+`t2_sign`×4+`t2_random`) 영속 **커밋 `20c3595`·`135342e`·`9f65bcd`** |
+| L1 **seed2** `online` | [49] noisy(16:57~) · [50] frzero(18:03~) — `oracle_excl,random_excl,flirds_gate_v2` | **진행** — excl 4개 영속(`9f65bcd`); 지금 **`flirds_gate_v2`**(HVP·pid 576195=100GB / 585182 램프업) → 완주 시 noisy·frzero seed2 = **9-arm 완결**(seed1 등가) |
+| L1 seed1·2 **clean** | clean_online [69][70] (clean_obs [67][68]=**`#SEAL`**=차기 컨테이너 이월) | **0/2** — 큐 꼬리 대기(clean 신규 = online 게이트 arm뿐, §1); 잔여 GPU 시간 내 착수 시 완주, 아니면 이월 |
+| **L2 seed0** | [45] clean · [47] noisy — 둘 다 valuation 중(pid 489847·469533=100GB) | **진행**(23:12) — rundir는 셀 끝 1회 persist라 **미생성**; 완주 시 L2 셀당 실측 GPU-h 확정 |
 
-⟹ 완료 집계: **L1 noisy·frzero = 2-seed 확보**(seed0·1) + seed2 부분. L2 2셀이 18:00 전에 비면 seed2 online 2셀도 완주 → **noisy·frzero 3-seed + L2 seed0 완결.**
+⟹ 완료 집계: **L1 noisy·frzero = seed0·1 완결 + seed2 obs_t2·excl 영속(16 arm)**; 잔여 = seed2 `flirds_gate_v2`×2(실행 중·임박) + **clean online seed1·2 [69][70]**(꼬리/이월) + L2 seed0 2셀 valuation. `flirds_gate_v2` 2개가 03:27 전에 비면 **noisy·frzero 3-seed 완결**, L2는 완주 시 seed0 확정.
 
 - **부대작업 완료**: pre-fix Tier A 20 rundir → `rundirs_llm_prefixh1/` 아카이브 · seed0 해시-포크
   `consolidate_hash_dirs.py --apply` 정리 · 큐 재정렬(44↔47, 인덱스 불변) · **L7(P1w) 코드·테스트 커밋(`ec6cbd5`)+H-14 사전등록 → 실행만 남음**.
