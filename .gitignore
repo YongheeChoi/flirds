@@ -40,6 +40,7 @@ runs/removal_dose/_sweep_cnn/
 runs/removal_dose/_chain/
 # beta=0.3 full re-run campaign: per-cell stdout logs are transient (tooling + queue ARE tracked):
 runs/rerun_beta03/logs/
+runs/rerun_beta03/_logs/
 # signal-size probe (2026-07-02): transient logs only; rundirs/, noise_probe/, cnn_c*/ ARE tracked:
 runs/probe_signal/_logs/
 runs/probe_signal/_nohup.out
