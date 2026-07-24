@@ -6,26 +6,26 @@
 > **현재: 캠페인 실행 중(2026-07-24 등록·모니터링) — 아래 「실행 현황」 참조.** push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 기존 rundir은 read-only.
 
-## 실행 현황 (2026-07-24 ~17:30 KST 갱신)
+## 실행 현황 (2026-07-24 저녁 갱신 · 커밋 80ebf30 시점)
 
-전 5항목 sbatch 등록 완료(번호 순). 완료분 rundir 커밋 `97db99c`(로컬·미push). 실패 0.
+완료분 rundir 커밋 `47680ec`(§4)·`80ebf30`(§1·§3) + Yonghee merge. **§5 파일럿 OOM 실패 1건**(§5 참조).
 
 | § | 실험 | 상태 | 진척 |
 |---|---|---|---|
-| §1 | c2fid CNN fidelity | 🟡 seed0 완료·seed1 진행 | **70/144**(s0 48✓·s1 22); 지금 §3/§5 seed0에 슬롯 양보(PD) |
+| §1 | c2fid CNN fidelity | 🟡 seed0·1 완료·seed2 진행 | **110/144**(s0 48✓·s1 46·s2 16) 실행 중·8슬롯 점유 |
 | §2 | W-B P1w observer(T2) | 🟡 파일럿 완주·게이트 대기 | seed0 파일럿 **29셀 완료**; `p1wgate`가 GPU 확보 시 판정 → 통과면 30-89 자동 |
-| §3 | C-fr frrand full-method | 🟡 파일럿 실행 중 | seed0 파일럿(array 0-7) 6/8 실행 중 |
-| §4 | C1 β0.3 재실행(30셀) | ✅ 30/30 완주 | ⚠ β0.3 결과가 `*_seed*_<hash>` 새 디렉토리로 착지(canonical 미교체) — 커밋 방식 결정 대기 |
-| §5 | L8 **silo5 (a)-leg만**(gsm5 보류) | 🟡 파일럿 실행 중 | **gsm5 파일럿+게이트 취소 완료**(Yonghee); silo5a 파일럿(array 0=clean seed0) 실행 중, 게이트 확장은 **seed-major(seed0 우선)**로 정정 |
+| §3 | C-fr frrand full-method | 🟡 파일럿 완주·게이트 대기 | seed0 8/8 EXIT=0·커밋(`80ebf30`); `frgate` PD(GPU 확보 시 seeds1-2 판정) |
+| §4 | C1 β0.3 재실행(30셀) | ✅ 완주·커밋 | β0.3 canonical **승격 커밋 `47680ec`**; ShapleyFL만 β0.5→0.3 변화 검증·타 10방법 비트동일 |
+| §5 | L8 **silo5 (a)-leg만**(gsm5 보류) | 🔴 파일럿 **OOM 실패** | silo5a SFT 재학습 24GB 초과(EXIT=1, ~1GB 부족) → **A6000 48GB 이전 필요**(결정 대기); `l8gate`는 fail-safe로 미확장. gsm5 취소 완료 |
 
-- **한도**: 동시 8-GPU(QOSMaxGRESPerUser) + §1/§4 array 각 `%8`. 현재 §4가 8슬롯 점유 → 나머지 그 뒤로 직렬화(§1-우선 depth-first).
+- **한도**: 동시 8-GPU(QOSMaxGRESPerUser) + §1 array `%8`. 현재 §1 c2fid가 8슬롯 점유 → 게이트 3종(p1w·fr·l8) PD 대기(각 GPU 확보 시 발화).
 - **파일럿→GO 게이트**(§2·§3·§5)는 Slurm `--dependency`로 자동(세션 무관·fail-safe): 완주 시 GPU-h 실측 보고 후 잔여 leg 자동 제출.
 - **예상 종료**(경합 유동): §1~§4(CNN) ~07-25, +§5(LLM) ~07-26.
 - **seed0 우선(2026-07-24 · change #3)**: 전 실험 seed0 완주 = 논문 착수선 → seeds 1-2 보강(`REMAINING-b200.md` §1a 2단계).
   실행 순서 = §1 c2fid **seed-major**(s0 48셀✓) · §2/§3 seed0 파일럿→게이트 · §5 silo5-a **seed-major 정정** · §4 C1 저비용 dataset-major = **의도된 예외**.
-  **전역 배리어(Q2 결정)**: 게이트가 실험별이라(각자 seed0 후 자기 seeds1-2 자동) 전역 seed0-우선은 자동 아님 →
-  **§1 seed1/2 hold**(`scontrol hold 1866324` — Yonghee; 전 slurm seed0 완주 후 `scontrol release 1866324`)로 §3/§5 seed0에 슬롯 우선. slurm은 곧 완주라 이 경량 개입만(게이트 재작성 안 함).
-- **gsm5 보류 = 취소 완료**(Yonghee, 2026-07-24): gsm5 파일럿(1866894)+게이트(1866895) scancel 됨. silo5a(1866896)+게이트(1866897)는 유지·실행 중.
+  **전역 배리어(Q2)**: 게이트가 실험별이라 전역 seed0-우선은 자동 아님 → §1 seed1/2 hold 계획이었으나 **이제 무의미**
+  (§1이 이미 110/144 = seed0·1 완료+seed2 진행). 남은 seed0 병목은 **§5뿐인데 그건 GPU 경합이 아니라 OOM**(§5) → hold 불요.
+- **gsm5 보류 = 취소 완료**(Yonghee, 2026-07-24): gsm5 파일럿(1866894)+게이트(1866895) scancel 됨. silo5a 파일럿(1866896)은 **OOM 실패**·게이트(1866897)는 fail-safe(미확장) → §5.
 
 ## 0. 환경
 
@@ -35,6 +35,7 @@
 - **작은-N LLM(§5 L8: gsm5·silo5 a-leg)**: 이 서버에선 CNN과 **동일 conda `lora4cl`**(2026-07-24 확정; 아래
   "venv 계열/다른 env"는 B200 기준). `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` + 24 GiB 노브 `VAL_CHUNK` + `HF_HOME=/scratch/chyoyhr/hf_home`.
 - 공통: `HF_HUB_OFFLINE=1`, `codes/`에서 `PYTHONPATH=.`.
+- **더 큰 GPU(2026-07-24 조사)**: 이 클러스터 `base_qos`로 **A6000 48GB**(`suma_a6000`·`gigabyte_a6000` ~96장)·**RTX6000Ada 48GB**(`asus_6000ada`)·**RTX4090 24GB**(`suma_rtx4090`) **즉시 접근**(모든 파티션 AllowAccounts=ALL — 계정 아닌 QOS가 게이트). **A100 40/80GB**(`suma_a100`)·**RTX PRO 6000 96GB**(`asus`/`gigabyte_pro6000`)만 특수 QOS(`a100_qos`/`pro6000_qos`). 8-GPU 상한은 per-user라 계정 2개면 동시 16. **24GB OOM 실험(§5 silo5-a)은 A6000로 해결.**
 
 ## 1. c2fid 본런 143셀 — CNN fidelity 주무대 (🟢 실행 중 — 70/144; seed-major=seed0 우선, s0 48셀 완료)
 
@@ -100,27 +101,28 @@
 - **스택 캐비엇**(이미 처리됨): 참조 frzero = B200/torch2.12, C-fr = RTX3090/torch2.11 — strmain이 동일 조건으로 이미 편입됐고 W-A가 recovery-정규화하 드리프트 무시가능(mean|Δ|≤0.006) 판정. 절대값 병치는 recovery로 읽음.
 - **분석**: `python runs/track_h/make_analysis.py` → `cnn_competition.csv`에 frrand 7방법+retrain 행 추가. **파일럿-우선**(seed0=array 0-7 → GPU-h 보고 → GO 후 seeds 1-2 = 8-23), 다른 Slurm 항목(§1 c2fid·§2 W-B·§4 C1)과 우선순위는 Yonghee.
 
-## 4. C1 30셀 β0.3 재실행 (ShapleyFL β 감사 — anchor5는 `REMAINING-b200.md` §4)
+## 4. C1 30셀 β0.3 재실행 (ShapleyFL β 감사 — anchor5는 `REMAINING-b200.md` §4) — ✅ 완료·커밋 `47680ec`
 
 논문 인용 ShapleyFL 값이 실제 **β=0.5** rundir 산출로 판명(감사 07-23): C1 30셀
 (git_sha `5cb927b`, 06-12)이 β0.5→0.3 변경(`e89af94`, 06-25) **이전** — 재실행 계획 미반영.
 - **셀 = C1 30셀**(track_c1; cifar10·mnist × 5시나리오 × 3seed). 오케스트레이터 = `rerun_beta03/`.
 - **seed 순서**: array는 dataset-major·seed-interleaved(셀당 ~1.6h·전량 8슬롯 ~6h 1패스) → seed0-우선
   재정렬 안 함 = change #3의 **의도된 예외**(저비용이라 seed0 데이터가 전체와 거의 동시 완주).
-- 실행 = `SFL_BETA=0.3`(현 소스 기본값 이미 0.3) + 셀당 `RUNDIR_REPLACE=1`(정체성 가드; §7).
+- 실행 = `SFL_BETA=0.3` + 셀당 `RUNDIR_REPLACE=1`. **⚠ 실측(07-24): RUNDIR_REPLACE가 canonical(하이픈·무해시)을 못 덮고 `*_<hash>` 새 디렉토리 생성**(track_c1 네이밍이 06-12 이후 해시 접미사 부여) → **수동으로 canonical 승격 후 커밋(`47680ec`)**. §7 잔여 배선(track_c1 identity=None)과 연관 — 다음 재실행 전 네이밍 정합 필요.
 - 완료 후: rundir 교체 커밋 → `make_analysis`/`make_fidelity` 재생성 → overview §3.1.2(C1) ShapleyFL 행
   갱신 → paper §5.2 sub(C1 표)·부록 C 값 갱신 + **B.5 재실행-대기 주석 삭제**(anchor5 B200분 함께 착지해야 완결).
 - **갱신 대상 overview**(빈칸 아님 — 값 교체): §5.2 sub C1 vs (a) 표의 ShapleyFL 열(예: cifar10/qskew +0.81) · 부록 C.
 
-## 5. L8 — retrain-(a) 스위트 (작은-N LLM: **silo5 a-leg만** · gsm5 보류) — ⚪ 등록·파일럿 큐 대기
+## 5. L8 — retrain-(a) 스위트 (작은-N LLM: **silo5 a-leg만** · gsm5 보류) — 🔴 파일럿 OOM 실패 → A6000 이전 결정 대기
 
 > **⚠ 스코프 변경 (2026-07-24 Yonghee): gsm5·anchor5 보류, silo5 (a)-leg만 활성.**
 > (a) retrain 오라클 = **silo5 단독**으로 확보. 근거·정리 = 아래 및 `paper/workplan/T5-retrain-a-suite.md` §1 보류 배너.
 > — **silo5**(non-IID)만이 실재 cross-seed 신호(clean +0.87 / noisy +0.93)를 갖는 유의미한 (a)-검증 무대.
 > — **gsm5**(IID, 주무대 데이터)는 near-additive·ρ≈0 축퇴 무대라 anchor5 기존 0.933과 정보 중복 → 보류(코드·캐시 존치, 부활 시 §5.1 그대로).
 > — **anchor5**(IID, Alpaca) 기존 0.933은 **보류 참조**(재실행 없음; `REMAINING-b200.md` §4 β0.3 재실행도 보류).
-> **실행 조치(완료)**: **gsm5 파일럿+게이트 취소 완료**(Yonghee), silo5a 파일럿(array 0=clean seed0) 실행 중
-> → 게이트가 **seed-major(seed0 우선)**로 9 leg 확장(array 1-8 = seed0 noisy/frzero 먼저, 그 뒤 seeds 1-2).
+> **실행 조치**: gsm5 파일럿+게이트 취소 완료(Yonghee). silo5a 파일럿(clean seed0) = **CUDA OOM 실패(EXIT=1, 17:42)** —
+> SFT 재학습이 24GB 초과(아래 메모리 절 정정). `l8gate`는 marker/rundir 부재로 **fail-safe 미확장**(정상). **→ A6000 48GB 이전 제안(결정 대기)**;
+> 이전 시 sbatch에 `--partition=suma_a6000 --qos=base_qos` 추가(fidelity leg=하드웨어 독립, seed-major 매핑 유지). seeds1-2도 A6000서 함께.
 > **⚠ 결과 여파**: silo5 (a)-leg 미완인 동안 §5.2 sub (a) 칸은 ⬚ 유지(anchor5 0.933은 보류 참조로 폴백 가능).
 
 > 스펙 = `paper/workplan/T5-retrain-a-suite.md`. 코드 **커밋 완료**(TRACKED·clean). **전 셀에 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`**(단편화 방지).
@@ -135,8 +137,9 @@
 **⚠ 메모리(24 GiB 3090 — 실측):** gsm5는 SCALE==1B에서 `val_chunk`을 **자동 2**로 낮춤. B200용 기본 `val_chunk=10`은
 estimator **2차 HVP**(`jvp∘grad`, eager-attn)가 **~38 GiB** 필요 → 3090 **OOM 실측**. `val_chunk`은 exact chunk-sum →
 **φ 값 불변(메모리 전용)**. `val_chunk=2`에서 peak ~22 GiB로 **완주 확인**. 여유 더 필요하면 `VAL_CHUNK=1`.
-(B200에서 돌리면 `VAL_CHUNK=10`으로 override해 가속 — 값 동일.) silo5 (a)-leg는 **HVP 없음**(재학습+no_grad
-val-loss만)이라 기본 knob으로 안전.
+(B200에서 돌리면 `VAL_CHUNK=10`으로 override해 가속 — 값 동일.) **⚠ silo5 (a)-leg 정정(2026-07-24 실측)**: HVP는 없지만
+**SFT 재학습 자체가 24GB OOM**(`trl compute_loss` 활성서 5.87 GiB 추가 요구 vs 4.89 free = ~1GB 부족; `expandable_segments` 켜도 부족).
+1B full SFT(모델+Adam+활성) > 24GB → **3090 부적합, A6000 48GB 필요**(base_qos 접근 가능·§0). `VAL_CHUNK`은 HVP용이라 이 학습 OOM엔 무효.
 
 **0) 스모크(선택 — 이 세션서 이미 green; 서버 캐시에 gpt2+gsm8k 있을 때만):**
 ```
