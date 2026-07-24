@@ -11,6 +11,9 @@
 # Produces runs/phase2_matrix/rundirs/1B_silo5_{threat}_aonly_s{seed}; canonical untouched.
 #
 # Pilot-first: --array=0 (clean seed0) -> measured GPU-h -> GO -> --array=1-8.
+# Array is SEED-MAJOR (change #3, seed0 우선): 0-2 = seed0 {clean,noisy,frzero},
+# 3-5 = seed1, 6-8 = seed2.  So the pilot + gate's 1-8 expansion finish ALL of seed0
+# (clean via pilot, noisy/frzero via 1,2) before any seed1/2 leg starts.
 #
 #SBATCH --job-name=silo5a
 #SBATCH --partition=base_suma_rtx3090
@@ -28,7 +31,7 @@ export HF_HOME=${HF_HOME:-/scratch/chyoyhr/hf_home}
 
 THREATS=(clean noisy frzero)
 IDX=${SLURM_ARRAY_TASK_ID}
-T=$((IDX / 3)); SEED=$((IDX % 3)); THREAT=${THREATS[$T]}
+SEED=$((IDX / 3)); T=$((IDX % 3)); THREAT=${THREATS[$T]}   # seed-major: array 0 = clean seed0 (gate GLOB safe)
 
 echo "[silo5a $IDX] 1B_silo5_${THREAT}_aonly_s${SEED}  $(date '+%F %T')  HF_HOME=$HF_HOME"
 

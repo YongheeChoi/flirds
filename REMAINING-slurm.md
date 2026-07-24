@@ -6,21 +6,26 @@
 > **현재: 캠페인 실행 중(2026-07-24 등록·모니터링) — 아래 「실행 현황」 참조.** push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 기존 rundir은 read-only.
 
-## 실행 현황 (2026-07-24 12:49 KST · 등록 후 ~12h)
+## 실행 현황 (2026-07-24 ~17:30 KST 갱신)
 
 전 5항목 sbatch 등록 완료(번호 순). 완료분 rundir 커밋 `97db99c`(로컬·미push). 실패 0.
 
 | § | 실험 | 상태 | 진척 |
 |---|---|---|---|
-| §1 | c2fid CNN fidelity | 🟢 실행 중 | **70 / 144 셀 완료**(rundir 커밋됨) |
+| §1 | c2fid CNN fidelity | 🟡 seed0 완료·seed1 진행 | **70/144**(s0 48✓·s1 22); 지금 §3/§5 seed0에 슬롯 양보(PD) |
 | §2 | W-B P1w observer(T2) | 🟡 파일럿 완주·게이트 대기 | seed0 파일럿 **29셀 완료**; `p1wgate`가 GPU 확보 시 판정 → 통과면 30-89 자동 |
-| §3 | C-fr frrand full-method | ⚪ 파일럿 큐 대기 | seed0 파일럿(array 0-7) 제출·PD; §1/§4 뒤 backfill |
-| §4 | C1 β0.3 재실행(30셀) | 🟢 실행 중 | 8슬롯 가동(~1.6h/10h); canonical rundir 교체는 완주 시(현재 미변경) |
-| §5 | L8 **silo5 (a)-leg만**(gsm5 보류) | ⚪ 등록·큐 대기 | 코드 커밋·HF 캐시 완비; **gsm5 보류(2026-07-24 Yonghee)→gsm5 파일럿 취소 요**, silo5a 파일럿(array 0) PD 유지 |
+| §3 | C-fr frrand full-method | 🟡 파일럿 실행 중 | seed0 파일럿(array 0-7) 6/8 실행 중 |
+| §4 | C1 β0.3 재실행(30셀) | ✅ 30/30 완주 | ⚠ β0.3 결과가 `*_seed*_<hash>` 새 디렉토리로 착지(canonical 미교체) — 커밋 방식 결정 대기 |
+| §5 | L8 **silo5 (a)-leg만**(gsm5 보류) | 🟡 파일럿 실행 중 | **gsm5 파일럿+게이트 취소 완료**(Yonghee); silo5a 파일럿(array 0=clean seed0) 실행 중, 게이트 확장은 **seed-major(seed0 우선)**로 정정 |
 
 - **한도**: 동시 8-GPU(QOSMaxGRESPerUser) + §1/§4 array 각 `%8`. 현재 §4가 8슬롯 점유 → 나머지 그 뒤로 직렬화(§1-우선 depth-first).
 - **파일럿→GO 게이트**(§2·§3·§5)는 Slurm `--dependency`로 자동(세션 무관·fail-safe): 완주 시 GPU-h 실측 보고 후 잔여 leg 자동 제출.
 - **예상 종료**(경합 유동): §1~§4(CNN) ~07-25, +§5(LLM) ~07-26.
+- **seed0 우선(2026-07-24 · change #3)**: 전 실험 seed0 완주 = 논문 착수선 → seeds 1-2 보강(`REMAINING-b200.md` §1a 2단계).
+  실행 순서 = §1 c2fid **seed-major**(s0 48셀✓) · §2/§3 seed0 파일럿→게이트 · §5 silo5-a **seed-major 정정** · §4 C1 저비용 dataset-major = **의도된 예외**.
+  **전역 배리어(Q2 결정)**: 게이트가 실험별이라(각자 seed0 후 자기 seeds1-2 자동) 전역 seed0-우선은 자동 아님 →
+  **§1 seed1/2 hold**(`scontrol hold 1866324` — Yonghee; 전 slurm seed0 완주 후 `scontrol release 1866324`)로 §3/§5 seed0에 슬롯 우선. slurm은 곧 완주라 이 경량 개입만(게이트 재작성 안 함).
+- **gsm5 보류 = 취소 완료**(Yonghee, 2026-07-24): gsm5 파일럿(1866894)+게이트(1866895) scancel 됨. silo5a(1866896)+게이트(1866897)는 유지·실행 중.
 
 ## 0. 환경
 
@@ -31,7 +36,7 @@
   "venv 계열/다른 env"는 B200 기준). `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` + 24 GiB 노브 `VAL_CHUNK` + `HF_HOME=/scratch/chyoyhr/hf_home`.
 - 공통: `HF_HUB_OFFLINE=1`, `codes/`에서 `PYTHONPATH=.`.
 
-## 1. c2fid 본런 143셀 — CNN fidelity 주무대 (🟢 실행 중 — 70/144 완료)
+## 1. c2fid 본런 143셀 — CNN fidelity 주무대 (🟢 실행 중 — 70/144; seed-major=seed0 우선, s0 48셀 완료)
 
 - 파일럿 `cifar10_dir1_grad-noise_fid_seed0` 완주·커밋(`570a93f` 그리드는 별개) —
   **실측 1.05 GPU-h/셀**(3,777s = 궤적 재생 284 + (b) 2¹⁰×120 오라클 824 + 8방법 2,669; peak 3.3 GiB)
@@ -100,6 +105,8 @@
 논문 인용 ShapleyFL 값이 실제 **β=0.5** rundir 산출로 판명(감사 07-23): C1 30셀
 (git_sha `5cb927b`, 06-12)이 β0.5→0.3 변경(`e89af94`, 06-25) **이전** — 재실행 계획 미반영.
 - **셀 = C1 30셀**(track_c1; cifar10·mnist × 5시나리오 × 3seed). 오케스트레이터 = `rerun_beta03/`.
+- **seed 순서**: array는 dataset-major·seed-interleaved(셀당 ~1.6h·전량 8슬롯 ~6h 1패스) → seed0-우선
+  재정렬 안 함 = change #3의 **의도된 예외**(저비용이라 seed0 데이터가 전체와 거의 동시 완주).
 - 실행 = `SFL_BETA=0.3`(현 소스 기본값 이미 0.3) + 셀당 `RUNDIR_REPLACE=1`(정체성 가드; §7).
 - 완료 후: rundir 교체 커밋 → `make_analysis`/`make_fidelity` 재생성 → overview §3.1.2(C1) ShapleyFL 행
   갱신 → paper §5.2 sub(C1 표)·부록 C 값 갱신 + **B.5 재실행-대기 주석 삭제**(anchor5 B200분 함께 착지해야 완결).
@@ -112,7 +119,8 @@
 > — **silo5**(non-IID)만이 실재 cross-seed 신호(clean +0.87 / noisy +0.93)를 갖는 유의미한 (a)-검증 무대.
 > — **gsm5**(IID, 주무대 데이터)는 near-additive·ρ≈0 축퇴 무대라 anchor5 기존 0.933과 정보 중복 → 보류(코드·캐시 존치, 부활 시 §5.1 그대로).
 > — **anchor5**(IID, Alpaca) 기존 0.933은 **보류 참조**(재실행 없음; `REMAINING-b200.md` §4 β0.3 재실행도 보류).
-> **실행 조치**: 큐의 **gsm5 파일럿 취소**, silo5a 파일럿(array 0)만 진행 → 게이트 통과 시 silo5a 9 leg 자동.
+> **실행 조치(완료)**: **gsm5 파일럿+게이트 취소 완료**(Yonghee), silo5a 파일럿(array 0=clean seed0) 실행 중
+> → 게이트가 **seed-major(seed0 우선)**로 9 leg 확장(array 1-8 = seed0 noisy/frzero 먼저, 그 뒤 seeds 1-2).
 > **⚠ 결과 여파**: silo5 (a)-leg 미완인 동안 §5.2 sub (a) 칸은 ⬚ 유지(anchor5 0.933은 보류 참조로 폴백 가능).
 
 > 스펙 = `paper/workplan/T5-retrain-a-suite.md`. 코드 **커밋 완료**(TRACKED·clean). **전 셀에 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`**(단편화 방지).
@@ -146,7 +154,7 @@ PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True REGIME=gsm5 THREAT=clean SEED=0
   `metrics.json`=vs(b) + **vs(a)(spearman_a/pearson_a)** + timing.
 - **비용/시간**: 셀당 (a) **2⁵=32 retrain × R30**이 지배적 → 3090서 여러 시간/셀. vs(b)만 싸게 선(先)확인하려면 `ORACLE_A=0`.
 
-**2) silo5 (a)-leg(★활성 = 유일 (a)-무대) — {clean,noisy,frzero} × seed{0,1,2} = 9 leg:**
+**2) silo5 (a)-leg(★활성 = 유일 (a)-무대) — {clean,noisy,frzero} × seed{0,1,2} = 9 leg (sbatch = seed-major: array 0-2 = seed0):**
 ```
 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True REGIME=silo5 THREAT=frzero SEED=0 \
   PYTHONPATH=. $PY -u experiments/track_a_silo5.py     # THREAT∈{clean,noisy,frzero} × SEED∈{0,1,2}
