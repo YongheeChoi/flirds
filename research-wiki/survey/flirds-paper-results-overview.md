@@ -218,10 +218,18 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 
 | 셀 | Flirds AUROC | (b) AUROC | 탐지기 4종 | 상태 |
 |---|---|---|---|---|
-| R4 gsm50k5 (noisy·frzero) | ⬚ | ⬚ | ⬚ | 채움 = `runs/phase2_matrix/rundirs/1B_gsm50k5_*`(L2) |
-| R4 gsm50k5 (**frrand**) | ⬚ | ⬚ | ⬚ | **신규 축** = L9(§1.6a) — random free-rider 탐지 |
-| c2fid (CNN C2, grad-noise) | 0.998 | 1.000 | – | ◐ seed0–1(cifar10/dir1; Δ=.002 oracle-동행 ✓) |
-| CNN (**frrand**) | 0.687 | 0.681 | – | ◐ c2fid seed0–1(Δ=.006 oracle-동행 ✓; (b)=0.68 → frrand는 약신호 위협). 개입-acc = C-fr 별도(§1.6a) |
+| R4 gsm50k5 · noisy | ⬚ | ⬚ | ⬚ | 채움 = `runs/phase2_matrix/rundirs/1B_gsm50k5_*`(L2) |
+| R4 gsm50k5 · frzero | ⬚ | ⬚ | ⬚ | (L2) |
+| R4 gsm50k5 · **frrand** | ⬚ | ⬚ | ⬚ | **신규 축** = L9(§1.6a) — random free-rider 탐지 |
+| **c2fid** (CNN C2, cifar10/dir1) — **전 오염-시나리오 평균** | 0.841 | 0.833 | – | ◐ seed0–1(7 시나리오·70/144, seed2 대기) |
+| └ frzero | 0.692 | 0.675 | – | ◐ seed0–1 |
+| └ frrand | 0.687 | 0.681 | – | ◐ seed0–1 |
+| └ grad-noise | 0.998 | 1.000 | – | ◐ seed0–1 |
+| └ label-flip@0.15 | 0.584 | 0.550 | – | ◐ seed0–1 |
+| └ label-flip@0.35 | 0.936 | 0.933 | – | ◐ seed0–1 |
+| └ label-flip@0.70 | 0.995 | 0.995 | – | ◐ seed0–1 |
+| └ label-flip strmain | 0.996 | 0.995 | – | ◐ seed0–1 |
+| └ clean | – | – | – | 오염0(탐지 대상 없음) |
 
 > H-13 판정 기준: 주장은 절대값이 아니라 **oracle-동행** $|\mathrm{AUROC(Flirds)}-\mathrm{AUROC((b))}|\le 0.05$. c2fid ◐ seed0–1에서 grad-noise(Δ.002)·frrand(Δ.006) 모두 **동행 성립** — 단 frrand는 (b) 자체가 0.68(약신호)이라 판정 대상은 "탐지 성능"이 아니라 "오라클 추종". **CNN frrand 탐지는 c2fid로 착지**(C-fr는 개입-acc leg만 남음); **R4 frrand 탐지 = 신규 축 미실행**(L9, §1.6a). (strmain-dose 탐지는 부차 — dose-변조 하 오염 클라 flag; 필요 시 별도 판단.)
 > ![[flirds-paper-results-overview-figs/f6_detection_auroc.png]] ⬚ *(F6 = 탐지 AUROC — L2/c2fid 착지 후 생성)*
@@ -259,7 +267,8 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 | threat | Flirds ρ(vs b) | worst-first Δ | best-first Δ | 판정 |
 |---|---|---|---|---|
 | silo5 noisy (val-loss) | +1.00 | **+0.0076** | −0.0084 | worst-first 제거가 loss 내림 = 순위 인과적 ✅ |
-| silo5 frrand / frzero | +1.00 | +0.0071 / +0.0067 | −0.0015 / −0.0016 | ✅ |
+| silo5 frrand | +1.00 | +0.0071 | −0.0015 | ✅ |
+| silo5 frzero | +1.00 | +0.0067 | −0.0016 | ✅ |
 | cifar10 label_flip (acc) | +1.00 | **acc 분리 +0.0445** | (b) 동급 +0.045 | ✅ (mnist의 ~13×) |
 | cifar10 feature_noise (acc) | +1.00 | acc 분리 +0.0385 | ShapleyFL(저순위) ≈0 | 순위→분리 인과 재확인 |
 
