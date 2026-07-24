@@ -25,7 +25,7 @@ tags: [flirds, paper, results, dashboard]
 
 | 무대 | 논문 역할 | 모델 | N · 참여 · R | oracle · 심판 | 상태 |
 |---|---|---|---|---|---|
-| **R4 gsm50k5** (주-LLM) | fidelity(§5.2 L2) · **downstream**(§5.3) · detection(§5.4) | Llama-3.2-1B-Instruct · LoRA r16/α32 | 50 · 5/50 · 200 | (b) per-round[L2 ⬚] · **EM** 1,119 | ◐ seed0(정본 L1 ⬚) |
+| **R4 gsm50k5** (주-LLM) | fidelity(§5.2 L2) · **downstream**(§5.3) · detection(§5.4) | Llama-3.2-1B-Instruct · LoRA r16/α32 | 50 · 5/50 · 200 | (b) per-round[L2 ⬚] · **EM** 1,119 | ● downstream noisy·frzero 3-seed · ◐ clean seed0 · L2(fid/det) ⬚ |
 | **C2 캠페인** (주-CNN) | fidelity(§5.2 c2fid) · **downstream**(§5.3) · detection(§5.4) | FedSVCNN(cifar)/LeNet5(fmnist) · 전체학습 | 100 · 10/100 · 120 | (b) per-round · **acc** | ● (dir1 restack 확인) |
 | anchor5 | (a) 특성화 **폴백 참조**(§5.2; 보류 2026-07-24) | 1B/3B/7B · LoRA | 5 · full · 30 | (a)+(b) 2⁵ · val-loss | ● (1B (a)) |
 | silo5 (a)-leg | retrain-(a) **주 무대**(§5.2; 유일 (a)) | 1B | 5 · full · 10 | (a)+(b) 2⁵ · val-loss | ⬚ (L8) |
@@ -82,18 +82,18 @@ tags: [flirds, paper, results, dashboard]
 
 | 무대                                   | Flirds Sp/Pe | Flirds-1st Sp/Pe | loss-heur Sp/Pe | 상태                                                    |
 | ------------------------------------ | ------------ | ---------------- | --------------- | ----------------------------------------------------- |
-| c2fid (CNN C2 twin, cifar10/dir1) — **전 시나리오 평균** | 0.972/0.988 | 0.604/0.474 | 0.912/0.947 | ◐ seed0–1(8시나리오·70/144, seed2 대기) |
-| └ clean | 0.986/0.991 | 0.398/0.230 | 0.808/0.889 | ◐ seed0–1 |
-| └ free-rider(frzero) | 0.988/0.997 | 0.529/0.435 | 0.860/0.936 | ◐ seed0–1 |
-| └ frrand | 0.996/0.997 | 0.556/0.434 | 0.863/0.937 | ◐ seed0–1 |
-| └ grad-noise | 0.830/0.935 | 0.254/0.024 | 0.987/0.973 | ◐ seed0–1 |
-| └ label-flip@0.15 | 0.988/0.990 | 0.436/0.207 | 0.859/0.907 | ◐ seed0–1 |
-| └ label-flip@0.35 | 0.994/0.994 | 0.725/0.595 | 0.935/0.956 | ◐ seed0–1 |
-| └ label-flip@0.70 | 0.998/0.998 | 0.966/0.928 | 0.990/0.991 | ◐ seed0–1 |
-| └ label-flip strmain | 0.999/0.998 | 0.970/0.937 | 0.991/0.991 | ◐ seed0–1 |
+| c2fid (CNN C2 twin, cifar10/dir1) — **전 시나리오 평균** | 0.974/0.988 | 0.606/0.506 | 0.923/0.947 | ● 3-seed(seed0–2·8시나리오) |
+| └ clean | 0.984/0.990 | 0.413/0.294 | 0.834/0.887 | ● 3-seed |
+| └ free-rider(frzero) | 0.984/0.997 | 0.511/0.467 | 0.877/0.932 | ● 3-seed |
+| └ frrand | 0.994/0.997 | 0.537/0.466 | 0.879/0.932 | ● 3-seed |
+| └ grad-noise | 0.847/0.937 | 0.218/−0.051 | 0.986/0.972 | ● 3-seed |
+| └ label-flip@0.15 | 0.989/0.990 | 0.454/0.300 | 0.880/0.906 | ● 3-seed |
+| └ label-flip@0.35 | 0.995/0.995 | 0.772/0.678 | 0.945/0.961 | ● 3-seed |
+| └ label-flip@0.70 | 0.998/0.999 | 0.971/0.945 | 0.991/0.992 | ● 3-seed |
+| └ label-flip strmain | 0.999/0.998 | 0.974/0.951 | 0.991/0.992 | ● 3-seed |
 | R4-L2 (LLM gsm50k5, (b) per-round)   | ⬚            | ⬚                | ⬚               | 채움 = `runs/phase2_matrix/rundirs/1B_gsm50k5_*` (L2 큐) |
 
-> 각주(c2fid ◐ seed0–1·cifar10/dir1, 70/144): **clean 칸은 신호-부재 레짐**(오발화 대조용, fidelity 해석 금지) · **strmain 셀** Sp Flirds 0.999 / 1st 0.970 / loss-heur 0.991(전 방법 고포화) · **frrand 셀** Flirds 0.996 / 1st 0.556 vs **renorm 붕괴**(GTG 0.049 · FedSV 0.027 · ShapleyFL −0.041) — same-game 3열엔 안 보이나 cross-game 변별 큼 · **F-4(dose 해상도)**: spearman_vs_rate Flirds **0.847 ≈ (b) 0.845**(corrupt-only 0.460=0.460 = 오라클 정확추종) 이나 Flirds-1st **0.869/0.619 ≥** Flirds → 사전등록 "Flirds ≳ 1st" **MISS**(2차항의 dose-우위는 이 셀서 미확인; Flirds 강점은 (b) 정확추종) · **R4 strmain류 per-client dose(⬚ L10)** = 이 dose-변별의 LLM 대응(REMAINING §1.6a). *seed2 착지 후 3-seed 재판정.*
+> 각주(c2fid ● 3-seed·cifar10/dir1, seed0–2): **clean 칸은 신호-부재 레짐**(오발화 대조용, fidelity 해석 금지) · std 범위(Sp): Flirds ≤.03 · loss-heur ≤.04 · **Flirds-1st ≤.10**(lf@.15/.35서 큼) · **strmain 셀** Sp Flirds 0.999 / 1st 0.974 / loss-heur 0.991(전 방법 고포화) · **frrand 셀** Flirds 0.994 / 1st 0.537 vs **renorm 붕괴**(GTG 0.019 · FedSV 0.009 · ShapleyFL −0.040) — same-game 3열엔 안 보이나 cross-game 변별 큼 · **F-4(dose 해상도)**: spearman_vs_rate Flirds **0.858 ≈ (b) 0.857**(corrupt-only Flirds 0.519 / (b) 0.515 = 오라클 정확추종) 이나 Flirds-1st **0.877/0.659 ≥** Flirds → 사전등록 "Flirds ≳ 1st" **MISS 유지**(3-seed; 2차항의 dose-우위는 이 셀서 미확인; Flirds 강점은 (b) 정확추종) · **cifar10/iid도 3-seed 완성**(Flirds 평균 Sp 0.982) · **R4 strmain류 per-client dose(⬚ L10)** = 이 dose-변별의 LLM 대응(REMAINING §1.6a).
 > ![[flirds-paper-results-overview-figs/f3_main_pair_heatmap.png]] ⬚ *(F3 = 메인 쌍 heatmap — 데이터 착지 시 `make_figures.py`에 f3 함수 추가·생성; 현 미구현)*
 
 ### (sub) retrain-(a) 특성화 — 작은-N 별도 무대
@@ -127,88 +127,94 @@ tags: [flirds, paper, results, dashboard]
 
 | dataset/scenario | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
-| cifar10 / feature_noise | **+0.63** | +0.50 | +0.56 | +0.44 | +0.18 | +0.39 | +0.28 | +0.40 |
-| cifar10 / label_flip | +0.52 | +0.59 | +0.58 | +0.45 | +0.41 | +0.32 | +0.29 | +0.36 |
-| cifar10 / quantity_skew | +0.57 | +0.56 | +0.57 | +0.70 | +0.70 | +0.72 | **+0.81** | -0.03 |
-| mnist / feature_noise | +0.33 | +0.44 | +0.44 | +0.40 | -0.07 | -0.07 | +0.60 | +0.66 |
+| cifar10 / feature_noise | **+0.63** | +0.50 | +0.56 | +0.44 | +0.18 | +0.39 | +0.26 | +0.40 |
+| cifar10 / label_flip | +0.52 | +0.59 | +0.58 | +0.45 | +0.41 | +0.32 | +0.27 | +0.36 |
+| cifar10 / quantity_skew | +0.57 | +0.56 | +0.57 | +0.70 | +0.70 | +0.72 | **+0.84** | -0.03 |
+| mnist / feature_noise | +0.33 | +0.44 | +0.44 | +0.40 | -0.07 | -0.07 | +0.58 | +0.66 |
 | mnist / label_flip | **+0.96** | +0.97 | +0.97 | +0.97 | +0.96 | +0.94 | +0.96 | +0.96 |
-| mnist / quantity_skew | **+0.85** | +0.77 | +0.84 | +0.56 | +0.68 | +0.65 | +0.51 | -0.09 |
-| cifar10 / iid *(오염0)* | -0.23 | -0.13 | -0.18 | -0.20 | -0.18 | +0.30 | +0.00 | +0.07 |
-| mnist / iid *(오염0)* | +0.36 | +0.52 | +0.48 | +0.19 | -0.11 | -0.09 | +0.66 | +0.74 |
-| **평균 (8칸)** | **+0.50** | **+0.53** | **+0.53** | **+0.44** | **+0.32** | **+0.39** | **+0.52** | **+0.38** |
-| _평균 (iid 제외 6칸)_ | _+0.64_ | _+0.64_ | _+0.66_ | _+0.59_ | _+0.48_ | _+0.49_ | _+0.58_ | _+0.38_ |
+| mnist / quantity_skew | **+0.85** | +0.77 | +0.84 | +0.56 | +0.68 | +0.65 | +0.48 | -0.09 |
+| cifar10 / iid *(오염0)* | -0.23 | -0.13 | -0.18 | -0.20 | -0.18 | +0.30 | +0.06 | +0.07 |
+| mnist / iid *(오염0)* | +0.36 | +0.52 | +0.48 | +0.19 | -0.11 | -0.09 | +0.62 | +0.74 |
+| **평균 (8칸)** | **+0.50** | **+0.53** | **+0.53** | **+0.44** | **+0.32** | **+0.39** | **+0.51** | **+0.38** |
+| _평균 (iid 제외 6칸)_ | _+0.64_ | _+0.64_ | _+0.66_ | _+0.59_ | _+0.48_ | _+0.49_ | _+0.57_ | _+0.38_ |
 
 **Pearson vs (a)** (같은 순서)
 
 | dataset/scenario | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
-| cifar10 / feature_noise | +0.60 | +0.51 | +0.57 | +0.43 | +0.19 | +0.44 | +0.31 | +0.47 |
-| cifar10 / label_flip | +0.44 | +0.46 | +0.49 | +0.32 | +0.26 | +0.33 | +0.28 | +0.42 |
-| cifar10 / quantity_skew | +0.60 | +0.55 | +0.60 | +0.72 | +0.63 | +0.71 | +0.72 | -0.04 |
-| mnist / feature_noise | +0.42 | +0.52 | +0.46 | +0.22 | -0.10 | -0.17 | +0.63 | +0.63 |
-| mnist / label_flip | +0.99 | +0.99 | +0.99 | +0.98 | +0.97 | +0.94 | **+1.00** | +0.98 |
-| mnist / quantity_skew | +0.59 | +0.60 | +0.61 | +0.45 | +0.55 | +0.63 | +0.42 | -0.15 |
-| cifar10 / iid *(오염0)* | -0.18 | -0.06 | -0.02 | -0.14 | -0.20 | +0.46 | +0.05 | +0.09 |
-| mnist / iid *(오염0)* | +0.42 | +0.59 | +0.54 | +0.32 | -0.09 | -0.15 | +0.69 | +0.70 |
-| **평균 (8칸)** | **+0.48** | **+0.52** | **+0.53** | **+0.41** | **+0.28** | **+0.40** | **+0.51** | **+0.39** |
-| _평균 (iid 제외 6칸)_ | _+0.61_ | _+0.60_ | _+0.62_ | _+0.52_ | _+0.42_ | _+0.48_ | _+0.56_ | _+0.39_ |
+| cifar10 / feature_noise | +0.60 | +0.51 | +0.57 | +0.43 | +0.19 | +0.44 | +0.28 | +0.47 |
+| cifar10 / label_flip | +0.44 | +0.46 | +0.49 | +0.32 | +0.26 | +0.33 | +0.25 | +0.42 |
+| cifar10 / quantity_skew | +0.60 | +0.55 | +0.60 | +0.72 | +0.63 | +0.71 | +0.69 | -0.04 |
+| mnist / feature_noise | +0.42 | +0.52 | +0.46 | +0.22 | -0.10 | -0.17 | +0.60 | +0.63 |
+| mnist / label_flip | +0.99 | +0.99 | +0.99 | +0.98 | +0.97 | +0.94 | +0.99 | +0.98 |
+| mnist / quantity_skew | +0.59 | +0.60 | +0.61 | +0.45 | +0.55 | +0.63 | +0.40 | -0.15 |
+| cifar10 / iid *(오염0)* | -0.18 | -0.06 | -0.02 | -0.14 | -0.20 | +0.46 | +0.10 | +0.09 |
+| mnist / iid *(오염0)* | +0.42 | +0.59 | +0.54 | +0.32 | -0.09 | -0.15 | +0.64 | +0.70 |
+| **평균 (8칸)** | **+0.48** | **+0.52** | **+0.53** | **+0.41** | **+0.28** | **+0.40** | **+0.50** | **+0.39** |
+| _평균 (iid 제외 6칸)_ | _+0.61_ | _+0.60_ | _+0.62_ | _+0.52_ | _+0.42_ | _+0.48_ | _+0.54_ | _+0.39_ |
 
-> 읽기: (i) **신호-강 칸(label_flip·feature_noise·quantity_skew)**서 두 게임 수렴 — same-game 3종 1위 2칸(cifar10/fn·mnist/qskew), mnist/label_flip은 전 방법 Sp +0.94~+0.97·Pe +0.94~+1.00 동수렴. (ii) **평균 읽는 법 — iid 희석 주의**: iid(오염0)은 대부분 0~음수(파티션만 있어 (a) 재학습-게임이 순위 재현 못 함)라 **평균(8칸)에 iid가 섞이면 same-game이 깎여 renorm과 붙어 보인다**(Flirds Sp +0.50 ≈ ShapleyFL +0.52). **실제 서열은 iid 제외 6칸**: same-game **0.64~0.66** > GTG 0.59 > ShapleyFL 0.58 > FedSV/ComFedSV 0.48~0.49 > FedIF 0.38. renorm-족이 신호-부재/크기 칸서 부분 우위(cifar10/qskew ShapleyFL Sp +0.81 = (a) 재정규화-게임 심판이 renorm 유리, 부록 C 각주 T10). (iii) **데이터셋 차 = 난이도**: 같은 오염 사다리인데 mnist/label_flip +0.96 > cifar10/label_flip +0.52 = mnist가 더 분리적(쉬운 과제)이라 오염 신호가 (a)에도 뚜렷 — 오염군이 다른 게 아니다. (iv) **Spearman↔Pearson 정합**(renorm-유리 칸서만 소폭 갈림). **출처**: `runs/track_c/fidelity.csv`(`spearman_a`/`pearson_a`, (dataset,scenario,method) 3-seed 평균, label_skew 제외).
+> 읽기: (i) **신호-강 칸(label_flip·feature_noise·quantity_skew)**서 두 게임 수렴 — same-game 3종 1위 2칸(cifar10/fn·mnist/qskew), mnist/label_flip은 전 방법 Sp +0.94~+0.97·Pe +0.94~+0.99 동수렴. (ii) **평균 읽는 법 — iid 희석 주의**: iid(오염0)은 대부분 0~음수(파티션만 있어 (a) 재학습-게임이 순위 재현 못 함)라 **평균(8칸)에 iid가 섞이면 same-game이 깎여 renorm과 붙어 보인다**(Flirds Sp +0.50 ≈ ShapleyFL +0.51). **실제 서열은 iid 제외 6칸**: same-game **0.64~0.66** > GTG 0.59 > ShapleyFL 0.57 > FedSV/ComFedSV 0.48~0.49 > FedIF 0.38. renorm-족이 신호-부재/크기 칸서 부분 우위(cifar10/qskew ShapleyFL Sp +0.84 = (a) 재정규화-게임 심판이 renorm 유리, 부록 C 각주 T10). (iii) **데이터셋 차 = 난이도**: 같은 오염 사다리인데 mnist/label_flip +0.96 > cifar10/label_flip +0.52 = mnist가 더 분리적(쉬운 과제)이라 오염 신호가 (a)에도 뚜렷 — 오염군이 다른 게 아니다. (iv) **Spearman↔Pearson 정합**(renorm-유리 칸서만 소폭 갈림). **출처**: `runs/track_c/fidelity.csv`(`spearman_a`/`pearson_a`, (dataset,scenario,method) 3-seed 평균, label_skew 제외). ⚠ **ShapleyFL 행 = β0.3 재실행 `47680ec`(07-24) 반영** — c1 rundir(post-β0.3) + `c1_oracle` phi_a 직접 재계산(타 8방법 β-불변 정확검증); `fidelity.csv` 자체는 β0.5 잔존 → `merge_oracle_a` 재생성 필요.
 > ![[flirds-paper-results-overview-figs/f1_cnn_c1_vs_a_heatmap.png]] *(좌=Spearman·우=Pearson 2-panel; label_skew 제외 8칸 + 방법별 평균 행)*
 
 ---
 
 ## §5.3 개입 (downstream)
 
-### (메인) LLM R4 P1 — T1 online / T2 retrain × {clean, noisy, frzero, **frrand ⬚**, **strmain-dose ⬚**}, 절대 EM — ⬚
+### (메인) LLM R4 — T2 retrain, P1 부호-게이트 × {clean ◐, noisy(swap@.7), frzero, frrand ⬚, strmain ⬚}, 절대 EM ● (noisy·frzero 3-seed)
 
-행 = vanilla·oracle_excl·random_excl·t2_random + estimator 4점수원(renorm 4종은 L4 착지 시 블록 추가). **frrand·strmain-dose 열 = 신규 계획**(REMAINING §1.6a L9·L10; 종전 "R4 frrand 재제안 금지" 번복) — CNN은 frrand가 flirds 단독 leg로 존재(아래 CNN 표), R4는 미실행.
+행 = vanilla(observer)·oracle_excl(천장)·random_excl + estimator 4(P1 부호-게이트 재학습). **renorm 4종(GTG/FedSV/ComFedSV/ShapleyFL) = L4 retrain-value 착지 시 블록 추가** · **online(T1) 7방법 = L11**(현 online=flirds만) · **frrand·strmain 열 = 신규**(REMAINING §1.6a L9·L10). 채움 = `runs/track_h/rundirs_llm/gsm50k5_*`(post-fix; rundir 직접 집계·analysis CSV 재생성 대기).
 
-| arm | clean | noisy(swap@.7) | frzero | frrand ⬚ | strmain-dose ⬚ |
+| arm (T2 retrain, 절대 EM) | clean ◐ | noisy(swap@.7) | frzero | frrand ⬚ | strmain ⬚ |
 |---|---|---|---|---|---|
-| vanilla / oracle_excl / random_excl | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
-| Flirds / Flirds-1st / loss-heur / FedIF (P1) | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| vanilla (observer, 바닥) | .3727 | .3274 | .3560 | ⬚ | ⬚ |
+| oracle_excl (천장) | – | .3625 | .3625 | ⬚ | ⬚ |
+| random_excl (무작위) | – | .3280 | .3476 | ⬚ | ⬚ |
+| **Flirds** | .3727 | .3479 | .3625 | ⬚ | ⬚ |
+| Flirds-1st | .3727 | .3458 | .3625 | ⬚ | ⬚ |
+| loss-heur | .3727 | .3497 | .3625 | ⬚ | ⬚ |
+| FedIF | .3727 | .3491 | .3625 | ⬚ | ⬚ |
 
-> ⚠ **pre-fix R4 seed0 값 인용 금지** — 정본 = L1 3-seed. 채움 = `runs/track_h/rundirs_llm/gsm50k5_*`(fix-후) → `runs/track_h/analysis/gsm50k5_*.csv`. (seed0 ◐ 파일럿은 존재하나 H1 판본 혼재로 본 페이지 미기입.)
-> ![[flirds-paper-results-overview-figs/f4_r4_intervention_em.png]] ⬚ *(F4 = R4 EM bar — L1 착지 후 생성)*
+> **Δem (vanilla 대비 회수; noisy/frzero 3-seed mean, std ≤.01)**: noisy — Flirds **+.0206** · loss-heur **+.0223** · FedIF +.0217 · Flirds-1st +.0185 vs random_excl **+.0006**(천장 oracle_excl +.0352) · frzero — 4 estimator 전부 **+.0066 = oracle_excl 동일**(free-rider 만장일치 배제 → 오라클과 kept 동일) · clean(◐ seed0) 전 arm .3727 = **do-no-harm parity**(kept=전원, seed1·2 이월). val-loss 병행(observer→estimator: noisy .6079→.603 · frzero .6096→.602). **정본**: L1 noisy·frzero 3-seed 완결·커밋(REMAINING-b200 §1; pre-fix는 `rundirs_llm_prefixh1/` 분리 아카이브). §5.4 R4 탐지 AUROC = L2 valuation 진행 중(⬚).
+> ![[flirds-paper-results-overview-figs/f4_r4_intervention_em.png]] ⬚ *(F4 = R4 EM bar — renorm-4·online-7 착지 후 생성)*
 
 ### (메인) CNN 8 점수원 × P1 절대 acc ● (dir1; 캠페인 restack 드리프트 확인 후 확정)
 
 **P1 sign-게이트 · online** (3-seed mean; vanilla=바닥·oracle_excl=천장·random_excl=무작위-제외 대조)
 
-| arm | clean | frzero | frrand¹ | grad-noise | label-flip@.70 | 평균² |
-|---|---|---|---|---|---|---|
-| vanilla (바닥) | .6389 | .5879 | .5876 | .2436 | .5247 | .4521 |
-| oracle_excl (천장) | – | .6203 | .6195 | .6203 | .6236 | .6214 |
-| random_excl (무작위) | – | .5838 | .5839 | .2590 | .5018 | .4482 |
-| **flirds** | .6315 | .6148 | .5895 | **.5668** | .5712 | .5843 |
-| flirds1st | .6384 | .6216 | ⬚ | .2479 | .5717 | .4804 |
-| lossheur | .6264 | .6114 | ⬚ | .5981 | .5670 | .5922 |
-| fedif | .6386 | .6143 | ⬚ | .2479 | .5728 | .4783 |
-| gtg | .6051 | **.3915** | ⬚ | .5972 | .5479 | .5122 |
-| fedsv | .5982 | **.3966** | ⬚ | .5972 | .5164 | .5034 |
-| comfedsv | .5963 | **.3918** | ⬚ | .5871 | .5152 | .4981 |
-| shapleyfl | .6045 | **.4020** | ⬚ | .6115 | .5278 | .5138 |
+| arm | clean | frzero | frrand¹ | grad-noise | label-flip@.70 | strmain³ | 평균² |
+|---|---|---|---|---|---|---|---|
+| vanilla (바닥) | .6389 | .5879 | .5876 | .2436 | .5247 | .5149 | .4678 |
+| oracle_excl (천장) | – | .6203 | .6195 | .6203 | .6236 | .6226 | .6217 |
+| random_excl (무작위) | – | .5838 | .5839 | .2590 | .5018 | .4928 | .4594 |
+| **flirds** | .6315 | .6148 | .5895 | **.5668** | .5712 | .5534 | .5766 |
+| flirds1st | .6384 | .6216 | .6060 | .2479 | .5717 | .5819 | .5058 |
+| lossheur | .6264 | .6114 | .6066 | .5981 | .5670 | .5756 | **.5880** |
+| fedif | .6386 | .6143 | .6154 | .2479 | .5728 | .5811 | .5040 |
+| gtg | .6051 | **.3915** | .3810 | .5972 | .5479 | .5327 | .5173 |
+| fedsv | .5982 | **.3966** | .3866 | .5972 | .5164 | .4931 | .5008 |
+| comfedsv | .5963 | **.3918** | .3892 | .5871 | .5152 | .5117 | .5015 |
+| shapleyfl | .6045 | **.4020** | .3977 | .6115 | .5278 | .5269 | .5171 |
 
-> ¹ **frrand = 현재 flirds 단독 leg** — CNN competition에서 free-rider-random은 flirds·앵커만 실행(다른 7 방법·retrain 미실행) → **7 방법 셀 = ⬚**(C-fr 착지 시 채움; 앵커·flirds만 ● 값). flirds .5895(vanilla .5876·random_excl .5839 위, oracle_excl .6195 근처)로 frzero(.6148)와 같은 exact-0 생존 계열. ⚠ **완전한 축(7 방법+retrain)으로 만들려면 CNN도 추가 실험 필요**(REMAINING §1.6a **C-fr**; random free-rider서도 renorm 붕괴가 나는지 = frzero 대칭 확인) · **R4(LLM) frrand는 전무 = 신규 계획**(§1.6a L9).
-> ² **평균** = 오염 3종(frzero·grad-noise·label-flip@.70) 산술평균 — clean(do-no-harm 대조)·frrand(대부분 ⬚)은 방법 간 비교가능성 위해 제외. online·retrain 공통. (개별 셀은 위 각 열; 소스 = `cnn_competition.csv`.)
+> ¹ **frrand** — flirds .5895 = **3-seed**(vanilla .5876·random_excl .5839 위, oracle_excl .6195 근처, frzero .6148과 같은 exact-0 생존 계열). **7 방법(flirds1st~shapleyfl) = seed0 파일럿(◐)** — frzero-대칭 확인: exact-0 계열 생존(flirds1st .6060·lossheur .6066·fedif .6154) vs **renorm 붕괴**(gtg .3810·fedsv .3866·comfedsv .3892·shapleyfl .3977). 3-seed 확정 = C-fr(REMAINING §1.6a) · **R4(LLM) frrand는 신규 계획**(§1.6a L9).
+> ² **평균** = 오염 4종(frzero·grad-noise·label-flip@.70·strmain) 산술평균 — 전부 3-seed·방법 간 비교가능. clean(do-no-harm 대조)·frrand(7방법 seed0 파일럿)은 제외. online·retrain 공통. (소스 = `cnn_competition.csv`, 재생성 `make_analysis.py`.)
+> ³ **strmain** = per-client dose(오염 클라마다 flip rate ∼U(0.5,1)) label-flip, 3-seed ●.
 
-**P1 · retrain** (관찰자 최종 부호로 kept → init부터 재학습; **frrand retrain = C-fr 계획**[⬚], 현재 online만 실행)
+**P1 · retrain** (관찰자 최종 부호로 kept → init부터 재학습; frrand = seed0 파일럿 ◐)
 
-| arm | clean | frzero | grad-noise | label-flip@.70 | 평균² |
-|---|---|---|---|---|---|
-| vanilla (바닥) | .6389 | .5879 | .2436 | .5247 | .4521 |
-| oracle_excl (천장) | – | .6203 | .6203 | .6236 | .6214 |
-| **flirds** | .6277 | .6063 | **.6065** | .6192 | .6107 |
-| flirds1st | .6386 | .6252 | .2436 | .6236 | .4975 |
-| fedif | .6417 | .6252 | .2436 | .6217 | .4968 |
-| lossheur | .6293 | .6125 | .4518 | .6205 | .5616 |
-| gtg | .6265 | .5158 | .6203 | .5991 | .5784 |
-| fedsv | .6166 | .5140 | .6203 | .5904 | .5749 |
-| comfedsv | .6232 | .5200 | .6203 | .5921 | .5775 |
-| shapleyfl | .6223 | .5113 | .6203 | .6028 | .5781 |
+| arm | clean | frzero | frrand¹ | grad-noise | label-flip@.70 | strmain³ | 평균² |
+|---|---|---|---|---|---|---|---|
+| vanilla (바닥) | .6389 | .5879 | .5876 | .2436 | .5247 | .5149 | .4678 |
+| oracle_excl (천장) | – | .6203 | .6195 | .6203 | .6236 | .6226 | .6217 |
+| **flirds** | .6277 | .6063 | .5925 | **.6065** | .6192 | .6204 | **.6131** |
+| flirds1st | .6386 | .6252 | .6034 | .2436 | .6236 | .6150 | .5269 |
+| fedif | .6417 | .6252 | .6102 | .2436 | .6217 | .6140 | .5261 |
+| lossheur | .6293 | .6125 | .5940 | .4518 | .6205 | .6198 | .5762 |
+| gtg | .6265 | .5158 | .5164 | .6203 | .5991 | .5906 | .5814 |
+| fedsv | .6166 | .5140 | .5164 | .6203 | .5904 | .5826 | .5768 |
+| comfedsv | .6232 | .5200 | .5258 | .6203 | .5921 | .5868 | .5798 |
+| shapleyfl | .6223 | .5113 | .4925 | .6203 | .6028 | .5865 | .5802 |
 
-> 서술 클레임(정확형): "**전 정책·전 시점 상위권 + grad-noise를 잡는 유일한 estimator(2차항: flirds GN online .5668 / retrain .6065 — vs 1차-계열 실명 flirds1st .2479/.2436·fedif .2479/.2436, lossheur 부분 .5981/.4518) + frzero에서 exact-0 계열 생존(online .61~.62) vs renorm 붕괴(online gtg .3915·fedsv .3966·comfedsv .3918·shapleyfl .4020 / retrain .51~.52)**". 정직 보고: clean 오발화 flirds −0.7pt·R4 clean T1 −1.0pt, 단 **T2 최종-부호는 무해(kept=전원)**. **출처**: `runs/track_h/analysis/cnn_competition.csv`(dataset=cifar10·partition=dir1·policy=P1; frrand=flirds leg). **P1w(크기-가중)** 는 결과 규칙부(00-INDEX §1).
+> 서술 클레임(정확형): "**전 정책·전 시점 상위권 + grad-noise를 잡는 유일한 estimator(2차항: flirds GN online .5668 / retrain .6065 — vs 1차-계열 실명 flirds1st .2479/.2436·fedif .2479/.2436, lossheur 부분 .5981/.4518) + frzero에서 exact-0 계열 생존(online .61~.62) vs renorm 붕괴(online gtg .3915·fedsv .3966·comfedsv .3918·shapleyfl .4020 / retrain .51~.52) + strmain(per-client dose)서 retrain flirds **.6204 ≈ oracle .6226**(전 estimator .586~.620 오라클 근접, online은 vanilla .5149 대비 전반 회수)**". 정직 보고: clean 오발화 flirds −0.7pt·R4 clean T1 −1.0pt, 단 **T2 최종-부호는 무해(kept=전원)**. **출처**: `runs/track_h/analysis/cnn_competition.csv`(dataset=cifar10·partition=dir1·policy=P1; **frrand**=flirds 3-seed + 7방법 seed0◐, **strmain**=3-seed; `make_analysis.py` 재생성). **P1w(크기-가중)** 는 결과 규칙부(00-INDEX §1).
 > ![[flirds-paper-results-overview-figs/f5_cnn_competition_p1_online.png]]
 
 ---
@@ -219,27 +225,27 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 
 | 셀 | Flirds AUROC | (b) AUROC | 탐지기 4종 | 상태 |
 |---|---|---|---|---|
-| R4 gsm50k5 · noisy | ⬚ | ⬚ | ⬚ | 채움 = `runs/phase2_matrix/rundirs/1B_gsm50k5_*`(L2) |
-| R4 gsm50k5 · frzero | ⬚ | ⬚ | ⬚ | (L2) |
+| R4 gsm50k5 · noisy | ⬚ | ⬚ | ⬚ | AUROC = L2 valuation 진행 중(rundir 미생성) — `1B_gsm50k5_noisy_*` |
+| R4 gsm50k5 · frzero | ⬚ | ⬚ | ⬚ | (b) 해석적 exact-0(free-rider φ=0) + L1 3-seed 개입 충족; AUROC=L2 |
 | R4 gsm50k5 · **frrand** | ⬚ | ⬚ | ⬚ | **신규 축** = L9(§1.6a) — random free-rider 탐지 |
 
-**c2fid (CNN C2, cifar10/dir1) — φ-AUROC 전 방법 × 오염-시나리오** ◐ seed0–1 (70/144, seed2 대기; clean=오염0 → 탐지 대상 없어 제외)
+**c2fid (CNN C2, cifar10/dir1) — φ-AUROC 전 방법 × 오염-시나리오** ● 3-seed (seed0–2; clean=오염0 → 탐지 대상 없어 제외)
 
 | 방법 | frzero | frrand | grad-noise | lf@.15 | lf@.35 | lf@.70 | strmain | 평균 |
 |---|---|---|---|---|---|---|---|---|
-| **(b)oracle** | 0.675 | 0.681 | 1.000 | 0.550 | 0.933 | 0.995 | 0.995 | 0.833 |
-| **Flirds** | 0.692 | 0.687 | 0.998 | 0.584 | 0.936 | 0.995 | 0.996 | 0.841 |
-| Flirds-1st | 0.967 | 0.967 | 0.506 | 0.600 | 0.919 | 1.000 | 1.000 | 0.851 |
-| loss-heur | 0.808 | 0.808 | 0.992 | 0.573 | 0.911 | 0.995 | 0.994 | 0.869 |
-| GTG | 0.026 | 0.027 | 1.000 | 0.337 | 0.443 | 0.872 | 0.875 | 0.511 |
-| FedSV | 0.009 | 0.009 | 1.000 | 0.368 | 0.484 | 0.873 | 0.882 | 0.518 |
-| ComFedSV | 0.237 | 0.238 | 0.716 | 0.465 | 0.467 | 0.572 | 0.594 | 0.470 |
-| ShapleyFL | 0.000 | 0.000 | 1.000 | 0.404 | 0.590 | 0.898 | 0.904 | 0.542 |
-| FedIF | 0.951 | 0.951 | 1.000 | 0.603 | 0.921 | 1.000 | 0.999 | 0.918 |
+| **(b)oracle** | 0.683 | 0.685 | 1.000 | 0.574 | 0.951 | 0.997 | 0.997 | 0.841 |
+| **Flirds** | 0.683 | 0.682 | 0.998 | 0.603 | 0.954 | 0.996 | 0.997 | 0.845 |
+| Flirds-1st | 0.978 | 0.978 | 0.494 | 0.602 | 0.939 | 1.000 | 1.000 | 0.856 |
+| loss-heur | 0.800 | 0.801 | 0.994 | 0.571 | 0.931 | 0.997 | 0.996 | 0.870 |
+| GTG | 0.022 | 0.023 | 1.000 | 0.336 | 0.444 | 0.867 | 0.861 | 0.508 |
+| FedSV | 0.008 | 0.008 | 1.000 | 0.370 | 0.482 | 0.872 | 0.870 | 0.516 |
+| ComFedSV | 0.219 | 0.219 | 0.738 | 0.463 | 0.462 | 0.570 | 0.590 | 0.466 |
+| ShapleyFL | 0.000 | 0.000 | 1.000 | 0.380 | 0.577 | 0.894 | 0.893 | 0.535 |
+| FedIF | 0.955 | 0.955 | 1.000 | 0.642 | 0.943 | 1.000 | 1.000 | 0.928 |
 
-> frzero/frrand 데이터 사실(해석 없이 수치만): free-rider φ = **정확히 0**(Flirds·(b)·Flirds-1st 모두 min=max=0·std=0). benign 클라 φ<0 비율 = (b) 66.7% / Flirds 68.3% / Flirds-1st 98.3%(benign 평균 φ = −0.017 / −0.020 / −0.114; cifar10/dir1 seed0). renorm(GTG/FedSV/ShapleyFL) frzero·frrand AUROC = 0.0~0.03.
+> frzero/frrand 데이터 사실(해석 없이 수치만): free-rider φ = **정확히 0**(Flirds·(b)·Flirds-1st 모두 min=max=0·std=0). benign 클라 φ<0 비율 = (b) 68.3% / Flirds 68.3% / Flirds-1st 97.8%(benign 평균 φ = −0.017 / −0.020 / −0.110; cifar10/dir1 3-seed). renorm(GTG/FedSV/ShapleyFL) frzero·frrand AUROC = 0.0~0.02.
 
-> H-13 판정 기준: 주장은 절대값이 아니라 **oracle-동행** $|\mathrm{AUROC(Flirds)}-\mathrm{AUROC((b))}|\le 0.05$. c2fid ◐ seed0–1에서 grad-noise(Δ.002)·frrand(Δ.006) 모두 **동행 성립** — 단 frrand는 (b) 자체가 0.68(약신호)이라 판정 대상은 "탐지 성능"이 아니라 "오라클 추종". **CNN frrand 탐지는 c2fid로 착지**(C-fr는 개입-acc leg만 남음); **R4 frrand 탐지 = 신규 축 미실행**(L9, §1.6a). (strmain-dose 탐지는 부차 — dose-변조 하 오염 클라 flag; 필요 시 별도 판단.)
+> H-13 판정 기준: 주장은 절대값이 아니라 **oracle-동행** $|\mathrm{AUROC(Flirds)}-\mathrm{AUROC((b))}|\le 0.05$. c2fid ● 3-seed에서 frzero(Δ.000)·grad-noise(Δ.002)·frrand(Δ.003) 모두 **동행 성립** — 단 frrand·frzero는 (b) 자체가 0.68(약신호)이라 판정 대상은 "탐지 성능"이 아니라 "오라클 추종". **CNN frrand 탐지는 c2fid로 착지**(C-fr는 개입-acc leg만 남음); **R4 frrand 탐지 = 신규 축 미실행**(L9, §1.6a). (strmain-dose 탐지는 부차 — dose-변조 하 오염 클라 flag; 필요 시 별도 판단.)
 > ![[flirds-paper-results-overview-figs/f6_detection_auroc.png]] ⬚ *(F6 = 탐지 AUROC — L2/c2fid 착지 후 생성)*
 
 ---
@@ -263,8 +269,8 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 
 **① 2차항(HVP)의 기여 — Flirds vs Flirds-1st** ●
 - **부분참여 fidelity**: CNN C1 label-flip k=0.2에서 Flirds **0.891** vs Flirds-1st **0.305**(k=0.5 .979/.765·full .993/.940; 전 72셀 pool Flirds 0.953). → 2차 Hessian 항이 partial 참여에서 값을 함.
-- **grad-noise 개입**: Track H에서 Flirds GN acc **.567~.607**(online .5668/retrain .6065) vs **1차-계열 실명** — Flirds-1st .248/.244·FedIF .248/.244(≈vanilla .244), loss-heur 부분 .598/.452 — 1차 정보만으론 noise 클라 불가시. **c2fid fidelity로도 재확인**(◐ seed0–1): grad-noise vs (b) Spearman Flirds **0.830** vs Flirds-1st **0.254**(1차 붕괴; loss-heur 0.987) — 개입-acc·fidelity 양쪽서 2차항 필요.
-- **dose-해상도 변별(F-4)**: CNN c2fid strmain(◐ seed0–1) — spearman_vs_rate Flirds **0.847 ≈ (b) 0.845**(corrupt-only 0.460=0.460 = 오라클 정확추종)이나 Flirds-1st **0.869/0.619 ≥** Flirds → 사전등록 "Flirds ≳ Flirds-1st" **MISS**(2차항의 dose-해상도 우위는 이 셀서 미확인; Flirds 강점은 (b) 정확추종). **R4 strmain-dose = ⬚**(L10; §5.2 F-4 각주의 LLM 대응; seed2 포함 3-seed 시 재판정).
+- **grad-noise 개입**: Track H에서 Flirds GN acc **.567~.607**(online .5668/retrain .6065) vs **1차-계열 실명** — Flirds-1st .248/.244·FedIF .248/.244(≈vanilla .244), loss-heur 부분 .598/.452 — 1차 정보만으론 noise 클라 불가시. **c2fid fidelity로도 재확인**(● 3-seed): grad-noise vs (b) Spearman Flirds **0.847** vs Flirds-1st **0.218**(1차 붕괴; loss-heur 0.986) — 개입-acc·fidelity 양쪽서 2차항 필요.
+- **dose-해상도 변별(F-4)**: CNN c2fid strmain(● 3-seed) — spearman_vs_rate Flirds **0.858 ≈ (b) 0.857**(corrupt-only Flirds 0.519 / (b) 0.515 = 오라클 정확추종)이나 Flirds-1st **0.877/0.659 ≥** Flirds → 사전등록 "Flirds ≳ Flirds-1st" **MISS 확정**(3-seed; 2차항의 dose-해상도 우위는 이 셀서 미확인; Flirds 강점은 (b) 정확추종). **R4 strmain-dose = ⬚**(L10; §5.2 F-4 각주의 LLM 대응).
 > ![[flirds-paper-results-overview-figs/f9_second_order_ksweep.png]]
 
 **② A축 lever probe** ●
@@ -312,6 +318,7 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 **부록 E — 비용·규모 보조** ● (07-23 본문→부록)
 - **N=10 2¹⁰**: (b) exact **117,649s(32.7h)** vs Flirds **733s = 1/160**(1-seed 명기). 출처 `runs/track_d/rundirs_e5_n10/1B_anchor10_seed0/metrics.json`.
 - **device100 anchor**: (b) per-round ~25,000s vs Flirds **157s = 1/159**. 출처 `runs/phase2_matrix/rundirs/1B_device100-a0.5_*` + op-count 모델.
+- **device100 sweep** (N=100·10/100·α∈{0.01,0.1}, 3셀 {frrand·noisy·frzero} 3-seed; (b) exact 불가 규모 → **Flirds=proxy-truth**): ① **scaling 일치도**(Spearman vs Flirds) — Flirds-1st·loss-heur·Fed-LOO ≈ **+1.000**, FedIF +0.66~0.83, ComFedSV **+0.07~0.14 붕괴**(N=100서도 renorm 저하 재현); ② **탐지 AUROC**(전용 4종 포함) — frrand·frzero = Flirds/loss-heur/FLTrust **1.00**(FedDQC 0.42~0.63·FLDetector 0.54~0.58 하위), noisy(swap)만 **FedDQC 1.00** > FLTrust 0.74 > Flirds/loss-heur 0.63(극단 α서 swap 약신호); ③ **runtime** — Flirds ~155s·Flirds-1st ~55s vs 전용 탐지기 457~1063s. 출처 `runs/phase2_matrix/rundirs/1B_device100-a{0.01,0.1}_{frrand,noisy,frzero}`. ⚠ **sweep=보조축**(R4 §5.4 탐지 promise는 gsm50k5 별도 무대).
 - **Scale 100/100 P1**(완전참여): P1 행 + vanilla/oracle/random 앵커. 출처 `runs/track_h/rundirs_cnn_scale/`. (§4.8.2)
 > F7 Panel B(=위 §5.5)가 N=10·device100 지수-비용을 함께 보여준다.
 
