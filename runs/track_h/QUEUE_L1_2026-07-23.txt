@@ -53,6 +53,18 @@ track_g.py|L1_s2_frzero_online|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARM
 # 드라이버는 campaign 44-50 전부 dispatch 후에만 여기 도달 => campaign 100% 우선·co-locate 아님(각 GPU 1셀=경합0).
 # 별도 root rundirs_llm_l4 = canonical rundirs_llm 무충돌. 마감(03:27) 내 미완 셀은 다음 컨테이너 재개
 # (관찰자 완료분은 arm rundir 영속; 미완 관찰자는 재시작). seed1·2 + vast.ai 이관은 REMAINING(Yonghee)에서.
-track_g.py|L4_gsm50k5_noisy_renorm_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm_l4
-track_g.py|L4_gsm50k5_clean_renorm_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm_l4
-track_g.py|L4_gsm50k5_frzero_renorm_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm_l4
+#VAST-V2 track_g.py|L4_gsm50k5_noisy_renorm_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm_l4
+#VAST-V2 track_g.py|L4_gsm50k5_clean_renorm_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm_l4
+#VAST-V2 track_g.py|L4_gsm50k5_frzero_renorm_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm_l4
+# ============ 꼬리 정밀팩킹 2026-07-24 11:30 (L4[56-58] -> vast V2 이관; REMAINING-b200 §1a·§2 정본) ============
+# 대체 근거: L4 셀당 >=9h(noisy 17h급) = 마감 03:27 내 완주 불가 + 문서상 L4/L11은 vast 담당.
+# 여기 4셀 = L1 clean seed1·2 (§1a B200 표 1행 "3-seed 정책상 필수", 현재 seed0만 존재 = 고아).
+# 실측 비용: clean_obs 5.52 GPU-h(rundirs_llm/gsm50k5_clean_observer_seed0/timing.json) / clean_online 3.8h.
+# 착수 마감선: 5.5h셀=21:57, 3.8h셀=23:39. 순서 = obs 2개 -> online 2개(내림차순).
+#   근거: 21:57 stage1 봉인이 자동 폴백 = 21:57 이전에 비는 GPU는 5.5h obs 를, 이후에 비는 GPU는
+#   봉인된 obs 를 건너뛰고 3.8h online 을 받는다. FIFO 드라이버에 fit-aware 스케줄링을 주입하는 효과.
+# 워치독(seal_watchdog.sh)이 21:57에 clean_obs, 23:39에 전 미투입 줄을 #SEAL 처리 => 중도컷 0.
+track_g.py|L1_s1_clean_obs|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=observer T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
+track_g.py|L1_s2_clean_obs|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=observer T2=1 T2_P5=0 T2_LEGACY=1 T2_CSIGN=0 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
+track_g.py|L1_s1_clean_online|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm
+track_g.py|L1_s2_clean_online|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds/runs/track_h/rundirs_llm

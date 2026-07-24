@@ -115,9 +115,9 @@ allocated **~27 GiB 추정** → 32GB 네이티브 적재 → **vast**(상세·�
 B200 잔여 창 = 07-24 11:00 → 07-26 24:00 ≈ **61h × 4 GPU = ~244 GPU-wall-h**.
 위 B200 필수분(~235–300)은 **전부 HVP 계열 = 1셀/GPU라 팩킹 불가** → **창을 그대로 채움**.
 ⟹ downstream(L4·L11·L9-arms·L7-arms)은 **seed0까지 포함해 vast**로 가야 물리적으로 26일 완주.
-정책(seed0+timing = B200 고정)의 **예외 승인 필요** — 근거: downstream EM은 W-A 스택-강건
+✅ **예외 승인됨(2026-07-24 Yonghee "vast ai로 넘기자")** — 근거: downstream EM은 W-A 스택-강건
 (recovery 정규화하 mean|Δ|≤0.006) + 대상이 foil(비-flirds) 레그. **fidelity·timing canonical은 B200 유지**(불변).
-→ 미승인 시 vast는 `REMAINING-vast.md` **V-A(seeds1-2)만** 실행, seed0분은 다음 B200 컨테이너로 이월.
+→ vast는 `REMAINING-vast.md` **V-A + V-B 전량** 실행. B200 미래 부하 **~234–259 GPU-h(≈2.5일) 감소**.
 
 ## 2. 대기 큐 — L4·L5·L6·L7
 

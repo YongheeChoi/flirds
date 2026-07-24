@@ -1,0 +1,19 @@
+{
+  "name": "gsm50k5_noisy_nr0.7_t2_sign_flirds_seed2",
+  "git_sha": "a0962d246678774f524e93d1f2ca9814baf9c220",
+  "git_dirty": true,
+  "git_diff_stat": "runs/track_h/QUEUE_L1_2026-07-23.txt | 18 +++++++++++++++---\n 1 file changed, 15 insertions(+), 3 deletions(-)",
+  "env_hash": "812a656f211f80ca",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.3",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200"
+  }
+}
