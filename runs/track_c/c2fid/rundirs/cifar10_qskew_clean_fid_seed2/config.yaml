@@ -1,0 +1,22 @@
+cfg:
+  n: 100
+  frac: 0.1
+  rounds: 120
+  epochs: 5
+  lr: 0.01
+  batch: 64
+  n_val: 2000
+  n_test: 8000
+  target: 0.6
+stage: c2fid
+dataset: cifar10
+partition: qskew
+threat: clean
+strength: main
+seed: 2
+mode: full
+width: 1.0
+flip_rate: null
+fid:
+  oracle_b: true
+  b_rounds: all

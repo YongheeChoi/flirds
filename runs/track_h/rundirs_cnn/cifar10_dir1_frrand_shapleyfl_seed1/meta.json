@@ -1,0 +1,19 @@
+{
+  "name": "cifar10_dir1_frrand_shapleyfl_seed1",
+  "git_sha": "fadcd01cbf1c9e507d0e58c91904c739a3581376",
+  "git_dirty": true,
+  "git_diff_stat": "REMAINING-slurm-YH.md                      | 37 +++++-------\n runs/track_h/analysis/p1w_cnn.csv          | 60 +++++++++++++++++++\n runs/track_h/analysis/p1w_cnn_README.md    | 26 ++++----\n runs/track_h/analysis/p1w_cnn_recovery.csv | 96 +++++++++++++++---------------\n 4 files changed, 137 insertions(+), 82 deletions(-)",
+  "env_hash": "be4b11eda33078df",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "5.5.4",
+    "peft": "0.19.1",
+    "trl": "1.2.0",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.4",
+    "numpy": "2.4.4",
+    "python": "3.11.15",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  }
+}
