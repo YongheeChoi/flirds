@@ -1,10 +1,10 @@
 # REMAINING (B200 풀) — LLM 주무대 R4 (gsm50k5, 1B)
 
-> 실행처별 인수인계 **2부작** 중 **B200** 몫. 짝 = `REMAINING-slurm.md`(CNN + 작은-N LLM + LLM downstream overflow).
-> **~~vast 폐기~~(2026-07-24 Yonghee)** — downstream SFT는 **B200 팩킹 + Slurm 3090**으로 흡수(§1a). `REMAINING-vast.md` 삭제.
+> 실행처별 인수인계 **5-서버 분할** 중 **B200** 몫. 짝 = `REMAINING-slurm-YH.md`(CNN)·`REMAINING-slurm-HJ.md`(silo5-a·L11)·`REMAINING-slurm-JW.md`(L4)·`REMAINING-slurm-JB.md`(L9 arms).
+> **48GB 개방 재편(2026-07-24)**: Slurm A6000/RTX6000Ada 48GB가 **4계정(YH·HJ·JW·JB)**로 열림 → **B200=HVP 전용, 비-flirds downstream 전량 Slurm 48GB로 이관**(§1a). ~~vast~~·~~Slurm 3090 §6 overflow~~ 폐기.
 > **마감(신): 실험 07-28 / 논문 07-29 21:00.** 전략 = **전 실험 seed0 우선 완주 → 작성 병행 seeds 1-2 보강**(§1a 2단계).
 > **현재(07-24 23:12): L1 seed0·seed1 완료 + seed2 `obs_t2` 2/2 DONE(arm 12개; 커밋 `135342e`·`9f65bcd`); seed2 `online` 2셀·L2 seed0 2셀 진행 중(§1).** 현 컨테이너 하드컷 07-25 03:27.
-> **B200 담당 = HVP(flirds 2차 φ)·fidelity·timing 전담 + SFT 팩킹**. push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
+> **B200 담당 = HVP(flirds 2차 φ) 전용 + L2 fidelity·canonical timing**(모든 SFT/retrain-scoring=Slurm §1a). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 실행 절차·명령 정본 = `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
 > 사전등록 = `runs/track_h/README.md` H-12·H-13(+H-14는 T3에서 선커밋).
 
@@ -58,7 +58,7 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
 
 - **부대작업 완료**: pre-fix Tier A 20 rundir → `rundirs_llm_prefixh1/` 아카이브 · seed0 해시-포크
   `consolidate_hash_dirs.py --apply` 정리 · 큐 재정렬(44↔47, 인덱스 불변) · **L7(P1w) 코드·테스트 커밋(`ec6cbd5`)+H-14 사전등록 → 실행만 남음**.
-- **✅ 꼬리 큐 재편 완료(07-24 11:30)**: L4 [56-58] 봉인(큐 태그 `#VAST-V2`는 레거시 → **실제 배정 = 다음 컨테이너 B200 SFT 팩킹**, §1a; 봉인 자체는 유효=현 컨테이너 완주 불가) · **L1 clean seed1·2 4셀 append**[67-70]
+- **✅ 꼬리 큐 재편 완료(07-24 11:30)**: L4 [56-58] 봉인(큐 태그 `#VAST-V2`는 레거시 → **실제 배정 = Slurm JW 48GB**(§1a); 봉인 자체는 유효=현 컨테이너 완주 불가) · **L1 clean seed1·2 4셀 append**[67-70]
   (clean_obs 5.5h/clean_online 3.8h = 꼬리 시간 완주, 3-seed 정책상 clean seeds1-2 필수인데 전무했음).
   **봉인 워치독** `$BATCH/runlogs/seal_watchdog.sh` 가동 — **21:57** clean_obs / **23:39** 전체 `#SEAL` → 마감(03:27) **중도컷 0**. 줄 삭제 없음(주석 prefix만).
 - **부수 사실**: track_g는 **arm 단위 rundir 영속** — 컨테이너 종료 시 완료 arm은 생존, 진행 중 arm만 손실(§0 "전손"은 L2=phase2_matrix에만 정확; L1/L4는 완료 arm 보존).
@@ -79,15 +79,14 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
 
 **메모리 실측 (07-24 · `timing.json` allocated 기준 — 3-클래스):**
 
-| 클래스 | allocated peak | 근거 rundir | 팩킹 |
+| 클래스 | allocated peak | 근거 rundir | 배치 (48GB 개방판) |
 |---|---|---|---|
-| **HVP** (flirds 2차 φ; flirds online 포함) | **95.5 GiB** | `observer`·`flirds_gate_v2` = 95.5–95.6 | **B200 1/GPU** (3090 불가) |
-| **retrain-scoring** (renorm 4방법 online/value: gtg·fedsv·comfedsv·shapleyfl; oracle/random_excl 재학습) | **~31–33 GiB** | silo5 `*_gate_v2` = 32.6 · `oracle_excl` = 31.0 | **B200 3–4/GPU** · **24GB 불가** |
-| **순수-SFT** (T2 재학습 · cum-재사용 online-gate 적용 · downstream eval) | **~15–18 GiB** | downstream 15.0 · val-curve 17.7 (T2 phase는 로깅 갭 0.0 = 구조상 동급) | **B200 6–7/GPU** · **24GB 3090 OK** |
+| **HVP** (flirds 2차 φ; flirds online 포함) | **95.5 GiB**(실측 98–106) | `observer`=106.5·`flirds_gate_v2`=98.0 | **B200 전용** (48GB도 기본 val_chunk 불가) |
+| **retrain-scoring** (renorm 4방법 online/value: gtg·fedsv·comfedsv·shapleyfl; oracle/random_excl 재학습) | **~31–33 GiB** | silo5 `*_gate_v2` = 32.6 · `oracle_excl` = 31.0 | **Slurm A6000 48GB** · 24GB 불가 |
+| **순수-SFT** (T2 재학습 · cum-재사용 online-gate 적용 · downstream eval) | **~15–18 GiB** | downstream 15.0 · val-curve 17.7 (T2 phase는 로깅 갭 0.0 = 구조상 동급) | **Slurm 48/24GB OK** |
 
-- nvidia-smi **reserved ≈ allocated × ~1.47**(HVP서 140/95.5; retrain-scoring reserved ~40) — 팩킹 판단은 allocated로 하되 reserved 여유 확보.
-- ⟹ **HVP 동거 금지**(HIGH+any = OOM). retrain-scoring 3(안전)–4(빡빡)/GPU · 순수-SFT는 ~6/GPU.
-- **핵심**: retrain arm도 관찰자 cum을 **B200가 선산출**하면 3090 몫은 downstream(15)·val-curve(18) phase만 = **순수-SFT ~17 GiB로 강등** → 24GB 적재 성립(§1a Slurm 흡수 근거).
+- nvidia-smi **reserved ≈ allocated × ~1.47** — 동시성 판단은 allocated 기준. A6000 48GB: retrain-scoring ~1/GPU(32) · 순수-SFT ~2/GPU(17). B200는 HVP 전용 1/GPU(동거 금지=OOM).
+- **핵심(코드 확인 `track_g.build_arm`)**: 비-flirds gate arm은 매 실행 **fresh 누적기로 자체 인라인 스코어**(저장 observer cum 미로드) → **Slurm서 완전 독립 실행**(cum 복사조차 불요). flirds만 2차 HVP(95+)라 B200 전용.
 
 ### L2 실행 명령
 
@@ -100,53 +99,76 @@ L2 = `phase2_matrix.py REGIME=gsm50k5`(nr 0.7·(b) per-round 2⁵·9방법[Fed-L
 산출은 c2fid 열-호환 스키마 롤업(CNN fidelity leg와 공용 표). **frzero-(b) fidelity/탐지는 해석적 exact-0**
 (free-rider φ=0)이라 측정 seed 셀 불요 — 3-seed 의무의 예외가 아니라 정의상 상수(§5.4 frzero 행 = 이 해석값 + L1 3-seed 개입).
 
-## 1a. 실행처 배치 + 07-28 마감 2단계 계획 (2026-07-24 확정 · vast 폐기판)
+## 1a. 실행처 배치 — B200(HVP 전용) + Slurm 48GB×4-ID (2026-07-24 개정 · 48GB 개방판)
 
-**메모리가 배치를 가른다**(07-24 실측; 위 §1 「메모리 실측」 3-클래스 표): **HVP**(flirds 2차 φ) **95.5 GiB** → **B200 1셀/GPU 고정**(팩킹·3090 불가).
-**SFT는 두 부류**: **retrain-scoring**(renorm 4방법 online/value·exclusion 재학습) **~32 GiB** → **B200 3–4/GPU 팩킹**(24GB 불가·B200 잔류) ·
-**순수-SFT**(T2 재학습·cum 재사용 online 적용·downstream) **~15–18 GiB** → **B200 6–7/GPU + 24GB 3090 네이티브**. 관찰자 cum만 B200가 선산출하면 downstream arm은 순수-SFT로 강등.
+> **개정 계기**: Slurm에 **A6000/RTX6000Ada 48GB**가 계정 3개(YH·HJ·JW)로 열림 → "꼭 B200라야 하는 것(HVP)만 B200, 나머지는 48/24GB로 Slurm". **종전 'B200 SFT 팩킹 + Slurm 3090 §6 overflow'는 폐기.**
 
-### 2단계 계획 — seed0 우선 (마감: 실험 07-28 / 논문 07-29 21:00)
+**메모리가 배치를 가른다**(§1 3-클래스 실측):
+- **HVP**(flirds 2차 φ; observer·flirds_gate_v2) **~95–106 GiB** → **B200 전용**(48GB도 기본 val_chunk로는 불가) = **B200의 유일·불가결 역할**.
+- **retrain-scoring**(renorm 4방법 값·exclusion 재학습) **~32 GiB** → **Slurm A6000 48GB**(24GB 불가). 종전 B200 잔류 → **48GB 개방으로 Slurm 이관**.
+- **순수-SFT**(T2 재학습·cum 재사용 online·downstream) **~15–18 GiB** → **Slurm 48/24GB** 어디든.
+⟹ **B200 = HVP factory**(cum 생산 + L2 fidelity + canonical timing). **모든 SFT/retrain-scoring = Slurm 48GB×4-ID.**
 
-**Phase 1 (지금→~07-26): 전 실험 seed0 = 논문 착수선.**
-- seed0 잔여 ≈ **~280 GPU-h**: HVP seed0(L2 마무리中 · L10/L9-obs/L7-obs ~35; L1 seed0 완료) + **downstream seed0**(L11·L4·L9-arms·L7-arms ~246).
-- B200 4장 = **HVP 전담 GPU(1/GPU) + SFT 팩킹 GPU(3–4/GPU)** 파티션 → ~1.5–2일 → **~07-26 seed0 완결 → 논문 착수.**
+### 4-서버 역할
+| 서버 | GPU | 역할 | 정본 |
+|---|---|---|---|
+| **B200** | 4× B200 | HVP 전용: L1 관찰자 cum·flirds online·L2 fidelity·L7/L9/L10 flirds 관찰자·flirds 가중 T2(L7·L1)·**canonical timing** | 이 파일 |
+| **YH**(chyoyhr) | 3090→A6000 8-QOS | CNN(c2fid·W-B·C-fr·C1) 완주 → **L11 seed2**(21런 ~92) + work-steal | `REMAINING-slurm-YH.md` |
+| **HJ**(신규) | A6000 48GB 8-QOS | silo5-a + **L11 seed0·1**(42런; 계 ~210) | `REMAINING-slurm-HJ.md` |
+| **JW**(신규) | A6000 48GB 8-QOS | L4(renorm T2) | `REMAINING-slurm-JW.md` |
+| **JB**(신규) | A6000 48GB 8-QOS | L9 비-flirds arms(frrand) | `REMAINING-slurm-JB.md` |
+
+- **동시성**: 8-GPU/user × 4 ID = **동시 32 Slurm GPU** + B200 4.
+- **B200 의존**: L11·L4·L9-arms·silo5-a = **자체완결(비-flirds 값·1차 스코어) → B200 cum 불요·즉시 가동**. flirds 가중 재학습(L7 T2·L1 flirds 개입)만 관찰자 flirds cum(HVP) 필요 → **B200 잔류**(cum-재사용 로더 §2a 미구현이라 관찰자와 묶어 B200서 산출).
+
+### 파이프라인 — seed0 우선 (마감: 실험 07-28 / 논문 07-29 21:00)
+
+**Phase 1 (지금→~07-26): seed0 = 논문 착수선.**
+- **B200(HVP)**: L2 seed0 마무리 + clean seed1/2 관찰자 + L7/L9/L10 seed0 flirds 관찰자(~35 GPU-h).
+- **Slurm(32 동시)**: L11·L4·L9-arms·silo5-a seed0 = **B200 독립·즉시 flood**(~246 GPU-h / 32 ≈ ~8 wall-h). CNN(YH)은 ~07-25 완주 후 합류.
+- → **~07-26 seed0 완결 → 논문 착수.**
 
 **Phase 2 (~07-26→28, 작성 병행): seeds 1-2 보강.**
-- seeds 1-2 ≈ **~610–666 GPU-h**: HVP s1-2(~126–163) + downstream s1-2(~466–521).
-- **B200 팩킹 + 26일 free Slurm 3090×8**(LLM SFT는 24GB 적재 → `REMAINING-slurm.md` §6) 병렬.
-- ⚠ **꼬리는 마감(29일)에 빠듯** — 일부 셀 2-seed 잔존 허용(seed0 완비 = 유효 논문; seeds 1-2 = error-bar 보강).
+- **B200 HVP가 임계경로**: HVP 전량 ~165–198 GPU-h / 4장 ≈ ~45 wall-h ≈ **~2일**. Slurm downstream(~466–521 / 32 동시)은 그 안에 흡수됨.
+- ⚠ 일부 셀 2-seed 잔존 허용(seed0 완비 = 유효 논문; seeds 1-2 = error-bar 보강).
+- **(선택) A6000-HVP 완화밸브**: B200 HVP 병목 시, A6000 48GB서 val_chunk 낮춰 seeds 1-2 관찰자 cum 병렬 생산 가능(chunk-sum exact → **φ 비트동일**; timing만 비-canonical). **게이트 = fit 테스트**(gsm50k5 관찰자 48GB 적재 최대 val_chunk 1회 측정; gsm5는 chunk2서 22GB 완주 실측·gsm50k5 미확인). 맞으면 B200 병목 해소, 안 맞으면 B200 전용 유지(그래도 ~2일 = 28일 내).
 
-### B200 배치 (팩킹 규칙)
+### B200 배치 (HVP 전용 — 1셀/GPU)
 
-| 클래스 | 실험 | GPU 점유 |
+| 실험 | 내용 | 비고 |
 |---|---|---|
-| **HVP (1/GPU)** | L2·L10 (+여유 L5·L6) · **L9/L7 flirds 관찰자** | 95.5 GiB → 1셀/GPU |
-| **retrain-scoring (3–4/GPU)** | **L4 renorm value · L11 gtg/fedsv/comfedsv/shapleyfl · L9-arms 관찰자** | ~32 GiB → 3–4개(24GB 불가) |
-| **순수-SFT (6–7/GPU · 3090 가능)** | **T2 재학습 · cum-재사용 online 적용 · L7-arms** | ~17 GiB → 조밀 팩킹·3090 overflow |
+| **L1 관찰자** | 잔여 = clean seed1/2 관찰자(noisy/frzero seed0-2 완료) + seed2 flirds_gate_v2 | HVP ~95–106 GiB |
+| **L2** | phase2_matrix {clean,noisy}×3seed — fidelity·탐지·(b)·**canonical timing** | HVP |
+| **L7** | P1w flirds 관찰자(HVP)+T1 `flirds_gatew_v2`+**T2 `t2_signw`**(cum-로더 미구현이라 관찰자와 묶어 B200) | HVP+bundled SFT ~80 |
+| **L9 flirds 관찰자** | frrand flirds 관찰자(비-flirds arms는 JW) | HVP ~30 |
+| **L10** | strmain per-client dose fidelity-leg | HVP ~30–45 |
+| (여유) L5·L6 | 비등n·graded-noisy silo5 | HVP·여유 시 |
 
-- **⚠ 팩킹 배속 측정(초반 필수·게이트)**: SFT 1장에 3–4개 → vs 1개 net 배속. **≥2.5×면 28일 완주 넉넉**,
-  ~1.5×면(fp32 true-matmul일 때) seeds 1-2 꼬리가 29일로 밀림 → 그때만 소량 대책. *(TF32 여부로 갈림 — 측정 확정.)*
-- **HVP+SFT 동거 금지**(95.5+reserved 여유 없음 → OOM 확정) → **GPU 파티션**(일부 HVP 전담, 나머지 SFT 팩킹). `expandable_segments`로 순수-SFT 밀도만 완화(검증 후).
-- **downstream = 관찰자 cum 재사용**(HVP 재실행 0): L11 = L1 cum(noisy·frzero 산출됨·clean seed0 산출됨) · L9-arms = B200 L9 관찰자 cum(프론트로드) · L7-arms = §2a 재사용 경로.
+- **HVP 1셀/GPU 고정**(동거 금지 = OOM). 4장 병렬 → HVP ~165–198 GPU-h / 4 ≈ ~2일 = **임계경로**.
+- **flirds cum 프론트로드**: seed0 관찰자 먼저 → L7 T2 등 flirds 가중 재학습이 그 cum을 쓴다(같은 B200 셀 내 T2까지 산출 = 로더 불요).
 
-### Slurm 3090 흡수 (26일 free 후)
-CNN(c2fid·W-B·C-fr·C1)+L8 완주(~26일) → 3090×8이 **LLM downstream seeds-1-2 overflow** 흡수(SFT 24GB 적재, VAL_CHUNK 불요). 레시피 = `REMAINING-slurm.md` §6.
+### Slurm 48GB×4-ID 분담 (즉시 가동 — 정본은 각 파일)
+- **HJ**: silo5-a + L11 **seed0·1**(42런) — `REMAINING-slurm-HJ.md`. ≈ **~210 GPU-h**
+- **JW**: L4(renorm T2) — `REMAINING-slurm-JW.md`. ≈ **~215**
+- **JB**: L9 비-flirds arms(frrand) — `REMAINING-slurm-JB.md`. ≈ **~170**
+- **YH**: CNN 완주(~07-25) → **L11 seed2**(21런 ~92) + work-steal — `REMAINING-slurm-YH.md`.
+- **부하 균형**: 최대 물량 L11(63런)을 **seed 분할**(HJ=seed0·1 ~184 / YH=seed2 ~92) → 4계정 ~170–215로 평준화. 잔여는 빈 계정이 work-steal(arm-level idempotent; JB가 최소라 완주 후 HJ tail 흡수).
+- 전부 자체완결(B200 cum 독립) → cum 대기 없이 seed0부터 flood. 착지 root = `rundirs_llm_{yh,hj,jw}`(canonical `rundirs_llm` 무수정) → make_analysis dup-win 병합.
 
 ### 예산·타임라인
-전체 잔여 ≈ **~840–960 GPU-h**(HVP ~165–180 + downstream ~675–780; anchor5·gsm5·vast 제거 후).
-B200 창(지금→28일) ≈ **~428 GPU-wall-h** + Slurm 3090 보조. **팩킹 ≥2.5× 가정 시 28일 완주**(seed0=26일).
-**fidelity·timing canonical은 B200 실측만**(§5.5) — 3090 산출 timing.json 사용 금지.
+- 전체 잔여 ≈ **~840–960 GPU-h**: HVP **~165–198**(B200 전량) + downstream **~675–780**(Slurm 48/24GB 전량).
+- **임계경로 = B200 HVP ~2일**(4장). Slurm(32 동시)은 여유 → **28일 완주, seed0 ~26일**.
+- **canonical fidelity·timing = B200 실측만**(§5.5). Slurm(torch2.11) 산출 = recovery 정규화로만 병치·timing.json cost 금지.
 
 ## 2. 대기 큐 — L4·L5·L6·L7
 
 | # | 셀 | 비용(GPU-h) | 상태 |
 |---|---|---|---|
-| **L4** | R4 Tier B **T2-only**(renorm 4점수원 × **clean·noisy·frzero** × 3-seed) | ~200–230 | **SFT → B200 팩킹**(§1a; renorm=value-only라 HVP 의존 0·자체완결). seed0 우선. 넘치면 Slurm 3090(§slurm §6). 현 큐 [56-58]은 완주 불가라 봉인됨 |
-| **L11** | R4 §5.3 online 완성 | 7 non-flirds(flirds1st·lossheur·fedif·gtg·fedsv·comfedsv·shapleyfl) T1 부호-게이트 × clean·noisy·frzero × 3-seed = **63 run** — 기존 observer cum φ 재사용(신규 FL run만·관찰자 재실행 0) | ~250–300 | **SFT → B200 팩킹**(§1a; L1 cum 재사용·완전독립 = 팩킹 최적). seed0 21런 우선. 넘치면 Slurm 3090 |
+| **L4** | R4 Tier B **T2-only**(renorm 4점수원 × **clean·noisy·frzero** × 3-seed) | ~200–230 | **Slurm JW 48GB**(§1a; renorm=value-only·자체 인라인 스코어·B200 독립). 정본=`REMAINING-slurm-JW.md` §1. seed0 우선. 현 B200 큐 [56-58]은 완주 불가라 봉인됨 |
+| **L11** | R4 §5.3 online 완성 | 7 non-flirds(flirds1st·lossheur·fedif·gtg·fedsv·comfedsv·shapleyfl) T1 부호-게이트 × clean·noisy·frzero × 3-seed = **63 run**(seed 분할: HJ s0·1 42런 + YH s2 21런) — 각 방법 자체 인라인 스코어(HVP 없음)·신규 FL run만·관찰자 재실행 0 | ~250–300 | **Slurm HJ(s0·1)+YH(s2) 48GB**(§1a; 비-flirds 자체 스코어·B200 독립). 정본=`REMAINING-slurm-HJ.md` §2·`REMAINING-slurm-YH.md` §5. seed0 우선 |
 | L5 | 비등n silo5 1셀(4:2:1:1:1, clean+noisy, 3-seed) — CNN qskew fidelity와 P5c 쌍 | ~10–15 | 여유 시 |
 | L6 | silo5 graded-noisy(nr~U(0.5,1), `answer_swap_graded`) — spearman_vs_rate LLM 대응 | ~6–12 | 여유 시(L4 우선) |
-| **L7** | **R4 P1w**(w∝max(cum,0)·합-1 재정규화; flirds-only) × {clean,noisy,frzero} × 3-seed × {T1,T2} = 18런 — 스펙·H-14 = `paper/workplan/T3-p1w-llm-impl.md`; **실행 런북 = §2a** | ~80 | **코드·테스트 커밋 완료(`ec6cbd5`)+H-14 사전등록 → 실행만 남음**. **관찰자 HVP=B200(1/GPU) · arms(T1·T2)=B200 SFT 팩킹**(§1a; 넘치면 Slurm 3090) |
+| **L7** | **R4 P1w**(w∝max(cum,0)·합-1 재정규화; flirds-only) × {clean,noisy,frzero} × 3-seed × {T1,T2} = 18런 — 스펙·H-14 = `paper/workplan/T3-p1w-llm-impl.md`; **실행 런북 = §2a** | ~80 | **코드·테스트 커밋 완료(`ec6cbd5`)+H-14 사전등록 → 실행만 남음**. **flirds 관찰자·arms 전부 B200**(flirds 스코어=HVP 95GB; §1a·§2a) |
 
 - **L4 clean (2026-07-24 Yonghee)**: renorm-4도 §5.3 **clean 오발화 열**이 필요 → L4 = clean·noisy·frzero
   × 3-seed(종전 noisy·frzero만). flirds와 달리 renorm은 clean에서도 음수 φ로 **오발화(false-firing)** 가능
@@ -160,10 +182,10 @@ B200 창(지금→28일) ≈ **~428 GPU-wall-h** + Slurm 3090 보조. **팩킹 �
   E5 N=10 확장 · **β0.3 잔여 재실행(device100·3B·7B — 대상 표 전부 논문 제외로 폐기 07-23;
   부활 시 목록 = `runs/rerun_beta03/RESUME_AFTER_MIGRATION.md`)**.
   (※ R4 frrand는 07-23 번복 → §3 L9로 부활.)
-- **예산·분할 정본 = §1a**(2026-07-24 vast 폐기판). 전체 잔여 ≈ **~840–960 GPU-h**(anchor5·gsm5·vast 제거 후).
-  - **B200**: HVP(1/GPU) 전량 + **downstream SFT 3–4개 팩킹**. seed0 우선(~280 → ~07-26) → seeds 1-2(~610–666).
-  - **Slurm 3090**(26일 free 후): LLM downstream seeds-1-2 **overflow** 흡수(24GB 적재; `REMAINING-slurm.md` §6).
-  - **게이트 = 팩킹 배속 측정**(≥2.5×면 28일 완주). **timing canonical은 B200 실측만**(§5.5).
+- **예산·분할 정본 = §1a**(2026-07-24 48GB 개방판). 전체 잔여 ≈ **~840–960 GPU-h**(anchor5·gsm5·vast 제거 후).
+  - **B200**: HVP(flirds 2차; 1셀/GPU) 전량 = 임계경로 ~2일. seed0 우선(~07-26) → seeds 1-2.
+  - **Slurm 48GB×4-ID**(YH·HJ·JW·JB): 비-flirds downstream 전량(L11·L4·L9-arms·silo5-a) = 자체 스코어·B200 독립·즉시 가동(32 동시).
+  - **timing canonical은 B200 실측만**(§5.5). Slurm(torch2.11)=recovery 정규화·timing cost 금지.
   ※ **frrand(L9)=full-8 확정** · **strmain(L10)=fidelity-leg 유지**(downstream full-8 아님). anchor5·gsm5=보류(§4·silo5 단독 (a)).
 
 ### 2a. L7 실행 런북 — R4 P1w (코드 구현 완료 2026-07-23·이 세션·로컬 Windows; 커밋·push·서버 pull 후 실행)
@@ -226,11 +248,11 @@ REGIME=gsm50k5 THREAT=<clean|noisy|frzero> SEED=<0|1|2> \
 
 > **종전 "R4 frrand 재제안 금지"를 번복.** 주무대 쌍 모두 free-rider-random 축이 불완전:
 > R4(gsm50k5)는 **frrand 전무**(frzero만). 값싸고 모달리티 제약 없음 → frrand를 full-method 축으로
-> 완성 + strmain-dose 추가 = 대칭 복원 + fidelity 변별(순위 축퇴 완화)이 목적. (CNN 대응 = `REMAINING-slurm.md` C-fr.)
+> 완성 + strmain-dose 추가 = 대칭 복원 + fidelity 변별(순위 축퇴 완화)이 목적. (CNN 대응 = `REMAINING-slurm-YH.md` §3 C-fr.)
 
 | # | 셀 | 내용 | 비용(GPU-h, 추정) | 상태 |
 |---|---|---|---|---|
-| **L9** | R4 frrand **full-8** | free-rider-random(zero 대신 무작위) × **8방법**(same-game 3+FedIF+renorm-4) × {T1 online, T2 retrain} × 3-seed — clean·noisy·frzero 열과 동일 구성(L1+L4+L11 machinery에 frrand threat 추가); renorm 붕괴를 random-FR서도 시연 | ~200 | **flirds 관찰자=B200 HVP 프론트로드(§1a·~30) / arms 8방법=B200 SFT 팩킹(~170)**(넘치면 Slurm 3090) — arms가 관찰자 cum에 블록되므로 관찰자 seed0 우선 |
+| **L9** | R4 frrand **full-8** | free-rider-random(zero 대신 무작위) × **8방법**(same-game 3+FedIF+renorm-4) × {T1 online, T2 retrain} × 3-seed — clean·noisy·frzero 열과 동일 구성(L1+L4+L11 machinery에 frrand threat 추가); renorm 붕괴를 random-FR서도 시연 | ~200 | **flirds 관찰자=B200 HVP(~30) / 비-flirds 7방법 arms=Slurm JB 48GB(~170; 자체 스코어·독립)** — 정본 `REMAINING-slurm-JB.md` §1 |
 | **L10** | R4 strmain류 per-client noisy-dose | answer-swap rate $\sim U(0.5,1)$ 클라별 변조(=FedCorr `strmain` 기본 draw) × 3-seed — **지표 = spearman_vs_rate(φ↔per-client dose) + vs (b) fidelity** | ~30–45(L2형 per-seed ~10–15) | **신규**(seed=3; GO 대기) |
 
 - **기대**: (i) **L9** → free-rider가 zero/random 양쪽서 exact-0 계열 생존·renorm 붕괴 재현.
@@ -245,7 +267,7 @@ REGIME=gsm50k5 THREAT=<clean|noisy|frzero> SEED=<0|1|2> \
 
 > **⚠ 보류 (2026-07-24 Yonghee): anchor5·gsm5 보류, (a) retrain 오라클 = silo5 단독.**
 > anchor5(IID, Alpaca)는 gsm5와 함께 보류 — silo5(non-IID)만이 실재 신호 무대라 (a)-검증을 담당.
-> 기존 0.933(β0.5 산출)은 **보류 참조**로 존치(부활 시 아래 절차 그대로; 근거·정리 = `REMAINING-slurm.md` §5 배너).
+> 기존 0.933(β0.5 산출)은 **보류 참조**로 존치(부활 시 아래 절차 그대로; 근거·정리 = `REMAINING-slurm-HJ.md` §1 배너).
 > **anchor5 β0.3 재실행은 안 함** → B200 ~40 GPU-h 회수(§1a 반영). C1(β0.3, Slurm §4)은 별건 = 유지.
 > ⚠ **여파**: anchor5 0.933은 논문 §5.2 sub의 **폴백 참조**로만(주 (a)-결과는 silo5). paper B.5 "β=0.3" 서술은
 > anchor5 보류로 무영향(silo5·C1이 β 정합 담당) — B.5 재실행-대기 주석은 C1 착지 시 정리.

@@ -28,7 +28,7 @@
 |---|---|---|---|---|
 | **L7** | R4 P1w(크기-가중) flirds-only {clean,noisy,frzero}×3-seed×{T1,T2} | ~80 | B200(L2 뒤·L4 앞) | T3 |
 | **W-B** | CNN 캠페인 그리드 P1w flirds twin leg (T1·T2) + W-A(dir1 기존 P2 재사용) | ~25–35(CNN측) | CNN 서버 | T4 |
-| **L8** | retrain-(a) 스위트: **silo5 (a)-leg만**({clean,noisy,frzero}×3seed) · **gsm5 보류**(2026-07-24) | silo5 ~26 (gsm5 ~60 보류) | **RTX3090×8**(B200 비점유) | T5 |
+| **L8** | retrain-(a) 스위트: **silo5 (a)-leg만**({clean,noisy,frzero}×3seed) · **gsm5 보류**(2026-07-24) | silo5 ~26 (gsm5 ~60 보류) | **A6000 48GB**(HJ 계정; 24GB OOM→48GB) | T5 |
 | W-D | P1w 비-flirds 점수원(CNN 확장무대·R4) | 조건부 | 게이트 | T3/T4 |
 
 P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본문 승격 / 동률 "부호가 가치의 대부분" ablation 1문장 / 열세·타 소스 역전 시 미수록(P1만; rundir 존속).
@@ -39,7 +39,7 @@ P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본�
 |---|---|---|---|---|
 | T3 | `T3-p1w-llm-impl.md` | R4 P1w 구현+테스트+스모크+큐 등재(H-14 사전등록 포함) | 없음(코드 세션) | ◐ 코드 구현 완료 07-23(T1 `flirds_gatew_v2`·T2 `t2_signw_flirds`[`T2_W=1`]; test_p1w 6종+회귀 green·offline 스모크 green·H-14 선등록) — **B200 L7 실행 대기**(런북 = `REMAINING-b200.md` §2a); 수록 규칙 판정 1줄은 실행 후 이 §1에 기록 |
 | T4 | `T4-p1w-cnn-relay.md` | CNN 서버 세션 전달 스펙(W-A 재사용 판정 + W-B twin leg) | 없음(전달) | ◐ 구현 완료 07-23(W-A 판정=드리프트≈0 귀속·FedIF 역전 확인 / W-B sbatch·분석·H-15 선등록) — **GPU 실행 대기**(RTX3090); 인수인계 = `runs/track_h/RUN_P1W_CNN.md` |
-| T5 | `T5-retrain-a-suite.md` | **silo5 (a)-leg** + 3090 배치 (gsm5 무대 = **보류** 2026-07-24; 코드·캐시 존치) | 없음(코드→3090) | ◐ silo5만 실행 |
+| T5 | `T5-retrain-a-suite.md` | **silo5 (a)-leg** + A6000 48GB 배치 (gsm5 무대 = **보류** 2026-07-24; 코드·캐시 존치) | 없음(코드→A6000/HJ) | ◐ silo5만 실행(`REMAINING-slurm-HJ.md` §1) |
 | T1 | `T1-paper-section5.md` | paper-ko §5·부록 B–E 실작성(기존값 기입 + ⬚ 골격) + 초록/§1/부록A 수정 | 없음(기존값부) | ☑ 07-23 (§5.1–5.6·부록 B–E·§6 스텁·전역수정 A-1~6 완료; CNN dir1 수치는 † = W-A 드리프트 확인 대기, ⬚ = F1·F2·F3·silo5(a)·I1·D1·비용실측·F-4) |
 | T2 | `T2-results-overview-page.md` | 논문-순서 결과 overview 위키 페이지 + 시각화(figures) | T1 구조(권장) | ✅ (2026-07-23; `survey/flirds-paper-results-overview.md` + figs, F1/2/5/7/8/9 생성·자립형) |
 
@@ -50,4 +50,4 @@ P1w 수록 규칙(사전 고정): 전 범위(W-A·W-B·L7)에서 이기면 본�
 - 수치는 rundir/analysis 재생성 값만(수기 금지). **R4 Tier A seed0(pre-fix `fa5fc6e`) 인용 금지** — L1 3-seed가 정본.
 - CNN dir1 기존 수치(§3.2.3·P2)는 **캠페인 restack 드리프트 표 확인 후** 기입/귀속.
 - 사전등록(예측 행)은 실행 전 커밋. 결과는 overview(§3.x)에 먼저, paper·T2 페이지는 그로부터.
-- push는 Yonghee 직접. 실행 큐 정본 = `REMAINING-b200.md`(LLM R4)·`REMAINING-slurm.md`(CNN + 작은-N LLM) + `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
+- push는 Yonghee 직접. 실행 큐 정본 = `REMAINING-b200.md`(B200 HVP)·`REMAINING-slurm-{YH,HJ,JW,JB}.md`(Slurm 4계정: YH=CNN·HJ=silo5-a·L11·JW=L4·JB=L9-arms) + `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
