@@ -2,19 +2,35 @@
 
 > 실행처별 인수인계 **3부작** 중 **yonsei Slurm RTX3090** 몫.
 > 짝 = `REMAINING-b200.md`(HVP·fidelity·timing) · `REMAINING-vast.md`(R4 downstream SFT 물량).
-> **현재: Slurm 서버 유휴 — 전량 실행 대기.** push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
+> **현재: 캠페인 실행 중(2026-07-24 등록·모니터링) — 아래 「실행 현황」 참조.** push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 기존 rundir은 read-only.
+
+## 실행 현황 (2026-07-24 12:49 KST · 등록 후 ~12h)
+
+전 5항목 sbatch 등록 완료(번호 순). 완료분 rundir 커밋 `97db99c`(로컬·미push). 실패 0.
+
+| § | 실험 | 상태 | 진척 |
+|---|---|---|---|
+| §1 | c2fid CNN fidelity | 🟢 실행 중 | **70 / 144 셀 완료**(rundir 커밋됨) |
+| §2 | W-B P1w observer(T2) | 🟡 파일럿 완주·게이트 대기 | seed0 파일럿 **29셀 완료**; `p1wgate`가 GPU 확보 시 판정 → 통과면 30-89 자동 |
+| §3 | C-fr frrand full-method | ⚪ 파일럿 큐 대기 | seed0 파일럿(array 0-7) 제출·PD; §1/§4 뒤 backfill |
+| §4 | C1 β0.3 재실행(30셀) | 🟢 실행 중 | 8슬롯 가동(~1.6h/10h); canonical rundir 교체는 완주 시(현재 미변경) |
+| §5 | L8 gsm5+silo5 (a) | ⚪ 등록·큐 대기 | 코드 커밋·HF 캐시(model+gsm8k+5도메인) 완비; gsm5/silo5a 파일럿(각 array 0) PD, L8 게이트 dependency 대기 |
+
+- **한도**: 동시 8-GPU(QOSMaxGRESPerUser) + §1/§4 array 각 `%8`. 현재 §4가 8슬롯 점유 → 나머지 그 뒤로 직렬화(§1-우선 depth-first).
+- **파일럿→GO 게이트**(§2·§3·§5)는 Slurm `--dependency`로 자동(세션 무관·fail-safe): 완주 시 GPU-h 실측 보고 후 잔여 leg 자동 제출.
+- **예상 종료**(경합 유동): §1~§4(CNN) ~07-25, +§5(LLM) ~07-26.
 
 ## 0. 환경
 
 - **CNN(§1 c2fid·§2 W-B·§3 C-fr·§4 C1)**: conda `lora4cl`(`/home/chyoyhr/anaconda3/envs/lora4cl/bin/python`,
   torch 2.11.0), Slurm partition `base_suma_rtx3090`, 8-GPU QOS. sbatch 스크립트·로그 경로는 각 항목 런북.
   리포 루트(서버) = `/home/chyoyhr/projects/flirds/`.
-- **작은-N LLM(§5 L8: gsm5·silo5 a-leg)**: §5 런북의 env(venv 계열 +
-  `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`; 24 GiB 메모리 노브 `VAL_CHUNK`). CNN과 **다른 env**.
+- **작은-N LLM(§5 L8: gsm5·silo5 a-leg)**: 이 서버에선 CNN과 **동일 conda `lora4cl`**(2026-07-24 확정; 아래
+  "venv 계열/다른 env"는 B200 기준). `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` + 24 GiB 노브 `VAL_CHUNK` + `HF_HOME=/scratch/chyoyhr/hf_home`.
 - 공통: `HF_HUB_OFFLINE=1`, `codes/`에서 `PYTHONPATH=.`.
 
-## 1. c2fid 본런 143셀 — CNN fidelity 주무대 (파일럿 완주·GO 대기)
+## 1. c2fid 본런 143셀 — CNN fidelity 주무대 (🟢 실행 중 — 70/144 완료)
 
 - 파일럿 `cifar10_dir1_grad-noise_fid_seed0` 완주·커밋(`570a93f` 그리드는 별개) —
   **실측 1.05 GPU-h/셀**(3,777s = 궤적 재생 284 + (b) 2¹⁰×120 오라클 824 + 8방법 2,669; peak 3.3 GiB)
@@ -24,7 +40,7 @@
 - **채우는 overview ⬚**: §5.2 (메인) c2fid fidelity · §5.4 c2fid φ-AUROC · §5.6 F-4 dose 해상도 ·
   부록 C cross-game c2fid 전표 · 부록 D (b)-target 안정성 · figure F3(메인쌍)·F6(탐지, L2와 공유).
 
-## 2. W-B — CNN P1w twin leg (W-A 판정 완료·W-B 실행 대기)
+## 2. W-B — CNN P1w twin leg (W-A 판정 완료·W-B 파일럿 29셀 완주·게이트 대기)
 
 > **정본 = `runs/track_h/RUN_P1W_CNN.md`**(W-A 판정·실행 절차·비용·수록 규칙). 스펙 =
 > `paper/workplan/T4-p1w-cnn-relay.md`. 커밋 `93ee942`(무GPU 산출물). **P1w ≡ 기존 P2**
@@ -56,7 +72,7 @@
 
 | # | 셀 | 내용 | 비용(GPU-h, 추정) | 상태 |
 |---|---|---|---|---|
-| **C-fr** | C2(CNN) frrand 완성 | cnn_competition frrand을 flirds-only → **full-method**(gtg·fedsv·comfedsv·shapleyfl·flirds1st·lossheur·fedif) **+ retrain(T2)** — dir1 × 3-seed(논문 §5.3 무대); frzero 셀과 동형 | ~15–30(dir1 3-seed online+retrain) | **레시피 확정 — seed=3 확정(2026-07-24); GO만 대기**(기술 블로커 없음) |
+| **C-fr** | C2(CNN) frrand 완성 | cnn_competition frrand을 flirds-only → **full-method**(gtg·fedsv·comfedsv·shapleyfl·flirds1st·lossheur·fedif) **+ retrain(T2)** — dir1 × 3-seed(논문 §5.3 무대); frzero 셀과 동형 | ~15–30(dir1 3-seed online+retrain) | ⚪ **파일럿 제출됨(2026-07-24; array 0-7 seed0, PD)** → 게이트 통과 시 seeds1-2(8-23) 자동 |
 
 - **구현**: 기존 `track_c2` competition에 frrand threat을 전-방법으로 확장 + `C2_T2`(retrain) = 신규 코드 없이 threat 커버리지만 확장.
 - **채우는 overview ⬚**: §5.3 CNN 8점수원 표의 **frrand¹ 열**(현재 flirds 외 "–" → 7방법+retrain 채움) + §5.4 CNN frrand 탐지 AUROC(observer가 source별 `auroc` emit — `cnn_competition.csv` auroc 열).
@@ -88,13 +104,13 @@
   갱신 → paper §5.2 sub(C1 표)·부록 C 값 갱신 + **B.5 재실행-대기 주석 삭제**(anchor5 B200분 함께 착지해야 완결).
 - **갱신 대상 overview**(빈칸 아님 — 값 교체): §5.2 sub C1 vs (a) 표의 ShapleyFL 열(예: cifar10/qskew +0.81) · 부록 C.
 
-## 5. L8 — retrain-(a) 스위트 (작은-N LLM: gsm5 + silo5 a-leg) — 코드 완료·실행 대기
+## 5. L8 — retrain-(a) 스위트 (작은-N LLM: gsm5 + silo5 a-leg) — ⚪ 등록·파일럿 큐 대기
 
-> 스펙 = `paper/workplan/T5-retrain-a-suite.md`. 코드는 구현·스모크·유닛테스트 완료(로컬 Windows) —
-> **Yonghee 커밋·push → 서버 pull 후 실행**. **전 셀에 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`**(단편화 방지).
-> env는 §0(작은-N LLM) — CNN conda와 다름(venv 계열; T5 스펙 확인).
+> 스펙 = `paper/workplan/T5-retrain-a-suite.md`. 코드 **커밋 완료**(TRACKED·clean). **전 셀에 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`**(단편화 방지).
+> **env(이 서버 확정 2026-07-24)**: CNN과 **동일** conda `lora4cl`(§0의 "venv 계열"은 B200 기준·무효). `HF_HOME=/scratch/chyoyhr/hf_home`
+> (model+gsm8k+5도메인 캐시 완비), 런타임 `HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1`. sbatch = `runs/phase2_matrix/sbatch_{gsm5,silo5_a,l8_gate}.sh`.
 
-**구현 파일(미커밋)**: `experiments/phase2_matrix.py`(REGIME=gsm5 신설 + dual (a)+(b) 오라클 + `report_vs_a`) ·
+**구현 파일(커밋됨)**: `experiments/phase2_matrix.py`(REGIME=gsm5 신설 + dual (a)+(b) 오라클 + `report_vs_a`) ·
 `experiments/track_a_silo5.py`(신규) · `flirds/data/llm.py`(`build_gsm8k_iid`에 `per_client`) ·
 `flirds/oracle/exact_sv_llm.py`(`subset_valloss_utility`) · `runs/phase2_matrix/merge_silo5_a.py`(신규) ·
 테스트 `tests/test_gsm5_a.py`(3종 green). gpt2 와이어링 스모크로 gsm5 전 경로((a)+(b)+9방법+report_vs_a) 확인 완료.

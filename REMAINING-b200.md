@@ -2,7 +2,7 @@
 
 > 실행처별 인수인계 **3부작** 중 **B200 컨테이너** 몫.
 > 짝 = `REMAINING-slurm.md`(CNN + 작은-N LLM) · `REMAINING-vast.md`(downstream SFT 물량).
-> **현재(07-24 10:56): L1 seed0 6/6 · seed1 4/4 완료, seed2·L2 seed0 진행 중(§1).** 마감 07-25 03:27(잔여 ~16h31m).
+> **현재(07-24 12:48): L1 seed0 6/6·seed1 4/4 완료(커밋 `20c3595`), seed2 부분+L2 seed0 진행 중(§1).** 마감 07-25 03:27(잔여 ~14h39m).
 > **B200 담당 = HVP(flirds 2차 φ)·fidelity·timing 전담** — downstream SFT는 vast로 분리(§1a).
 > push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 실행 절차·명령 정본 = `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
@@ -43,26 +43,28 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
 >   **oracle_excl/random_excl 없음**(제외 대상 부재) + **T2 clean은 kept=전원→`equals_vanilla`로 스킵**
 >   → 실질 신규 = T1(online) 게이트 arm뿐 = 저비용.
 
-### 진행 상황 (07-24 10:56)
+### 진행 상황 (07-24 12:48)
 
 | 묶음 | 셀 | 상태 |
 |---|---|---|
 | L1 **seed0** | noisy/frzero `obs_t2`·`online` + **clean_obs·clean_online** | **6/6 DONE** — `rundirs_llm/*seed0` 41개, consolidate 완료·**커밋 `5cb21ec`** |
-| L1 **seed1** | noisy/frzero `obs_t2`·`online` | **4/4 DONE**(08:34) — `*seed1` 18개 **untracked(커밋 필요)** |
-| L1 seed1 **clean** | clean_obs·clean_online | **0/2 미실행** |
-| L1 **seed2** | [44] noisy_obs_t2(03:13~, T2 중) · [48] frzero_obs_t2(08:34~) | 진행 — 완주 ~20:15–22:45 / ~18:10 |
+| L1 **seed1** | noisy/frzero `obs_t2`·`online` | **4/4 DONE**(08:34) — `*seed1` 18개 **커밋 `20c3595`** |
+| L1 seed1 **clean** | clean_obs·clean_online | **0/2** — 큐 [67][69] append(꼬리 팩킹); 워치독이 착수마감선 관리 |
+| L1 **seed2** | [44] noisy_obs_t2(03:13~, T2 중) · [48] frzero_obs_t2(08:34~) | 진행 — **완료 arm 2개 영속**(noisy `observer`+`t2_sign_flirds`, `20c3595`); 완주 ~21:30 / ~18:10 |
 | L1 seed2 대기 | [49] noisy_online(9.5h) · [50] frzero_online(8.8h) | 각 **17:57 / 18:40 이전 착수 시 완주** |
-| **L2 seed0** | [45] clean(04:04~, valuation 4.9h째) · [47] noisy(06:48~) | 진행 — 완주 13:00–18:00 / 15:50–20:00(추정) |
+| L1 seed2 **clean** | clean_obs·clean_online | **0/2** — 큐 [68][70] append |
+| **L2 seed0** | [45] clean(04:04~, valuation 6.7h째) · [47] noisy(06:48~, 4.0h째) | 진행 — rundir는 셀 끝 1회 persist라 **미생성**; 완주 시 L2 셀당 실측 GPU-h 확정 |
 
-⟹ L2 2셀이 18:00 전에 비면 **seed2 4셀 + L2 seed0 2셀 완주** → **L1 3-seed(noisy·frzero) + L2 seed0 완결.**
+⟹ 완료 집계: **L1 noisy·frzero = 2-seed 확보**(seed0·1) + seed2 부분. L2 2셀이 18:00 전에 비면 seed2 online 2셀도 완주 → **noisy·frzero 3-seed + L2 seed0 완결.**
 
 - **부대작업 완료**: pre-fix Tier A 20 rundir → `rundirs_llm_prefixh1/` 아카이브 · seed0 해시-포크
   `consolidate_hash_dirs.py --apply` 정리 · 큐 재정렬(44↔47, 인덱스 불변) · **L7(P1w) 코드·테스트 커밋(`ec6cbd5`)+H-14 사전등록 → 실행만 남음**.
-- **⚠ L4 [56-58]은 이번 컨테이너 완주 불가**(셀당 ≥9h, noisy는 17h급) → **주석 처리 + L1 clean seed1·2 4셀 append 권장**
-  (clean_obs 5.5h/clean_online 3.8h = 꼬리 시간에 실제 완주, 3-seed 정책상 clean seeds1-2가 필수인데 전무).
-  큐 규칙 준수: **줄 삭제·삽입 금지, 정지=주석·추가=append**. **Yonghee 지시 대기.**
-- **부수 사실**: track_g는 **arm 단위 rundir 영속** — 컨테이너 종료 시 완료 arm은 생존, 진행 중 arm만 손실(§0 "전손"보다 덜 파괴적).
-- **완료 후**: rundir 커밋 + `make_analysis.py` 재생성 + H-12/H-13 대조 → paper I1·F2·D1 ⬚ 채움.
+- **✅ 꼬리 큐 재편 완료(07-24 11:30)**: L4 [56-58] → `#VAST-V2` 봉인(vast V2 담당) · **L1 clean seed1·2 4셀 append**[67-70]
+  (clean_obs 5.5h/clean_online 3.8h = 꼬리 시간 완주, 3-seed 정책상 clean seeds1-2 필수인데 전무했음).
+  **봉인 워치독** `$BATCH/runlogs/seal_watchdog.sh` 가동 — **21:57** clean_obs / **23:39** 전체 `#SEAL` → 마감(03:27) **중도컷 0**. 줄 삭제 없음(주석 prefix만).
+- **부수 사실**: track_g는 **arm 단위 rundir 영속** — 컨테이너 종료 시 완료 arm은 생존, 진행 중 arm만 손실(§0 "전손"은 L2=phase2_matrix에만 정확; L1/L4는 완료 arm 보존).
+- **컨테이너 교체 = 03:27 하드컷**(창은 07-26 24:00까지지만 이 컨테이너는 마감): 교체 전 ① **완료 큐 줄 전부 `#` 주석**(드라이버 `consumed=0` 재시작 → 미주석 시 완료 rundir 덮어씀) ② **rundir 커밋**(seed2·L2 완주분) ③ 완주 판정 = `TRACK G/MATRIX DONE`+mtime.
+- **완료 후**: `make_analysis.py` 재생성 + H-12/H-13 대조 → paper I1·F2·D1 ⬚ 채움.
 
 ### 📌 실측 셀 비용 (드라이버 로그 확정치 — 예산 산정 근거)
 
@@ -101,7 +103,7 @@ allocated **~27 GiB 추정** → 32GB 네이티브 적재 → **vast**(상세·�
 
 | 실험 | 셀 | GPU-h | 비고 |
 |---|---|---|---|
-| **L1 잔여** clean × seed{1,2} | 4셀 | ~19 | 3-seed 정책상 **필수** · §1 큐 조치로 일부 회수 |
+| **L1 잔여** clean × seed{1,2} | 4셀 | ~19 | 3-seed 정책상 **필수** · **큐 [67-70] append 완료**(이 컨테이너 꼬리서 일부 회수, 나머지는 다음 컨테이너) |
 | **L2 잔여** noisy·clean × seed{1,2} | 4셀 | ~60–100 | HVP+**timing 원천** · 실측 대기 |
 | **L10** strmain dose | 3-seed | ~30–45 | HVP |
 | **L9 관찰자만** (arms는 vast) | 3 seed | ~30 | **프론트로드 필수** — vast V3a가 이 cum에 블록됨 |
@@ -115,9 +117,9 @@ allocated **~27 GiB 추정** → 32GB 네이티브 적재 → **vast**(상세·�
 B200 잔여 창 = 07-24 11:00 → 07-26 24:00 ≈ **61h × 4 GPU = ~244 GPU-wall-h**.
 위 B200 필수분(~235–300)은 **전부 HVP 계열 = 1셀/GPU라 팩킹 불가** → **창을 그대로 채움**.
 ⟹ downstream(L4·L11·L9-arms·L7-arms)은 **seed0까지 포함해 vast**로 가야 물리적으로 26일 완주.
-정책(seed0+timing = B200 고정)의 **예외 승인 필요** — 근거: downstream EM은 W-A 스택-강건
+✅ **예외 승인됨(2026-07-24 Yonghee "vast ai로 넘기자")** — 근거: downstream EM은 W-A 스택-강건
 (recovery 정규화하 mean|Δ|≤0.006) + 대상이 foil(비-flirds) 레그. **fidelity·timing canonical은 B200 유지**(불변).
-→ 미승인 시 vast는 `REMAINING-vast.md` **V-A(seeds1-2)만** 실행, seed0분은 다음 B200 컨테이너로 이월.
+→ vast는 `REMAINING-vast.md` **V-A + V-B 전량** 실행. B200 미래 부하 **~234–259 GPU-h(≈2.5일) 감소**.
 
 ## 2. 대기 큐 — L4·L5·L6·L7
 

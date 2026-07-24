@@ -1,0 +1,19 @@
+{
+  "name": "gsm50k5_frzero_t2_sign_flirds_seed1",
+  "git_sha": "a9efd91e77f0c078b59a8b5f534a91ba64ccc467",
+  "git_dirty": true,
+  "git_diff_stat": "runs/track_h/QUEUE_L1_2026-07-23.txt               |   6 +-\n .../config.yaml                                    | 122 ------\n .../freeze.txt                                     |  87 ----\n .../meta.json                                      |  19 -\n .../metrics.json                                   | 439 --------------------\n .../phi.parquet                                    | Bin 4498 -> 0 bytes\n .../phi_rounds.parquet                             | Bin 119462 -> 0 bytes\n .../timing.json                                    |  20 -\n .../config.yaml                                    | 162 --------\n .../freeze.txt                                     |  87 ----\n .../meta.json                                      |  19 -\n .../metrics.json                                   | 460 ---------------------\n .../phi.parquet                                    | Bin 4323 -> 0 bytes\n .../phi_rounds.parquet                             | Bin 89615 -> 0 bytes\n .../timing.json                                    |  20 -\n .../config.yaml                                    | 162 --------\n .../freeze.txt                                     |  87 ----\n .../meta.json                                      |  19 -\n .../metrics.json                                   | 460 ---------------------\n .../phi.parquet                                    | Bin 4499 -> 0 bytes\n .../phi_rounds.parquet                             | Bin 119926 -> 0 bytes\n .../timing.json                                    |  20 -\n .../config.yaml                                    |  11 +\n .../meta.json                                      |   7 +-\n .../metrics.json                                   |   6 +-\n .../timing.json                                    |   6 +-\n .../config.yaml                                    |  11 +\n .../meta.json                                      |   7 +-\n .../metrics.json                                   |   8 +-\n .../timing.json                                    |   6 +-\n .../config.yaml                                    |  11 +\n .../meta.json                                      |   7 +-\n .../metrics.json                                   |   8 +-\n .../timing.json                                    |   6 +-\n .../config.yaml                                    |  11 +\n .../meta.json                                      |   7 +-\n .../metrics.json                                   |   9 +-\n .../timing.json                                    |   6 +-\n 38 files changed, 95 insertions(+), 2221 deletions(-)",
+  "env_hash": "812a656f211f80ca",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.3",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200"
+  }
+}

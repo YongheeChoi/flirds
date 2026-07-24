@@ -1,6 +1,6 @@
 {
   "name": "cifar10_dir1_grad-noise_fid_seed0",
-  "git_sha": "29a7f3e65910e06f65465ba45ff0fbf5844d2238",
+  "git_sha": "97f1ad5e1717fc2bac5df82f4d613d46eeefb0af",
   "git_dirty": true,
   "git_diff_stat": "",
   "env_hash": "be4b11eda33078df",
