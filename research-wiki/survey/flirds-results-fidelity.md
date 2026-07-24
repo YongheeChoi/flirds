@@ -29,6 +29,7 @@ tags: [flirds, results, fidelity]
 > **세팅**: FedSVCNN(cifar10)/LeNet5(fmnist) · N=100 · 10/100 참여 · R=120 · (b) per-round oracle · seed{0,1,2}. 위협 8종, 데이터셋×파티션마다 별도 표. **detection(§3)과 같은 rundir**. clean 칸 = 신호-부재(오발화 대조, fidelity 해석 금지). *전 9방법·Kendall·거리·loss-heur는 원본 `fidelity.csv`/detection 페이지.*
 
 **cifar10 / dir1** (● 3-seed)
+
 | 시나리오 | Flirds ρ | Flirds-1st ρ | Flirds r | Flirds-1st r |
 |---|---|---|---|---|
 | clean | **0.984±0.004** | <u>0.413±0.036</u> | **0.990±0.001** | <u>0.294±0.091</u> |
@@ -42,6 +43,7 @@ tags: [flirds, results, fidelity]
 | **평균(8시나리오)** | **0.974** | <u>0.606</u> | **0.988** | <u>0.506</u> |
 
 **cifar10 / iid** (● 3-seed · 저-이질성 트윈)
+
 | 시나리오 | Flirds ρ | Flirds-1st ρ | Flirds r | Flirds-1st r |
 |---|---|---|---|---|
 | clean | **0.998±0.000** | <u>0.866±0.032</u> | **0.999±0.000** | <u>0.893±0.009</u> |
@@ -55,6 +57,7 @@ tags: [flirds, results, fidelity]
 | **평균(8시나리오)** | **0.982** | <u>0.841</u> | **0.994** | <u>0.820</u> |
 
 **cifar10 / qskew** (● 3-seed · lf@0.15만 ◐2-seed)
+
 | 시나리오 | Flirds ρ | Flirds-1st ρ | Flirds r | Flirds-1st r |
 |---|---|---|---|---|
 | clean | **0.985±0.005** | <u>0.364±0.059</u> | **0.991±0.001** | <u>-0.058±0.047</u> |
@@ -68,6 +71,7 @@ tags: [flirds, results, fidelity]
 | **평균(8시나리오)** | **0.963** | <u>0.623</u> | **0.982** | <u>0.332</u> |
 
 **cifar10 / shard** (● 3-seed · clean·lf@0.35만 ◐2-seed · 2-shard 병적 레짐)
+
 | 시나리오 | Flirds ρ | Flirds-1st ρ | Flirds r | Flirds-1st r |
 |---|---|---|---|---|
 | clean | **0.959±0.008** | <u>0.735±0.004</u> | **0.967±0.004** | <u>0.774±0.000</u> |
@@ -81,6 +85,7 @@ tags: [flirds, results, fidelity]
 | **평균(8시나리오)** | **0.935** | <u>0.563</u> | **0.960** | <u>0.634</u> |
 
 **fmnist / dir1** (● 3-seed)
+
 | 시나리오 | Flirds ρ | Flirds-1st ρ | Flirds r | Flirds-1st r |
 |---|---|---|---|---|
 | clean | **0.992±0.001** | <u>0.590±0.129</u> | **0.995±0.001** | <u>0.463±0.207</u> |
@@ -94,6 +99,7 @@ tags: [flirds, results, fidelity]
 | **평균(8시나리오)** | **0.991** | <u>0.765</u> | **0.994** | <u>0.711</u> |
 
 **fmnist / iid** (● 3-seed · 최분리 트윈)
+
 | 시나리오 | Flirds ρ | Flirds-1st ρ | Flirds r | Flirds-1st r |
 |---|---|---|---|---|
 | clean | **0.998±0.001** | <u>0.897±0.019</u> | **0.998±0.000** | <u>0.926±0.008</u> |
@@ -158,6 +164,7 @@ tags: [flirds, results, fidelity]
 > **세팅**: LeNet5(mnist)/FedSVCNN(cifar10) · N=10 · full · R=10 · (a) 2¹⁰ retrain + (b) 2¹⁰ · seed{0,1,2}. 오염은 클라-index 사다리(`_pair_ladder`)라 dataset·seed 무관 동일 → cifar10↔mnist 차이는 과제 난이도. `label_skew`는 (a)-게임 축퇴로 제외. **iid(오염0)은 신호-부재 대조**(평균 희석 주의). ⚠ **ShapleyFL 열 = β0.5 잔존**(canonical β0.3는 소폭↑; 예: cifar10/qskew Sp 0.81→0.84 — merge 재생성 대기).
 
 **cifar10 — Spearman vs (a)** (● 3-seed)
+
 | 시나리오 | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | feature-noise | **0.63±0.10** | 0.50±0.24 | <u>0.56±0.18</u> | 0.44±0.06 | 0.18±0.16 | 0.39±0.24 | 0.28±0.21 | 0.40±0.17 |
@@ -167,6 +174,7 @@ tags: [flirds, results, fidelity]
 | **평균(4시나리오)** | 0.37 | 0.38 | <u>0.38</u> | 0.35 | 0.28 | **0.43** | 0.35 | 0.20 |
 
 **cifar10 — Pearson vs (a)** (● 3-seed)
+
 | 시나리오 | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | feature-noise | **0.60±0.09** | 0.51±0.21 | <u>0.57±0.17</u> | 0.43±0.10 | 0.19±0.13 | 0.44±0.22 | 0.31±0.18 | 0.47±0.17 |
@@ -176,6 +184,7 @@ tags: [flirds, results, fidelity]
 | **평균(4시나리오)** | 0.36 | 0.36 | <u>0.41</u> | 0.33 | 0.22 | **0.48** | 0.34 | 0.24 |
 
 **mnist — Spearman vs (a)** (● 3-seed)
+
 | 시나리오 | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | feature-noise | 0.33±0.16 | 0.44±0.38 | 0.44±0.37 | 0.40±0.30 | -0.07±0.43 | -0.07±0.26 | <u>0.60±0.08</u> | **0.66±0.15** |
@@ -185,6 +194,7 @@ tags: [flirds, results, fidelity]
 | **평균(4시나리오)** | 0.62 | 0.67 | <u>0.68</u> | 0.53 | 0.37 | 0.35 | **0.68** | 0.57 |
 
 **mnist — Pearson vs (a)** (● 3-seed)
+
 | 시나리오 | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | feature-noise | 0.42±0.19 | 0.52±0.26 | 0.46±0.27 | 0.22±0.31 | -0.10±0.29 | -0.17±0.18 | <u>0.63±0.12</u> | **0.63±0.14** |
