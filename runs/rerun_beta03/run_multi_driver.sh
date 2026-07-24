@@ -22,7 +22,7 @@ mkdir -p "$LOGDIR"
 read -ra gpus <<< "${GPUS:-0 1 2 3}"        # GPUS="0 1 2" to restrict (default: all four)
 declare -A pid cellname
 consumed=0
-done_re="MATRIX DONE|TRACK D DONE|\[persist\]"
+done_re="MATRIX DONE|TRACK D DONE|TRACK G DONE|\[persist\]"
 echo "[$(date +%F_%H:%M:%S)] MULTI-DRIVER START: queue=$QUEUE -> $LOGDIR"
 
 running() { for g in "${gpus[@]}"; do p=${pid[$g]:-}; [ -n "$p" ] && kill -0 "$p" 2>/dev/null && return 0; done; return 1; }

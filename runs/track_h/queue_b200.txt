@@ -1,0 +1,52 @@
+# ════════════════════════════════════════════════════════════════════════════
+# B200 배치 큐 — 차기 컨테이너 이월분 (REMAINING-b200.md §1 현재상태 + §1a Phase1/2)
+# 드라이버: runs/rerun_beta03/run_multi_driver.sh   (형식: SCRIPT|LOGNAME|envs)
+#   · 큐 소진 시 자동 종료 = 배치 친화.  재개형: 완료 줄은 '#' 주석(줄 삭제 금지 — consumed 인덱스).
+#   · __REPO__ = 리포 루트; run_b200_batch.sh 가 sed 로 실제 경로 치환.
+#
+# ⚠ 재실행 금지(REMAINING §1): L1 **noisy·frzero 3-seed 전부 완료·커밋** → 이 큐에 없음.
+#   여기 있는 건 전부 미완/신규: L2(전손 s0+신규 s1·2)·L1 clean(s1·2)·L7·L9 flirds.
+#
+# seed0 우선(§1a Phase 1 = 논문 착수선) → seed1 → seed2.  GPU 배정 수는 GPUS= 로(1장이면 seed0만
+# ~1.5일; 4장이면 전체 ~2일).  L2=phase2_matrix(자기 root·RUN_NAME 자가생성)·나머지=track_g(RUNDIR_ROOT 명시).
+# ════════════════════════════════════════════════════════════════════════════
+
+# ─────────── Phase 1 : seed0 (논문 착수선) ───────────
+# L2 seed0 (이전 컨테이너서 valuation 중 전손 → 처음부터) — fidelity·(b) per-round 2^5·탐지 4종·canonical timing
+phase2_matrix.py|L2_gsm50k5_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0
+phase2_matrix.py|L2_gsm50k5_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0
+# L9 flirds seed0 — frrand flirds 관찰자+online (JB 비-flirds arms의 recovery 분모 + flirds arms 공급)
+track_g.py|L9_s0_frrand_obs|RUN_NAME= REGIME=gsm50k5 THREAT=frrand SEED=0 ARMS=observer OBS_SOURCES=flirds T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L9_s0_frrand_online|RUN_NAME= REGIME=gsm50k5 THREAT=frrand SEED=0 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# L7 seed0 — P1w flirds (관찰자 동반 = §2a 옵션a; obs + flirds_gatew_v2[T1] + t2_signw_flirds[T2])
+track_g.py|L7_s0_clean|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_p1w
+track_g.py|L7_s0_noisy|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_p1w
+track_g.py|L7_s0_frzero|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_p1w
+
+# ─────────── Phase 2 : seed1 ───────────
+phase2_matrix.py|L2_gsm50k5_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1
+phase2_matrix.py|L2_gsm50k5_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1
+track_g.py|L1_s1_clean_obs|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_s1_clean_online|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L9_s1_frrand_obs|RUN_NAME= REGIME=gsm50k5 THREAT=frrand SEED=1 ARMS=observer OBS_SOURCES=flirds T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L9_s1_frrand_online|RUN_NAME= REGIME=gsm50k5 THREAT=frrand SEED=1 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L7_s1_clean|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_p1w
+track_g.py|L7_s1_noisy|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_p1w
+track_g.py|L7_s1_frzero|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_p1w
+
+# ─────────── Phase 2 : seed2 ───────────
+phase2_matrix.py|L2_gsm50k5_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2
+phase2_matrix.py|L2_gsm50k5_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2
+track_g.py|L1_s2_clean_obs|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_s2_clean_online|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L9_s2_frrand_obs|RUN_NAME= REGIME=gsm50k5 THREAT=frrand SEED=2 ARMS=observer OBS_SOURCES=flirds T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L9_s2_frrand_online|RUN_NAME= REGIME=gsm50k5 THREAT=frrand SEED=2 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L7_s2_clean|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_p1w
+track_g.py|L7_s2_noisy|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_p1w
+track_g.py|L7_s2_frzero|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARMS=observer,flirds_gatew_v2 OBS_SOURCES=flirds T2=1 T2_W=1 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_p1w
+
+# ─────────── (여유 시 · GO 대기 — threat 토큰/러너 확정 후 주석 해제) ───────────
+# L10 strmain per-client dose(answer-swap ~U(0.5,1)) fidelity-leg × 3seed — REMAINING §3(신규·GO 대기).
+#   threat 토큰 미확정(answer_swap_graded?) → Yonghee 확정 후 아래 형태로 활성:
+# phase2_matrix.py|L10_gsm50k5_strmain_s0|RUN_NAME= REGIME=gsm50k5 THREAT=<확정> SEED=0
+# L5 비등n silo5(4:2:1:1:1 clean+noisy 3seed) · L6 silo5 graded-noisy — REMAINING §2(여유 시).
