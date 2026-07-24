@@ -221,15 +221,22 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 | R4 gsm50k5 · noisy | ⬚ | ⬚ | ⬚ | 채움 = `runs/phase2_matrix/rundirs/1B_gsm50k5_*`(L2) |
 | R4 gsm50k5 · frzero | ⬚ | ⬚ | ⬚ | (L2) |
 | R4 gsm50k5 · **frrand** | ⬚ | ⬚ | ⬚ | **신규 축** = L9(§1.6a) — random free-rider 탐지 |
-| **c2fid** (CNN C2, cifar10/dir1) — **전 오염-시나리오 평균** | 0.841 | 0.833 | – | ◐ seed0–1(7 시나리오·70/144, seed2 대기) |
-| └ frzero | 0.692 | 0.675 | – | ◐ seed0–1 |
-| └ frrand | 0.687 | 0.681 | – | ◐ seed0–1 |
-| └ grad-noise | 0.998 | 1.000 | – | ◐ seed0–1 |
-| └ label-flip@0.15 | 0.584 | 0.550 | – | ◐ seed0–1 |
-| └ label-flip@0.35 | 0.936 | 0.933 | – | ◐ seed0–1 |
-| └ label-flip@0.70 | 0.995 | 0.995 | – | ◐ seed0–1 |
-| └ label-flip strmain | 0.996 | 0.995 | – | ◐ seed0–1 |
-| └ clean | – | – | – | 오염0(탐지 대상 없음) |
+
+**c2fid (CNN C2, cifar10/dir1) — φ-AUROC 전 방법 × 오염-시나리오** ◐ seed0–1 (70/144, seed2 대기; clean=오염0 → 탐지 대상 없어 제외)
+
+| 방법 | frzero | frrand | grad-noise | lf@.15 | lf@.35 | lf@.70 | strmain | 평균 |
+|---|---|---|---|---|---|---|---|---|
+| **(b)oracle** | 0.675 | 0.681 | 1.000 | 0.550 | 0.933 | 0.995 | 0.995 | 0.833 |
+| **Flirds** | 0.692 | 0.687 | 0.998 | 0.584 | 0.936 | 0.995 | 0.996 | 0.841 |
+| Flirds-1st | 0.967 | 0.967 | 0.506 | 0.600 | 0.919 | 1.000 | 1.000 | 0.851 |
+| loss-heur | 0.808 | 0.808 | 0.992 | 0.573 | 0.911 | 0.995 | 0.994 | 0.869 |
+| GTG | 0.026 | 0.027 | 1.000 | 0.337 | 0.443 | 0.872 | 0.875 | 0.511 |
+| FedSV | 0.009 | 0.009 | 1.000 | 0.368 | 0.484 | 0.873 | 0.882 | 0.518 |
+| ComFedSV | 0.237 | 0.238 | 0.716 | 0.465 | 0.467 | 0.572 | 0.594 | 0.470 |
+| ShapleyFL | 0.000 | 0.000 | 1.000 | 0.404 | 0.590 | 0.898 | 0.904 | 0.542 |
+| FedIF | 0.951 | 0.951 | 1.000 | 0.603 | 0.921 | 1.000 | 0.999 | 0.918 |
+
+> frzero/frrand 데이터 사실(해석 없이 수치만): free-rider φ = **정확히 0**(Flirds·(b)·Flirds-1st 모두 min=max=0·std=0). benign 클라 φ<0 비율 = (b) 66.7% / Flirds 68.3% / Flirds-1st 98.3%(benign 평균 φ = −0.017 / −0.020 / −0.114; cifar10/dir1 seed0). renorm(GTG/FedSV/ShapleyFL) frzero·frrand AUROC = 0.0~0.03.
 
 > H-13 판정 기준: 주장은 절대값이 아니라 **oracle-동행** $|\mathrm{AUROC(Flirds)}-\mathrm{AUROC((b))}|\le 0.05$. c2fid ◐ seed0–1에서 grad-noise(Δ.002)·frrand(Δ.006) 모두 **동행 성립** — 단 frrand는 (b) 자체가 0.68(약신호)이라 판정 대상은 "탐지 성능"이 아니라 "오라클 추종". **CNN frrand 탐지는 c2fid로 착지**(C-fr는 개입-acc leg만 남음); **R4 frrand 탐지 = 신규 축 미실행**(L9, §1.6a). (strmain-dose 탐지는 부차 — dose-변조 하 오염 클라 flag; 필요 시 별도 판단.)
 > ![[flirds-paper-results-overview-figs/f6_detection_auroc.png]] ⬚ *(F6 = 탐지 AUROC — L2/c2fid 착지 후 생성)*
