@@ -12,6 +12,7 @@
 #
 # Python 3.11.15
 torch==2.12.0            # +cu130 build (CUDA 13.0); install from the matching index-url
+torchvision==0.27.0      # +cu130; pairs with torch 2.12.0. CNN track loaders (flirds/data/cnn.py); LLM-only boxes can drop it
 transformers==5.9.0
 peft==0.19.1
 trl==1.5.1
