@@ -235,11 +235,17 @@ cifar10,qskew,grad_noise,,0,flirds,0.5055555555555555,0.9270833333333334
 cifar10,qskew,label_flip,0.7,0,flirds,0.07692307692307693,0.9533898305084746
 cifar10,qskew,label_flip,,0,flirds,0.07967032967032966,0.9427966101694916
 cifar10,shard,clean,,0,flirds,0.47,
+cifar10,shard,clean,,1,flirds,0.4725,
 cifar10,shard,free_rider,,0,flirds,0.4777777777777778,1.0
+cifar10,shard,free_rider,,1,flirds,0.4812760055478502,1.0
 cifar10,shard,frrand,,0,flirds,0.4777777777777778,0.475
+cifar10,shard,frrand,,1,flirds,0.47572815533980584,0.48643006263048016
 cifar10,shard,grad_noise,,0,flirds,0.4597222222222222,0.9166666666666666
+cifar10,shard,grad_noise,,1,flirds,0.4368932038834951,0.9018789144050104
 cifar10,shard,label_flip,0.7,0,flirds,0.4958791208791209,0.4533898305084746
+cifar10,shard,label_flip,0.7,1,flirds,0.5,0.3833922261484099
 cifar10,shard,label_flip,,0,flirds,0.49725274725274726,0.4279661016949153
+cifar10,shard,label_flip,,1,flirds,0.4810725552050473,0.411660777385159
 fmnist,dir1,clean,,0,flirds,0.4091666666666667,
 fmnist,dir1,free_rider,,0,flirds,0.39444444444444443,1.0
 fmnist,dir1,frrand,,0,flirds,0.38472222222222224,0.48125
