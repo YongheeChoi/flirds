@@ -1,0 +1,19 @@
+{
+  "name": "gsm50k5_frzero_flirds_gate_v2_seed2",
+  "git_sha": "50a0a601a2df26602a808e44cfe857e1febcb3ae",
+  "git_dirty": true,
+  "git_diff_stat": "",
+  "env_hash": "812a656f211f80ca",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.3",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200"
+  }
+}
