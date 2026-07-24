@@ -176,36 +176,37 @@ tags: [flirds, paper, results, dashboard]
 
 **P1 sign-게이트 · online** (3-seed mean; vanilla=바닥·oracle_excl=천장·random_excl=무작위-제외 대조)
 
-| arm | clean | frzero | frrand¹ | grad-noise | label-flip@.70 |
-|---|---|---|---|---|---|
-| vanilla (바닥) | .6389 | .5879 | .5876 | .2436 | .5247 |
-| oracle_excl (천장) | – | .6203 | .6195 | .6203 | .6236 |
-| random_excl (무작위) | – | .5838 | .5839 | .2590 | .5018 |
-| **flirds** | .6315 | .6148 | .5895 | **.5668** | .5712 |
-| flirds1st | .6384 | .6216 | ⬚ | .2479 | .5717 |
-| lossheur | .6264 | .6114 | ⬚ | .5981 | .5670 |
-| fedif | .6386 | .6143 | ⬚ | .2479 | .5728 |
-| gtg | .6051 | **.3915** | ⬚ | .5972 | .5479 |
-| fedsv | .5982 | **.3966** | ⬚ | .5972 | .5164 |
-| comfedsv | .5963 | **.3918** | ⬚ | .5871 | .5152 |
-| shapleyfl | .6045 | **.4020** | ⬚ | .6115 | .5278 |
+| arm | clean | frzero | frrand¹ | grad-noise | label-flip@.70 | 평균² |
+|---|---|---|---|---|---|---|
+| vanilla (바닥) | .6389 | .5879 | .5876 | .2436 | .5247 | .4521 |
+| oracle_excl (천장) | – | .6203 | .6195 | .6203 | .6236 | .6214 |
+| random_excl (무작위) | – | .5838 | .5839 | .2590 | .5018 | .4482 |
+| **flirds** | .6315 | .6148 | .5895 | **.5668** | .5712 | .5843 |
+| flirds1st | .6384 | .6216 | ⬚ | .2479 | .5717 | .4804 |
+| lossheur | .6264 | .6114 | ⬚ | .5981 | .5670 | .5922 |
+| fedif | .6386 | .6143 | ⬚ | .2479 | .5728 | .4783 |
+| gtg | .6051 | **.3915** | ⬚ | .5972 | .5479 | .5122 |
+| fedsv | .5982 | **.3966** | ⬚ | .5972 | .5164 | .5034 |
+| comfedsv | .5963 | **.3918** | ⬚ | .5871 | .5152 | .4981 |
+| shapleyfl | .6045 | **.4020** | ⬚ | .6115 | .5278 | .5138 |
 
 > ¹ **frrand = 현재 flirds 단독 leg** — CNN competition에서 free-rider-random은 flirds·앵커만 실행(다른 7 방법·retrain 미실행) → **7 방법 셀 = ⬚**(C-fr 착지 시 채움; 앵커·flirds만 ● 값). flirds .5895(vanilla .5876·random_excl .5839 위, oracle_excl .6195 근처)로 frzero(.6148)와 같은 exact-0 생존 계열. ⚠ **완전한 축(7 방법+retrain)으로 만들려면 CNN도 추가 실험 필요**(REMAINING §1.6a **C-fr**; random free-rider서도 renorm 붕괴가 나는지 = frzero 대칭 확인) · **R4(LLM) frrand는 전무 = 신규 계획**(§1.6a L9).
+> ² **평균** = 오염 3종(frzero·grad-noise·label-flip@.70) 산술평균 — clean(do-no-harm 대조)·frrand(대부분 ⬚)은 방법 간 비교가능성 위해 제외. online·retrain 공통. (개별 셀은 위 각 열; 소스 = `cnn_competition.csv`.)
 
 **P1 · retrain** (관찰자 최종 부호로 kept → init부터 재학습; **frrand retrain = C-fr 계획**[⬚], 현재 online만 실행)
 
-| arm | clean | frzero | grad-noise | label-flip@.70 |
-|---|---|---|---|---|
-| vanilla (바닥) | .6389 | .5879 | .2436 | .5247 |
-| oracle_excl (천장) | – | .6203 | .6203 | .6236 |
-| **flirds** | .6277 | .6063 | **.6065** | .6192 |
-| flirds1st | .6386 | .6252 | .2436 | .6236 |
-| fedif | .6417 | .6252 | .2436 | .6217 |
-| lossheur | .6293 | .6125 | .4518 | .6205 |
-| gtg | .6265 | .5158 | .6203 | .5991 |
-| fedsv | .6166 | .5140 | .6203 | .5904 |
-| comfedsv | .6232 | .5200 | .6203 | .5921 |
-| shapleyfl | .6223 | .5113 | .6203 | .6028 |
+| arm | clean | frzero | grad-noise | label-flip@.70 | 평균² |
+|---|---|---|---|---|---|
+| vanilla (바닥) | .6389 | .5879 | .2436 | .5247 | .4521 |
+| oracle_excl (천장) | – | .6203 | .6203 | .6236 | .6214 |
+| **flirds** | .6277 | .6063 | **.6065** | .6192 | .6107 |
+| flirds1st | .6386 | .6252 | .2436 | .6236 | .4975 |
+| fedif | .6417 | .6252 | .2436 | .6217 | .4968 |
+| lossheur | .6293 | .6125 | .4518 | .6205 | .5616 |
+| gtg | .6265 | .5158 | .6203 | .5991 | .5784 |
+| fedsv | .6166 | .5140 | .6203 | .5904 | .5749 |
+| comfedsv | .6232 | .5200 | .6203 | .5921 | .5775 |
+| shapleyfl | .6223 | .5113 | .6203 | .6028 | .5781 |
 
 > 서술 클레임(정확형): "**전 정책·전 시점 상위권 + grad-noise를 잡는 유일한 estimator(2차항: flirds GN online .5668 / retrain .6065 — vs 1차-계열 실명 flirds1st .2479/.2436·fedif .2479/.2436, lossheur 부분 .5981/.4518) + frzero에서 exact-0 계열 생존(online .61~.62) vs renorm 붕괴(online gtg .3915·fedsv .3966·comfedsv .3918·shapleyfl .4020 / retrain .51~.52)**". 정직 보고: clean 오발화 flirds −0.7pt·R4 clean T1 −1.0pt, 단 **T2 최종-부호는 무해(kept=전원)**. **출처**: `runs/track_h/analysis/cnn_competition.csv`(dataset=cifar10·partition=dir1·policy=P1; frrand=flirds leg). **P1w(크기-가중)** 는 결과 규칙부(00-INDEX §1).
 > ![[flirds-paper-results-overview-figs/f5_cnn_competition_p1_online.png]]
