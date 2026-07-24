@@ -4,6 +4,12 @@
 # (flirds.run_logger).  A minority of early runs used torch 2.11.0 / transformers
 # 5.5.4 (see meta.json); re-run those on this stack before pooling into one table.
 #
+# Per-track splits for provisioning a single-purpose server (2026-07-25):
+#   requirements-cnn.txt  — CNN track only, NO HuggingFace stack (lighter box)
+#   requirements-llm.txt  — LLM track, full stack (superset; also runs CNN)
+# This file stays the combined anchor other docs reference; the two above are the
+# same pins partitioned by import footprint.
+#
 # Python 3.11.15
 torch==2.12.0            # +cu130 build (CUDA 13.0); install from the matching index-url
 transformers==5.9.0

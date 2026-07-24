@@ -1,0 +1,26 @@
+# flirds — CNN track deps (self-built FL simulator; NO HuggingFace stack).
+#
+# Covers the CNN fidelity/competition mainstage runners, all HF-free:
+#   experiments/track_c1.py · track_c2.py · track_c2_fid.py
+#   → §1 c2fid · §2 W-B(P1w) · §3 C-fr(frrand) · §4 C1  (imports: numpy/torch/
+#     torchvision/scipy/scikit-learn/pandas only; verified by import scan 2026-07-25).
+#
+# ⚠ track_g.py (gate-arm CNN grids: runs/track_g/run_cnn_grid.sh) top-level-imports
+#   transformers + peft even in CNN mode → those need requirements-llm.txt, not this file.
+#
+# The EXACT per-run environment is captured verbatim in each run-dir's freeze.txt
+# (flirds.run_logger).  ⚠ Stack note: the committed anchor is torch 2.12 (majority
+# 596/965 runs); a minority of early / RTX3090 runs used torch 2.11.0 + torchvision
+# 0.26.0 (see meta.json).  Don't juxtapose absolute values across stacks — read
+# cross-stack via recovery-normalization (W-A: mean|Δ| ≤ 0.006).
+#
+# Python 3.11.15
+torch==2.12.0            # +cu130 build (CUDA 13.0); install from the matching index-url
+torchvision==0.27.0      # +cu130; pairs with torch 2.12.0 (78/78 canonical freeze). CIFAR-10/FMNIST loaders (flirds/data/cnn.py)
+numpy==2.4.6
+# --- infra (versions not stamped in meta; pin from a run-dir freeze.txt for a release) ---
+pandas
+pyyaml                   # rundir config.yaml (flirds/run_logger)
+pyarrow                  # phi.parquet
+scipy                    # rankdata / spearmanr / kendalltau (fidelity)
+scikit-learn             # roc_auc_score (detection AUROC)
