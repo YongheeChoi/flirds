@@ -80,10 +80,18 @@ tags: [flirds, paper, results, dashboard]
 
 주무대(c2fid + R4-L2)에 exact (b) per-round oracle을 붙여 same-game 3종을 채점. **현 fidelity 표는 대부분 포화(≈1.000)**라 변별용으로 이 두 셀을 신설.
 
-| 무대 | Flirds Sp/Pe | Flirds-1st Sp/Pe | loss-heur Sp/Pe | 상태 |
-|---|---|---|---|---|
-| c2fid (CNN C2 twin·**grad-noise 셀**) | 0.830/0.935 | 0.254/0.024 | 0.987/0.973 | ◐ seed0–1(cifar10/dir1; 70/144, seed2 대기) |
-| R4-L2 (LLM gsm50k5, (b) per-round) | ⬚ | ⬚ | ⬚ | 채움 = `runs/phase2_matrix/rundirs/1B_gsm50k5_*` (L2 큐) |
+| 무대                                   | Flirds Sp/Pe | Flirds-1st Sp/Pe | loss-heur Sp/Pe | 상태                                                    |
+| ------------------------------------ | ------------ | ---------------- | --------------- | ----------------------------------------------------- |
+| c2fid (CNN C2 twin, cifar10/dir1) — **전 시나리오 평균** | 0.972/0.988 | 0.604/0.474 | 0.912/0.947 | ◐ seed0–1(8시나리오·70/144, seed2 대기) |
+| └ clean | 0.986/0.991 | 0.398/0.230 | 0.808/0.889 | ◐ seed0–1 |
+| └ free-rider(frzero) | 0.988/0.997 | 0.529/0.435 | 0.860/0.936 | ◐ seed0–1 |
+| └ frrand | 0.996/0.997 | 0.556/0.434 | 0.863/0.937 | ◐ seed0–1 |
+| └ grad-noise | 0.830/0.935 | 0.254/0.024 | 0.987/0.973 | ◐ seed0–1 |
+| └ label-flip@0.15 | 0.988/0.990 | 0.436/0.207 | 0.859/0.907 | ◐ seed0–1 |
+| └ label-flip@0.35 | 0.994/0.994 | 0.725/0.595 | 0.935/0.956 | ◐ seed0–1 |
+| └ label-flip@0.70 | 0.998/0.998 | 0.966/0.928 | 0.990/0.991 | ◐ seed0–1 |
+| └ label-flip strmain | 0.999/0.998 | 0.970/0.937 | 0.991/0.991 | ◐ seed0–1 |
+| R4-L2 (LLM gsm50k5, (b) per-round)   | ⬚            | ⬚                | ⬚               | 채움 = `runs/phase2_matrix/rundirs/1B_gsm50k5_*` (L2 큐) |
 
 > 각주(c2fid ◐ seed0–1·cifar10/dir1, 70/144): **clean 칸은 신호-부재 레짐**(오발화 대조용, fidelity 해석 금지) · **strmain 셀** Sp Flirds 0.999 / 1st 0.970 / loss-heur 0.991(전 방법 고포화) · **frrand 셀** Flirds 0.996 / 1st 0.556 vs **renorm 붕괴**(GTG 0.049 · FedSV 0.027 · ShapleyFL −0.041) — same-game 3열엔 안 보이나 cross-game 변별 큼 · **F-4(dose 해상도)**: spearman_vs_rate Flirds **0.847 ≈ (b) 0.845**(corrupt-only 0.460=0.460 = 오라클 정확추종) 이나 Flirds-1st **0.869/0.619 ≥** Flirds → 사전등록 "Flirds ≳ 1st" **MISS**(2차항의 dose-우위는 이 셀서 미확인; Flirds 강점은 (b) 정확추종) · **R4 strmain류 per-client dose(⬚ L10)** = 이 dose-변별의 LLM 대응(REMAINING §1.6a). *seed2 착지 후 3-seed 재판정.*
 > ![[flirds-paper-results-overview-figs/f3_main_pair_heatmap.png]] ⬚ *(F3 = 메인 쌍 heatmap — 데이터 착지 시 `make_figures.py`에 f3 함수 추가·생성; 현 미구현)*
