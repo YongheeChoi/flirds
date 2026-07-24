@@ -78,9 +78,17 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
 | `clean_online` | **3.8h** |
 | L2 (`phase2_matrix` gsm50k5) | **≥7h, 미확정**(FL학습 ~2h + valuation ≥5h) |
 
-**메모리 실측**: HVP 스코어링 = nvidia-smi **reserved ~140 GiB** vs `timing.json` **allocated 95.5 GiB**
-(비 ~1.47 — 판단은 allocated로). LOW(renorm·GTG/FedSV/ShapleyFL/ComFedSV·탐지기) reserved ~40 GiB.
-⟹ **HIGH+HIGH·HIGH+LOW 동거 OOM**, LOW끼리만 GPU당 2–3개 팩킹.
+**메모리 실측 (07-24 · `timing.json` allocated 기준 — 3-클래스):**
+
+| 클래스 | allocated peak | 근거 rundir | 팩킹 |
+|---|---|---|---|
+| **HVP** (flirds 2차 φ; flirds online 포함) | **95.5 GiB** | `observer`·`flirds_gate_v2` = 95.5–95.6 | **B200 1/GPU** (3090 불가) |
+| **retrain-scoring** (renorm 4방법 online/value: gtg·fedsv·comfedsv·shapleyfl; oracle/random_excl 재학습) | **~31–33 GiB** | silo5 `*_gate_v2` = 32.6 · `oracle_excl` = 31.0 | **B200 3–4/GPU** · **24GB 불가** |
+| **순수-SFT** (T2 재학습 · cum-재사용 online-gate 적용 · downstream eval) | **~15–18 GiB** | downstream 15.0 · val-curve 17.7 (T2 phase는 로깅 갭 0.0 = 구조상 동급) | **B200 6–7/GPU** · **24GB 3090 OK** |
+
+- nvidia-smi **reserved ≈ allocated × ~1.47**(HVP서 140/95.5; retrain-scoring reserved ~40) — 팩킹 판단은 allocated로 하되 reserved 여유 확보.
+- ⟹ **HVP 동거 금지**(HIGH+any = OOM). retrain-scoring 3(안전)–4(빡빡)/GPU · 순수-SFT는 ~6/GPU.
+- **핵심**: retrain arm도 관찰자 cum을 **B200가 선산출**하면 3090 몫은 downstream(15)·val-curve(18) phase만 = **순수-SFT ~17 GiB로 강등** → 24GB 적재 성립(§1a Slurm 흡수 근거).
 
 ### L2 실행 명령
 
@@ -95,8 +103,9 @@ L2 = `phase2_matrix.py REGIME=gsm50k5`(nr 0.7·(b) per-round 2⁵·9방법[Fed-L
 
 ## 1a. 실행처 배치 + 07-28 마감 2단계 계획 (2026-07-24 확정 · vast 폐기판)
 
-**메모리가 배치를 가른다**(실측): **HVP**(flirds 2차 φ) allocated **95.5 GiB** → **B200 1셀/GPU 고정**(팩킹 불가·3090 불가).
-**LOW/SFT**(게이트·T2 재학습·online·renorm) allocated **~27 GiB** → **B200 1장에 3–4개 팩킹** + **24GB 3090 네이티브 적재**.
+**메모리가 배치를 가른다**(07-24 실측; 위 §1 「메모리 실측」 3-클래스 표): **HVP**(flirds 2차 φ) **95.5 GiB** → **B200 1셀/GPU 고정**(팩킹·3090 불가).
+**SFT는 두 부류**: **retrain-scoring**(renorm 4방법 online/value·exclusion 재학습) **~32 GiB** → **B200 3–4/GPU 팩킹**(24GB 불가·B200 잔류) ·
+**순수-SFT**(T2 재학습·cum 재사용 online 적용·downstream) **~15–18 GiB** → **B200 6–7/GPU + 24GB 3090 네이티브**. 관찰자 cum만 B200가 선산출하면 downstream arm은 순수-SFT로 강등.
 
 ### 2단계 계획 — seed0 우선 (마감: 실험 07-28 / 논문 07-29 21:00)
 
@@ -113,12 +122,13 @@ L2 = `phase2_matrix.py REGIME=gsm50k5`(nr 0.7·(b) per-round 2⁵·9방법[Fed-L
 
 | 클래스 | 실험 | GPU 점유 |
 |---|---|---|
-| **HVP (1/GPU)** | L2·L10 (+여유 L5·L6) · **L9/L7 관찰자** | 95.5 GiB → 1셀/GPU |
-| **SFT (3–4/GPU 팩킹)** | **L11·L4·L9-arms·L7-arms** | 27 GiB×3=81 → 3–4개 동시 |
+| **HVP (1/GPU)** | L2·L10 (+여유 L5·L6) · **L9/L7 flirds 관찰자** | 95.5 GiB → 1셀/GPU |
+| **retrain-scoring (3–4/GPU)** | **L4 renorm value · L11 gtg/fedsv/comfedsv/shapleyfl · L9-arms 관찰자** | ~32 GiB → 3–4개(24GB 불가) |
+| **순수-SFT (6–7/GPU · 3090 가능)** | **T2 재학습 · cum-재사용 online 적용 · L7-arms** | ~17 GiB → 조밀 팩킹·3090 overflow |
 
 - **⚠ 팩킹 배속 측정(초반 필수·게이트)**: SFT 1장에 3–4개 → vs 1개 net 배속. **≥2.5×면 28일 완주 넉넉**,
   ~1.5×면(fp32 true-matmul일 때) seeds 1-2 꼬리가 29일로 밀림 → 그때만 소량 대책. *(TF32 여부로 갈림 — 측정 확정.)*
-- **HVP+SFT 동거**(95.5+3×27=176<192)는 reserved(~140)+overhead로 **OOM 위험** → **GPU 파티션 권장**(일부 HVP 전담, 나머지 SFT 팩킹). `expandable_segments`로 완화 가능하나 검증 후.
+- **HVP+SFT 동거 금지**(95.5+reserved 여유 없음 → OOM 확정) → **GPU 파티션**(일부 HVP 전담, 나머지 SFT 팩킹). `expandable_segments`로 순수-SFT 밀도만 완화(검증 후).
 - **downstream = 관찰자 cum 재사용**(HVP 재실행 0): L11 = L1 cum(noisy·frzero 산출됨·clean seed0 산출됨) · L9-arms = B200 L9 관찰자 cum(프론트로드) · L7-arms = §2a 재사용 경로.
 
 ### Slurm 3090 흡수 (26일 free 후)
