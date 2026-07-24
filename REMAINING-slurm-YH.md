@@ -68,13 +68,12 @@
 
 - **(a) 담당 = L11 seed2**(7 비-flirds × {clean,noisy,frzero} × seed2 = **21런 ~92 GPU-h**): HJ와 동일 arm세트에 `SEED=2`. seed2 = 최저 우선(error-bar seed)이라 YH의 늦은 가용(~07-25)과 정합. 착지 root `rundirs_llm_yh`.
 - **(b) 보조(우선순위)**: 남으면 HJ/JW/JB 밀리는 큐의 seeds 1-2 흡수. 큰 물량 순 = L11 tail(HJ) → L4(JW) → L9-arms(JB). flirds 가중 T2(L7·L1)는 B200 몫이라 여기 안 옴.
-- **명령**: 해당 실험의 track_g 명령 그대로, **착지 root만 YH 전용**:
+- **명령(L11 seed2 = sbatch)**: HJ와 **같은 파일**, YH는 seed2 array만(root는 seed2→`rundirs_llm_yh` 자동):
   ```
-  RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_yh \
-  REGIME=gsm50k5 THREAT=<...> SEED=<1|2> ARMS=<...> T2=<0|1> T2_LEGACY=0 T2_P5=0 \
-    PYTHONPATH=. $PY -u experiments/track_g.py
+  cd $REPO && mkdir -p runs/track_h/_logs
+  sbatch --array=42-62%8 runs/track_h/sbatch_l11_online.sh     # seed2 21런
   ```
-  (arm 세트 = 흡수하는 HJ/JW 항목과 동일. A6000 파티션.)
+- **명령(work-steal 보조)**: 빈 슬롯이 HJ/JW/JB 잔여를 흡수할 땐 해당 sbatch를 `RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_yh` 오버라이드로 재제출(예: `RUNDIR_ROOT=… sbatch --array=<남은범위> runs/track_h/sbatch_l4_renorm_t2.sh`) — 착지 root만 YH 전용, make_analysis dup-win 병합.
 - **셋업**: YH는 repo·conda·HF캐시 이미 완비(§0) → A6000 파티션 지정만 추가. HJ/JW 대비 **셋업 마찰 0**.
 - **분석**: `make_analysis.py`에 `rundirs_llm_yh` root 추가(dup-win) → 병합. **스택 캐비엇 = recovery 정규화**(W-A ≤0.006). **timing cost 금지**(B200 실측만).
 

@@ -24,11 +24,12 @@ HJ는 지금까지 안 쓰던 계정 → 아래 4개가 준비돼야 잡이 돈�
 - **무엇**: 기존 canonical `1B_silo5_{clean,noisy,frzero}` rundir과 **동일 split·seed** 재현 → (a) 32-retrain(R=10) **오라클만 신규**. estimator HVP 없음(재학습 + no_grad val-loss).
 - **셀**: {clean, noisy, frzero} × seed{0,1,2} = **9 leg**. seed-major(array 0-2 = seed0 우선).
 - **전제**: canonical `runs/phase2_matrix/rundirs/1B_silo5_{clean,noisy,frzero}` 3개 존재 확인됨(read-only) + 5도메인 HF캐시(§0-3).
-- **명령**(A6000 1장/leg):
+- **실행(sbatch — REMAINING만 보고 실행)**: `runs/phase2_matrix/sbatch_silo5_a.sh`(A6000 48GB·qos base_qos·9셀 seed-major·%8). §0 셋업(repo·lora4cl·HF캐시) 후:
   ```
-  PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True REGIME=silo5 THREAT=<clean|noisy|frzero> SEED=<0|1|2> \
-    PYTHONPATH=. $PY -u experiments/track_a_silo5.py
+  cd $REPO && mkdir -p runs/phase2_matrix/_logs
+  sbatch runs/phase2_matrix/sbatch_silo5_a.sh                 # 9 leg 전부 (seed0 = array 0-2 먼저)
   ```
+  - env는 sbatch에 내장: `HF_HUB_OFFLINE=1`·`HF_HOME`(기본 YH scratch, 안 읽히면 `HF_HOME=<내 캐시>` 오버라이드)·`expandable_segments`·모델=1B(SMOKE_MODEL 미설정). `PY`/`REPO`도 `${VAR:-기본}`이라 다르면 `PY=… sbatch …`.
   - 48GB선 기본 knob(batch16·val_chunk10·maxlen768) 그대로. 완료 = 로그 `SILO5 (a)-LEG DONE`.
   - 만약 48GB도 빠듯하면(예상 안 됨) `VAL_CHUNK=3 VAL_MAXLEN=64`만 낮춤(val-loss 전용·**φ 불변**; batch는 불변 유지).
 - **산출**: `runs/phase2_matrix/rundirs/1B_silo5_{threat}_aonly_s{seed}`.
@@ -48,14 +49,13 @@ PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py     # canonical ⋈ *_aonly
 > `REMAINING-b200.md` §2 L11의 실행처 = **HJ 48GB(seed0·1) + YH(seed2)**. 최대 물량(63런)을 seed로 분할해 HJ 과부하 방지 — HJ가 우선 seed0·1(42런), YH가 CNN 완주 후 seed2(21런·`REMAINING-slurm-YH.md` §5). R4 §5.3 online 표는 CNN처럼 8방법인데 현재 online=flirds만(B200 L1) → 나머지 **7방법 T1 online**을 채운다. (retrain 8방법 = L1 4 exact-0 + L4 renorm-4로 별도 완성.)
 
 - **무엇(HJ 몫)**: 7 비-flirds(flirds1st·lossheur·fedif·gtg·fedsv·comfedsv·shapleyfl) T1 부호-게이트 online × {clean,noisy,frzero} × **seed{0,1}** = **42 run**(seed2 21런 = YH §5). 비-flirds는 online 스코어링에 **HVP 불요**(값·1차) → **retrain-scoring ~32 GiB → 48GB**, B200 cum 불요·자체완결.
-- **러너**: `experiments/track_g.py`(B200과 동일 코드). **착지 root = HJ 전용**(canonical `rundirs_llm` 무수정):
+- **실행(sbatch — REMAINING만 보고 실행)**: `runs/track_h/sbatch_l11_online.sh`(A6000 48GB·63셀 seed-major·root는 seed로 자동 라우팅 seed2→YH·그외→HJ). 7소스={flirds1st,lossheur,fedif,gtg,fedsv,comfedsv,shapleyfl} 각 `<src>_gate_v2`(자체 인라인 스코어). §0 셋업 후:
   ```
-  RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_hj \
-  REGIME=gsm50k5 THREAT=<clean|noisy|frzero> SEED=<0|1|2> \
-    ARMS=<src>_gate_v2 OBS_SOURCES=<src> T2=0 T2_LEGACY=0 T2_P5=0 \
-    PYTHONPATH=. $PY -u experiments/track_g.py
+  cd $REPO && mkdir -p runs/track_h/_logs
+  sbatch --array=0-41%8 runs/track_h/sbatch_l11_online.sh      # HJ = seed0·1 (42런; seed0 = 0-20 먼저)
   ```
-  (arm 세트·OBS_SOURCES 정확 목록 = B200 L11 큐와 동일 — Yonghee 확정 후 sbatch array. HJ=SEED 0·1(42런), **seed0 21런 우선**. seed2는 YH.)
+  (seed2 21런 = YH가 `--array=42-62%8` 제출 = `REMAINING-slurm-YH.md` §5. env·모델=1B 전부 sbatch 내장.)
+- **분모 의존(런타임 아님·분석 시)**: 각 셀 recovery 분모(vanilla/oracle_excl/random_excl)는 B200 L1(clean·noisy·frzero 관찰자+online)이 같은 셀키로 산출 → make_analysis 병합. 잡 자체는 B200 대기 없이 즉시 실행.
 - **비용(HJ 몫)**: ≈ 4–4.8 GPU-h/run → 42런(s0·1) ≈ **~184 GPU-h**(8슬롯 ~23 wall-h; seed0 21런 ~13 wall-h). +silo5-a 26 → **HJ 계 ~210**.
 - **분석**: `runs/track_h/make_analysis.py` LLM 로더에 `rundirs_llm_hj` root 추가(track_h dup-win) → B200 산출과 셀키 병합. **스택 캐비엇 = recovery 정규화**(위 §1과 동일). **timing cost 금지**.
 - **채우는 overview ⬚**: §5.3 R4 online 표의 7 비-flirds 행.

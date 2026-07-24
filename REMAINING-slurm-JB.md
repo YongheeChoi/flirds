@@ -20,14 +20,13 @@
 > `REMAINING-b200.md` §3 L9(frrand full-8)의 **비-flirds arm 몫**. R4(gsm50k5)의 free-rider 축은 frzero만 있고 frrand 전무 → full-method로 완성해 "exact-0 생존 vs renorm 붕괴"를 random free-rider에서도 시연(frzero 대칭화).
 
 - **무엇**: frrand(zero 대신 무작위 free-rider) × 7 비-flirds(same-game flirds1st·lossheur + FedIF + renorm-4 gtg·fedsv·comfedsv·shapleyfl) × {T1 online, T2 retrain} × seed{0,1,2}. `track_g build_arm`이 매 실행 fresh 누적기로 **자체 인라인 스코어**(HVP 없음·저장 cum 미로드) → B200 독립.
-- **러너·명령**(A6000 1장/셀; **착지 root = JB 전용**, canonical `rundirs_llm` 무수정):
+- **실행(sbatch — REMAINING만 보고 실행)**: `runs/track_h/sbatch_l9_frrand.sh`(A6000 48GB·24셀 seed-major·root `rundirs_llm_jb`). seed당 8셀 = **7 T1**(각 `<src>_gate_v2` online) + **1 T2**(`observer OBS_SOURCES=7소스 T2=1` → 7 t2_sign 재학습; 한 관찰자 셀 = rundir 레이스 회피, ~33h arm-영속). §0 셋업 후:
   ```
-  RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_jb \
-  REGIME=gsm50k5 THREAT=frrand SEED=<0|1|2> \
-    ARMS=<비-flirds gate/T2 arm 세트> T2=<0|1> T2_LEGACY=0 T2_P5=0 \
-    PYTHONPATH=. $PY -u experiments/track_g.py
+  cd $REPO && mkdir -p runs/track_h/_logs
+  sbatch --array=0-7%8 runs/track_h/sbatch_l9_frrand.sh        # seed0 파일럿(J0-6=T1 먼저, J7=T2) → GPU-h 보고
+  sbatch --array=8-23%8 runs/track_h/sbatch_l9_frrand.sh       # seeds 1-2
   ```
-  (arm 세트 = HJ L11과 동형·threat만 frrand — Yonghee 확정 후 sbatch array 전개. **seed0 우선**. B200 L9 flirds 관찰자와 make_analysis에서 셀키 병합.)
+  (env·모델=1B 전부 sbatch 내장. **분모·flirds arms = B200 L9**가 같은 셀키로 산출 → make_analysis 병합; 잡은 B200 대기 없이 실행.)
 - **비용**: ≈ **~150–170 GPU-h**(7방법×{T1,T2}×3seed; 8슬롯 ~20 wall-h; seed0 ~7 wall-h).
 - **분석**: `make_analysis.py` LLM 로더에 `rundirs_llm_jb` root 추가(dup-win) → 셀키 병합. **채우는 overview ⬚**: §5.3 R4 frrand 열(비-flirds+retrain) + §5.4 frrand 탐지 AUROC.
 

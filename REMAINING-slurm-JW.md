@@ -21,14 +21,13 @@
 
 - **무엇**: renorm 4점수원(gtg·fedsv·comfedsv·shapleyfl) T2 재학습 × {clean,noisy,frzero} × seed{0,1,2}. renorm은 **value-only·HVP 의존 0·자체완결**(자체 renorm 값 산출 후 그 가중으로 재학습; `track_g build_arm`이 매 실행 fresh 누적기로 인라인 스코어) → B200 cum 불요.
 - **clean 열의 의미(2026-07-24 Yonghee)**: flirds와 달리 renorm은 clean에서도 음수 φ로 **오발화(false-firing)** 가능 → clean T2가 `equals_vanilla` 스킵 안 되고 실제 재학습 발생 → §5.3 clean 열의 renorm-4 칸을 채운다.
-- **러너·명령**(A6000 1장/셀; **착지 root = JW 전용**, canonical `rundirs_llm` 무수정):
+- **실행(sbatch — REMAINING만 보고 실행)**: `runs/track_h/sbatch_l4_renorm_t2.sh`(A6000 48GB·9셀 seed-major·root `rundirs_llm_jw`). 각 셀 = `observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_LEGACY=1`(관찰자 궤적 + renorm-4 t2_sign 재학습; 셀당 ~20h, arm-단위 영속). §0 셋업 후:
   ```
-  RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_jw \
-  REGIME=gsm50k5 THREAT=<clean|noisy|frzero> SEED=<0|1|2> \
-    ARMS=<renorm T2 arm 세트> T2=1 T2_LEGACY=0 T2_P5=0 \
-    PYTHONPATH=. $PY -u experiments/track_g.py
+  cd $REPO && mkdir -p runs/track_h/_logs
+  sbatch --array=0-2%8 runs/track_h/sbatch_l4_renorm_t2.sh     # seed0 파일럿 3셀 → GPU-h 보고
+  sbatch --array=3-8%8 runs/track_h/sbatch_l4_renorm_t2.sh     # seeds 1-2
   ```
-  (정확한 renorm-4 T2 arm 라벨·OBS_SOURCES = B200 L4 큐와 동일 — Yonghee 확정 후 sbatch array 전개. **seed0 3셀 우선**.)
+  (env·모델=1B 전부 sbatch 내장. clean 셀 포함 = renorm 오발화로 실제 재학습.)
 - **비용**: ≈ **~200–230 GPU-h**(9셀 내부 renorm-4 재학습; 8슬롯 ~28 wall-h; seed0 3셀 우선 ~10 wall-h).
 - **분석**: `make_analysis.py` LLM 로더에 `rundirs_llm_jw` root 추가(dup-win) → 셀키 병합. **채우는 overview ⬚**: §5.3 R4 retrain 표 renorm-4 칸.
 

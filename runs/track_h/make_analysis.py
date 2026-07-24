@@ -88,7 +88,14 @@ def _load(root):
 
 # ------------------------------------------------------------------- LLM
 def analyze_llm():
-    cells = _load(RUNS / "track_g" / "rundirs") + _load(ROOT / "rundirs_llm")  # track_h wins on dup
+    # Slurm 48GB×4-ID + B200 split (2026-07-24): account roots merge by the meta cell
+    # key (regime,threat,nr,seed) below; canonical rundirs_llm is loaded LAST so it wins
+    # on dup.  _load returns [] for roots not yet on disk, so this is safe pre-run.
+    cells = (_load(RUNS / "track_g" / "rundirs")
+             + _load(ROOT / "rundirs_llm_l4") + _load(ROOT / "rundirs_llm_hj")
+             + _load(ROOT / "rundirs_llm_jw") + _load(ROOT / "rundirs_llm_jb")
+             + _load(ROOT / "rundirs_llm_yh") + _load(ROOT / "rundirs_llm_p1w")
+             + _load(ROOT / "rundirs_llm"))                       # track_h canonical wins on dup
     groups = {}
     for c in cells:
         cfg = c["cfg"]
