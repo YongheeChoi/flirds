@@ -15,6 +15,22 @@ tags: [flirds, paper, results, dashboard]
 
 **마커**: ● 실측 값 기입 · ◐ 부분/1-seed(정본 아님) · ⬚ 미실행(경로만) · – 해당없음. **비교군 9종** 위계 = same-game(Flirds·Flirds-1st·loss-heur) ↔ cross-game(GTG·FedSV·ComFedSV·ShapleyFL·FedIF). fidelity는 **same-game만 vs (b)**(본문·부록 공통 — cross-game은 in-run 오라클과 다른 게임이라 vs (b) 미채점), vs (a)는 전 방법(방법-중립 참값). seed = 3-seed mean±std(std=ddof0), 예외는 ◐ 명시.
 
+### CNN 실험 커버리지 맵 (dataset × partition × 축)
+
+> 구조 규약 2개: **①fidelity(§5.2)와 detection(§5.4)은 같은 rundir(`c2fid`)를 공유** → 커버리지 항상 동일(한 칸으로 표기). **②downstream(§5.3 competition)은 별도 캠페인(`track_h` 개입 arm)**이라 커버리지가 독립. **주무대 = cifar10/dir1**(나머지는 트윈·강건성·보조).
+
+| dataset / partition | §5.2 fidelity = §5.4 탐지 (`c2fid`) | §5.3 downstream (`track_h`) |
+|---|---|---|
+| **cifar10 / dir1** (α=1, 주무대) | ● 3-seed (8위협) | ● 3-seed (obs+8방법 online·retrain) |
+| **cifar10 / iid** (저-이질성 트윈) | ● 3-seed (8위협) | ⬚ observer(obsf seed0)만 — 개입 arm 미실행 |
+| cifar10 / qskew (수량-skew) | ◐ 2-seed (seed2 대기) | ⬚ observer만 |
+| cifar10 / shard (2-shard 병적) | ◐ 1–2seed (clean·lf@.35=seed0만) | ⬚ observer만 |
+| **fmnist / dir1** | ◐ 2-seed (seed2 대기) | ⬚ observer만 |
+| **fmnist / iid** | ◐ 2-seed (seed2 대기) | ⬚ observer만 |
+| fmnist / shard·qskew | – 설계상 없음 (fmnist 범위=iid·dir1) | – |
+
+> **3-seed 채우기 run 목록**: ①표시-무대 c2fid 완성 = **fmnist/dir1 seed2 ×8위협 + fmnist/iid seed2 ×8위협 = 16 run**(→ §5.2·§5.4 fmnist 전부 ● 승격) · ②강건성-부록(원할 때) = cifar10/qskew seed2 ×8 + cifar10/shard [seed2 ×8 + seed1 ×{clean,lf@.35}] = 18 run · ③**§5.3 fmnist·iid competition** = 별도 대규모(obs+8방법 × {online,P1-retrain} × 6위협 × 3seed) — dir1이 headline이면 보류 가능. (LLM R4 커버리지는 §5.3-메인·§5.4 참조: L1 noisy·frzero ● 3-seed / clean ◐ seed0 / frrand·strmain ⬚ / L2 탐지 ⬚.)
+
 ---
 
 ## §5.1 실험 세팅 (작성 가능)
@@ -118,6 +134,8 @@ tags: [flirds, paper, results, dashboard]
 | └ label-flip@0.35 | 0.996/0.999 | 0.987/0.994 | 0.989/0.996 | ◐ 2-seed |
 | └ label-flip@0.70 | 0.990/0.998 | 0.989/0.994 | 0.990/0.996 | ◐ 2-seed |
 | └ label-flip strmain | 0.990/0.998 | 0.991/0.992 | 0.992/0.995 | ◐ 2-seed |
+| c2fid cifar10/**qskew** (수량-skew) — **전 시나리오 평균** | 0.958/0.981 | 0.628/0.324 | 0.940/0.961 | ◐ 2-seed(강건성-보조) |
+| c2fid cifar10/**shard** (2-shard) — **전 시나리오 평균** | 0.935/0.962 | 0.589/0.643 | 0.862/0.904 | ◐ 1–2seed(clean·lf@.35=seed0만) |
 | R4-L2 (LLM gsm50k5, (b) per-round)   | ⬚            | ⬚                | ⬚               | 채움 = `runs/phase2_matrix/rundirs/1B_gsm50k5_*` (L2 큐) |
 
 > 각주(c2fid ● 3-seed·cifar10/dir1, seed0–2): **clean 칸은 신호-부재 레짐**(오발화 대조용, fidelity 해석 금지) · std 범위(Sp): Flirds ≤.03 · loss-heur ≤.04 · **Flirds-1st ≤.10**(lf@.15/.35서 큼) · **strmain 셀** Sp Flirds 0.999 / 1st 0.974 / loss-heur 0.991(전 방법 고포화) · **frrand 셀** Flirds 0.994 / 1st 0.537 vs **renorm 붕괴**(GTG 0.019 · FedSV 0.009 · ShapleyFL −0.040) — same-game 3열엔 안 보이나 cross-game 변별 큼 · **F-4(dose 해상도)**: spearman_vs_rate Flirds **0.858 ≈ (b) 0.857**(corrupt-only Flirds 0.519 / (b) 0.515 = 오라클 정확추종) 이나 Flirds-1st **0.877/0.659 ≥** Flirds → 사전등록 "Flirds ≳ 1st" **MISS 유지**(3-seed; 2차항의 dose-우위는 이 셀서 미확인; Flirds 강점은 (b) 정확추종) · **iid 블록 표에 편입**(cifar10/iid ● 3-seed · fmnist/iid ◐ 2-seed): iid는 파티션-균등 **저-이질성 트윈**이라 clean 칸이 특히 신호-희박(dir1보다 오발화 대조 성격 강함)·오염 칸은 신호 존치 — Flirds 평균 Sp cifar10/iid 0.982·fmnist/iid 0.993·fmnist/dir1 0.990. **fmnist(dir1·iid)=2-seed**(◐, seed2 대기; cifar10 패턴 재현 — Flirds grad-noise만 소폭↓, Flirds-1st grad-noise 붕괴·renorm frzero/frrand 붕괴 동일) · **R4 strmain류 per-client dose(⬚ L10)** = 이 dose-변별의 LLM 대응(REMAINING §1.6a).
@@ -246,6 +264,16 @@ tags: [flirds, paper, results, dashboard]
 > 서술 클레임(정확형): "**전 정책·전 시점 상위권 + grad-noise를 잡는 유일한 estimator(2차항: flirds GN online .5668 / retrain .6065 — vs 1차-계열 실명 flirds1st .2479/.2436·fedif .2479/.2436, lossheur 부분 .5981/.4518) + frzero에서 exact-0 계열 생존(online .61~.62) vs renorm 붕괴(online gtg .3915·fedsv .3966·comfedsv .3918·shapleyfl .4020 / retrain .51~.52) + strmain(per-client dose)서 retrain flirds **.6204 ≈ oracle .6226**(전 estimator .586~.620 오라클 근접, online은 vanilla .5149 대비 전반 회수)**". 정직 보고: clean 오발화 flirds −0.7pt·R4 clean T1 −1.0pt, 단 **T2 최종-부호는 무해(kept=전원)**. **출처**: `runs/track_h/analysis/cnn_competition.csv`(dataset=cifar10·partition=dir1·policy=P1; **frrand**=flirds 3-seed + 7방법 seed0◐, **strmain**=3-seed; `make_analysis.py` 재생성). **P1w(크기-가중)** 는 결과 규칙부(00-INDEX §1).
 > ![[flirds-paper-results-overview-figs/f5_cnn_competition_p1_online.png]]
 
+**(미실행 competition — ⬚ 빈칸 준비)** — 아래 무대는 observer(obsf seed0) 궤적만 존재, 개입 arm 0개
+
+| 무대 | online | retrain | 채우기 spec |
+|---|---|---|---|
+| cifar10 / iid | ⬚ | ⬚ | obs+8방법 × {online,P1-retrain} × 6위협 × 3seed |
+| fmnist / dir1 | ⬚ | ⬚ | 동일 (track_h CNN arm) |
+| fmnist / iid | ⬚ | ⬚ | 동일 |
+
+> 우선순위 주의: **downstream은 주무대 cifar10/dir1만 정본**(위 메인 표). iid·fmnist competition은 headline 아님 — fidelity/detection(§5.2·§5.4)엔 이미 iid·fmnist가 있으므로, §5.3 확장은 "개입 실효성의 데이터셋·파티션 강건성"을 원할 때만. **출처(빈칸 경로)**: `runs/track_h/rundirs_cnn/{cifar10_iid,fmnist_dir1,fmnist_iid}_*_obsf_seed0`(현재)→ 개입 arm 추가 실행 필요.
+
 ---
 
 ## §5.4 탐지 (2차 ③ — 마지막) — ⬚
@@ -324,6 +352,22 @@ R4 φ-파생(same-game 3종 + (b)) + **전용 탐지기 4종**(FLDetector/FLTrus
 | FedIF | 0.972 | 0.973 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.992 |
 
 > fmnist/iid 요약(◐ 2-seed): 가장 분리적인 트윈 — lf 전 계열 ≈1.00, (b)/Flirds/FedIF 평균 0.986~0.992. frzero/frrand서 (b)=0.95(dir1 0.74·cifar10/iid 0.90보다 강). renorm(FedSV/ShapleyFL/ComFedSV) frzero/frrand 여전히 붕괴(0.00~0.37). Flirds=(b) **완전 동행**(frzero·frrand Δ.000).
+
+**파티션-강건성 요약 (cifar10, 7위협 평균 AUROC)** — dir1·iid 상세는 위 표, qskew·shard는 이 요약으로 갈음
+
+| 방법 | dir1 ●3s | iid ●3s | qskew ◐2s | shard ◐1–2s |
+|---|---|---|---|---|
+| **(b)oracle** | 0.841 | 0.932 | 0.884 | 0.438 |
+| **Flirds** | 0.845 | 0.931 | 0.870 | 0.536 |
+| Flirds-1st | 0.856 | 0.878 | 0.850 | 0.640 |
+| loss-heur | 0.870 | 0.945 | 0.892 | 0.443 |
+| GTG | 0.508 | 0.775 | 0.718 | 0.145 |
+| FedSV | 0.516 | 0.682 | 0.655 | 0.143 |
+| ComFedSV | 0.466 | 0.592 | 0.602 | 0.239 |
+| ShapleyFL | 0.535 | 0.667 | 0.626 | 0.143 |
+| FedIF | 0.928 | 0.919 | 0.879 | 0.779 |
+
+> 강건성 읽기: **qskew ≈ dir1/iid**(Flirds 0.870, oracle-동행 유지). **shard(2-shard 병적)=최난 레짐** — (b) 자체가 0.438로 약(극단 label-skew가 오염 신호와 교락)하나 **Flirds 0.536 > (b)**, FedIF 0.779 최고, renorm(GTG/FedSV/ShapleyFL) ~0.14로 완전 붕괴. shard clean·lf@.35는 seed0만(1-seed) → seed1·2 대기. **출처**: `runs/track_c/c2fid/rundirs/cifar10_{qskew,shard}_*`(직접 재집계, ddof=0).
 
 ---
 
