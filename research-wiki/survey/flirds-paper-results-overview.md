@@ -41,7 +41,7 @@ tags: [flirds, paper, results, dashboard]
 
 | 무대 | 논문 역할 | 모델 | N · 참여 · R | oracle · 심판 | 상태 |
 |---|---|---|---|---|---|
-| **R4 gsm50k5** (주-LLM) | fidelity(§5.2 L2) · **downstream**(§5.3) · detection(§5.4) | Llama-3.2-1B-Instruct · LoRA r16/α32 | 50 · 5/50 · 200 | (b) per-round[L2 ⬚] · **EM** 1,119 | ● downstream noisy·frzero 3-seed · ◐ clean seed0 · L2(fid/det) ⬚ |
+| **R4 gsm50k5** (주-LLM) | fidelity(§5.2 L2) · **downstream**(§5.3) · detection(§5.4) | Llama-3.2-1B-Instruct · LoRA r16/α32 | 50 · 5/50 · 200 | (b) per-round[L2 ⬚] · **EM** 1,119 | ● downstream noisy·frzero 3-seed(**retrain+online 양 leg**) · ◐ clean seed0 · L2(fid/det) ⬚ |
 | **C2 캠페인** (주-CNN) | fidelity(§5.2 c2fid) · **downstream**(§5.3) · detection(§5.4) | FedSVCNN(cifar)/LeNet5(fmnist) · 전체학습 | 100 · 10/100 · 120 | (b) per-round · **acc** | ● (dir1 restack 확인) |
 | anchor5 | (a) 특성화 **폴백 참조**(§5.2; 보류 2026-07-24) | 1B/3B/7B · LoRA | 5 · full · 30 | (a)+(b) 2⁵ · val-loss | ● (1B (a)) |
 | silo5 (a)-leg | retrain-(a) **주 무대**(§5.2; 유일 (a)) | 1B | 5 · full · 10 | (a)+(b) 2⁵ · val-loss | ⬚ (L8) |
@@ -205,9 +205,9 @@ tags: [flirds, paper, results, dashboard]
 
 ## §5.3 개입 (downstream)
 
-### (메인) LLM R4 — T2 retrain, P1 부호-게이트 × {clean ◐, noisy(swap@.7), frzero, frrand ⬚, strmain ⬚}, 절대 EM ● (noisy·frzero 3-seed)
+### (메인) LLM R4 — T2 retrain(P1 부호-게이트) + online(배포 게이팅) × {clean ◐, noisy(swap@.7), frzero, frrand ⬚, strmain ⬚}, 절대 EM ● (noisy·frzero 3-seed)
 
-행 = vanilla(observer)·oracle_excl(천장)·random_excl + estimator 4(P1 부호-게이트 재학습). **renorm 4종(GTG/FedSV/ComFedSV/ShapleyFL) = L4 retrain-value 착지 시 블록 추가** · **online(T1) 7방법 = L11**(현 online=flirds만) · **frrand·strmain 열 = 신규**(REMAINING §1.6a L9·L10). 채움 = `runs/track_h/rundirs_llm/gsm50k5_*`(post-fix; rundir 직접 집계·analysis CSV 재생성 대기).
+행 = vanilla(observer)·oracle_excl(천장)·random_excl + estimator 4(P1 부호-게이트 재학습). **renorm 4종(GTG/FedSV/ComFedSV/ShapleyFL) = L4 retrain-value 착지 시 블록 추가** · **online 배포-게이팅 `flirds_gate_v2` = noisy·frzero 3-seed 완결**(seed2 커밋 `918ae86`; 아래 online 표) · **online 7방법(GTG~ShapleyFL) = L11 ⬚** · **frrand·strmain 열 = 신규**(REMAINING §1.6a L9·L10). 채움 = `runs/track_h/rundirs_llm/gsm50k5_*`(post-fix; rundir 직접 집계·analysis CSV 재생성 대기).
 
 | arm (T2 retrain, 절대 EM) | clean ◐ | noisy(swap@.7) | frzero | frrand ⬚ | strmain ⬚ |
 |---|---|---|---|---|---|
@@ -220,6 +220,16 @@ tags: [flirds, paper, results, dashboard]
 | FedIF | .3727 | .3491 | .3625 | ⬚ | ⬚ |
 
 > **Δem (vanilla 대비 회수; noisy/frzero 3-seed mean, std ≤.01)**: noisy — Flirds **+.0206** · loss-heur **+.0223** · FedIF +.0217 · Flirds-1st +.0185 vs random_excl **+.0006**(천장 oracle_excl +.0352) · frzero — 4 estimator 전부 **+.0066 = oracle_excl 동일**(free-rider 만장일치 배제 → 오라클과 kept 동일) · clean(◐ seed0) 전 arm .3727 = **do-no-harm parity**(kept=전원, seed1·2 이월). val-loss 병행(observer→estimator: noisy .6079→.603 · frzero .6096→.602). **정본**: L1 noisy·frzero 3-seed 완결·커밋(REMAINING-b200 §1; pre-fix는 `rundirs_llm_prefixh1/` 분리 아카이브). §5.4 R4 탐지 AUROC = L2 valuation 진행 중(⬚).
+**online (배포 게이팅 · `flirds_gate_v2` = burn-in 10·probation-5) 3-seed** — online 7방법(GTG~ShapleyFL) = L11 ⬚
+
+| arm (online, 절대 EM) | clean ◐ | noisy(swap@.7) | frzero |
+|---|---|---|---|
+| vanilla (observer, 바닥) | .3727 | .3274 | .3560 |
+| oracle_excl (천장) | – | .3625 | .3625 |
+| random_excl (무작위) | – | .3280 | .3476 |
+| **Flirds (gate v2)** | .3664 | **.3479** | .3566 |
+
+> **online vs retrain (Flirds; 새로 완결)**: noisy — online **+.0206 = retrain**(둘 다 .3479 → 배포 게이팅이 재학습-부호와 동급 회수) · frzero — online **+.0006** ≪ retrain **+.0066(=oracle)**: 배포 게이팅은 burn-in/probation 지연 탓 free-rider 회수 약함(재학습은 관찰자 최종부호로 처음부터 제외 → oracle 도달) · clean(◐ seed0) online **−.0063**(probation 오배제 = 서술 "R4 clean T1 −1pt"의 실측) vs retrain 0(kept=전원, 무해). **정본**: L1 seed2 online `flirds_gate_v2` 완주·커밋 `918ae86`(peak 106GB·gpu_h 3.7–3.9) ⟹ noisy·frzero **online·retrain 양 leg 3-seed 완결**.
 > ![[flirds-paper-results-overview-figs/f4_r4_intervention_em.png]] ⬚ *(F4 = R4 EM bar — renorm-4·online-7 착지 후 생성)*
 
 ### (메인) CNN 8 점수원 × P1 절대 acc ● (dir1; 캠페인 restack 드리프트 확인 후 확정)
