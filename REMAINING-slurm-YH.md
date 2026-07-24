@@ -4,20 +4,21 @@
 > **역할 = (1) CNN 주무대(c2fid·W-B·C-fr·C1) 완주** — 이미 실행 중 · **(2) CNN free(~07-25) 후 A6000 48GB에서 LLM downstream 보조**(HJ·JW 큐 work-steal). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > **마감: 실험 07-28 / 논문 07-29 21:00** — seed0 우선. 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 기존 rundir은 read-only.
 
-## 실행 현황 (2026-07-24 저녁 · 커밋 80ebf30/47680ec 시점)
+## 실행 현황 (2026-07-25 · seeds1-2 진행 중 · 커밋 `e9b2e25` 시점)
 
 | § | 실험 | 상태 | 진척 |
 |---|---|---|---|
-| §1 | c2fid CNN fidelity | 🟡 seed0·1 완료·seed2 진행 | **110/144**(s0 48✓·s1 46·s2 16) 실행 중·8슬롯 점유 |
-| §2 | W-B P1w observer(T2) | 🟡 파일럿 29셀 완주·게이트 대기 | `p1wgate`가 GPU 확보 시 판정 → 통과면 30-89 자동 |
-| §3 | C-fr frrand full-method | 🟡 파일럿 8/8 EXIT=0·커밋(`80ebf30`) | `frgate` PD(GPU 확보 시 seeds1-2 판정) |
-| §3.5 | **fmnist 완결(신규 07-25)** | 🟢 CNN free 후 즉시 | Part A c2fid s2 16셀 + Part B competition 288 rundir — **YH lora4cl 전용**(스택 정합) |
+| §1 | c2fid CNN fidelity | 🟢 거의 완주·**커밋** | **141/144**(s0 48✓·s1 46·s2 47; **fmnist s2 16/16✓**)·rundir `e9b2e25`까지 커밋 — **3셀 미생성**(cifar10 s1 2·s2 1; rundir 미존재·본 array 종료) |
+| §2 | W-B P1w observer(T2) | 🟢 seeds1-2 실행 중 | obsf **s0 29·s1 8·s2 0 = 37/90**(s0·s1 완결분 `e9b2e25` 커밋)·`hp1w` 잔여 ~52셀 |
+| §3 | C-fr frrand full-method | 🟢 막바지 | frrand **s0 8✓·s1 7·s2 6 = 21/24**(완결분 `e9b2e25` 커밋)·`hfrrand` 잔여 3셀 |
+| §3.5 | **fmnist 완결(신규 07-25)** | 🟡 **Part A ✅**·Part B 파일럿 dep-gated | Part A=본 array 자체 완주(별도 sbatch 불요). **Part B 파일럿 제출됨**(`1873883`, §2·§3 완료 dep-gate·seed0 96셀)·seeds1-2는 GO 대기 — **YH lora4cl 전용** |
 | §4 | C1 β0.3 재실행(30셀) | ✅ 완주·커밋 `47680ec` | ShapleyFL만 β0.5→0.3 변화·타 10방법 비트동일 |
 | §5 | LLM downstream 보조 | ⚪ CNN·§3.5 free 후 | HJ/JW overflow work-steal(A6000) |
 
-- **한도**: 동시 8-GPU(QOSMaxGRESPerUser) + §1 array `%8`. 현재 §1 c2fid가 8슬롯 점유 → 게이트 2종(p1w·fr) PD 대기(GPU 확보 시 발화).
-- **파일럿→GO 게이트**(§2·§3)는 Slurm `--dependency`로 자동(세션 무관). 완주 시 GPU-h 실측 보고 후 잔여 leg 자동 제출.
-- **예상 종료**: §1~§3(CNN) ~07-25 → 이후 8슬롯이 **§5 LLM 보조**로 전환(A6000 파티션).
+- **한도**: 동시 8-GPU(QOSMaxGRESPerUser). **§1 c2fid 완주 → 게이트 2종(p1w·fr) 발화 완료** → 현재 §2 `hp1w`(30-89) + §3 `hfrrand`(마지막 3셀)가 seeds1-2로 8슬롯 공유 중.
+- **커밋 현황(2026-07-25)**: 완결 rundir `e9b2e25` 커밋 = §1 c2fid seed2 31 + §3 frrand s1-2 13 + §2 obsf s1 6 = **50셀**. 실행 중 미완 셀·파생 `p1w_cnn*` analysis(§2 미완 → 재생성 대기)는 제외. push는 Yonghee.
+- **파일럿→GO 게이트**(§2·§3)는 Slurm `--dependency`로 자동(세션 무관) — **양쪽 발화 완료**(§2 30-89·§3 8-23 자동 제출됨).
+- **예상 종료**: §3 막바지·§2 진행 중 → CNN 주무대 ~07-25 → **§3.5 Part B(fmnist competition) 먼저**(2.11 네이티브) → 그다음 §5 LLM 보조(A6000). **⚠ §1 잔여 3셀 미생성 = 재제출 여부 Yonghee 판단**(rundir 미존재라 `make_analysis` 자동 흡수 안 됨).
 - **silo5-a는 여기 아님**: 24GB OOM으로 취소 → **HJ 계정 A6000**로 이관(`REMAINING-slurm-HJ.md` §1). YH의 3090/A6000 QOS 8슬롯이 CNN에 물려 동시 실행 불가라 = 다른 계정으로 뺀 이유.
 
 ## 0. 환경
@@ -39,28 +40,23 @@
 
 > **왜 YH 전용**: fmnist 아티팩트 전량(`_g` grid 48셀·c2fid seed0/1) + cifar10/dir1 competition = **전부 torch 2.11**(freeze.txt 실측 2026-07-25). 신규 fmnist도 2.11에서 돌려야 ①c2fid 3-seed 세트가 seed별로 스택 안 갈리고 ②competition recovery 분모(`_g` vanilla/oracle_excl, 2.11)와 소스 arm이 셀 내부서 동일 스택. **2.11 = YH lora4cl 뿐** → A6000(2.12) 이관 시 오히려 스택 쪼갬. 둘 다 CNN·B200 독립. **CNN 주무대(§1–3) free 후 즉시**, §5 LLM 보조보다 **먼저**(CNN 네이티브 환경 그대로).
 
-**Part A — c2fid fmnist seed2 (16셀, §5.2 fidelity = §5.4 탐지):** seed0·1 완비, seed2만 결측.
-- 본 144-array의 인덱스 **128–143**과 동일 셀 = 별도 파일 `runs/track_c/c2fid/sbatch_fid_fmnist_s2.sh`(array 0-15).
-- **이중실행 주의**: 본 `sbatch_fid.sh`(0-143)가 아직 살아있으면 → 본 array를 `--array=0-127%8`로 캡(cifar10 seed2만) 후 이 파일 제출, **또는** 이 파일 건너뛰고 본 array가 128–143 자체 완주. 같은 rundir명 last-writer-wins라 레이스는 GPU 낭비만.
-  ```
-  mkdir -p runs/track_c/c2fid/_logs
-  sbatch runs/track_c/c2fid/sbatch_fid_fmnist_s2.sh          # 16셀, 3090/lora4cl
-  ```
-- 비용 ≈ **~11–16 GPU-h**(fmnist는 cifar10보다 쌈). 완료 → `make_analysis.py`가 fmnist seed2 흡수.
+**Part A — c2fid fmnist seed2 (16셀, §5.2 fidelity = §5.4 탐지): ✅ 완주(2026-07-25 실측).**
+- 본 144-array(`sbatch_fid.sh` 0-143)가 인덱스 **128–143을 자체 완주** → fmnist seed2 **16/16 phi.parquet 완결**, `make_analysis.py` 흡수 대상.
+- ⚠ **별도 `runs/track_c/c2fid/sbatch_fid_fmnist_s2.sh`(array 0-15) 제출 불요** — 같은 rundir명 last-writer-wins라 이중실행은 GPU 낭비만(파일은 존치). **단 §1 미생성 3셀**(cifar10 s1 2·s2 1)은 본 `sbatch_fid.sh` 해당 인덱스 재제출 사안이라 이 파일과 무관.
 
 **Part B — §5.3 competition fmnist (288 rundir, 신규):** fmnist에 obsf(W-B)만 있고 8점수원 경쟁은 전무.
 - `{fmnist iid,dir1} × 6위협(clean·fr·frrand·gn·lf@0.7·strmain) × (7 비-flirds + obs) × 3seed`.
 - flirds arm·recovery 분모는 track_g fmnist `_g` grid(3-seed 전량 on disk) 재사용 → 신규는 비-flirds 소스만 = 자체 스코어·B200 독립.
   ```
-  mkdir -p runs/track_h/_logs
-  sbatch --array=0-95%8   runs/track_h/sbatch_cnn_fmnist_comp.sh   # seed0 파일럿(96)
-  # GPU-h 실측 보고 → GO →
-  sbatch --array=96-287%8 runs/track_h/sbatch_cnn_fmnist_comp.sh   # seeds 1-2
+  # seed0 파일럿(96) = ✅ 제출됨 (job 1873883, 2026-07-25) — §2·§3 완료 dep-gate:
+  #   sbatch --dependency=afterany:1873028,afterany:1873026 --array=0-95%8 runs/track_h/sbatch_cnn_fmnist_comp.sh
+  #   → CNN free 시 자동 발화. ⚠ 재제출 금지(중복 = GPU 낭비). GPU-h 실측 보고 → GO 후 seeds1-2:
+  sbatch --array=96-287%8 runs/track_h/sbatch_cnn_fmnist_comp.sh   # seeds 1-2 (GO 대기)
   ```
 - 비용 ≈ **~15–40 GPU-h**(비-flirds 소스만; MC 소스[gtg·fedsv·comfedsv·shapleyfl]가 주비용이나 fmnist 저해상이라 쌈). 사전등록 = README H-16.
 - 완료 → `make_analysis.py`(fmnist 행 cnn_competition.csv 편입) → overview §3.2.3 이웃 소절(fmnist 열) → paper §5.3. **판정 = 성능만**(§3).
 
-**합계 ~30–55 GPU-h**(YH 8슬롯 3090 → wall ~반나절). B200 HVP ~2일 임계경로 하위라 마감 여유. 완료 후 §5 L11 seed2로 전환.
+**잔여 = Part B ~15–40 GPU-h**(Part A 완료 → 합계 ~30–55 중 c2fid분 소진; YH 8슬롯 3090 → wall ~반나절). B200 HVP ~2일 임계경로 하위라 마감 여유. 완료 후 §5 L11 seed2로 전환.
 
 ## 5. LLM downstream — L11 seed2 담당 + work-steal 보조 (CNN·§3.5 free 후 · A6000 48GB)
 
