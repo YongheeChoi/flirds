@@ -1,7 +1,8 @@
 {
-  "name": "cifar10_feature_noise_seed0",
-  "git_sha": "5cb927b6df4f51c1e38df1a8e2f7a85c6fac0cd8",
+  "name": "cifar10_feature-noise_seed0",
+  "git_sha": "44d0786774022f69f6cf99a319e7abd5a2dc7d60",
   "git_dirty": true,
+  "git_diff_stat": "",
   "env_hash": "be4b11eda33078df",
   "versions": {
     "torch": "2.11.0+cu130",
@@ -11,6 +12,8 @@
     "accelerate": "1.13.0",
     "datasets": "4.8.4",
     "numpy": "2.4.4",
-    "python": "3.11.15"
+    "python": "3.11.15",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3090"
   }
 }

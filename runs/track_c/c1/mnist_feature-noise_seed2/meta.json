@@ -1,7 +1,8 @@
 {
-  "name": "mnist_feature_noise_seed2",
-  "git_sha": "5cb927b6df4f51c1e38df1a8e2f7a85c6fac0cd8",
+  "name": "mnist_feature-noise_seed2",
+  "git_sha": "e8f95ca17160fa20381abc1009c35bc9a6c05ea0",
   "git_dirty": true,
+  "git_diff_stat": "REMAINING-slurm.md                   | 15 +++++++++++----\n runs/phase2_matrix/sbatch_silo5_a.sh |  5 ++++-\n 2 files changed, 15 insertions(+), 5 deletions(-)",
   "env_hash": "be4b11eda33078df",
   "versions": {
     "torch": "2.11.0+cu130",
@@ -11,6 +12,8 @@
     "accelerate": "1.13.0",
     "datasets": "4.8.4",
     "numpy": "2.4.4",
-    "python": "3.11.15"
+    "python": "3.11.15",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3090"
   }
 }

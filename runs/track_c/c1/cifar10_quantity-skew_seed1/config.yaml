@@ -16,3 +16,6 @@ scenario: quantity_skew
 seed: 1
 mode: full
 oracle_a: false
+width: 1.0
+kfrac: 1.0
+removal: false

@@ -1,0 +1,20 @@
+{
+  "phases": {
+    "client-training": {
+      "s": 103.771,
+      "peak_gib": 0.0
+    },
+    "valuation": {
+      "s": 461.43,
+      "peak_gib": 3.365
+    },
+    "ripple-own-trajectory": {
+      "s": 7467.078,
+      "peak_gib": 12.28
+    }
+  },
+  "total_s": 8032.279,
+  "gpu_hours": 2.231189,
+  "n_gpus": 1,
+  "peak_gib": 12.28
+}
