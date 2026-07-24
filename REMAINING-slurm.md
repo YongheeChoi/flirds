@@ -1,7 +1,8 @@
-# REMAINING (Slurm RTX3090 풀) — CNN + 작은-N LLM
+# REMAINING (Slurm RTX3090 풀) — CNN + 작은-N LLM + LLM downstream overflow
 
-> 실행처별 인수인계 **3부작** 중 **yonsei Slurm RTX3090** 몫.
-> 짝 = `REMAINING-b200.md`(HVP·fidelity·timing) · `REMAINING-vast.md`(R4 downstream SFT 물량).
+> 실행처별 인수인계 **2부작** 중 **yonsei Slurm RTX3090** 몫. 짝 = `REMAINING-b200.md`(HVP·fidelity·timing + SFT 팩킹).
+> **~~vast 폐기~~(2026-07-24)**: R4 downstream SFT는 B200 팩킹이 주력, **3090은 26일 free 후 seeds-1-2 overflow 흡수**(§6·24GB 적재).
+> **마감(신): 실험 07-28 / 논문 07-29 21:00** — seed0 우선(`REMAINING-b200.md` §1a 2단계).
 > **현재: 캠페인 실행 중(2026-07-24 등록·모니터링) — 아래 「실행 현황」 참조.** push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 기존 rundir은 read-only.
 
@@ -99,7 +100,7 @@
 논문 인용 ShapleyFL 값이 실제 **β=0.5** rundir 산출로 판명(감사 07-23): C1 30셀
 (git_sha `5cb927b`, 06-12)이 β0.5→0.3 변경(`e89af94`, 06-25) **이전** — 재실행 계획 미반영.
 - **셀 = C1 30셀**(track_c1; cifar10·mnist × 5시나리오 × 3seed). 오케스트레이터 = `rerun_beta03/`.
-- 실행 = `SFL_BETA=0.3`(현 소스 기본값 이미 0.3) + 셀당 `RUNDIR_REPLACE=1`(정체성 가드; §6).
+- 실행 = `SFL_BETA=0.3`(현 소스 기본값 이미 0.3) + 셀당 `RUNDIR_REPLACE=1`(정체성 가드; §7).
 - 완료 후: rundir 교체 커밋 → `make_analysis`/`make_fidelity` 재생성 → overview §3.1.2(C1) ShapleyFL 행
   갱신 → paper §5.2 sub(C1 표)·부록 C 값 갱신 + **B.5 재실행-대기 주석 삭제**(anchor5 B200분 함께 착지해야 완결).
 - **갱신 대상 overview**(빈칸 아님 — 값 교체): §5.2 sub C1 vs (a) 표의 ShapleyFL 열(예: cifar10/qskew +0.81) · 부록 C.
@@ -167,7 +168,27 @@ PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py     # canonical ⋈ *_aonly
 **사전기대(T5 §2)는 실행 전 커밋**, HIT/MISS 그대로 보고. gsm5·3B/7B (a)는 하지 않음.
 - **채우는 overview ⬚**: §5.2 sub **silo5 (a)-leg**(gsm5 주표는 보류 → silo5가 유일 (a)-무대).
 
-## 6. rundir 정체성 — 잔여 배선 (CNN track 관련)
+## 6. LLM downstream overflow — B200 보조 (seeds 1-2, 26일 free 후 · 2026-07-24 신규)
+
+> **역할**: R4 downstream SFT(L11·L4·L9-arms·L7-arms)의 주력은 **B200 팩킹**(`REMAINING-b200.md` §1a).
+> 3090은 **CNN(§1-4)+L8(§5) 완주(~26일) 후** 놀지 않게 **seeds 1-2 overflow만** 받는 **조건부 보조** — B200가 28일 창에 못 담는 꼬리 흡수.
+
+- **왜 3090에 됨**: downstream = SFT(게이트·T2 재학습·online), estimator HVP 없음 → allocated **~27 GiB**로 **24GB에 네이티브**(gsm5 batch16·seq512가 3090 완주한 선례; T2 재학습·online 동일). **VAL_CHUNK 불요**(HVP 아님).
+- **무엇을(우선순위)**: **seeds 1-2만**(seed0은 B200가 ~26일에 먼저 뽑음 = 논문 착수선). 큰 독립 물량 순 = **L11(online 42런) → L4(renorm T2 6셀) → L9-arms → L7-arms**.
+- **전제 = 관찰자 cum**: downstream은 관찰자 φ 재사용(HVP 재실행 0). **B200가 산출한 cum(`metrics.json`의 `observer_cum`, 수 KB)만 3090에 복사** → arms가 읽어 실행. L11=L1 cum·L9-arms=B200 L9관찰자 cum·L7-arms=§2a 경로.
+- **러너·명령**: `experiments/track_g.py`(B200과 동일 러너·코드). env = §0(작은-N LLM = conda `lora4cl`). 예:
+  ```
+  RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_3090 \
+  REGIME=gsm50k5 THREAT=<clean|noisy|frzero> SEED=<1|2> \
+    ARMS=<src>_gate_v2 OBS_SOURCES=<...> T2=<0|1> T2_LEGACY=0 T2_P5=0 \
+    PYTHONPATH=. $PY -u experiments/track_g.py
+  ```
+  (arm 세트·OBS_SOURCES는 B200 L11/L4/L9/L7 큐와 동일; 착지 root만 분리해 canonical `rundirs_llm` 무수정.)
+- **스택 캐비엇**: 3090(torch2.11)/B200(torch2.12) 절대값 병치 금지 → **recovery 정규화로 읽음**(W-A mean|Δ|≤0.006; CNN C-fr 선례). **timing.json은 §5.5 cost에 사용 금지**(B200 실측만).
+- **조건부**: B200 팩킹 배속이 ≥2.5×면 3090 보조 거의 불요(B200가 28일에 완주). ~1.5×거나 B200 공백 시 이 §6로 꼬리 흡수 = seeds 1-2 3-seed 완주 보장.
+- **분석**: `make_analysis.py` LLM 로더에 `rundirs_llm_3090` root 추가(track_h dup-win) → B200 산출과 셀키 병합.
+
+## 7. rundir 정체성 — 잔여 배선 (CNN track 관련)
 
 처방 1+2 구현 완료(07-23): 정체성 allow-list(`check_identity`/`precheck`; 우회 `RUNDIR_REPLACE=1`) +
 β 단일화(`shapleyfl.BETA = env SFL_BETA, 기본 0.3`). 배선 완료 = `track_g`·`phase2_matrix`, 테스트 6개.
