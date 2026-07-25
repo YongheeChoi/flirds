@@ -30,6 +30,27 @@
 - **비용**: ≈ **~150–170 GPU-h**(7방법×{T1,T2}×3seed; 8슬롯 ~20 wall-h; seed0 ~7 wall-h).
 - **분석**: `make_analysis.py` LLM 로더에 `rundirs_llm_jb` root 추가(dup-win) → 셀키 병합. **채우는 overview ⬚**: §5.3 R4 frrand 열(비-flirds+retrain) + §5.4 frrand 탐지 AUROC.
 
+## 1.5 실측 wall-time · --time 배당 · 예상 종료 (2026-07-25 측정, A6000)
+
+> 위 §1 "~150–170 GPU-h·8슬롯 ~20 wall-h·seed0 ~7 wall-h" 추정은 **과소**(renorm·observer 저평가). 실측 기반 정정. **방법별 셀 시간이 최대 ~7×까지 차이 → 균일 --time 금지.**
+
+| 셀 유형 | wall-time | 근거 | 권장 --time |
+|---|---|---|---|
+| **lossheur** T1 | **9.1h·8.8h** (완주 ×2) | timing.json total_s (fl+scoring ~8.4h + val-curve ~0.5h + downstream ~0.15h) | **18h** |
+| **renorm-4** T1 (gtg·fedsv·comfedsv·shapleyfl) | **~23–28h** (추정) | ~40 train/h(측정) vs lossheur 94/h; s0 4셀 ~14h에 ~557 train(~60%) | **42h** |
+| **flirds1st·fedif** T1 (fixed VAL_CHUNK=5) | **~11–15h** (추정·미완) | grad-only(HVP 없음)·lossheur+청크 overhead; 재제출 후 갱신 | **30h** |
+| **observer** T2 (VAL_CHUNK=2) | **~44–78h** (추정·미완) | FL(7방법/round = renorm급 ~28–38h) + N distinct t2_sign retrain(~8h/개) | **96h** |
+
+- **renorm이 느린 이유**: 라운드마다 coalition/submodel 평가(`shapleyfl_round_raw`=val forward) → forward만 하는 lossheur 대비 2.4×. **observer는 7방법 동시 채점 → renorm 비용 + 2차 HVP 상속**, 그 뒤 retrain.
+- **OOM 주의(A6000 48GB)**: flirds1st·fedif(functorch val-grad)·observer(2차 HVP)는 기본 VAL_CHUNK로 OOM. `VAL_CHUNK` 축소 필수(sbatch 두 env블록에 `VAL_CHUNK="${VAL_CHUNK:-10}"` 배선; **T1=5, observer=2**). 청크 합산은 `flirds_estimator._chunked`상 수학적 exact → **φ 불변**, peak 메모리만 감소. renorm·lossheur는 grad 경로 없어 안전.
+- **총 GPU-h ≈ 580** (renorm 12셀×~25h≈300 + observer 3셀×~60h≈180 + lossheur/grad ~100). 8-GPU/user 한도 → wall ≈ 3–4일.
+
+**현 run 예상 종료** (job 1873996/1874031 + fixed 1875968 obs/1875969 T1; 07-25 17:40 기준, 8-GPU 한도):
+- renorm **s0** (gtg·fedsv·comfedsv·shapleyfl, ~14h째): **~07-25 23시 – 07-26 04시**
+- renorm **s1·s2** + lossheur s2: **~07-26 낮–밤**
+- **flirds1st·fedif** fixed 6셀(1875969): 슬롯 확보 후 각 ~12h → **~07-26**
+- **observer T2** 3셀(1875968, --time 96h): seed0(_7, must-land) 먼저 → **~07-27**; seeds1-2(_15·_23) → **07-27~28**(경합 시 리스크)
+
 ## 2. 우선순위·큐 운용
 
 - **seed0 우선**: L9-arms seed0 먼저 → 논문 착수선. 이후 seeds 1-2.
