@@ -108,20 +108,6 @@ closed-form으로 계산한다. 즉 Flirds 역시 참값 자체가 아니라 그
 파라미터 공간의 차원에만 비례하므로, 전체 모델을 학습하는 소형 네트워크부터 PEFT(LoRA)
 어댑터만 교환하는 LLM 파인튜닝까지 같은 식이 그대로 적용된다.
 
-**검증.** 선행 연구들은 기여도 점수의 타당성을 주로 다운스트림 효과로 확인해 왔다:
-기여도-선택 학습이 수렴이나 성능 향상을 돕는지, 저기여 클라이언트가 실제로 오염돼
-있었는지를 보는 식이다.
-우리는 검증을 두 겹으로 나눈다. **추정기 층**에서는 Flirds가 겨냥하는 게임의 exact Shapley 값, 곧
-in-run 정의를 근사 없이 라운드당 $2^{|P_r|}$ 전수 열거로 계산한 **exact in-run Shapley**를
-같은 학습 궤적 위에서 직접 구해, 추정값이 이를 순위·값 수준에서 재현하는지 잰다. 근사
-참조나 다운스트림 간접 증거에 의존해 온 선행 관행보다 강한 기준이다. **실효성 층**에서는 측정한 기여도가 실제로 학습에
-도움이 되는 값인지를 잰다. 각 방법이 매긴 기여도를 기반으로 학습 과정을 개선하고, 그
-학습 성과로 방법들을 비교한다: 학습 도중 순기여 $\le 0$인 클라이언트를
-자동 배제하는 온라인 sign-gating, 기여도 순서대로 클라이언트를 제거하고 실제로
-재학습해 순위의 인과적 타당성을 확인하는 removal 실험, 누적 기여도가 양(+)인 클라이언트만 남겨 처음부터
-재학습하는 selection 실험, 그리고 오염·무임승차 클라이언트 탐지다. 여기에 방법별 계산 비용을
-같은 고정 궤적 위에서 실측한다. 고전적 exact retrain Shapley와의 실증적 관계는 특성화 실험으로만 보고한다(§5.2).
-
 **기여.** 이 논문의 기여는 다음과 같다.
 
 1. **방법.** In-Run Data Shapley의 closed-form 계산을 연합학습의 라운드 구조로 확장한
@@ -173,14 +159,6 @@ Taylor 기여를 누적한다. 이들은 모두 학습 데이터에 직접 접�
 이어지는 것은 In-Run 계열인데, FedAvg 집계 $\sum_k p_k \Delta w_k$가 배치 gradient의
 샘플-선형 분해와 같은 구조를 클라이언트 수준에서 이미 드러내기 때문이다. 본 논문은 이
 관찰에서 출발해 IRDS의 closed-form 계산을 연합 라운드 게임으로 확장한다(§4).
-
-**탐지·강건 집계 baseline.** 연합학습에는 오염·악성 클라이언트에 대응하는 별도의 계열이
-있다: 업데이트 통계로 이상 클라이언트를 찾아내는 **탐지**(FLDetector, FLTrust, STD-DAGMM,
-FedDQC 등)와, 집계 단계에서 outlier 업데이트의 영향을 억제해 강건성을 확보하는 **강건
-집계**(Krum, 좌표별 median, trimmed-mean 등)다. 이들은 이진 제거(keep/discard)나 신뢰
-가중치를 산출할 뿐 부호 있는 연속 기여도와 분배 공리를 다루지 않으므로, 기여도 평가의
-대체재가 아니다. 우리는 두 축을 분리하고, 위 전용 탐지기들과는 각자가 설계된 위협에서
-비교한다(§5.4).
 
 ---
 
@@ -345,10 +323,10 @@ LoRA 인자 좌표의 양이다(CNN 트랙은 전체 파라미터를 학습하�
 
 실험은 §1의 검증 두 겹을 핵심 질문의 위계 순으로 배치한다. **1차 — fidelity**: 추정값이
 exact 참값의 순위·값을 재현하는가(§5.2). **2차 — 실효성**: 측정한 기여도로 학습을 실제로
-개선할 수 있는가(§5.3), 오염 클라이언트가 가려지는가(§5.4). 이어서 방법별 계산 비용(§5.5)과
-구성요소별 ablation(§5.6)을 본다. 프로토콜 상세와 위협 구현은 부록 B, fidelity 확장
-표(cross-game 계열 전표 포함)는 부록 C, 재현성(안정성) 분석은 부록 D, 비용·규모 보조 실험은
-부록 E에 있다.
+개선할 수 있는가(§5.3). 이어서 방법별 계산 비용(§5.4)과 구성요소별 ablation(§5.5)을 본다.
+프로토콜 상세와 위협 구현은 부록 B, fidelity 확장(비교 방법 전종 × 두 참값, 추가 지표, 보조
+무대)은 부록 C, 재현성(안정성)은 부록 D, 개입 확장(주무대 경쟁의 MNIST 짝·크기-가중
+변형·무해성·φ 부호 감사)은 부록 E, 비용 상세는 부록 F, 오염 클라이언트 탐지는 부록 G에 있다.
 
 ### 5.1 실험 세팅
 
@@ -358,22 +336,26 @@ FL"이라는 같은 구도를 공유한다. retrain GT가 필요한 비교는 $2
 
 | 무대 | 트랙 / 데이터 | $N$ · 참여 | $R$ | 위협 축 | GT | 쓰임 |
 |---|---|---|---|---|---|---|
-| **주** `LLM-Main` | LLM 1B(LoRA) · GSM8K | 50 · 5/50 | 200 | clean / answer-swap@0.7 / free-rider(zero) — 오염 40% | in-run GT (per-round $2^5$) | §5.2–5.5 |
-| **주** `CNN-Main` 캠페인 | CNN · CIFAR-10×{iid,Dirichlet(α=1),shard,quantity-skew} + FMNIST×{iid,Dirichlet(α=1)} | 100 · 10/100 | 120 | clean / free-rider(zero·rand) / gradient noise / label-flip@{.15,.35,.70}·variable-intensity label-flip — 오염 40% | in-run GT (per-round $2^{10}$) | §5.2–5.4 |
-| 보조 `LLM-Small` | LLM 1B · GSM8K(주무대 정합) | 5 · 전원 | 30 | clean / answer-swap@0.7 — 오염 40% | **retrain GT ($2^5$)** + in-run GT ($2^5$) | §5.2 |
-| 보조 `Silo` | LLM 1B · 5-도메인 비IID | 5 · 전원 | 10 | clean / answer-swap / free-rider | in-run GT ($2^5$) (+ retrain GT ⬚) | §5.2·§5.6 |
-| 보조 `Anchor` | LLM 1B · alpaca IID clean | 5 · 전원 | 30 | – | **retrain GT ($2^5$)** + in-run GT ($2^5$) | §5.2 |
-| 보조 `CNN-Grid` | CNN · MNIST+CIFAR-10 × 5시나리오 | 10 · 전원 | 10 | iid / label·quantity-skew / label-flip / feature-noise | **retrain GT ($2^{10}$)** + in-run GT ($2^{10}$) | §5.2·§5.6·부록 C·D |
+| **주** `LLM-Main` | LLM 1B(LoRA) · GSM8K | 50 · 5/50 | 200 | clean / answer-swap@0.7 / free-rider(zero) — 오염 40% | in-run GT (per-round $2^5$) | §5.2–5.4 · 부록 G |
+| **주** `CNN-Main` | CNN · CIFAR-10 × {Dirichlet(α=1), iid} | 100 · 10/100 | 120 | clean / free-rider(zero) / gradient noise / label-flip@0.70 — 오염 40% | in-run GT (per-round $2^{10}$) | §5.2·§5.3 · 부록 G |
+| 보조 `LLM-Scale` | LLM 1B·3B·7B · alpaca IID clean | 20 · 2/20 | 200 | – (clean-IID 전용) | in-run GT (per-round $2^2$) | §5.2 |
+| 보조 `Silo` | LLM 1B · 5-도메인 비IID | 5 · 전원 | 10 | clean / answer-swap / free-rider(zero) | **retrain GT ($2^5$)** + in-run GT ($2^5$) | §5.2·§5.5 · 부록 C·D |
+| 보조 `Anchor` | LLM 1B · alpaca IID clean | 5 · 전원 | 30 | – | retrain GT ($2^5$) + in-run GT ($2^5$) | 부록 C·F |
+| 보조 `CNN-Small` | CNN · CIFAR-10 × {Dirichlet(α=1), iid} | 10 · 전원 | 10 | `CNN-Main`과 동일 | **retrain GT ($2^{10}$)** + in-run GT ($2^{10}$) | §5.2 · 부록 C·D |
+| 보조 `LLM-Device` | LLM 1B · alpaca · Dirichlet($\alpha$) | 100 · 10/100 | 30 | clean / answer-swap / free-rider(zero) | in-run GT (per-round $2^{10}$) | §5.4 · 부록 C·G |
+
+**오염축은 트랙당 고정한다**: CNN = {label-flip@0.70, free-rider(zero), gradient noise},
+LLM = {answer-swap@0.7, free-rider(zero)}. clean은 위협이 아니라 전 무대 공통의 대조
+앵커다(무해성 parity·오발화 판정의 기준). `CNN-Main`·`CNN-Small`의 MNIST 짝(동일 세팅,
+데이터셋만 교체)은 데이터셋 강건성 확인 전용으로 부록 C·G에 둔다.
 
 성능 심판은 LLM-Main = GSM8K 공식 test의 잔여 1,119문항 exact-match(EM; greedy 디코딩),
-CNN = held-out test 정확도다. 학습은 두 트랙 모두 momentum 없는 plain SGD·상수
+CNN = held-out test 정확도, `LLM-Scale`의 개입 무해성 심판은 MMLU·Alpaca-test ROUGE-L(부록
+E)이다. 학습은 두 트랙 모두 momentum 없는 plain SGD·상수
 학습률·stateless 클라이언트(부록 A.9의 가정 그대로)이고, LLM 트랙은 LoRA(r=16, α=32) 인자만
-교환한다(부록 A.10). 하이퍼파라미터 전량·데이터 분배 규칙은 부록 B. 표에서 위협 이름
-`lf@r`는 label-flip@r(라벨 오염 비율 $r$)의 축약이다. 부록 E의 보조
-무대(완전참여 100/100, $N{=}10$ LLM $2^{10}$, cross-device anchor)는 비용·규모 주장 전용이다.
+교환한다(부록 A.10). 하이퍼파라미터 전량·데이터 분배 규칙은 부록 B.
 
-**비교 방법: 겨냥하는 게임으로 나눈다.** 기여도 방법 8종을 두 계열로 구분하며, 이 구분이
-§5.2 표 구성의 원리다.
+**비교 방법: 겨냥하는 게임으로 나눈다.** 기여도 방법 8종을 두 계열로 구분한다.
 
 - **같은-게임 계열(3)** — 식 (6)의 고정-가중 라운드 게임을 겨냥한다: **Flirds**(2차 closed-form),
   **Flirds-1st**(1차 항만), **individual utility**(라운드 게임의 singleton utility
@@ -381,21 +363,25 @@ CNN = held-out test 정확도다. 학습은 두 트랙 모두 momentum 없는 pl
   값). 이들과 in-run GT의 차이는 순수한 근사 오차다.
 - **cross-game 계열(5)** — GTG-Shapley, FedSV, ComFedSV, ShapleyFL, FedIF: §2의 계보
   그대로 재정규화 게임·보간 행렬·가공 surrogate·influence 등 저마다 다른 값을 겨냥한다.
-  in-run GT와의 불일치에는 근사 오차와 "다른 게임" 성분이 섞여 있으므로 본문 fidelity 표에서는
-  같은-게임 계열과 분리하고, 전표를 부록 C에 둔다. 단 **retrain GT 대비 비교는 전 방법을
-  같은 표에** 둔다 — retrain GT는 어느 방법의 목표값도 아닌 중립 참값이기 때문이다.
+  in-run GT와의 불일치에는 근사 오차와 "다른 게임" 성분이 섞여 있다.
 
-전용 탐지기 4종(FLDetector, FLTrust, STD-DAGMM, FedDQC)은 §2의 약속대로 §5.4에서 비교한다.
-제외: Banzhaf(다른 semivalue 축), Ripple(방법이 자체 재학습 궤적을 요구해 아래 고정-궤적
+**본문 fidelity 표는 Flirds와 Flirds-1st만 싣는다.** §5.2가 답하는 것은 추정기 층의 질문 —
+제안 방법의 유일한 근사인 Taylor 절단이 실제로 얼마나 큰가 — 이고, 같은 게임을 겨냥한 채
+절단 차수만 다른 두 변형의 대조가 그 질문의 최소 충분 단위이기 때문이다. 나머지 6종과의
+비교는 두 자리에서 한다: 측정한 기여도의 다운스트림 우열(§5.3의 CNN 8 점수원 경쟁)과
+fidelity 전표(부록 C — 전 방법 × 두 참값, Kendall·거리 포함).
+
+제외: Banzhaf(다른 semivalue 축), Fed-LOO(Shapley가 아닌 leave-one-out 축),
+Ripple(방법이 자체 재학습 궤적을 요구해 아래 고정-궤적
 채점과 비호환). clean-preserving poisoning 위협은 본 논문의 스코프 밖이다(§6). baseline
 재구현·파라미터 주석(ShapleyFL EMA β, ComFedSV per-round 대용 등)은 부록 B.5.
 
 **지표.** fidelity = Spearman $\rho$(순위)·Pearson $r$(값)을 본문에, Kendall
 $\tau$·거리 3종(cosine/euclidean/max)을 부록 C에 둔다. 탐지 = AUROC(오염 클라이언트를
-양성으로 두고 기여도 순위 하위 = 의심 규약; 부록 B). 개입 = **절대 성능**(EM/acc)을
+양성으로 두고 기여도 순위 하위 = 의심 규약; 부록 B·G). 개입 = **절대 성능**(EM/acc)을
 vanilla(개입 없음 = 바닥)와 oracle-제외(오염 클라 정확 제외 = 천장) 사이에서 직접 읽는다 —
 정규화 점수가 셀 간 기준선 차이를 가리는 것을 피한다. 비용 = 같은 궤적 위 valuation 단독
-wall-clock과 하드웨어-독립 연산수 모델(§5.5).
+wall-clock과 하드웨어-독립 연산수 모델(§5.4).
 
 **고정-궤적 채점.** 셀(무대 × 위협 × seed)마다 학습 궤적 하나를 실측해 동결하고, **모든
 방법과 in-run GT을 같은 로그 위에서 채점한다**(§4.1의 프로토콜). 방법 간 차이는 전부 방법
@@ -411,111 +397,119 @@ free-rider에 0이 아닌 값을 주는 것은 구현 오류가 아니라 그 �
 
 ### 5.2 Fidelity — exact in-run Shapley 재현 (1차)
 
-**주무대, 같은-게임 계열 vs in-run GT.** 표 [F1]은 CNN 주무대 144셀(파티션 6 × 위협 8 ×
-3-seed)을 위협별로 풀링한 Spearman, 표 [F2]는 LLM 주무대의 위협별 Spearman·Pearson이다.
+**주무대: Flirds vs Flirds-1st, in-run GT 대비.** 표 [F1]은 CNN 주무대 24셀(파티션 2 × 위협
+4(clean 포함) × 3-seed)을 위협별로 풀링한 Spearman, 표 [F2]는 LLM 주무대의 위협별
+Spearman·Pearson, 표 [F3]은 스케일 축(`LLM-Scale`)이다.
 
-표 [F1] — CNN 주무대(`CNN-Main`): 같은-게임 3종 vs in-run GT, Spearman ↑ (위협별; 파티션 × seed 풀) ⬚
-<!-- 채움: runs/track_c/c2fid/analysis/{fidelity,cellmean}.csv (make_analysis.py 재생성) -->
+표 [F1] — CNN 주무대(`CNN-Main`): Flirds vs Flirds-1st, in-run GT 대비 Spearman ↑ (위협별; 파티션 × seed 풀 = 위협당 6셀, mean±std) ●
+<!-- 출처: runs/track_c/c2fid/analysis/fidelity.csv 재풀링(dataset=cifar10, partition∈{dir1,iid},
+     scenario∈{clean, free_rider, grad_noise, label_flip@'0.70'}, 값 = spearman_b = vs (b)oracle).
+     24셀(2 파티션 × 4 위협 × 3-seed) 전량 실측 ●. qskew·shard·fmnist 파티션과
+     frrand·lf@{.15,.35}·strmain 열은 위협축 스코프 밖 — rundir 존속, 표 미수록. -->
 
-| method | clean | free-rider(zero) | free-rider(rand) | gradient noise | lf@0.15 | lf@0.35 | lf@0.70 | variable-intensity label-flip |
-|---|---|---|---|---|---|---|---|---|
-| Flirds | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
-| Flirds-1st | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
-| individual utility | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
-
-표 [F2] — LLM 주무대(`LLM-Main`): 같은-게임 3종 vs in-run GT (per-round $2^5$) ⬚(◐)
-<!-- 채움: runs/phase2_matrix/rundirs/1B_gsm50k5_{noisy_nr0.7,clean}_s0/metrics.json (L2) -->
-
-| method | answer-swap Spearman | answer-swap Pearson | clean Spearman | clean Pearson |
+| method | clean | free-rider(zero) | gradient noise | label-flip@0.70 |
 |---|---|---|---|---|
-| Flirds | ⬚ | ⬚ | ⬚ | ⬚ |
-| Flirds-1st | ⬚ | ⬚ | ⬚ | ⬚ |
-| individual utility | ⬚ | ⬚ | ⬚ | ⬚ |
+| **Flirds** | .991±.008 | .990±.009 | **.858±.031** | .998±.001 |
+| Flirds-1st | .640±.251 | .702±.212 | .266±.082 | .979±.011 |
 
-(free-rider(zero) 셀의 fidelity는 별도 채점하지 않는다 — in-run GT와 같은-게임 계열 모두 해당
-클라이언트에 대수적으로 정확히 0을 주어(명제 2) 일치가 자명하며, 이 성질은 탐지(§5.4)와
-개입(§5.3)에서 실효성으로 검증된다.)
+표 [F2] — LLM 주무대(`LLM-Main`): Flirds vs Flirds-1st, in-run GT 대비 (per-round $2^5$) ⬚
+<!-- 채움: G1(R4-L2) — REGIME=gsm50k5 × {answer-swap, free-rider(zero), clean} × seed{0,1,2} = 9셀.
+     runs/phase2_matrix/rundirs/1B_gsm50k5_*/metrics.json -->
 
-읽기 각주 두 개. ① **clean 칸은 신호-부재 레짐이다**: 클라이언트 간 실제 차이가 없어 in-run GT
-자신의 순위조차 seed를 넘어 재현되지 않는다(부록 D). 이 칸의 낮은 $\rho$는 방법의 실패가
-아니라 잴 것이 없음을 뜻하며, 오발화 대조용으로만 둔다. ② variable-intensity label-flip(오염 클라이언트별 강도가
-연속 분포) 칸에서는 φ가 오염 강도 자체를 얼마나 해상하는지도 채점한다(φ vs 실현 오염율의
-Spearman): ⬚ <!-- F-4 사전등록: Flirds ≈ in-run GT 자기천장 > 1st — c2fid make_analysis 자동 대조 -->.
+| method | answer-swap Sp | answer-swap Pe | free-rider(zero) Sp | free-rider(zero) Pe | clean Sp | clean Pe |
+|---|---|---|---|---|---|---|
+| Flirds | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| Flirds-1st | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
 
-**sub — exact retrain Shapley retrain GT 특성화.** retrain GT는 $2^N$번의 전체 재학습을 요구하므로
-주무대($N{=}50/100$)에서는 계산이 원리적으로 불가능하다. 그래서 부득이하게 작은-$N$ 별도
-무대에서 특성화하되, 무대마다 다른 축을 담당하도록 세팅을 의도적으로 다양화했다:
-**LLM-Small** = 주무대와 데이터·위협·오염 비율(2/5 = 40%)·검증 규칙·하이퍼를 전부 공유하고
-$N{=}5$ 전원 참여·$R{=}30$만 축소한 "라운드-cohort 축소판"(주무대의 라운드당 참여자 수가 곧
-5다) — 주무대 정합 주 표. **Silo** = 도메인 이질성(비IID) 신호 무대. **Anchor** = IID-clean
-참조. **CNN-Grid** = retrain GT·in-run GT를 동시에 $2^{10}$ 전수로 계산하는 시나리오 격자.
+표 [F3] — `LLM-Scale`(1B·3B·7B; clean-IID 전용 무대): Flirds vs Flirds-1st, in-run GT 대비 Spearman ↑ (3-seed) ●
+<!-- 출처: runs/track_d/fidelity.csv (cell=*_std20_seed{0,1,2}, 진리값 TRUTH="(b)oracle" —
+     make_fidelity.py가 각 rundir의 phi.parquet에서 재계산; 18셀 중 std20 9셀). anchor5 9셀은 부록 C.6. -->
 
-표 [F3] — `LLM-Small`: 전 방법 vs retrain GT ($2^5$) (주 표) ⬚
-<!-- 채움: L8 (paper/workplan/T5-retrain-a-suite.md) rundir → 분석 CSV; 3-seed -->
+| scale | Flirds | Flirds-1st |
+|---|---|---|
+| 1B | 1.000±.000 | .999±.001 |
+| 3B | 1.000±.000 | .997±.003 |
+| 7B | .999±.001 | .998±.002 |
 
-| method | clean Sp vs retrain GT | answer-swap Sp vs retrain GT | (참고) Sp vs in-run GT |
+(`LLM-Scale`은 라운드당 참여가 2라 in-run GT 직접 열거($2^2$)가 오히려 싼 무대이고 clean-IID라
+클라이언트 간 실재 신호도 없다 — 이 표의 질문은 우위가 아니라 **모델 규모가 1B→7B로 커져도
+Taylor 절단 fidelity가 유지되는가** 하나다.)
+
+(free-rider(zero) 칸의 일치는 오염 클라이언트 쪽에서는 부분적으로 자명하다 — in-run GT와
+같은-게임 계열 모두 해당 클라이언트에 대수적으로 정확히 0을 주므로(명제 2), 이 칸의 변별
+정보는 잔여 clean 클라이언트 순위의 재현에 있다. exact-0 성질 자체는 개입(§5.3)과
+탐지(부록 G)에서 실효성으로 검증된다.)
+
+읽기(CNN·스케일 실측 기준). ① **2차항이 fidelity를 가르는 칸은 gradient noise다**: 표 [F1]에서
+Flirds .858 vs Flirds-1st .266 — 1차 근사는 순위를 거의 잃는다. 같은 칸의 개입 결과(§5.3의
+.5668/.6065 vs vanilla 수준)와 부호가 정확히 맞는다. ② 나머지 오염 칸(label-flip)은 두 변형
+모두 .98 이상으로, 절단 차수의 효과는 위협의 성격에 달려 있다 — 클라이언트 업데이트가
+등방적 잡음으로 흐트러질수록 1차 항만으로는 부족해진다. ③ **모델 규모는 fidelity를 낮추지
+않는다**: 표 [F3]에서 1B→7B 내내 두 변형 모두 .997 이상이다(이 무대는 $K{=}2$·clean-IID라
+근사 부담 자체가 작다 — 스케일 불변성의 확인이지 우위의 증거는 아니다).
+
+읽기 각주. **clean 칸은 신호-부재 레짐이다**: 클라이언트 간 실제 차이가 없어 in-run GT
+자신의 순위조차 seed를 넘어 재현되지 않는다(부록 D). 다만 fidelity는 셀 안에서 같은 궤적을
+두고 재는 양이라 이 칸에서도 정의된다 — 표 [F1]에서 Flirds가 clean .991을 얻는 것은 재현할
+신호가 있다는 뜻이 아니라 잡음 수준의 값 차이까지 따라간다는 뜻이다. 이 칸은 방법 간 우열이
+아니라 오발화 대조용으로만 읽는다.
+
+**sub — retrain GT 특성화.** retrain GT는 $2^N$번의 전체 재학습을 요구하므로
+주무대($N{=}50/100$)에서는 계산이 원리적으로 불가능하다 — 주무대와 $N$·참여율을 공유하는
+retrain GT 무대는 존재할 수 없고, 정렬 가능한 축은 데이터·파티션·위협뿐이다. 그래서 트랙당
+작은-$N$ 무대 하나가 주 표를 담당한다: **Silo**(LLM) = 5-도메인 비IID 실재-신호 무대,
+**CNN-Small**(CNN) = 주무대와 데이터(CIFAR-10)·파티션({Dirichlet(α=1), iid})·위협 축을 전부
+공유하는 $N{=}10$ 축소판. LLM 쪽 IID-clean 참조(`Anchor`)는 부록 C.6에 둔다.
+
+표 [F4] — `Silo`(5-도메인 비IID; 실재-신호 무대): Flirds vs Flirds-1st, retrain GT ($2^5$) 대비 Spearman ↑ (1B, 3-seed) ●
+<!-- 출처: runs/phase2_matrix/silo5_a_fidelity_1B.csv (열 spearman_a = vs (a)retrain GT;
+     (b)oracle 행의 spearman_a = retrain GT↔in-run GT 일치도). rundir = 1B_silo5_{clean,noisy,frzero}_aonly_s{0,1,2}
+     (3위협 × 3-seed = 9런, 셀당 2^5=32 재학습). 값 수준 Pearson(pearson_a): clean .9999±.0001 /
+     answer-swap .9997±.0001 / free-rider .9998±.0000 (Flirds; Flirds-1st는 answer-swap만 .9996).
+     전 방법(8종) = 부록 C.6(ComFedSV clean 열 ⬚ 주의). 본문 승격 = Yonghee 07-25(권고 채택). -->
+
+| threat | Flirds | Flirds-1st | retrain GT ↔ in-run GT |
 |---|---|---|---|
-| Flirds | ⬚ | ⬚ | ⬚ |
-| Flirds-1st | ⬚ | ⬚ | ⬚ |
-| individual utility | ⬚ | ⬚ | ⬚ |
-| GTG | ⬚ | ⬚ | ⬚ |
-| FedSV | ⬚ | ⬚ | ⬚ |
-| ComFedSV | ⬚ | ⬚ | ⬚ |
-| ShapleyFL | ⬚ | ⬚ | ⬚ |
-| FedIF | ⬚ | ⬚ | ⬚ |
-| **retrain GT↔in-run GT 일치도** | ⬚ | ⬚ | – |
+| clean | 1.000±.000 | 1.000±.000 | 1.000±.000 |
+| answer-swap | 1.000±.000 | 1.000±.000 | 1.000±.000 |
+| free-rider(zero) | 1.000±.000 | 1.000±.000 | 1.000±.000 |
 
-Silo의 retrain GT-leg(clean·answer-swap·free-rider × 3-seed)는 ⬚
-<!-- 채움: L8 Silo *_aonly_* rundir + 기존 canonical phi.parquet 조인(merge 패턴) -->
-— Silo는 $N{=}5$ 무대 가운데 유일하게 in-run GT 타깃 순위가 seed를 넘어 재현되는 무대라(부록 D:
-clean +0.87, 오염 +0.93) "retrain GT가 그 실재 신호를 같게 매기는가"를 처음 재는 칸이다.
+읽기. Silo가 LLM 쪽 주 표인 이유는 둘이다: ① $N{=}5$ 무대 가운데 유일하게 in-run GT 타깃
+순위가 seed를 넘어 재현되는 실재-신호 무대이고(부록 D: clean +0.87, 오염 +0.93), ② LLM
+오염축 {clean, answer-swap, free-rider(zero)}이 전부 정렬된다. 헤드라인은 마지막 열이다 — 이
+무대에서 **retrain GT↔in-run GT 일치도는 세 위협 모두 1.000±.000**(9셀 전량): in-run GT를
+같은-게임 정답으로 쓰는 본 논문의 설계 선택을, 어느 방법의 목표값도 아닌 방법-중립 참값이
+실재-신호 무대에서 직접 승인한다. Flirds·Flirds-1st도 같은 값에 도달하며, 순위가 $N{=}5$에서
+포화하는 만큼 값 수준 Pearson을 함께 본다 — 두 변형 모두 .9996–.9999로, 일치는 순위뿐
+아니라 값에서도 성립한다. **이 표는 방법 간 우열을 가리는 자리가 아니다**: 같은-게임 계열은
+전 칸 포화이고(구별은 cross-game 계열에서만 생긴다 — ComFedSV .833–.867, FedIF .867–.933;
+부록 C.6), 이 무대가 답하는 것은 "두 참값이 같은 것을 재는가" 하나다. caveat: 이 무대의
+answer-swap은 클라 내 교체 비율 $nr{=}1.0$(무대 canonical)로 주무대의 0.7과 다르다(부록 B.2).
+반면 IID-clean 참조 무대 `Anchor`에서는 두 참값 사이의 일치도 자체가 0.933으로 떨어져
+같은-게임 계열의 점수가 그 천장에 갇힌다 — 신호-부재 무대의 한계이지 방법의 한계가 아니며,
+전표와 읽기는 부록 C.6에 둔다.
 
-표 [F4] — `Anchor`(IID-clean 참조): 전 방법 vs retrain GT ($2^5$) (1B, 3-seed)
-<!-- 출처: runs/track_d/rundirs/1B_anchor5_seed{0,1,2}/phi.parquet — truth=retrain GT로 피벗 재계산 -->
+표 [F5] — `CNN-Small`: Flirds vs Flirds-1st, retrain GT ($2^{10}$) 대비 Spearman ↑ (3-seed) ⬚
+<!-- 채움: G2 — track_c1 위협·파티션 확장(free_rider·grad_noise 위협 + dir1 파티션) 후
+     cifar10 {dir1,iid} × {clean, frzero, gn, lf@0.70} × 3-seed = 24셀 재실행.
+     전 방법·Pearson·vs in-run GT = 부록 C.2·C.3. 구 시나리오 격자(feature-noise·label/quantity-skew·
+     dose 사다리) 결과는 위협축 스코프 밖 — rundir 존속(runs/track_c/c1), 표 미수록. -->
 
-| method | Spearman vs retrain GT ↑ | Pearson vs retrain GT ↑ | (참고) Spearman vs in-run GT |
+| partition / threat | Flirds | Flirds-1st | retrain GT ↔ in-run GT |
 |---|---|---|---|
-| Flirds | 0.933±.047 | 0.933±.055 | 1.000 |
-| Flirds-1st | 0.933±.047 | 0.929±.060 | 1.000 |
-| individual utility | 0.933±.047 | 0.931±.057 | 1.000 |
-| GTG | 0.933±.047 | 0.937±.052 | 1.000 |
-| FedSV | 0.733±.170 | 0.685±.249 | 0.700 |
-| ShapleyFL | 0.767±.330 | 0.916±.084 | 0.700 |
-| ComFedSV | 0.467±.450 | 0.598±.280 | 0.500 |
-| FedIF | 0.167±.613 | 0.048±.585 | 0.067 |
+| Dirichlet(α=1) / label-flip@0.70 | ⬚ | ⬚ | ⬚ |
+| Dirichlet(α=1) / free-rider(zero) | ⬚ | ⬚ | ⬚ |
+| Dirichlet(α=1) / gradient noise | ⬚ | ⬚ | ⬚ |
+| Dirichlet(α=1) / clean | ⬚ | ⬚ | ⬚ |
+| iid / label-flip@0.70 | ⬚ | ⬚ | ⬚ |
+| iid / free-rider(zero) | ⬚ | ⬚ | ⬚ |
+| iid / gradient noise | ⬚ | ⬚ | ⬚ |
+| iid / clean | ⬚ | ⬚ | ⬚ |
 
-읽기: 같은-게임 3종과 GTG가 0.933으로 동률인 것은 천장 효과다 — 이들은 in-run GT와 사실상 완전
-일치(vs in-run GT ≈ 1.000)하므로, vs retrain GT 점수가 두 참값 사이의 일치도 **retrain GT↔in-run GT = 0.933±.047**
-그 자체로 수렴한다. 즉 이 무대에서 같은-게임 계열의 retrain GT 재현은 게임 간 간극이 상한이다.
-주의할 점은 Anchor가 IID-clean이라 in-run GT 타깃 자체가 seed-불안정하다는 것(부록 D: cross-seed
-$\rho$ −0.37)이며, 이것이 LLM-Small·Silo를 주 표로 두는 이유다.
-
-표 [F5] — CNN `CNN-Grid`: 같은-게임 3종 vs retrain GT ($2^{10}$), Spearman ↑ (시나리오별, 3-seed 평균)
-<!-- 출처: runs/track_c/fidelity.csv spearman_a group-mean. 전 방법(8종)·Pearson = 부록 C -->
-
-| dataset / scenario | Flirds | Flirds-1st | individual utility |
-|---|---|---|---|
-| cifar10 / feature_noise | **+0.63** | +0.50 | +0.56 |
-| cifar10 / iid | −0.23 | −0.13 | −0.18 |
-| cifar10 / label_flip | +0.52 | +0.59 | +0.58 |
-| cifar10 / label_skew | −0.18 | −0.07 | +0.14 |
-| cifar10 / quantity_skew | +0.57 | +0.56 | +0.57 |
-| mnist / feature_noise | +0.33 | +0.44 | +0.44 |
-| mnist / iid | +0.36 | +0.52 | +0.48 |
-| mnist / label_flip | **+0.96** | +0.97 | +0.97 |
-| mnist / label_skew | −0.28 | −0.06 | −0.16 |
-| mnist / quantity_skew | **+0.85** | +0.77 | +0.84 |
-
-읽기: 두 게임(realized 귀속 vs counterfactual 재학습)은 **클라이언트 간 실제 차이가 있는
-칸에서 수렴한다** — cifar10의 label-flip·feature-noise·quantity-skew와 mnist의
-label-flip·quantity-skew에서 같은-게임 계열 vs retrain GT +0.50~+0.97이고, 전 방법(8종) 가운데
-Flirds가 1위인 칸이 둘(cifar10/feature_noise +0.63, mnist/quantity_skew +0.85),
-mnist/label_flip은 전 방법이 +0.94~0.97로 동수렴한다(부록 C). mnist/feature_noise(+0.33~
-+0.44)는 오염 σ가 약해 게임 수준 신호 자체가 흐릿한 칸이다.
-신호-부재 칸(iid·label_skew)에서는 두 게임의 순위가 상관을 잃는데, 이는 위 각주 ①과 같은
-현상의 retrain GT-버전이다 — retrain GT 게임 값 자체가 재학습 노이즈 수준의 차이를 순위화한 것이기
-때문이다. 한편 retrain GT가 부분집합 크기로 재정규화되는 게임이라는 사실이 재정규화 계열에
-유리하게 작동하는 칸도 있다(cifar10/quantity_skew는 ShapleyFL +0.81이 최고 — 부록 C).
+이 표가 재는 것은 두 겹이다: ① 실재 신호가 있는 오염 칸에서 두 게임(realized 귀속 vs
+counterfactual 재학습)이 수렴하는가 — 마지막 열(retrain GT↔in-run GT)이 그 게임-간 천장이고,
+Flirds가 그 천장에 얼마나 붙는가가 방법의 몫이다. ② clean·iid 칸은 신호-부재 통제(위 각주와
+같은 현상의 retrain GT-버전 — retrain GT 게임 값 자체가 재학습 노이즈 수준의 차이를 순위화)다.
 
 ### 5.3 개입 — 측정한 기여도로 학습을 개선하는가 (2차 ①)
 
@@ -529,35 +523,57 @@ free-rider exact-0과 clean 클라이언트의 누적 양수 성질이 문턱 0�
 분리). 같은 정책에 점수원만 갈아끼우며 비교하므로, 이 절은 fidelity(§5.2)가 다운스트림
 우열로 이어지는지의 직접 시험이기도 하다.
 
-**LLM 주무대(`LLM-Main`), 절대 EM.** 표 [I1] ⬚
-<!-- 채움: L1 Tier C 3-seed — runs/track_h/analysis/gsm50k5_*.csv (fix-후 rundir만).
-     pre-fix seed0(git_sha fa5fc6e) 값 인용 금지. renorm 4점수원 블록은 L4 착지 시 추가. -->
+**LLM 주무대(`LLM-Main`), 절대 EM.** 표 [I1] ⬚ — 점수원은 **Flirds·Flirds-1st**로 좁힌다.
+이 무대의 질문은 두 개다: 순위 정보의 가치(vs 무작위 통제)와 2차항의 기여(vs 1차). 전
+점수원 경쟁은 CNN 표 [I2]가 담당한다.
+<!-- 점수원 축소 = Yonghee 2026-07-25 결정: I1 = {vanilla, oracle-제외, random, Flirds, Flirds-1st}만.
+     채움: runs/track_h/analysis/gsm50k5_*.csv (fix-후 rundir만; pre-fix seed0 git_sha fa5fc6e 인용 금지).
+     현황: retrain {Flirds, Flirds-1st} × {answer-swap, frzero} 3-seed ●, online Flirds ●,
+     clean 열 ◐(seed0). 남은 런 = online Flirds-1st(2위협 × 3-seed) + clean 열(vanilla·Flirds·
+     Flirds-1st) 3-seed화. 구 G4의 renorm 4종·individual utility·FedIF 확장은 스코프 아웃
+     (기산출 rundir 존속, 표 미수록). -->
 
-**online gating**(정책 = sign-gating; 점수원 = Flirds):
+**online gating**(정책 = sign-gating):
 
-| arm | clean | answer-swap | free-rider |
+| arm | clean ◐ | answer-swap | free-rider |
 |---|---|---|---|
-| vanilla(관찰자) | ⬚ | ⬚ | ⬚ |
-| oracle-제외 (천장) | – | ⬚ | ⬚ |
-| random-제외 (통제) | – | ⬚ | ⬚ |
-| Flirds · sign-gating | ⬚ | ⬚ | ⬚ |
+| vanilla(관찰자) | .3727 | .3274±.0069 | .3560±.0157 |
+| oracle-제외 (천장) | – | .3625±.0121 | .3625±.0121 |
+| random-제외 (통제) | – | .3280±.0059 | .3476±.0179 |
+| **Flirds** | .3664 | **.3479±.0054** | .3566±.0108 |
+| Flirds-1st | ⬚ | ⬚ | ⬚ |
 
-**retrain**(정책 = sign-gating × 점수원 4종):
+**retrain**(정책 = sign-gating):
 
-| arm | clean | answer-swap | free-rider |
+| arm | clean ◐ | answer-swap | free-rider |
 |---|---|---|---|
-| vanilla(관찰자) | ⬚ | ⬚ | ⬚ |
-| oracle-제외 (천장) | – | ⬚ | ⬚ |
-| retrain-random (통제) | – | ⬚ | ⬚ |
-| Flirds · sign-gating | ⬚ | ⬚ | ⬚ |
-| Flirds-1st · sign-gating | ⬚ | ⬚ | ⬚ |
-| individual utility · sign-gating | ⬚ | ⬚ | ⬚ |
-| FedIF · sign-gating | ⬚ | ⬚ | ⬚ |
+| vanilla(관찰자) | .3727 | .3274±.0069 | .3560±.0157 |
+| oracle-제외 (천장) | – | .3625±.0121 | .3625±.0121 |
+| retrain-random (통제) | – | .3220±.0104 | .3482±.0117 |
+| **Flirds** | .3727 | **.3479±.0037** | **.3625±.0121** |
+| Flirds-1st | .3727 | .3458±.0018 | **.3625±.0121** |
 
-**CNN(Dirichlet α=1)†, 절대 test acc.** 같은 정책·같은 무대·같은 seed에서 **점수원만 8종으로 교체**한
-경쟁이다. 표 [I2] (오염-평균 = free-rider·gradient noise·label-flip 3위협 평균).
+읽기(LLM 실측 기준). ① **answer-swap이 이 무대의 판별 칸이다**: vanilla .3274 → Flirds .3479로
+천장(.3625) 대비 격차의 58%를 회수하는 반면, kept 크기를 맞춘 무작위 통제는 online .3280 ·
+retrain .3220으로 vanilla 근처이거나 그 아래다 — 회수는 클라이언트를 덜어낸 효과가 아니라
+**순위 정보** 자체에서 온다. Flirds-1st(retrain)는 .3458로 2차항 없이도 대부분을 따라오지만
+같은 방향으로 조금 뒤진다(회수 52% vs 58%). ② **free-rider 칸은 retrain에서 정확 회수, online에서
+판별력 없음**: retrain의 Flirds·Flirds-1st는 세 seed 모두 oracle-제외와 **비트 동일한 값**을
+낸다 — kept 집합이 정확히 clean 30인과 일치하기 때문이다(명제 2의 exact-0이 그대로 정확
+선별로 발현). 반면 online은 .3566으로 vanilla(.3560)와 사실상 같은데, 이 칸은 vanilla와 천장의
+간격 자체가 0.65pt로 seed 분산(±1.1–1.6pt)보다 작아 **애초에 개입 이득을 잴 수 없는 칸**이다
+(zero-update 클라이언트는 성능을 깎지도 않는다). 정직한 보고는 "online이 실패했다"가 아니라
+"이 칸은 정확 선별(retrain)로만 검증된다"이다. ③ **clean 오발화**: online Flirds는 −0.63pt(.3664 vs
+.3727), retrain은 아무도 배제하지 않아 vanilla와 완전히 같다(kept = 50) — CNN 표 [I2]의 ④와
+같은 패턴이다. ◐ = clean 열은 seed0 단독.
+
+**CNN 주무대, 절대 test acc.** 같은 정책·같은 무대·같은 seed에서 **점수원만 8종으로 교체**한
+경쟁이다. 표 [I2]는 Dirichlet(α=1) 파티션†(오염-평균 = free-rider·gradient noise·label-flip
+3위협 평균), iid 파티션 블록(동일 구성)은 ⬚.
 <!-- 출처: runs/track_h/analysis/{competition_score,cnn_competition}.csv (07-20 집계 정정판).
-     † = W-A(캠페인 restack 드리프트 표) 확인 후 확정 — paper/workplan/T4 참조. -->
+     † = W-A(캠페인 restack 드리프트 표) 확인 후 확정 — paper/workplan/T4 참조.
+     iid 블록 = G3: 비-Flirds 점수원 7종 84 rundir + 8점수원 T2 관측자(obs) 12 재실행 = 96 rundir;
+     Flirds 온라인 arm은 track_g rundirs_cnn 144셀에서 기산출. -->
 
 sign-gating · online:
 
@@ -597,109 +613,111 @@ zero-update free-rider에게 몫을 계속 배분해, 게이트가 free-rider는
 클라이언트를 내쫓기 때문이다(§4.1의 게임 선택 논거가 성능으로 발현; retrain에선 온라인
 복리 악화가 없어 .51~.52로 완화). ② **gradient noise는 2차항 판별 칸이다**: estimator 계열 중
 Flirds만 회복하고(.5668 online / .6065 retrain), 1차 정보만 쓰는 Flirds-1st·FedIF는
-.2479/.2436 ≈ vanilla(.2436) — noise 클라이언트를 아예 보지 못한다(§5.6-①). ③ label-flip은
+.2479/.2436 ≈ vanilla(.2436) — noise 클라이언트를 아예 보지 못한다(§5.5-①). ③ label-flip은
 재학습(retrain) 우위: 전 estimator가 online .57대 → retrain .62대(천장 근접)로 상승한다.
-경계-강도 무대(variable-intensity label-flip, 클라별 rate ~ U(.5,1))에서도 같은 서열이 재현된다(sign-gating retrain 회복률
-Flirds +0.98·renorm 0.60~0.74; online renorm 파국 최심 FedSV −0.32)†. ④ **clean 오발화의
-정직 보고**: online에서 Flirds −0.7pt·individual utility −1.3pt(누적 부호의 0-교차 노이즈),
+④ **clean 오발화의 정직 보고**: online에서 Flirds −0.7pt·individual utility −1.3pt,
 Flirds-1st·FedIF는 무발화. 종합하면 정확한 클레임은 "Flirds 단독 1위"가 아니라 — **전
 정책·전 시점 상위권 + gradient noise를 잡는 유일한 estimator**이며, 개별 칸 최고는
-FedIF·individual utility도 차지한다. LLM 주무대에서 같은 구조가 재현되는지는 표 [I1] ⬚.
+FedIF·individual utility도 차지한다. LLM 주무대(표 [I1])는 이 경쟁을 Flirds·Flirds-1st로
+좁혀, 순위 정보의 가치(vs 무작위)와 절단 차수의 효과(vs 1차)만 절대 EM으로 확인한다 — 판별
+칸(answer-swap)에서 천장 대비 회수 58%(Flirds) vs 52%(Flirds-1st), 무작위 통제는 0 이하다.
 
-**magnitude-weighted gating(크기-가중 변형).** [자리] sign-gating과 같은 배제에 더해, 남는 클라이언트를 양수 누적 기여도
-크기에 비례해 가중($w_k \propto n_k \max(\hat\phi_k, 0)$, 합-1 재정규화)하는 변형의 전 무대
-검증이 진행 중이다 ⬚.
-<!-- 수록 규칙(사전 고정 — workplan 00-INDEX §1): CNN·LLM 전 범위에서 sign-gating 상회 시 본문 승격 /
-     동률 시 "부호가 가치의 대부분" 1문장 / 열세·타 점수원 역전 시 미수록(본 절은 sign-gating만). -->
+크기-가중 변형(sign-gating 배제 + 양수 누적 기여도 비례 가중)과 clean-IID 무해성 parity는
+부록 E에 둔다.
 
-### 5.4 탐지 (2차 ③)
+### 5.4 비용
 
-탐지를 위계의 마지막에 두는 이유는 기여도와 탐지가 직결이 아니기 때문이다: 검증 손실을
-실제로 낮추는 오염(예: 직전 라운드의 글로벌 업데이트를 재제출하는 free-rider 변형)에 대해
-val-loss 게임의 정직한 답은 "기여함"이고, 이는 추정 실패가 아니라 in-run GT 자신의 답이기도
-하다(§6). 따라서 주장 형식은 절대 AUROC가 아니라 **in-run GT 일치**이다 — 추정기가 in-run GT와 같은
-답을 주는가(사전 등록 기준: $|\mathrm{AUROC}(\text{Flirds}) - \mathrm{AUROC}(\phi^{\mathrm{in}})| \le
-0.05$). φ-파생 탐지는 기여도 순위 하위 = 의심 규약의 AUROC이고, 전용 탐지기 4종은 각자의
-스코어를 그대로 쓴다.
+**연산수 모델 — $N$·$R$·$K$의 함수.** 라운드당 참여 수를 $K := |P_r|$로 두면, 각 방법의
+valuation 비용은 라운드당 지배 연산수로 해석적으로 닫힌다(표 [O1]; 전 방법이 같은 동결 로그
+위의 후처리라 학습 비용은 공통이므로 제외). 구조가 말하는 것: **Flirds의 비용은 $R$에만
+비례하고 $K$·$N$과 무관**(라운드당 HVP 1회 — 참여자당 내적은 지배항이 아니다), in-run
+GT·ShapleyFL은 $K$에 지수, individual utility는 $K$에 선형, Monte-Carlo 계열(FedSV·GTG)은
+절단으로 지수 상한이 내려오며, ComFedSV만 $N$이 들어온다.
 
-표 [D1] — LLM 주무대(`LLM-Main`) AUROC ⬚(◐)
-<!-- 채움: L2 rundir metrics.json auroc — H-13 대조(in-run GT 일치 기준) 포함 -->
+표 [O1] — 라운드당 지배 연산수(전체 = × $R$)
+<!-- 출처: runs/measured_2026-07/op_counts.py::per_round(method, K, N) — G7 파라메트릭 재작성 -->
 
-| method | answer-swap | free-rider |
+| method | 라운드당 | $K$·$N$ 의존성 |
 |---|---|---|
-| in-run GT (게임의 답) | ⬚ | ⬚ |
-| Flirds | ⬚ | ⬚ |
-| Flirds-1st | ⬚ | ⬚ |
-| individual utility | ⬚ | ⬚ |
-| FLDetector | ⬚ | ⬚ |
-| FLTrust | ⬚ | ⬚ |
-| STD-DAGMM | ⬚ | ⬚ |
-| FedDQC | ⬚ | ⬚ |
+| **Flirds** | **1 HVP** (+ $K$ dot) | **없음 — cohort 무관 상수** |
+| Flirds-1st | 1 grad | 없음 |
+| FedIF | 1 grad | 없음 |
+| individual utility | $1{+}K$ fwd | $K$ 선형 |
+| in-run GT | $2^K$ fwd | $K$ 지수 |
+| ShapleyFL | $2^K$ fwd | $K$ 지수 |
+| FedSV | $\le \min\!\big(2^K,\ \max(30, 2K)\cdot K\big)$ fwd | $K$ 지수 상한(절단으로 하락) |
+| GTG | $\le \min\!\big(2^K,\ \max(30, \lceil 0.8\cdot 2^K\rceil)\cdot K\big)$ fwd | 〃 |
+| ComFedSV | $\le 1+\min\!\big(2^K,\ M\cdot K\big)$ fwd, $M{=}\max(10,\lceil N\ln N\rceil)$ | $K$ 지수 상한 + **유일한 $N$ 의존** |
 
-CNN 주무대 φ-AUROC(오염 셀, 위협별 풀) ⬚
-<!-- 채움: c2fid analysis auroc 열. F-2 사전등록: free-rider 셀 exact-0 계열 AUROC 1.0 vs
-     renorm 유령값 저하; free-rider(rand) 셀 Flirds 계열 ≥ GTG/FedSV -->
+시간 환산은 microbench per-op 단가와의 곱이다(fp32·B200: forward 1.60s·HVP 10.36s,
+HVP/forward ≈ 6.5) — 하드웨어가 바뀌면 이 두 수만 갈아끼운다. 이 하나의 식이 두 극단을 동시에
+설명한다: 라운드당 참여가 아주 작은 무대(`LLM-Scale`, $K{=}2$)에서는 $2^2{=}4$ forward < 1
+HVP ≈ 6.5 forward라 in-run GT 직접 열거가 오히려 싸고(실측 Flirds 1.61× — 부록 F),
+$K{=}10$이면 지수 항이 폭발해 159×로 역전된다(아래). 즉 **Flirds의 비용 우위는 "참여가 많아
+전수 열거가 지수적으로 비싼" 무대의 것**이고, 그렇지 않은 무대에서도 Flirds-1st(라운드당
+gradient 1회)는 항상 최저가다. 모델 예측이 무대별 실측 wall-clock을 재현하는 검증 라인과 보조
+무대 전표(retrain GT ~9× 포함)는 부록 F.
 
-### 5.5 비용
+**주무대급 실측(`LLM-Device`, $K{=}10$·$R{=}30$).** 방법별 valuation 단독 wall-clock(1B,
+3-seed):
 
-**연산수 모델(하드웨어-독립).** 방법별 라운드-누적 지배 연산수는 해석적으로 닫힌다:
-Flirds = 라운드당 **HVP 1회**(cohort 크기와 무관), Flirds-1st = 라운드당 val-gradient 1회,
-individual utility = 라운드당 $1{+}|P_r|$ forward, in-run GT = 라운드당 $2^{|P_r|}$ forward. per-op
-실측(fp32·B200: forward 1.60s, HVP 10.36s — HVP/forward ≈ 6.5)과의 곱이 wall-clock을
-재현한다:
+| method | wall-clock (s) | Flirds 대비 |
+|---|---|---|
+| Flirds-1st | 53.8±2.3 | 0.34× |
+| FedIF | 53.7±2.3 | 0.34× |
+| **Flirds** | **157.3±5.4** | **1×** |
+| ComFedSV | 357.9±18.2 | 2.3× |
+| individual utility | ⬚ | – |
+| FedSV | 4,969±200 | 31.6× |
+| GTG | 18,149±1,592 | 115× |
+| ShapleyFL | 24,935±1,123 | 159× |
+| in-run GT | 24,975±1,115 | **159×** |
 
-| 무대 | Flirds | Flirds-1st | individual utility | in-run GT |
-|---|---|---|---|---|
-| Silo ($N{=}5$·$R{=}10$) | 10 HVP → 예측 104s / 실측 ~107s | 10 grad (~35s) | 60 fwd → 96s / 96.6–100.1s | 320 fwd → 512s / ~530s |
-| Anchor ($N{=}5$ 전원·$R{=}30$) | 30 HVP → 실측 707±16s | 30 grad (231±5s) | 180 fwd (657±19s) | 960 fwd (3,528±83s) |
-| cross-device ($K{=}10$·$R{=}30$) | 30 HVP → 실측 157s | 30 grad (53s) | 330 fwd | **30,720 fwd → 실측 24,975s** |
+<!-- 출처: runs/phase2_matrix/analysis/04_device100_anchor/csv/runtime_table.csv, threat=noisy(answer-swap)
+     열의 3-seed mean±std (rundir 1B_device100-a0.5_noisy_anchor). free-rider(zero) 열도 오차범위 내 동일
+     (Flirds 157.156±7.073 / in-run GT 24975.698±1182.093) — wall-clock은 동결 로그 위 후처리라 위협 무관.
+     individual utility(loss-heur)는 측정값 467.220±21.928s가 존재하나 **C6 이전(pre-fix) 측정**이라 미수록:
+     당시 구현이 싱글턴마다 base loss를 재계산해 라운드당 2K fwd(=20)를 썼고, 2026-07-17 수정으로
+     1+K(=11)로 정정됨(phi 비트동일, runtime만 변함 — cost-comparison-methodology §C6). 표 [O1]의
+     1+K 모델과 어긋나는 값을 실측으로 실을 수 없으므로 교정본 재측정 후 기입. 재측정 시 예상 ~260s.
+     탐지기 4종(FLDetector·FLTrust·STD-DAGMM·FedDQC) 행은 같은 CSV에 있으나 스코프 아웃. -->
 
-(무대마다 검증셋 크기·시퀀스 길이가 달라 per-op 절대 단가는 다르지만, 연산수 비가 wall-clock
-비를 지배한다 — Silo 행은 microbench 곱이 실측을 그대로 재현하는 검증 라인이다.)
+in-run GT 대비 **159×**(표 [O1]의 30,720 forward 예측과 정합), coalition-열거
+계열 대비로도 32×(FedSV)~159×(ShapleyFL)다. 이 표는 표 [O1]의 모델을 두 지점에서 확인해
+준다: ① 라운드당 gradient 1회로 같은 자리에 있는 Flirds-1st와 FedIF가 53.8 vs 53.7로 사실상
+겹치고, ② $2^K$ 열거를 그대로 수행하는 ShapleyFL(24,935)이 in-run GT(24,975)와 만난다 —
+ShapleyFL의 비용이 exact 열거와 같다는 것은 그 방법이 겨냥하는 값이 다를 뿐 계산량은
+줄지 않는다는 뜻이다. `LLM-Main`($K{=}5$)의 실측 wall-clock은 G1 rundir의 timing과 함께 ⬚.
 
-**주무대 실측** ⬚ <!-- 채움: LLM-Main L1·L2 timing.json + c2fid runtime_s 열 -->. 구조는 위
-모델이 이미 말해 준다. 주무대 LLM은 라운드당 cohort 5라 in-run GT가 라운드당 $2^5{=}32$ forward로
-아직 감당 가능하고(같은 구조인 Anchor의 실측 비 ≈ 5×), cohort 10이면 실측 159×
-(cross-device), $N{=}10$ 전원 참여의 $2^{10}$ 전 라운드 열거는 32.7h vs Flirds 733s =
-160×로 벌어진다(부록 E). 반대로 라운드당 참여가 아주 작은 무대(예: 2명 → $2^2{=}4$ forward
-< 1 HVP ≈ 6.5 forward)에서는 in-run GT 직접 열거가 Flirds(2차)보다 싸다 — **Flirds의 비용 우위는
-"참여가 많아 전수 열거가 지수적으로 비싼" 무대의 것**이고, 그렇지 않은 무대에서도
-Flirds-1st(라운드당 gradient 1회)는 항상 최저가다. retrain GT는 같은 무대에서 in-run GT의
-~9배다(Anchor: 30,817±244s vs 3,528±83s — $2^5$개 부분집합 × $R{=}30$ 재학습). CNN에서는
-valuation이 학습 자체보다 두 자릿수 싸다(CNN-Grid: Flirds 0.6~1.4s vs FL 학습 80~94s).
+### 5.5 Ablation
 
-### 5.6 Ablation
+**① 2차항(클라이언트-상호작용 항)의 기여 — CNN 레그.** §4.2의 Flirds-1st와의 대조다.
+fidelity 축: $N{=}10$ 참여 k-sweep probe(label-flip)에서 클라이언트당 참여 횟수가 적으면 1차
+근사가 붕괴하고 2차항이 방어한다 — 라운드 참여 2/10에서 Flirds 0.891±.147 vs Flirds-1st
+0.305±.434(전원 참여에선 0.993±.008 vs 0.940±.039; 전 72셀 풀 Flirds 0.953±.080).
+다운스트림 축: 주무대 gradient noise 칸에서 2차항 유무가 회복과 실명을 가른다(§5.3: Flirds
+.5668/.6065 vs 1차 계열 .2479/.2436 ≈ vanilla)†; 같은 칸의 fidelity 대조는 표 [F1]과 같은
+rundir에서 나온다.
 
-**① 2차항(클라이언트-상호작용 항)의 기여.** §4.2의 Flirds-1st와의 대조다.
-fidelity 축: CNN-Grid 참여 sweep에서 클라이언트당 참여 횟수가 적으면 1차 근사가 붕괴하고
-2차항이 방어한다 — label-flip, 라운드 참여 2/10에서 Flirds 0.891±.147 vs Flirds-1st
-0.305±.434(전원 참여에선 0.993±.008 vs 0.940±.039; 전 72셀 풀 Flirds 0.953±.080). 참여
-횟수가 충분하면(1B 5/50·$R{=}200$, 클라당 ~20회) 1차도 1.000을 유지한다 — 조건은 "참여
-분수"가 아니라 **클라이언트당 참여 횟수**다. 다운스트림 축: gradient noise 무대에서 2차항
-유무가 회복과 실명을 가른다(§5.3: Flirds .5668/.6065 vs 1차 계열 .2479/.2436 ≈ vanilla)†.
-오염-강도 해상도(variable-intensity label-flip, F-4) ⬚.
-
-**② 학습-강도 lever는 fidelity를 흔들지 않는다.** LoRA rank {16,32,64}(용량), lr
-{1e-3,2e-3,3e-3} × local steps {10,20,30}(강도), CNN 폭 {0.5,1,2,4}(8×)를 각각 sweep해도:
-Flirds vs in-run GT는 **전 칸 1.000**(lr·steps로 per-round 이동이 커져도 라운드당 1 HVP가 in-run GT를
-정확 재현 — Taylor 절단의 실무적 트레이드오프가 이 범위에선 관측되지 않는다), 클라이언트 간
-φ 분리도 lever로는 거의 변하지 않는다(CNN 폭 8×에 φ range 평평; 오염(label-flip)이 iid의
-2–4×를 만든다). 방법 간 구별을 만드는 축은 lever가 아니라 **참여 형태**다: 5/50
-부분참여(1B·$R{=}200$)에서 같은-게임 3종은 0.999–1.000을 유지하지만(Flirds 3-seed
-+1.000±.000) ComFedSV·ShapleyFL·FedIF는 음수로 붕괴하고, GTG 0.98·FedSV 0.91이다(전표
-부록 C.5).
+**② 2차항의 기여 — LLM 레그.** 주무대와 같은 참여 구조(5/50, $N{=}50$·$R{=}200$)의
+alpaca-IID 무대에서 같은-게임 계열은 in-run GT 재현 0.999–1.000을 유지하지만(Flirds 3-seed
++1.000±.000) 1차-influence·재정규화 계열은 무너진다 — ComFedSV·ShapleyFL·FedIF 음수 붕괴,
+GTG 0.98·FedSV 0.91. 이 대조는 LoRA rank {16,32,64}에 걸쳐 불변이다(전표 부록 C.5; r32·r64는
+3-seed 보강 ⬚ <!-- G5: seed{1,2} × {r32,r64} = 4런 -->). 한편 클라이언트당 참여 횟수가
+충분하면(~20회) Flirds-1st도 1.000을 유지한다 — 2차항이 필요한 레짐은 ①의 k-sweep과
+합쳐 읽으면 "참여 분수"가 아니라 **클라이언트당 참여 횟수가 희소한** 레짐이다.
 
 **③ Removal-curve — 게임-무관 인과 검증.** 각 방법의 기여도 순위대로 클라이언트를 실제로
 제거하고 처음부터 재학습해, 순위의 인과적 타당성을 게임 정의와 무관한 공통 자(ruler)로
-확인한다. LLM Silo(3위협 × 3-seed): worst-first 제거가 val-loss를 내리고(+0.0067~+0.0076)
-best-first는 올린다(−0.0084~−0.0015); Flirds·Flirds-1st·individual utility·in-run GT의 removal 곡선은 9/9
-셀에서 엄밀히 일치하고(같은 순위 → 같은 곡선), FedIF만 free-rider(zero)에서 질적으로
-얕다(worst-first +0.0038). CNN-Grid(6셀 × 3-seed)은 **정확도 축**으로 같은 구조를
-보인다: cifar10 label-flip·feature-noise에서 Flirds 순위의 worst−best 정확도 분리
-+0.039~+0.045로 in-run GT와 동급(+0.038~+0.045)이고, 순위가 낮은 방법(ShapleyFL $\rho$
-+0.07~+0.26)은 분리 ≈ 0 — 순위 품질이 그대로 인과 분리로 이어진다. iid 통제군은 기대대로
-분리 ≈ 0이다(cifar10은 소폭 음수 −0.0033이나 in-run GT도 −0.0027 — 데이터량 손실이 지배하는 무대
-특성이지 방법 실패가 아니다).
+확인한다. LLM `Silo`(answer-swap·free-rider(zero) × 3-seed + clean 통제 ⬚): worst-first
+제거가 val-loss를 내리고 best-first는 올린다 ⬚ <!-- 채움: runs/removal_dose 재풀링(frrand 행
+제외; 구 3위협 풀 수치 +0.0067~+0.0076 / −0.0084~−0.0015는 재풀링 후 갱신). clean 통제 =
+silo5 clean × 3seed 신규 3런(§5.1 clean-앵커 규칙; 플랜 §4.3 권고, ~1 GPU-h 미만) -->;
+Flirds·Flirds-1st·individual utility·in-run GT의 removal 곡선은 전 셀에서 엄밀히 일치하고(같은
+순위 → 같은 곡선), FedIF만 free-rider(zero)에서 질적으로 얕다. CNN 레그는 주무대 위협
+축({label-flip@0.70, free-rider(zero), gradient noise} + iid/clean 통제)으로 정렬해 **정확도
+축**의 같은 구조 — 순위 품질이 worst−best acc 분리로 이어지고 통제군 분리 ≈ 0 — 를 확인한다
+⬚ <!-- G6: removal_dose CNN — frzero·gn × 3-seed(6런) + lf@0.70 재실행(3런); G2 러너 확장 공유 -->.
 
 ---
 
@@ -709,10 +727,10 @@ best-first는 올린다(−0.0084~−0.0015); Flirds·Flirds-1st·individual uti
  - 궤적-특이 utility의 공리화 미해결 — IRDS로부터의 승계(§3.3·부록 A.8); 공리 성립 주장은 frozen 게임 한정.
  - per-sample→per-client 브리지의 LLM 한계: token-mean CE에서 분모 불일치로 비성립(부록 A.7) — LLM valuation을 per-sample 합으로 근거짓지 않음.
  - LLM 위협 축의 스코프: gradient noise는 LoRA 기하에서 무대 미성립(부록 B.6) — LLM 쪽 update-공격은 free-rider 계열로 한정. 서술 근거·수치 = runs/track_h/gnoise_diag/README.md(그대로 인용 가능; 단 그 안의 Krum σ=200·arXiv 3편은 검증 실패 = 인용 금지 목록 동봉).
- - "기여도≠탐지"의 게임-공통 사례 1문장: delta-재활용 free-rider(frdelta)는 val-loss를 실제로 낮춰 in-run GT 자신이 "기여함"으로 답함 — 탐지는 update-패턴 탐지기의 몫.
+ - "기여도≠탐지"의 게임-공통 사례 1문장: delta-재활용 free-rider(frdelta)는 val-loss를 실제로 낮춰 in-run GT 자신이 "기여함"으로 답함 — 추정 실패가 아니라 val-loss 게임의 정직한 답이며, 업데이트 패턴 자체를 보는 별도 축의 문제다.
  - 공정 분배·보상 스킴(fairness/reward)으로의 연결은 향후 과제.
- - 1-seed 항목 명시: N=10 2^10(부록 E), LLM-Main in-run GT-fidelity 셀(◐).
- - IID-clean 신호-부재 무대의 해석(부록 D): 방법이 아니라 무대의 결함 — retrain GT 특성화의 iid 칸 낮은 ρ 해석 포함.
+ - 3-seed 규칙(전 수록 실험 seed{0,1,2}) 준수 명시; 미착지 ⬚ 칸의 해소 계획은 G-목록(연구노트)과 대응.
+ - IID-clean 신호-부재 무대의 해석(부록 D): 방법이 아니라 무대의 결함 — retrain GT 특성화(CNN-Small·Anchor)의 clean·iid 칸과 LLM-Scale의 낮은/불안정 ρ 해석 포함.
  - 참여 lottery: 어느 라운드·어느 cohort에 뽑혔는지가 지급액에 영향 — symmetry는 라운드 게임 안에서만 성립하고, 라운드 배정 자체는 운영자 정책의 몫이다(정산 프레임의 스코프 한계).
 -->
 
@@ -725,7 +743,7 @@ best-first는 올린다(−0.0084~−0.0015); Flirds·Flirds-1st·individual uti
    배타성의 원인이던 조합 재평가를 closed-form으로 없앤 것이 열쇠(§2 두 갈래 → §4).
  - LLM-scale 최초 2건 회수(기여 1·2): 클라이언트-수준 연합 valuation의 LLM 규모 수행 +
    exact GT 대비 채점의 LLM 규모 확장. 성질별 "최초" 주장은 하지 않는다.
- - 결과를 위계 순으로 한 문장씩: fidelity(§5.2) → 개입(§5.3) → 탐지(§5.4) → 비용(§5.5).
+ - 결과를 위계 순으로 한 문장씩: fidelity(§5.2) → 개입(§5.3) → 비용(§5.4); 탐지는 부록 G.
  - 향후: 궤적-특이 게임의 공리화, incentive·보상 스킴 설계로의 연결(§6).
 -->
 
@@ -856,15 +874,13 @@ $7.6 \times 10^{-12}$; per-round 분해 = $2^N$ 전수 in-run GT $3.9 \times 10^
 | 무대 | 모델 | 데이터·분배 | $N$ · 참여 | $R$ · local | optimizer | 기타 |
 |---|---|---|---|---|---|---|
 | `LLM-Main` | Llama-3.2-1B-Instruct + LoRA r16/α32 | GSM8K train 7,473 → 클라당 149문항 IID 균등 | 50 · 5/50 | 200 · 10 steps × batch 16 | SGD mom 0, lr 1e-3 | maxlen 512; val 200 = 공식 test에서 카브, 심판 = 잔여 1,119 EM |
-| `LLM-Small` | 동일 | 동일 규칙(클라당 149문항) | 5 · 전원 | 30 · 동일 | 동일 | 오염 2/5(=40%); 이중 GT(retrain+in-run) |
-| `Silo` | Llama-3.2-1B + LoRA r16/α32 | 5-도메인 비IID(클라 = 도메인); train 200 / val 20 / test 40 | 5 · 전원 | 10 · 10 steps × batch 16 | SGD mom 0, lr 1e-3 | maxlen 768, warmup 2 |
-| `Anchor` | Llama-3.2-1B-Instruct + LoRA r16/α32 | alpaca-gpt4 20k IID; val 200 / test 1000 | 5 · 전원 | 30 · 10 steps × batch 16 | SGD mom 0, lr 1e-3 | seq 512 |
-| `CNN-Main` 캠페인 | CIFAR-10 = FedSVCNN / FMNIST = LeNet5 | 파티션 4종(B.3) | 100 · 10/100 | 120 · 5 epochs × batch 64 | SGD mom 0, lr 0.01 | 분배 seed 고정 |
-| `CNN-Grid` | MNIST = LeNet5 / CIFAR-10 = FedSVCNN | 시나리오 5종(B.3); val 2000 / test 8000 | 10 · 전원 | 10 · 5 epochs × batch 64 | SGD mom 0, lr 0.01 | 이중 GT(retrain+in-run) $2^{10}$ |
+| `LLM-Scale` | Llama 1B·3B·7B + LoRA r16/α32 | alpaca-gpt4 20k IID | 20 · 2/20 | 200 · 10 steps × batch 16 | SGD mom 0, lr 1e-3 | seq 512; clean-IID 전용 |
+| `Silo` | Llama-3.2-1B + LoRA r16/α32 | 5-도메인 비IID(클라 = 도메인); train 200 / val 20 / test 40 | 5 · 전원 | 10 · 10 steps × batch 16 | SGD mom 0, lr 1e-3 | maxlen 768, warmup 2; 이중 GT(retrain+in-run) $2^5$ |
+| `Anchor` | Llama-3.2-1B-Instruct + LoRA r16/α32 | alpaca-gpt4 20k IID; val 200 / test 1000 | 5 · 전원 | 30 · 10 steps × batch 16 | SGD mom 0, lr 1e-3 | seq 512; 이중 GT(retrain+in-run) $2^5$ |
+| `CNN-Main` | CIFAR-10 = FedSVCNN | 파티션 2종(B.3); MNIST 짝 = LeNet5(부록) | 100 · 10/100 | 120 · 5 epochs × batch 64 | SGD mom 0, lr 0.01 | 분배 seed 고정 |
+| `CNN-Small` | CIFAR-10 = FedSVCNN | `CNN-Main`과 동일 파티션·위협; val 2000 / test 8000; MNIST 짝(부록) | 10 · 전원 | 10 · 5 epochs × batch 64 | SGD mom 0, lr 0.01 | 이중 GT(retrain+in-run) $2^{10}$ |
+| `LLM-Device` | Llama-3.2-1B + LoRA r16/α32 | alpaca, Dirichlet $\alpha{=}0.5$(탐지는 $\alpha$ 스윕), 클라당 300; val 10 / test 40 | 100 · 10/100 | 30 · 5 steps | SGD mom 0, lr 1e-3 | – |
 
-부록 E 보조 무대: **완전참여** = `CNN-Main`의 Dirichlet(α=1) 무대에서 참여만 100/100; **$N{=}10$ LLM** =
-anchor 무대의 $N{=}10$ 확장($R{=}30$, in-run GT = $2^{10}$ 전수); **cross-device** = 1B,
-$N{=}100$·10/100, $R{=}30$·5 steps, 클라당 300, Dirichlet $\alpha{=}0.5$, val 10 / test 40.
 전 무대 fp32 학습·채점.
 
 **B.2 위협 구현.** 모든 오염은 클라이언트-재현적 seed로 고정된다(같은 셀 재실행 시 동일
@@ -872,28 +888,43 @@ $N{=}100$·10/100, $R{=}30$·5 steps, 클라당 300, Dirichlet $\alpha{=}0.5$, v
 
 - **answer-swap@rate**(LLM): 클라이언트 데이터의 rate 비율에서 응답(풀이 + 최종
   답)을 같은 클라이언트의 다른 문항 것으로 순열 교체 — 형식은 완전한 정상 데이터이나
-  문항-응답 대응이 깨진 현실적 mislabel. `LLM-Main`·`LLM-Small`는 rate 0.7; `Silo`의
-  answer-swap($nr$)도 같은 순열 교체($nr$ = 클라 내 교체 비율).
-- **free-rider(zero)**: 로컬 학습 없이 $\Delta = 0$ 제출. **free-rider(rand)**: 무학습, benign
-  스케일에 맞춘 무작위 delta 제출.
+  문항-응답 대응이 깨진 현실적 mislabel. `LLM-Main`은 rate 0.7; `Silo`의
+  answer-swap($nr$)도 같은 순열 교체($nr$ = 클라 내 교체 비율; 이 무대 canonical은
+  $nr{=}1.0$).
+- **free-rider(zero)**: 로컬 학습 없이 $\Delta = 0$ 제출.
 - **gradient noise**(CNN): 정상 로컬 학습 후 업데이트에 가우시안 노이즈 주입.
-- **label-flip@rate**(CNN): rate 비율의 라벨을 무작위 교체. **variable-intensity label-flip**: 오염 클라이언트별
-  rate를 $U(0.5, 1)$에서 추첨(연속 강도 무대). 이때 label-flip의 오염 클라이언트 집합은
-  FedCorr의 $(\rho, \tau)$ 잡음 모델을 공식 구현 그대로 따른다: 오염 여부가 클라이언트별 독립
-  Bernoulli($\rho{=}0.4$)로 뽑혀 **오염 수가 시드마다 변동**하며($N{=}100$ 실현값 39/48/47,
-  평균 44.7% — 표에는 명목 $\rho$ 대신 실현 수를 병기), 위 variable-intensity label-flip이 곧 FedCorr의 기본 강도
-  draw($\tau \sim U(0.5,1)$)이고 고정-dose 셀 $\{0.15, 0.35, 0.70\}$은 그 draw를 지정값으로
-  대체한 것이다(update-level 위협 — free-rider(zero)·free-rider(rand)·gradient noise — 는 준거 문헌이 없어
-  정확히 $\lfloor \rho N \rceil{=}40$명 비복원 추출; 모든 대조는 위협을 고정한 채 이뤄지므로
-  두 규약이 한 비교 안에서 만나지 않는다). **feature-noise**: 입력에 데이터 표준편차
-  대비 $\sigma$ 가우시안. **label/quantity-skew**(`CNN-Grid`): 비IID 분배 자체가 시나리오(오염
-  없음).
+- **label-flip@0.70**(CNN): 오염 클라이언트 데이터의 70%에서 라벨을 **참 라벨을 제외한**
+  $K{-}1$개 오답 중 균일 무작위로 교체 — 참 라벨을 배제하므로 명목 rate가 곧 실효 오염률이다.
+
+**강도는 상수로 고정한다.** 어느 무대에서도 위협 강도를 분포에서 뽑지 않는다(label-flip 도즈
+0.70 · answer-swap rate 0.7, `Silo`는 $nr{=}1.0$ · gradient noise $\sigma{=}0.1$ ·
+free-rider(zero)는 $\Delta{=}0$이라 강도 자유도가 없다). 도즈-반응을 따로 보지 않는 표에서
+강도가 시드마다 흔들리면 방법 간 차이와 강도의 흔들림이 분리되지 않기 때문이다.
+
+**오염 클라이언트 집합은 무대별로 명목 비율과 실현 방식이 다르다.** 표에는 명목 비율 대신
+**실현 수**를 병기한다:
+
+| 무대 | 실현 방식 | 실현 오염 수 (seed 0/1/2) |
+|---|---|---|
+| `CNN-Main` ($N{=}100$) | label-flip: 클라이언트별 독립 Bernoulli($\rho{=}0.4$) → 시드마다 변동 | 39 / 48 / 47 (평균 44.7%) |
+| 〃 | free-rider · gradient noise: $\lfloor \rho N \rceil$ 비복원 추출 | 40 / 40 / 40 (40%) |
+| `CNN-Small` ($N{=}10$) | 전 위협 $\lfloor \rho N \rceil$ 비복원 추출 | 4 / 4 / 4 (40%) |
+| `LLM-Main` ($N{=}50$) | 전 위협 고정 인덱스 $\{0,\dots,19\}$ | 20 / 20 / 20 (40%) |
+| `LLM-Device` ($N{=}100$) | 전 위협 고정 인덱스 $\{10,30,50,70,90\}$ | 5 / 5 / 5 (5%) |
+| `Silo` ($N{=}5$) | answer-swap = 클라 $\{0\}$ · free-rider = 클라 $\{1\}$ | 1 / 1 / 1 (20%) |
+
+세 가지를 덧붙인다. ① **고정 인덱스는 일반성을 잃지 않는다** — LLM 무대의 클라이언트 샤드는
+공식 split을 시드별로 셔플해 등분한 것이므로 같은 인덱스가 쥔 데이터가 시드마다 바뀐다.
+② **$N{=}10$에서 Bernoulli를 쓰지 않는 이유는 상대 변동**이다 — $N{=}100$에서 39–48은 명목값의
+$\pm12\%$지만 $N{=}10$이면 3/7/6, 즉 $\pm39\%$로 흔들려 label-flip 열만 실효 도즈가 달라지고 네
+위협이 한 fidelity 표를 공유할 수 없다. ③ **모든 대조는 위협과 무대를 고정한 채 이뤄지므로 이
+차이가 한 비교 안에서 만나지 않는다** — 무대 간 수치를 직접 겹쳐 읽지 않는다는 뜻이고, 이는
+$N$·참여율·$R$이 이미 무대마다 다르다는 제약(§5.1)과 같은 성격이다.
 
 **B.3 데이터 분배.** GSM8K: 공식 test 1,319문항에서 200을 카브해 서버 검증셋으로, 잔여
-1,119문항이 성능 심판 — 학습 데이터와의 분리는 공식 split 그대로다. `CNN-Main` 파티션: `iid` /
-`Dirichlet(α=1)` = 라벨+크기 동시 skew / `shard` = 클라당 2-shard 라벨
-skew(McMahan) / `quantity-skew` = 크기 skew 전용(라벨 IID; GTG 비율). `CNN-Grid` 시나리오 5종은
-GTG-Shapley의 5-시나리오 무대 이식이다.
+1,119문항이 성능 심판 — 학습 데이터와의 분리는 공식 split 그대로다. CNN 파티션 2종:
+`iid` / `Dirichlet(α=1)` = 라벨+크기 동시 skew. `CNN-Small`은 별도 시나리오 없이 주무대의
+파티션·위협 축을 $N{=}10$으로 그대로 축소한다.
 
 **B.4 연산 환경.** 학습·채점 전량 fp32(단 cuDNN convolution의 TF32 기본 활성은 CNN 트랙에
 노출됨을 명시); 스택 내 결정론 옵션 고정(같은 seed 재실행의 궤적 재현 — free-rider exact-0의
@@ -903,18 +934,15 @@ in-run GT-쪽 전제). 실행 환경(GPU·라이브러리 버전)은 셀별 rund
 양수)으로 통일했다(원 정의가 반대 방향이면 부호 반전만). ② ShapleyFL의 EMA는
 $\beta{=}0.3$이다($\beta{=}0.5$ 대비 차이가 같은 셀 재실행 노이즈 수준임을 확인).
 <!-- ⚠ 재실행 대기(2026-07-23 Yonghee 결정 = β0.3 재실행): 현재 이 "β=0.3" 서술은 논문 인용
-     ShapleyFL 값과 잠정 불일치다 — 인용 값(표 [F4] Anchor vs retrain GT의 .767, 부록 C의 CNN C1)은
-     아직 β=0.5 rundir 산출:
-       · C1 30셀 = git_sha 5cb927b (2026-06-12), track_c1 shapleyfl_from_logs(beta=0.5)
-       · 1B_anchor5 3셀 = git_sha 39a0a97 (2026-06-15), track_d shapleyfl_from_logs(beta=0.5)
-     β 0.5→0.3 변경 e89af94(2026-06-25)의 재실행 계획이 이 두 셋엔 미반영이었음(phase2_matrix 일부·3B만).
-     해소 = β0.3 재실행 확정(REMAINING §1.4; C1 30=RTX3090, 1B_anchor5 3=B200). 착지 후 rundir 교체 +
-     F4·부록 C 값 갱신 + 이 주석 삭제. same-game 본문 주장엔 무영향(ShapleyFL=cross-game 비교군). -->
+     ShapleyFL 값과 잠정 불일치다 — 인용 값(부록 C.6 Anchor vs retrain GT의 .767)은
+     아직 β=0.5 rundir 산출(1B_anchor5 3셀 = git_sha 39a0a97, 2026-06-15, beta=0.5).
+     구 C1 30셀도 β=0.5였으나 CNN-Small 재편(G2)으로 전량 재실행되므로 자동 해소.
+     Anchor 해소 = β0.3 재실행(B200) 착지 후 rundir 교체 + 부록 C.6 값 갱신 + 이 주석 삭제.
+     same-game 본문 주장엔 무영향(ShapleyFL=cross-game 비교군). -->
 ③
 ComFedSV의 utility 행렬 low-rank 완성은 사후 일괄 계산이 원형이므로, per-round 점수가
 필요한 개입 무대(§5.3)에서는 균등평균 submodel + 손실-감소 효용의 per-round 대용치(원 논문
-Eq. 6 기반)를 쓴다 — fidelity 무대(§5.2)는 원형 그대로다. ④ 탐지기 4종은 논문 스펙
-재구현이며 스코어 방향만 통일했다.
+Eq. 6 기반)를 쓴다 — fidelity 무대(§5.2)는 원형 그대로다.
 
 **B.6 LLM 위협 축에 gradient noise가 없는 이유.** 업데이트에 주입하는 등방(isotropic) 노이즈는
 LoRA 인자 공간의 기하에서 검증-gradient 방향 성분이 미미해, CNN에서와 달리 성능·φ 어느
@@ -923,76 +951,68 @@ LoRA 인자 공간의 기하에서 검증-gradient 방향 성분이 미미해, C
 
 ### 부록 C. Fidelity 확장
 
-**C.1 주무대 전 방법(cross-game 포함) vs in-run GT.** ⬚
-<!-- 채움: c2fid analysis(8방법 × 위협 8종) + LLM-Main L2(8방법 × answer-swap·clean) — §5.2 표
-     F1·F2의 전 방법 확장판. cross-game 계열의 불일치는 근사 오차 + "다른 게임" 성분 합산임을
-     본문 §5.1 구분과 함께 다시 명시. -->
+**C.1 주무대 전 방법 vs in-run GT.** ⬚ — §5.2 표 F1·F2의 전 방법 확장판이다. 같은 표에서
+읽히도록 본문 2종(Flirds·Flirds-1st) 행을 함께 싣는다. cross-game 계열의 in-run GT 대비
+불일치에는 근사 오차와 "다른 게임" 성분이 합산돼 있음을 §5.1의 구분과 함께 다시 밝힌다.
+CNN 열의 MNIST 짝(동일 세팅, 데이터셋만 교체)은 ⬚ <!-- G8: track_c2에 mnist 추가(MODEL_FN
+LeNet5) 후 2파티션 × 4위협(clean 포함) × 3-seed = 24셀 -->.
+<!-- 채움: c2fid analysis(cifar10 {dir1,iid} 재풀링) + LLM-Main G1(8방법 × answer-swap·clean). -->
 
-| method | `CNN-Main` clean | free-rider(zero) | free-rider(rand) | gradient noise | lf@.15 | lf@.35 | lf@.70 | variable-intensity label-flip | `LLM-Main` answer-swap | clean |
-|---|---|---|---|---|---|---|---|---|---|---|
-| GTG | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
-| FedSV | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
-| ComFedSV | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
-| ShapleyFL | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
-| FedIF | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| method | `CNN-Main` clean | free-rider(zero) | gradient noise | label-flip@0.70 | `LLM-Main` answer-swap | free-rider(zero) | clean |
+|---|---|---|---|---|---|---|---|
+| Flirds | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| Flirds-1st | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| individual utility | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| GTG | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| FedSV | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| ComFedSV | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| ShapleyFL | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| FedIF | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
 
-**C.2 CNN `CNN-Grid` 시나리오별 vs in-run GT, 전 방법 — Spearman ↑** (3-seed 평균)
-<!-- 출처: runs/track_c/fidelity.csv spearman_b group-mean -->
+**C.2 `CNN-Small` 파티션·위협별 vs in-run GT, 전 방법 — Spearman ↑** (3-seed) ⬚
+<!-- 채움: G2 재실행 rundir(track_c1 확장) — cifar10 {dir1,iid} × {clean, frzero, gn, lf@0.70}.
+     구 시나리오 격자(feature-noise·label/quantity-skew·dose 사다리) 표는 위협축 스코프 밖으로
+     폐기(rundir 존속 runs/track_c/c1). MNIST 짝 = G9(동일 확장) ⬚. -->
 
-| dataset / scenario | Flirds | Flirds-1st | GTG | FedSV | ComFedSV | ShapleyFL | FedIF | individual utility |
+| partition / threat | Flirds | Flirds-1st | individual utility | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
-| cifar10 / feature_noise | 1.00 | 0.89 | 0.59 | 0.40 | 0.19 | 0.20 | 0.62 | 0.90 |
-| cifar10 / iid | 0.95 | 0.54 | 0.21 | 0.22 | 0.12 | 0.18 | 0.45 | 0.69 |
-| cifar10 / label_flip | 1.00 | 0.95 | 0.64 | 0.54 | 0.31 | 0.37 | 0.74 | 0.95 |
-| cifar10 / label_skew | 0.98 | 0.92 | 0.49 | 0.53 | 0.31 | 0.29 | 0.68 | 0.88 |
-| cifar10 / quantity_skew | 0.99 | 0.96 | 0.78 | 0.56 | 0.67 | 0.44 | −0.20 | 0.98 |
-| mnist / feature_noise | 0.79 | 0.70 | 0.41 | 0.13 | 0.21 | 0.48 | 0.57 | 0.78 |
-| mnist / iid | 0.81 | 0.78 | 0.47 | 0.04 | 0.10 | 0.47 | 0.73 | 0.84 |
-| mnist / label_flip | 1.00 | 0.99 | 0.99 | 0.97 | 0.95 | 0.98 | 0.98 | 0.99 |
-| mnist / label_skew | 0.71 | 0.61 | 0.33 | −0.01 | 0.14 | −0.02 | 0.41 | 0.63 |
-| mnist / quantity_skew | 0.96 | 0.98 | 0.78 | 0.63 | 0.49 | 0.52 | −0.07 | 0.96 |
+| dir1 / label-flip@0.70 | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| dir1 / free-rider(zero) | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| dir1 / gradient noise | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| dir1 / clean | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| iid / label-flip@0.70 | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| iid / free-rider(zero) | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| iid / gradient noise | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| iid / clean | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
 
-풀 평균(10시나리오 × 3-seed): Flirds **0.919±.134** > individual utility 0.860±.154 > Flirds-1st
-0.832±.194 > GTG 0.569±.343 > FedIF 0.491 > FedSV 0.401 > ShapleyFL 0.391 > ComFedSV
-0.348. iid 셀(신호-부재)을 빼면 Flirds 0.928±.136으로 비교군 내 1위가 유지된다.
+**C.3 `CNN-Small` 파티션·위협별 vs retrain GT, 전 방법 — Spearman ↑** (§5.2 표 F5의 확장) ⬚
+<!-- 채움: G2 — C.2와 같은 rundir의 retrain GT leg; Pearson도 동일 분석 파일에서 재생성 -->
 
-**C.3 CNN `CNN-Grid` 시나리오별 vs retrain GT, 전 방법 — Spearman ↑** (§5.2 표 F5의 확장)
-<!-- 출처: runs/track_c/fidelity.csv spearman_a group-mean; Pearson도 동일 파일 -->
-
-| dataset / scenario | Flirds | Flirds-1st | individual utility | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
+| partition / threat | Flirds | Flirds-1st | individual utility | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
-| cifar10 / feature_noise | **+0.63** | +0.50 | +0.56 | +0.44 | +0.18 | +0.39 | +0.28 | +0.40 |
-| cifar10 / iid | −0.23 | −0.13 | −0.18 | −0.20 | −0.18 | +0.30 | +0.00 | +0.07 |
-| cifar10 / label_flip | +0.52 | +0.59 | +0.58 | +0.45 | +0.41 | +0.32 | +0.29 | +0.36 |
-| cifar10 / label_skew | −0.18 | −0.07 | +0.14 | +0.44 | +0.40 | +0.28 | +0.12 | +0.19 |
-| cifar10 / quantity_skew | +0.57 | +0.56 | +0.57 | +0.70 | +0.70 | +0.72 | **+0.81** | −0.03 |
-| mnist / feature_noise | +0.33 | +0.44 | +0.44 | +0.40 | −0.07 | −0.07 | +0.60 | +0.66 |
-| mnist / iid | +0.36 | +0.52 | +0.48 | +0.19 | −0.11 | −0.09 | +0.66 | +0.74 |
-| mnist / label_flip | +0.96 | +0.97 | +0.97 | +0.97 | +0.96 | +0.94 | +0.96 | +0.96 |
-| mnist / label_skew | −0.28 | −0.06 | −0.16 | −0.22 | −0.14 | −0.04 | +0.28 | +0.54 |
-| mnist / quantity_skew | **+0.85** | +0.77 | +0.84 | +0.56 | +0.68 | +0.65 | +0.51 | −0.09 |
+| dir1 / label-flip@0.70 | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| dir1 / free-rider(zero) | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| dir1 / gradient noise | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| dir1 / clean | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
+| iid / (4위협 동일 구성) | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ | ⬚ |
 
-각주: cifar10/quantity_skew·label_skew처럼 재정규화 계열이 유리한 칸은 retrain GT 게임 자체가
-부분집합 크기로 재정규화되는 게임이라는 구조와 정합한다(§4.1의 게임 구분이 심판 선택에도
-작용하는 사례). Pearson 표는 같은 파일에서 재생성.
-
-**C.4 CNN `CNN-Grid` Kendall·거리 풀** (10시나리오 × 3-seed; vs in-run GT)
+**C.4 Kendall·거리 지표 풀** (vs in-run GT) ⬚
+<!-- 채움: 주무대(c2fid 재풀링·G1)와 CNN-Small(G2)에서 Kendall τ·cosine/euclid/max 거리 —
+     구 시나리오 격자 풀 값은 무대 폐기로 미수록 -->
 
 | method | Kendall ↑ | cosine_d ↓ | euclid_d ↓ | max_diff ↓ |
 |---|---|---|---|---|
-| Flirds | 0.849±.192 | 0.001±.003 | 0.133±.114 | 0.054±.048 |
-| Flirds-1st | 0.733±.223 | 0.009±.020 | 0.207±.186 | 0.085±.068 |
-| individual utility | 0.757±.187 | 0.009±.018 | 0.216±.164 | 0.090±.060 |
-| GTG | 0.470±.302 | 0.074±.078 | 0.175±.124 | 0.117±.110 |
-| FedSV | 0.324±.344 | 0.225±.185 | 0.547±.418 | 0.346±.346 |
-| ComFedSV | 0.270±.318 | 0.329±.221 | 0.756±.507 | 0.490±.370 |
-| ShapleyFL | 0.307±.327 | 0.057±.030 | 1.456±.305 | 0.697±.088 |
-| FedIF | 0.399±.333 | 0.078±.071 | 1.092±.192 | 0.601±.097 |
-
-(주무대 Kendall·거리 열은 c2fid·L2 분석 CSV에서 동일 형식으로 ⬚.)
+| Flirds | ⬚ | ⬚ | ⬚ | ⬚ |
+| Flirds-1st | ⬚ | ⬚ | ⬚ | ⬚ |
+| individual utility | ⬚ | ⬚ | ⬚ | ⬚ |
+| GTG | ⬚ | ⬚ | ⬚ | ⬚ |
+| FedSV | ⬚ | ⬚ | ⬚ | ⬚ |
+| ComFedSV | ⬚ | ⬚ | ⬚ | ⬚ |
+| ShapleyFL | ⬚ | ⬚ | ⬚ | ⬚ |
+| FedIF | ⬚ | ⬚ | ⬚ | ⬚ |
 
 **C.5 부분참여 probe(`Partial-Probe`: $N{=}50$, 5/50, $R{=}200$, IID-clean) — vs in-run GT Spearman ↑**
-(LoRA rank별, seed0; Flirds·Flirds-1st는 r16 3-seed 확정)
+(LoRA rank별; r16 3-seed ●, r32·r64는 3-seed 보강 ⬚ <!-- G5: seed{1,2} × {r32,r64} -->)
 
 | method | r16 | r32 | r64 |
 |---|---|---|---|
@@ -1008,28 +1028,103 @@ LoRA 인자 공간의 기하에서 검증-gradient 방향 성분이 미미해, C
 전원 참여 무대(anchor류)에서는 대부분 방법이 1.000으로 붕괴-동률이지만, 부분참여가 방법을
 가른다 — uniform-subset/1차-influence 계열(ComFedSV·ShapleyFL·FedIF)은 in-run GT 반대
 순위(음수)로 붕괴하고, 같은-게임 계열은 rank와 무관하게 1.000을 유지한다(Flirds r16 3-seed
-+1.000±.000). §5.6-②의 "구별을 만드는 축은 참여 형태" 클레임의 전표다.
++1.000±.000). §5.5-②(2차항 LLM 레그)의 전표다.
+
+**C.6 LLM 보조 무대 전 방법 vs retrain GT ($2^5$)** — §5.2 표 F4(`Silo`)의 전 방법 확장판과
+IID-clean 참조 전표(`Anchor`; 본문에서 내린 폴백). retrain GT는 어느 방법의 목표값도 아닌
+중립 참값이므로 전 방법을 같은 표에 둔다.
+
+`Silo`(실재-신호 무대; 1B, 3-seed) ⬚
+<!-- 채움: silo5 (a)-leg rundir + canonical phi.parquet 조인 — 실측 완료(●), 값 전사만 남음.
+     ComFedSV clean 열은 ⬚(미산출). -->
+
+| method | clean | answer-swap | free-rider(zero) |
+|---|---|---|---|
+| Flirds | ⬚ | ⬚ | ⬚ |
+| Flirds-1st | ⬚ | ⬚ | ⬚ |
+| individual utility | ⬚ | ⬚ | ⬚ |
+| GTG | ⬚ | ⬚ | ⬚ |
+| FedSV | ⬚ | ⬚ | ⬚ |
+| ComFedSV | ⬚ | ⬚ | ⬚ |
+| ShapleyFL | ⬚ | ⬚ | ⬚ |
+| FedIF | ⬚ | ⬚ | ⬚ |
+| **retrain GT ↔ in-run GT 일치도** | ⬚ | ⬚ | ⬚ |
+
+`Anchor`(IID-clean 참조; 1B, 3-seed)
+<!-- 출처: runs/track_d/rundirs/1B_anchor5_seed{0,1,2}/phi.parquet — truth=retrain GT로 피벗 재계산 -->
+
+| method | Spearman vs retrain GT ↑ | Pearson vs retrain GT ↑ | (참고) Spearman vs in-run GT |
+|---|---|---|---|
+| Flirds | 0.933±.047 | 0.933±.055 | 1.000 |
+| Flirds-1st | 0.933±.047 | 0.929±.060 | 1.000 |
+| individual utility | 0.933±.047 | 0.931±.057 | 1.000 |
+| GTG | 0.933±.047 | 0.937±.052 | 1.000 |
+| FedSV | 0.733±.170 | 0.685±.249 | 0.700 |
+| ShapleyFL | 0.767±.330 | 0.916±.084 | 0.700 |
+| ComFedSV | 0.467±.450 | 0.598±.280 | 0.500 |
+| FedIF | 0.167±.613 | 0.048±.585 | 0.067 |
+
+Anchor에서 갈리는 지점은 **천장(0.933 = 두 참값 일치도)에 도달하는가**다: 같은-게임 3종과
+GTG는 in-run GT를 사실상 완전 재현하므로(vs in-run GT ≈ 1.000) retrain GT 점수가 게임 간
+간극으로 수렴해 동률이 되고, in-run GT 재현이 무너지는 방법들(FedSV·ShapleyFL 0.700,
+ComFedSV 0.500, FedIF 0.067)은 그만큼 retrain GT 대비로도 내려앉는다. 즉 이 무대에서
+retrain GT 점수는 대체로 in-run GT 재현도의 함수이며, 두 참값을 각각 겨냥해 얻는 별도의
+서열이 아니다. 남은 간극 0.067은 추정 오차가 아니라 두 참값이 묻는 질문의 차이(realized
+귀속 대 counterfactual 재학습)이며, IID-clean이라 in-run GT 타깃 자체가 seed-불안정한(부록
+D: −0.37) 무대 특성의 산물이다 — 실재-신호 무대(`Silo`)에서 같은 일치도가 1.000으로 닫히는
+것(표 F4)과 대조된다.
+
+**C.7 `Silo` 도메인 비IID 전 방법 vs in-run GT ($2^5$)** (1B, answer-swap·free-rider(zero)·clean × 3-seed) ⬚
+<!-- 채움: runs/phase2_matrix 1B_silo5 rundir — 3-seed 실측 완료(●), 값 전사만 남음(frrand 행 미수록).
+     의의: N=5 무대 중 유일하게 in-run GT 타깃이 seed를 넘어 재현되는(부록 D.2) 실재-신호 무대의 전표 -->
+
+| method | clean | answer-swap | free-rider(zero) |
+|---|---|---|---|
+| Flirds | ⬚ | ⬚ | ⬚ |
+| Flirds-1st | ⬚ | ⬚ | ⬚ |
+| individual utility | ⬚ | ⬚ | ⬚ |
+| GTG | ⬚ | ⬚ | ⬚ |
+| FedSV | ⬚ | ⬚ | ⬚ |
+| ComFedSV | ⬚ | ⬚ | ⬚ |
+| ShapleyFL | ⬚ | ⬚ | ⬚ |
+| FedIF | ⬚ | ⬚ | ⬚ |
+
+**C.8 `LLM-Device` 대규모 교차-디바이스 vs in-run GT (per-round $2^{10}$)** (answer-swap·free-rider(zero); $N{=}100$·10/100, $\alpha{=}0.5$, 1B, 3-seed) ⬚
+<!-- 채움: phase2_matrix device100 anchor 셀 — 3-seed 실측 완료(●), 값 전사만 남음(frrand 행 미수록).
+     §5.4 비용 실측과 같은 rundir: 규모 무대에서의 fidelity·비용 동시 근거.
+     ⚠ 이 무대엔 clean 셀이 없다(전 α 미실측) — §5.1 clean-앵커 규칙의 유일한 예외; 채움 여부
+     결정 계류(플랜 §4.3: (b) per-round 셀당 ~6.9h → clean × 3seed ≈ 21 GPU-h). -->
+
+**C.9 학습-강도 lever는 fidelity를 흔들지 않는다.** LoRA rank {16,32,64}(용량), lr
+{1e-3,2e-3,3e-3} × local steps {10,20,30}(강도), CNN 폭 {0.5,1,2,4}(8×)를 각각 sweep해도:
+Flirds vs in-run GT는 **전 칸 1.000**(lr·steps로 per-round 이동이 커져도 라운드당 1 HVP가
+in-run GT를 정확 재현 — Taylor 절단의 실무적 트레이드오프가 이 범위에선 관측되지 않는다),
+클라이언트 간 φ 분리도 lever로는 거의 변하지 않는다(CNN 폭 8×에 φ range 평평;
+오염(label-flip)이 iid의 2–4×를 만든다). CNN 레그는 3-seed ●(기준칸 폭 1·참여 1.0은 구 C1
+rundir 재사용 — provenance 각주), LLM 레그는 핵심축만 3-seed이고 나머지는 보강 ⬚
+<!-- G12: lr{1e-3}st{20,30}·lr{2,3}e-3 st{20,30}·anchor r{32,64}·std50k5 r{32,64}·noise r64
+     seed 보강 23런 — 핵심 미확인 질문 "lr로 커진 φ가 cross-seed 실재 신호인가"는 lr{2,3}e-3
+     계열 seed{1,2}가 판정 -->.
 
 ### 부록 D. 안정성(재현성)
 
-**D.1 방법 순위의 seed 간 안정성(CNN `CNN-Grid`).** 같은 방법의 φ 순위를 seed 간
-상관($\rho_{xseed}$, 3-seed 쌍별 평균; 10시나리오 풀)으로 잰다:
+**D.1 방법 순위의 seed 간 안정성(CNN).** 같은 방법의 φ 순위를 seed 간
+상관($\rho_{xseed}$, 3-seed 쌍별 평균)으로 잰다 ⬚:
+<!-- 채움: CNN-Small(G2) 착지 후 신-무대 풀로 재산출. 구 시나리오 격자 풀 값(Flirds 0.547 =
+     in-run GT 자체 0.518 추종, MC 재구성 계열 0.12~0.31 하락)은 무대 폐기로 미수록 —
+     같은 구조의 재현이 사전 기대. -->
 
 | method | $\rho_{xseed}$ ↑ |
 |---|---|
-| in-run GT (자체) | 0.518±.453 |
-| **Flirds** | **0.547±.394** |
-| Flirds-1st | 0.510±.461 |
-| individual utility | 0.474±.448 |
-| GTG | 0.311±.441 |
-| FedSV | 0.289±.385 |
-| FedIF | 0.243±.413 |
-| ComFedSV | 0.198±.383 |
-| ShapleyFL | 0.124±.431 |
-
-in-run GT 자체의 안정성이 0.518이다 — CNN 무대는 seed마다 클라이언트 기여가 실제로
-달라진다. Flirds(0.547)는 **in-run GT의 내재 안정성을 그대로 추종**하고, Monte-Carlo
-재구성 계열은 추가 분산으로 0.12~0.31까지 떨어진다.
+| in-run GT (자체) | ⬚ |
+| Flirds | ⬚ |
+| Flirds-1st | ⬚ |
+| individual utility | ⬚ |
+| GTG | ⬚ |
+| FedSV | ⬚ |
+| ComFedSV | ⬚ |
+| ShapleyFL | ⬚ |
+| FedIF | ⬚ |
 
 **D.2 in-run GT 타깃 자기-안정성(수록 무대).** fidelity의 매칭 대상인 in-run GT 자신이 seed를 넘어
 재현되는가(in-run GT φ 순위의 seed 간 쌍별 Spearman 평균):
@@ -1040,43 +1135,137 @@ in-run GT 자체의 안정성이 0.518이다 — CNN 무대는 seed마다 클라
 | `Silo` clean (비IID) | **+0.867** |
 | `Silo` answer-swap | +0.933 |
 | `Silo` free-rider(zero) | +0.933 |
-| `CNN-Grid` (10시나리오 풀) | +0.518±.453 |
-| `LLM-Main` | ⬚ <!-- 채움: L1·L2 rundir in-run GT φ 피벗 --> |
-| `CNN-Main` 캠페인 | ⬚ <!-- 채움: c2fid rundir in-run GT φ 피벗 --> |
+| `LLM-Main` | ⬚ <!-- 채움: G1 rundir in-run GT φ 피벗 --> |
+| `CNN-Main` | ⬚ <!-- 채움: c2fid rundir in-run GT φ 피벗(⟐ 파생, 실행 0) --> |
+| `CNN-Small` | ⬚ <!-- 채움: G2 rundir --> |
 
 판정: IID-clean 무대의 in-run GT 타깃은 seed-불안정하다(−0.37) — 그 위의 per-seed fidelity
 1.000은 "불안정한 참값을 그때그때 정확히 좇는 것"이다. 반면 비IID·오염 무대에서는 타깃이
 안정하고(+0.87~+0.93) 그곳의 fidelity가 실재 신호에 대한 재현이다. 본 논문의 fidelity 표는
-이 구분과 함께 읽어야 하며(§5.2 각주 ①), 이것이 retrain GT 특성화의 주 표를
-LLM-Small·Silo(신호-실재 무대)에 두고 Anchor를 참조로만 쓰는 이유다.
+이 구분과 함께 읽어야 하며(§5.2 각주), 이것이 retrain GT 특성화의 주 표를 실재-신호·주무대-정합
+무대(`Silo`·`CNN-Small`)에 두고 Anchor를 참조로만 쓰는 이유다.
 
-### 부록 E. 비용·규모 보조 실험
+### 부록 E. 개입 확장
 
-**E.1 완전참여 100/100(CNN, Dirichlet(α=1) 무대).** 라운드당 100/100 참여 — coalition 계열은
-라운드당 $2^{100}$ 평가라 개입 arm 자체가 존재할 수 없고(전수·MC 어느 쪽도), Flirds는
-라운드당 HVP 1회 그대로다(비용 주장 "cohort 크기에 상수"의 극한 무대). sign-gating의 절대
-test acc(3-seed):
+**E.1 CNN sign-gating 경쟁의 MNIST 짝.** §5.3 표 [I2]와 동일 무대·정책·점수원 8종
+(online·retrain, {Dirichlet(α=1), iid})을 데이터셋만 MNIST로 교체해 개입 실효성의 데이터셋
+강건성을 확인한다 ⬚.
+<!-- G10: 관측자 24 + 점수원 192 = 216 rundir(G8 러너 확장 공유). 크기-가중(P1w) arm은 같은
+     rundir에서 동반 산출(E.2). -->
 
-| arm | clean | label-flip@0.70 | free-rider | gradient noise | **오염-평균** |
-|---|---|---|---|---|---|
-| vanilla (바닥) | .6527±.003 | .5550±.022 | .6077±.004 | .5497±.005 | .5708 |
-| oracle-제외 (천장) | – | .6301±.004 | .6339±.003 | .6339±.003 | .6326 |
-| random-제외 (통제) | – | .5216±.034 | .5953±.009 | .5136±.012 | .5435 |
-| Flirds · sign-gating | .6440±.005 | .5862±.010 | .6223±.007 | .6102±.001 | .6062 |
+**E.2 크기-가중 게이팅(P1w).** sign-gating과 같은 배제에 더해, 남는 클라이언트를 양수 누적
+기여도 크기에 비례해 가중($w_k \propto n_k \max(\hat\phi_k, 0)$, 합-1 재정규화)하는 변형이다.
+cifar10/Dirichlet(α=1)은 실측 완료 ●, 나머지 무대는 §5.3의 점수원 확장 rundir에서 동반
+산출된다(추가 런 0) ⬚.
+<!-- 채움: track_h rundir의 gatew_v2/t2_signw arm — cifar10/dir1 ● 값 전사; iid = G3 동반,
+     mnist = G10 동반. 수록 규칙(사전 고정 — workplan 00-INDEX §1): CNN·LLM 전 범위에서
+     sign-gating 상회 시 본문 승격 / 동률 시 "부호가 가치의 대부분" 1문장 / 열세·타 점수원
+     역전 시 본 표까지만. -->
 
-완전참여는 vanilla 자체를 강하게 만들지만(gradient noise .5497 vs 10/100 무대의 .2436 — 오염
-업데이트가 100클라 평균에 희석), 그럼에도 sign-gating이 오염 3셀 전부에서 vanilla를 상회한다(회수율
-평균 +0.56). random-제외는 전 위협에서 vanilla보다 해롭다(회수율 −0.43~−0.47) — 게이트
-이득이 "그냥 동수를 뺀 효과"가 아님의 통제 실증.
+**E.3 clean-IID 무해성(do-no-harm) parity.** `LLM-Scale`(1B·3B·7B, clean-IID)에서 φ-기반
+개입이 성능을 깎지 않는지 — vanilla / Flirds-가중 / Flirds-선택 3 arm의 MMLU·Alpaca-test
+ROUGE-L parity ⬚.
+<!-- 채움: runs/track_d arms — 3-seed 실측 완료(●), 값 전사만 남음. ShapleyFL-가중·FedIF-가중
+     행은 스코프 재편으로 미수록(3행 표). clean 무대 기대 = 개입이 해를 끼치지 않음(parity). -->
 
-**E.2 $N{=}10$ LLM, in-run GT ($2^{10}$) (◐ 1-seed).** 전원 참여 $N{=}10$·$R{=}30$에서 in-run GT를
-라운드당 $2^{10}{=}1{,}024$ coalition 완전 열거로 계산: 같은-게임 3종 모두 Spearman
-1.000(값 수준 Pearson 잔차만 분리 — Flirds $1{-}r \approx 9{\times}10^{-7}$로 최소).
-비용: **in-run GT 117,649s(32.7h) vs Flirds 733s = 1/160**(Flirds-1st 240s, individual utility 1,240s).
-$N{=}5$($2^5$)에서 $N{=}10$($2^{10}$)으로 갈 때 in-run GT 비용이 실증적으로 폭발하는 동안
-Flirds는 라운드당 HVP 1회로 고정임을 보이는 규모 축 실측이다.
+**E.4 φ 부호 감사 — sign-gating의 작동 전제.** 게이트 문턱 $\tau{=}0$이 성립하려면 clean
+클라이언트의 누적 기여도가 양수여야 하고(오배제 0), 오염 클라이언트가 음수/0이어야
+한다(회수). 전 수록 rundir에 대한 부호 전수 감사 ⬚:
+<!-- 채움: runs/track_g/audit 파생(⟐ 실행 0) — 표 A: clean 클라 누적 φ≤0 비율(점수원별;
+     오배제 위험) / 표 B: 오염 클라 누적 φ≤0 비율 + free-rider(zero) exact-0 병기.
+     ⚠ CNN 레그(frzero·gn 무대)는 현 감사 스냅샷 미커버 — G2·G8 착지 후 재감사. -->
 
-**E.3 cross-device anchor($N{=}100$, 10/100, $R{=}30$).** in-run GT per-round $2^{10}$ ≈
-**24,975s vs Flirds 157s = 1/159**(Flirds-1st 53s; 참고 coalition 계열 — GTG ≈ 18,100s,
-FedSV ≈ 4,970s, ShapleyFL ≈ 24,900s). §5.5 연산수 모델의 30,720 forward 예측과 정합하며,
-E.2와 함께 "cohort가 큰 무대에서의 지수 대 상수" 주장을 두 무대에서 교차 실측한다.
+### 부록 F. 비용 상세
+
+**F.1 LLM 보조 무대 실측 — 연산수 모델의 검증 라인.** §5.4 표 [O1]의 per-op
+곱(microbench)이 무대별 실측 wall-clock을 재현한다(무대마다 검증셋 크기·시퀀스 길이가 달라
+per-op 절대 단가는 다르지만, 연산수 비가 wall-clock 비를 지배한다):
+
+| 무대 | Flirds | Flirds-1st | individual utility | in-run GT |
+|---|---|---|---|---|
+| `Silo` ($K{=}5$·$R{=}10$) | 10 HVP → 예측 104s / 실측 ~107s | 10 grad (~35s) | 60 fwd → 96s / 96.6–100.1s | 320 fwd → 512s / ~530s |
+| `Anchor` ($K{=}5$·$R{=}30$) | 30 HVP → 실측 707±16s | 30 grad (231±5s) | 180 fwd (657±19s) | 960 fwd (3,528±83s) |
+| `LLM-Scale` ($K{=}2$·$R{=}200$) | ⬚ (**in-run GT의 1.61×** — 소-cohort 역전) | ⬚ | ⬚ | ⬚ |
+
+cross-game 5종의 무대별 wall-clock 전량(같은 분석 파일) ⬚:
+
+| method | `Silo` | `Anchor` | `LLM-Scale` |
+|---|---|---|---|
+| GTG | ⬚ | ⬚ | ⬚ |
+| FedSV | ⬚ | ⬚ | ⬚ |
+| ComFedSV | ⬚ | ⬚ | ⬚ |
+| ShapleyFL | ⬚ | ⬚ | ⬚ |
+| FedIF | ⬚ | ⬚ | ⬚ |
+
+<!-- 채움: 두 표 모두 3-seed ●, 1B 기준 — anchor5·std20의 3B·7B 실측(● 3-seed)도 동일 소스에서
+     값 전사 시 병기. LLM-Scale 행 = runs/track_d std20 timing(individual utility는 C6 교정본
+     runtime만 인용 — in_run_singletons 캐시 fix 후 재측정값). Fed-LOO·Banzhaf·탐지기 행 미수록. -->
+
+$K{=}2$ 행이 표 [O1]의 소-cohort 역전 실증이다: $2^2{=}4$ forward < 1 HVP ≈ 6.5 forward.
+retrain GT의 가격표(둘 다 $2^5$개 부분집합 전체 재학습): `Silo`($R{=}10$)에서 31,137s —
+Flirds(~107s)의 292×, in-run GT(~530s)의 58.6×; `Anchor`($R{=}30$)에서 30,817±244s —
+in-run GT(3,528±83s)의 ~9배.
+
+**F.2 CNN 방법별 실측.** `CNN-Main`(cifar10/Dirichlet(α=1), 오염 3위협 평균, $n{=}9$)의
+방법별 valuation wall-clock(초):
+
+| method | wall-clock (s) |
+|---|---|
+| Flirds-1st | 4.21±0.10 |
+| FedIF | 5.35±0.17 |
+| individual utility | 9.22±0.12 |
+| **Flirds** | **10.64±0.37** |
+| ComFedSV | 23.65±0.58 |
+| FedSV | 293.98±4.90 |
+| in-run GT | 836.58±14.07 |
+| GTG | 1,079.92±131.64 |
+| ShapleyFL | 1,468.47±16.34 |
+
+<!-- 출처: runs/track_c/c2fid/analysis/fidelity.csv runtime_s 열 -->
+
+CNN에서 valuation은 학습 자체보다 자릿수로 싸다. 참조 가격표: `CNN-Small`($N{=}10$)의
+retrain GT는 $2^{10}$ 전체 재학습이라 valuation과 자릿수 4~5개 차이가 난다 ⬚
+<!-- 채움: G2 rundir의 t_a(재학습 총시간)·traj_time — 구 무대 실측(cifar10 t_a 32,912s =
+     Flirds의 ~28,000×)은 G2 착지 후 신-무대 값으로 교체 -->
+— retrain GT 무대를 $N{=}10$에 묶어둘 수밖에 없는 이유의 가격표다.
+
+### 부록 G. 탐지
+
+탐지를 핵심 질문 위계의 마지막에 두고 부록으로 보내는 이유는 기여도와 탐지가 직결이 아니기
+때문이다: 검증 손실을 실제로 낮추는 오염(예: 직전 라운드의 글로벌 업데이트를 재제출하는
+free-rider 변형)에 대해 val-loss 게임의 정직한 답은 "기여함"이고, 이는 추정 실패가 아니라
+in-run GT 자신의 답이기도 하다(§6). 따라서 여기서의 주장 형식은 절대 AUROC가 아니라
+**in-run GT 일치**다 — 추정기가 게임의 답과 같은 답을 주는가(사전 등록 기준:
+$|\mathrm{AUROC}(\text{Flirds}) - \mathrm{AUROC}(\phi^{\mathrm{in}})| \le 0.05$). φ-파생 탐지는
+기여도 순위 하위 = 의심 규약의 AUROC를 쓴다(부록 B). 표는 본문·부록에 이미 등장한 무대의
+rundir에서만 뽑는다(새 무대 없음).
+
+**G.1 LLM 주무대(`LLM-Main`) AUROC** ⬚
+<!-- 채움: G1 rundir metrics.json auroc — in-run GT 일치 기준 대조 포함 -->
+
+| method | answer-swap | free-rider |
+|---|---|---|
+| in-run GT (게임의 답) | ⬚ | ⬚ |
+| Flirds | ⬚ | ⬚ |
+| Flirds-1st | ⬚ | ⬚ |
+| individual utility | ⬚ | ⬚ |
+
+**G.2 CNN 주무대(`CNN-Main`) φ-AUROC** (오염 셀, 위협별 풀) ⬚
+<!-- 채움: c2fid analysis auroc 열(cifar10 {dir1,iid} 재풀링; ● 실측 — free-rider 셀 exact-0
+     계열 1.0 vs renorm 붕괴 0.00~0.29, gradient-noise 셀 Flirds-1st 실명 0.49, Flirds는
+     in-run GT-동행 Δ≤0.05). MNIST 짝 = G8 동반 ⬚. -->
+
+free-rider(zero) 셀은 0-의미론이 그대로 탐지 성능으로 드러나는 칸이다: 고정-가중 게임을
+겨냥하는 계열은 명제 2에 의해 해당 클라이언트에 정확히 0을 주어 분리가 자명한 반면,
+재정규화 게임을 겨냥하는 계열은 0 아닌 몫을 배분해 순위가 흐려진다(같은 구조가 개입
+성능으로 나타나는 것이 §5.3의 판정 재료다). gradient-noise 셀은 §5.5-①의 2차항 논지가
+탐지 축에서 재현되는 칸이다.
+
+**G.3 `LLM-Device` $\alpha$-스윕 탐지 — "기여도 ≠ 탐지"의 정직한 근거.** 비IID 강도
+$\alpha$를 스윕하며 φ-AUROC를 잰다 ⬚
+<!-- 채움: phase2_matrix device100 rundir(3-seed ●) — free-rider(zero)는 전 α에서 1.000
+     (배경 무관), answer-swap은 α 비단조 0.57~0.77이며 in-run GT 자신도 0.604 -->.
+free-rider(zero)는 배경 분포와 무관하게 전 $\alpha$에서 완전 분리되는 반면, answer-swap의
+AUROC는 $\alpha$에 비단조적이고 **in-run GT 자신조차 낮다** — 탐지가 약한 곳에서 추정기는
+게임의 답을 그대로 좇고 있으며(in-run GT 일치), 낮은 절대 AUROC는 방법의 실패가 아니라
+val-loss 게임이 탐지기가 아니라는 사실의 정직한 표현이다(§6).
