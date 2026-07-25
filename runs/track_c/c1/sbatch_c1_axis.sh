@@ -26,13 +26,33 @@
 #     → **제출 전 필수 게이트**: `git show origin/main:codes/experiments/track_c1.py |
 #        grep -q C1_THREAT` (JW·JB 워처가 쓰는 술어와 동일).  통과 못 하면 제출 금지.
 #
-#   🚨 **오염 클라 개수·집합 = 계정 간 정본 1개** — C-b 구현이 두 벌 존재했다(YH 워킹트리 ·
-#     JW 로컬 989f5ca).  둘 다 개수는 `round(0.4·N)` = 4/10 으로 수렴했고 이는
-#     `track_c2.py:154 MAL_FRAC = 0.4`(CNN 정본)와 일치한다.  하지만 **어느 클라를 고르는가**
-#     (RNG 스트림)까지 같지 않으면 seed 열마다 프로토콜이 갈려 48셀이 한 표에 못 올라간다.
-#     → 정본 = **push 된 origin/main 버전 하나**.  다른 계정은 자기 구현을 쓰지 말고
-#        reset 한다.  이미 자기 구현으로 돌린 셀이 있으면 `corrupt=` 집합을 정본 규칙과
-#        대조하고, 다르면 그 셀만 재제출.
+#   🚨 **오염-집합 draw 는 위협별로 다르다 — 균일 규칙(고정 4/10)을 쓰면 안 된다.**
+#     `track_c2.py:248-259`(감사 2026-07-23) + 논문 paper-ko.md:863-869 가 정본:
+#       · label_flip  = **독립 Bernoulli(rho=0.4)** -> **개수가 시드마다 변동**.
+#                       FedCorr 공식 구현 그대로(gamma_s = binomial(1,rho,n)).
+#                       강도만 0.70 고정(FedCorr 의 tau~U(0.5,1) draw 아님).
+#       · free_rider  = 고정 `round(rho*n)` 비복원 추출  (update-level = 준거 문헌 없음
+#       · grad_noise    -> 논문이 이미 예외로 기술.  C2_STRENGTH 는 진폭을 쓸어간다)
+#     → **이식은 track_c2.py:258-259 를 그대로**(새로 유도 금지):
+#         mal = rng.random(n) < _strength(MAL_FRAC) if THREAT == "label_flip" else \
+#             set(rng.choice(n, size=max(1, int(round(MAL_FRAC*n))), replace=False).tolist())
+#       + rate 는 l.280-281 대로 `C1_FLIP_RATE=0.70` 고정.
+#     ⚠ mal draw 는 `np.random.default_rng(1000+seed)` 의 **첫 소비**여야 한다 — 파티션이
+#       스트림을 먼저 먹으면 집합이 partition-dependent 가 되어 기존 corpus 와 갈린다
+#       (l.271-275 가 바로 그 위험을 기록해 둔 지점).  draw 가 seed-only 인 덕분에 같은
+#       seed 는 dataset/partition/dose/track 을 넘어 같은 집합을 준다(l.255-257).
+#
+#     **N=10 실현값 — 미리 계산해 둔 기대치(assert 로 쓸 것)**.  같은 코드로 N=100 을
+#     돌리면 논문 기재값 39/48/47 을 정확히 재생산하므로 아래는 신뢰 가능:
+#       label_flip  seed0 k=3 [3,5,6] · seed1 k=7 [1,2,4,5,7,8,9] · seed2 k=6 [0,1,3,4,6,7]
+#       fr / gn     seed0 [1,4,6,7]   · seed1 [0,4,6,7]            · seed2 [3,4,6,9]
+#     전 셀 k>=2 -> AUROC 가 모든 셀에서 정의된다(k=0/1 붕괴 케이스 없음).  평균 5.33 이
+#     명목 4 보다 높고 seed1 은 7/10 이지만, 논문 규약이 "명목 rho 대신 **실현 수**를 병기"
+#     이므로 그대로 보고한다.
+#
+#   🚨 **정본은 push 된 origin/main 하나** — C-b 구현이 두 벌 존재했다(YH 워킹트리 ·
+#     JW 로컬 989f5ca).  다른 계정은 자기 구현을 쓰지 말고 reset 한다.  이미 자기 구현으로
+#     돌린 셀이 있으면 위 실현값과 `corrupt=` 를 대조하고, 다르면 그 셀만 재제출.
 #
 # 48 cells = {cifar10, mnist} x {iid, dir1} x 4 threats x 3 seeds  (SEED-MAJOR 16/seed)
 #   셀 내부: (a) 2^10 재학습 오라클 + (b) 2^10 in-run + 9방법 φ  (N=10 full, R=10)

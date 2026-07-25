@@ -37,8 +37,21 @@
   JB 가 포팅하지 않기로 한 판단이 결과적으로 옳았다: JW 는 별도 구현(`989f5ca`)을 만들어
   **정본이 두 벌 되는 문제**가 생겼고, 지금 그걸 되돌리는 중이다.
 - 착지 후 JB 계획대로 `C1_ORACLE_A=0` 빌드-only 스모크(별도 `_smoke` 이름)로 새 threat 경로를
-  먼저 검증할 것. 대조 기준점(YH 스모크 실측): `cifar10/dir1_free_rider seed=0` →
-  `corrupt=[1,3]` · `rates=[0,…]`(free_rider 는 라벨 무접촉) · `corrupt=round(0.4N)`.
+  먼저 검증할 것. **⚠ 대조 기준은 `round(0.4N)` 균일이 아니다** — 오염-집합 draw 는 위협별로
+  갈린다(`track_c2.py:248-259` 감사 · 논문 `paper-ko.md:863-869`):
+  **label_flip = 독립 Bernoulli(ρ=0.4) 라 개수가 시드마다 변동**(강도만 0.70 고정),
+  free_rider·grad_noise = 고정 `⌊ρN⌉` 비복원(update-level = 준거 문헌 없음 → 논문이 예외 기술).
+  draw 는 **seed-only** 라 dataset/partition 과 무관하다(l.255-257).
+
+  **JB 몫(mnist seed1·2)의 미리 계산된 실현값** — 스모크에서 이 값이 나와야 한다
+  (같은 코드로 N=100 을 돌리면 논문 기재값 39/48/47 을 정확히 재생산 → 신뢰 가능):
+
+  | | seed1 | seed2 | (참고) seed0 |
+  |---|---|---|---|
+  | **label_flip** | k=7 `[1,2,4,5,7,8,9]` | k=6 `[0,1,3,4,6,7]` | k=3 `[3,5,6]` |
+  | fr · gn (고정 4) | `[0,4,6,7]` | `[3,4,6,9]` | `[1,4,6,7]` |
+
+  전 셀 k≥2 → AUROC 가 모든 셀에서 정의된다. `rates=[0,…]` = free_rider 라벨 무접촉(정상).
 
 ```
 cd $REPO && mkdir -p runs/track_c/c1/_logs
