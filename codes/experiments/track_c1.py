@@ -32,6 +32,16 @@ Spearman on the ladder scenarios.
 Run (from codes/):
   C1_DATASET=mnist C1_SCENARIO=label_flip C1_SEED=0 C1_MODE=full \
   CUDA_VISIBLE_DEVICES=0 PYTHONPATH=. python experiments/track_c1.py
+C-b (2026-07-25): the paper's CNN threat axis replaces the GTG scenario knob --
+  C1_DATASET=cifar10 C1_PARTITION=dir1 C1_THREAT=label_flip C1_FLIP_RATE=0.70 \
+  C1_SEED=0 C1_MODE=full PYTHONPATH=. python experiments/track_c1.py
+C1_PARTITION = iid|dir1 (Dirichlet alpha=1) and C1_THREAT = clean|label_flip|
+free_rider|grad_noise split what C1_SCENARIO fused, and the fixed dose replaces the
+pair ladder (so phi-vs-rate Spearman drops out; detection AUROC stays).  The two
+update-level threats ride a `delta_transform` that is applied to the shared
+trajectory AND to every (a)-oracle retrain -- an oracle that retrains the threat
+away is not an oracle of the estimator's game.  Ripple self-skips there (no seam in
+its own trajectory).  Setting neither env keeps the legacy path bit-identical.
 Shard one process per (dataset, scenario, seed); C1_ORACLE_A=0 skips the 2^N
 retrain sweep, C1_ORACLE_A_ONLY=1 runs ONLY it (merge post-hoc off run dirs).
 C1_REMOVAL=1 adds the Exp A3 worst/best-first removal-retrain curves (val loss
@@ -62,8 +72,10 @@ from flirds.data.cnn import _STATS, get_dataset, get_labels
 from flirds.data.corruptors import CNN_CORRUPTORS
 from flirds.eval.metrics import (cosine_distance, detection_auroc,
                                  euclidean_distance, max_difference, pearson)
-from flirds.fl.partition import (gtg_quantity_ratios, iid_partition,
-                                 label_skew_partition, quantity_skew_partition)
+from flirds.fl.intervene import make_delta_transform
+from flirds.fl.partition import (dirichlet_partition, gtg_quantity_ratios,
+                                 iid_partition, label_skew_partition,
+                                 quantity_skew_partition)
 from flirds.fl.server import evaluate, fedavg
 from flirds.models.cnn import FedSVCNN, LeNet5
 from flirds.oracle.exact_sv import exact_shapley, subset_utility_valloss
@@ -78,6 +90,27 @@ from flirds.timing import PhaseTimer
 DATASET = os.environ.get("C1_DATASET", "mnist")          # mnist | cifar10
 SCENARIO = os.environ.get("C1_SCENARIO", "iid")          # iid | label_skew | quantity_skew | label_flip | feature_noise
 SEED = int(os.environ.get("C1_SEED", "0"))
+
+# ---- C-b (2026-07-25): paper threat/partition axes, replacing the GTG scenario knob ----
+# The 5 GTG scenarios mix partition and corruption into one string and match none of
+# the paper's confirmed CNN threats (lf@0.70 / free-rider-zero / grad-noise).  Setting
+# either C1_PARTITION or C1_THREAT switches to the split axes; leaving both unset keeps
+# the legacy C1_SCENARIO path bit-identical (existing rundirs replay unchanged).
+PARTITION = os.environ.get("C1_PARTITION")               # iid | dir1
+THREAT = os.environ.get("C1_THREAT")                     # clean | label_flip | free_rider | grad_noise
+AXIS = PARTITION is not None or THREAT is not None
+FLIP_RATE = float(os.environ.get("C1_FLIP_RATE", "0.70"))         # fixed dose (replaces the pair ladder)
+MAL_FRAC = float(os.environ.get("C1_MAL_FRAC", "0.4"))            # track_c2 convention
+GRAD_NOISE_STD = float(os.environ.get("C1_GRAD_NOISE_STD", "0.1"))  # track_c2 GAMMA_GRADNOISE
+if AXIS:
+    PARTITION = PARTITION or "iid"
+    THREAT = THREAT or "clean"
+    if PARTITION not in ("iid", "dir1"):
+        raise ValueError(f"C1_PARTITION must be iid|dir1, got {PARTITION!r}")
+    if THREAT not in ("clean", "label_flip", "free_rider", "grad_noise"):
+        raise ValueError("C1_THREAT must be clean|label_flip|free_rider|grad_noise, "
+                         f"got {THREAT!r}")
+    SCENARIO = f"{PARTITION}_{THREAT}"                   # metrics/log tag only
 MODE = os.environ.get("C1_MODE", "smoke")                # smoke | full
 ORACLE_A = os.environ.get("C1_ORACLE_A", "1") == "1"
 ORACLE_A_ONLY = os.environ.get("C1_ORACLE_A_ONLY", "0") == "1"
@@ -130,12 +163,16 @@ def _timed(fn, device):
 # data build                                                                  #
 # --------------------------------------------------------------------------- #
 def build(dataset, scenario, n, n_per, batch, n_val, n_test, seed):
-    """Partition + corrupt + loaders.  Returns (loaders, rates, vx, vy, val_loader,
-    test_loader).  `rates` = per-client corruption ladder (zeros off-ladder)."""
+    """Partition + corrupt + loaders.  Returns (loaders, rates, delta_transform, vx,
+    vy, val_loader, test_loader).  `rates` = per-client corruption dose (0 = clean);
+    `delta_transform` carries the update-level threats (None for data-level ones)."""
     train = get_dataset(dataset)
     test = get_dataset(dataset, train=False)
     labels = get_labels(train)
-    if scenario == "label_skew":
+    if AXIS:                               # C-b: partition is its own axis
+        idx = (dirichlet_partition(labels, n, alpha=1.0, seed=seed) if PARTITION == "dir1"
+               else iid_partition(labels, n, seed=seed))
+    elif scenario == "label_skew":
         idx = label_skew_partition(labels, n, seed=seed)
     elif scenario == "quantity_skew":
         idx = quantity_skew_partition(labels, n, _quantity_ratios(n), seed=seed)
@@ -145,17 +182,42 @@ def build(dataset, scenario, n, n_per, batch, n_val, n_test, seed):
         scale = n_per / max(len(i) for i in idx)        # quantity skew survives
         idx = [i[:max(1, round(len(i) * scale))] for i in idx]
 
-    rates = _pair_ladder(n) if scenario in ("label_flip", "feature_noise") else [0.0] * n
+    delta_transform, mal = None, []
+    if AXIS:
+        # Corrupt set = a fixed COUNT round(MAL_FRAC*n), not track_c2's per-threat draw.
+        # track_c2 keeps FedCorr's Bernoulli(rho) mask because it reproduces FedCorr's
+        # official model at N=100; here the dose is pinned (0.70, not FedCorr's
+        # U(tau,1)) so nothing is being reproduced, and at N=10 a Bernoulli draw would
+        # swing the set size 2-6 across seeds -- an equal count is what lets the three
+        # threats share one fidelity table.  Same stream/offset as track_c2 (1000+seed).
+        rng = np.random.default_rng(1000 + seed)
+        if THREAT != "clean":
+            mal = sorted(int(c) for c in rng.choice(
+                n, size=max(1, round(MAL_FRAC * n)), replace=False))
+        # dose doubles as the binary corrupt label for detection AUROC; the update-level
+        # threats have no data-space rate, so they carry their own amplitude (free-rider
+        # = 1.0, the fully fabricated update).
+        dose = {"label_flip": FLIP_RATE, "free_rider": 1.0,
+                "grad_noise": GRAD_NOISE_STD}.get(THREAT, 0.0)
+        rates = [dose if c in mal else 0.0 for c in range(n)]
+    else:
+        rates = _pair_ladder(n) if scenario in ("label_flip", "feature_noise") else [0.0] * n
+
     loaders = []
     for c, ci in enumerate(idx):
         xs = torch.stack([train[i][0] for i in ci])
         ys = torch.tensor([train[i][1] for i in ci])
-        if scenario == "label_flip":
+        if AXIS:
+            if THREAT == "label_flip" and rates[c] > 0:
+                xs, ys = CNN_CORRUPTORS["label_flip"](xs, ys, c, rate=rates[c])
+        elif scenario == "label_flip":
             xs, ys = CNN_CORRUPTORS["label_flip"](xs, ys, c, rate=rates[c])
         elif scenario == "feature_noise":
             xs, ys = CNN_CORRUPTORS["feature_noise"](xs, ys, c, std=rates[c],
                                                      data_std=_STATS[dataset][1])
         loaders.append(DataLoader(TensorDataset(xs, ys), batch_size=batch, shuffle=True))
+    if AXIS and THREAT in ("free_rider", "grad_noise"):
+        delta_transform = make_delta_transform(mal, THREAT, std=GRAD_NOISE_STD, seed=seed)
 
     perm = np.random.default_rng(0).permutation(len(test))   # split seed FIXED at 0
     val_idx, test_idx = perm[:n_val], perm[n_val:n_val + n_test]
@@ -163,7 +225,7 @@ def build(dataset, scenario, n, n_per, batch, n_val, n_test, seed):
     vy = torch.tensor([test[i][1] for i in val_idx])
     val_loader = DataLoader(TensorDataset(vx, vy), batch_size=512)
     test_loader = DataLoader(Subset(test, test_idx.tolist()), batch_size=512)
-    return loaders, rates, vx, vy, val_loader, test_loader
+    return loaders, rates, delta_transform, vx, vy, val_loader, test_loader
 
 
 # --------------------------------------------------------------------------- #
@@ -239,7 +301,7 @@ def run_seed(seed, device="cuda"):
     n, R, E, lr = CFG["n_clients"], CFG["rounds"], CFG["epochs"], CFG["lr"]
     pt = PhaseTimer(device, n_gpus=int(os.environ.get("N_GPUS", "1")))   # §15.1 timing.json substrate
     seed_everything(seed, cudnn_deterministic=True)
-    loaders, rates, vx, vy, val_loader, test_loader = build(
+    loaders, rates, delta_transform, vx, vy, val_loader, test_loader = build(
         DATASET, SCENARIO, n, CFG["n_per"], CFG["batch"], CFG["n_val"], CFG["n_test"], seed)
     print(f"[build] {DATASET}/{SCENARIO} seed={seed} sizes={[len(l.dataset) for l in loaders]}"
           f" rates={rates}", flush=True)
@@ -252,7 +314,8 @@ def run_seed(seed, device="cuda"):
         def util(S):
             if S not in cache:
                 cache[S] = subset_utility_valloss(MODEL_FN, loaders, val_loader, S,
-                                                  R, E, lr, device=device, seed=seed)
+                                                  R, E, lr, device=device, seed=seed,
+                                                  delta_transform=delta_transform)
             return cache[S]
 
         (phi_a), t_a = _timed(lambda: exact_shapley(n, util), device)
@@ -268,7 +331,8 @@ def run_seed(seed, device="cuda"):
     logs = []
     (final_state, history), t_traj = _timed(lambda: fedavg(
         MODEL_FN, loaders, test_loader, R, E, lr, sample_frac=KFRAC, device=device,
-        seed=seed, on_round=lambda r, gb, dm: logs.append((gb, dm))), device)
+        seed=seed, on_round=lambda r, gb, dm: logs.append((gb, dm)),
+        delta_transform=delta_transform), device)
     final_acc = history[-1][1]
     pt.record("client-training", t_traj)               # §15.1: reuse the existing measurement
     print(f"[traj] {R}r x {E}e in {t_traj:.0f}s  final test-acc={final_acc:.4f}", flush=True)
@@ -308,7 +372,16 @@ def run_seed(seed, device="cuda"):
         methods.append(("loss-heur", phi, t))
         # Fed-LOO dropped from the comparison (Yonghee 2026-07-23).  The estimator
         # `flirds.oracle.in_run_sv.in_run_loo` stays so existing rundirs replay.
-    if RIPPLE:
+    # Ripple builds its own trajectory through `client_drop_and_delta`, which forms the
+    # drop utility from the HONEST local delta -- there is no seam to inject an
+    # update-level threat, so under free-rider/grad-noise it would score a fabricated
+    # client off training it never actually submitted.  A wrong number in the fidelity
+    # table is worse than a missing one: skip it and say so (C-b 2026-07-25).
+    ripple_skipped = AXIS and THREAT in ("free_rider", "grad_noise")
+    if ripple_skipped:
+        print(f"[ripple] SKIPPED: threat {THREAT!r} is update-level and Ripple's own "
+              "trajectory cannot observe it", flush=True)
+    if RIPPLE and not ripple_skipped:
         rp = CFG["ripple"]
         with pt.phase("ripple-own-trajectory"):        # §15.1/C1: Ripple retrains -> NOT from-logs valuation
             phi, t = _timed(lambda: ripple_shapley(MODEL_FN, loaders, R, E, lr,
@@ -319,7 +392,8 @@ def run_seed(seed, device="cuda"):
     gt = {"b": methods[0][1]}                          # good->low
     if phi_a is not None:
         gt["a"] = -phi_a                               # (a) is -val-loss good->high -> flip
-    ladder = SCENARIO in ("label_flip", "feature_noise")
+    ladder = SCENARIO in ("label_flip", "feature_noise")   # graded dose -> phi-vs-rate is meaningful
+    detect = ladder or (AXIS and THREAT != "clean")        # binary corrupt labels -> AUROC only
     y = [1 if r > 0 else 0 for r in rates]
     res = {}
     for name, vec, rt in methods:
@@ -333,14 +407,15 @@ def run_seed(seed, device="cuda"):
             m[f"cos_{g}"] = cosine_distance(vec, gvec)
             m[f"euc_{g}"] = euclidean_distance(vec, gvec)
             m[f"maxdiff_{g}"] = max_difference(vec, gvec)
-        if ladder:
+        if detect:
             m["auroc"] = detection_auroc(vec, y)       # good->low: corrupt scores high
+        if ladder:                                     # AXIS pins ONE dose -> no rate axis
             m["spearman_vs_rate"] = float(spearmanr(vec, rates).correlation)
         res[name] = m
 
     hdr = f"  {'method':10s} {'time':>7s} {'rho(b)':>7s} {'tau(b)':>7s} {'r_p(b)':>7s}"
     hdr += f" {'rho(a)':>7s} {'r_p(a)':>7s}" if "a" in gt else ""
-    hdr += f" {'AUROC':>6s}" if ladder else ""
+    hdr += f" {'AUROC':>6s}" if detect else ""
     print(hdr, flush=True)
     for name, vec, rt in methods:
         m = res[name]
@@ -348,7 +423,7 @@ def run_seed(seed, device="cuda"):
         line += f" {m.get('kendall_b', float('nan')):7.3f} {m.get('pearson_b', float('nan')):7.3f}"
         line += (f" {m.get('spearman_a', float('nan')):7.3f} {m.get('pearson_a', float('nan')):7.3f}"
                  if "a" in gt else "")
-        line += f" {m.get('auroc', float('nan')):6.3f}" if ladder else ""
+        line += f" {m.get('auroc', float('nan')):6.3f}" if detect else ""
         print(line, flush=True)
 
     # ---- Exp A3: removal-retrain curves (gated; extra retrains) ----
@@ -358,9 +433,12 @@ def run_seed(seed, device="cuda"):
 
         def retrain_eval(kept):
             """Clean FedAvg on `kept` -> (game val-loss, test acc) off ONE retrained global."""
+            dt = None if delta_transform is None else (   # re-key to original client ids
+                lambda i, r, d, _k=tuple(kept): delta_transform(_k[i], r, d))
             final, _ = fedavg(MODEL_FN, [loaders[c] for c in kept], None, R, E, lr,
                               sample_frac=1.0, device=device, seed=seed,
-                              eval_every=R + 1)        # no per-round eval (the (a)-sweep pattern)
+                              eval_every=R + 1,        # no per-round eval (the (a)-sweep pattern)
+                              delta_transform=dt)
             with torch.no_grad():
                 vl = float(loss_fn({k: final[k] for k in pkeys}, {}))
             return vl, evaluate(eval_model, final, test_loader, device)
@@ -414,6 +492,12 @@ def run_seed(seed, device="cuda"):
     metrics = dict(dataset=DATASET, scenario=SCENARIO, seed=seed, mode=MODE,
                    final_acc=final_acc, acc_curve=history, traj_time=t_traj,
                    rates=rates, methods=res, _timing=pt.to_timing(), **removal)
+    if AXIS:
+        metrics.update(partition=PARTITION, threat=THREAT,
+                       corrupt=[1 if r > 0 else 0 for r in rates],
+                       dose=dict(flip_rate=FLIP_RATE, mal_frac=MAL_FRAC,
+                                 grad_noise_std=GRAD_NOISE_STD),
+                       ripple_skipped=ripple_skipped)
     if phi_a is not None:
         metrics["oracle_a"] = dict(phi=phi_a.tolist(), time=t_a, n_retrains=2 ** n)
     phi_rows = [dict(client=c, rate=rates[c],
@@ -435,6 +519,10 @@ def main():
             rl = RunLogger(RUN_ROOT, name, dict(cfg=CFG, dataset=DATASET, scenario=SCENARIO,
                                                 seed=SEED, mode=MODE, oracle_a=ORACLE_A,
                                                 width=WIDTH, kfrac=KFRAC, removal=REMOVAL,
+                                                **({"partition": PARTITION, "threat": THREAT,
+                                                    "flip_rate": FLIP_RATE, "mal_frac": MAL_FRAC,
+                                                    "grad_noise_std": GRAD_NOISE_STD}
+                                                   if AXIS else {}),
                                                 **({"v3": {"methods": V3_METHODS, "zc": V3_ZC}}
                                                    if V3 else {})),
                            repo_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
