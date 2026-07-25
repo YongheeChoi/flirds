@@ -16,7 +16,8 @@ export PY=$BATCH/venv/bin/python     # ★ 반드시 venv(torch 2.12+cu130) — 
 export PP=$REPO/codes                # PYTHONPATH (드라이버가 셀마다 설정)
 
 # ── ② 배정받은 B200 개수에 맞춤 (1장이면 "0", 4장이면 "0 1 2 3") ─────────────
-export GPUS="0 1 2 3"
+# 2026-07-25 현재 배정 = **2장** → "0 1". 더 잡히면 여기만 늘리면 됨(큐는 그대로; 우선순위 = 큐 순서).
+export GPUS="0 1"
 
 # ── ③ 로그·런타임 큐 ──────────────────────────────────────────────────────────
 export LOGDIR=$BATCH/runlogs/logs_batch

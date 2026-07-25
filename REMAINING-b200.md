@@ -4,6 +4,7 @@
 > **48GB 개방 재편(2026-07-24)**: Slurm A6000/RTX6000Ada 48GB가 **4계정(YH·HJ·JW·JB)**로 열림 → **B200=HVP 전용, 비-flirds downstream 전량 Slurm 48GB로 이관**(§1a). ~~vast~~·~~Slurm 3090 §6 overflow~~ 폐기.
 > **마감(신): 실험 07-28 / 논문 07-29 21:00.** 전략 = **전 실험 seed0 우선 완주 → 작성 병행 seeds 1-2 보강**(§1a 2단계).
 > **현재(07-25 03:05 · 이 컨테이너 마무리): L1 noisy·frzero 3-seed 완전 완결**(seed2 `online` `flirds_gate_v2` 2개 02:20/02:29 DONE·커밋 `918ae86`; seed0·1 기완료). **차기 컨테이너 이월**: ① L2 seed0 clean·noisy(valuation 중 종료=전손→처음부터 재실행) ② L1 clean seed1·2(sealed 미착수) ③ §1a Phase 1. 재개 지침 = §1 진행상황 + §1a.
+> **▶ 지금 뭘 돌리나 (07-25 · B200 2장 배정)**: **P0 = L2 seed0 2셀** → P1 L2 s1·2 → P2 L1 clean s1·2 → P3 L9-flirds. **P4 L7은 2장이면 착수 금지**(판정 불가). 근거·예산 = **§1b**. 큐 = `runs/track_h/queue_b200.txt`(재정렬 완료), 가동 = `bash runs/track_h/run_b200_batch.sh`(`GPUS="0 1"`).
 > **B200 담당 = HVP(flirds 2차 φ) 전용 + L2 fidelity·canonical timing**(모든 SFT/retrain-scoring=Slurm §1a). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 실행 절차·명령 정본 = `runs/track_h/QUEUE_L1L2_2026-07-23.md`.
 > 사전등록 = `runs/track_h/README.md` H-12·H-13(+H-14는 T3에서 선커밋).
@@ -64,6 +65,30 @@ L1 R4 Tier C **P1-only**(Yonghee 07-23: P5s 전면 중단) 가동 중. 실행 �
 - **부수 사실**: track_g는 **arm 단위 rundir 영속** — 컨테이너 종료 시 완료 arm은 생존, 진행 중 arm만 손실(§0 "전손"은 L2=phase2_matrix에만 정확; L1/L4는 완료 arm 보존).
 - **컨테이너 교체 = 03:27 하드컷**(창은 **07-28 24:00**(실험 마감)까지지만 이 컨테이너는 마감; 다음 컨테이너가 §1a 2단계 이어감): 교체 전 ① **완료 큐 줄 전부 `#` 주석**(드라이버 `consumed=0` 재시작 → 미주석 시 완료 rundir 덮어씀) ② **rundir 커밋**(seed2·L2 완주분) ③ 완주 판정 = `TRACK G/MATRIX DONE`+mtime.
 - **완료 후**: `make_analysis.py` 재생성 + H-12/H-13 대조 → paper I1·F2·D1 ⬚ 채움.
+
+## 1b. ▶ 실행 우선순위 — **B200 2장 배정**(2026-07-25 · 지금 이걸 따를 것)
+
+> **큐 = `runs/track_h/queue_b200.txt`(2장 기준 재정렬 완료) · 런처 = `runs/track_h/run_b200_batch.sh`(`GPUS="0 1"`).**
+> 드라이버는 큐를 **위에서부터** pop 하므로 **큐 순서 = 우선순위**. 더 잡히면 큐는 그대로 두고 `GPUS`만 늘린다.
+> ⚠ **가동 후 재정렬 금지**(consumed 인덱스) — 완료분은 `#` 주석만.
+
+**예산이 순서를 강제한다**: 마감(실험 07-28 24:00)까지 2장 ≈ **~140 GPU-h** vs B200 잔여 **~240–255**
+(L2 42–60 + L1 clean 18.6 + L9-flirds ~55 + L7 ~120) → **전부는 불가**. 아래는 "완주 가능한 것 × 대체 불가능성" 순.
+
+| P | 묶음 | 셀 | GPU-h | 2장 wall | 왜 이 순서인가 |
+|---|---|---|---|---|---|
+| **P0** | **L2 seed0**(clean·noisy) | 2 | ~14–20 | ~7–10h | **논문 최대 병목·대체 불가**. 본문 F2 + 부록 C.1·D.2·F.1 + §5.4 canonical timing 이 전부 여기 걸림(축-지도 LLM fidelity·탐지 = ⬚, 로컬 `phase2_matrix/rundirs`에 `1B_gsm50k5_*` **0개** 확인). HVP 95–106GiB + canonical timing = **B200 아니면 못 함** |
+| **P1** | **L2 seed1·2** | 4 | ~28–40 | ~14–20h | 3-seed 규칙(07-24). 같은 러너·같은 리스크 → P0 직후가 가장 안전 |
+| **P2** | **L1 clean seed1·2** | 4 | **18.6** | ~9–11h | §5.3 **clean 열(오발화 대조·do-no-harm)**의 유일 소스(clean 개입 EM은 `track_g THREAT=clean`에서만; L2는 fidelity·탐지만). 싸고 arm-단위 영속 = 컷에 강함 |
+| **P3** | **L9 flirds** frrand 3-seed | 6 | ~55 | ~28h | **2장으로 완주 가능한 유일한 확장**. online 셀이 `oracle_excl`·`random_excl`(천장/분모)까지 산출 → **JB 미착지여도 자기완결** |
+| **P4** | **L7 P1w** | 9 | ~120 | ~60h | **2장이면 손대지 말 것.** 수록 규칙 = "CNN·LLM 전 범위 3-seed 승격" → seed0만 돌면 **판정 불가 = 미수록** → 부분 실행 가치 ≈ 0(짝 CNN W-B도 37/90) |
+
+- **P0–P3 = ~116–134 GPU-h ≈ 2장 58–67 wall-h** → 마감 내 완주 가능선. P4는 GPU 증장 시에만.
+- **P0 이 최우선인 이유(한 줄)**: 나머지 P1–P4는 *이미 있는 축을 두껍게* 하지만, **P0만이 비어 있는 축(LLM 주무대 fidelity·탐지)을 여는** 셀이다.
+- ⚠ **L2 전손 리스크 운용**: `phase2_matrix`는 **cell-end 1회 persist** → 중도 컷 = 20h+ 전손(직전 컨테이너 실사례).
+  컨테이너 컷이 예상되면 **신규 투입 중단(드레인)** — `$BATCH/runlogs/seal_watchdog.sh` 재가동 권장(§1 07-24 사례: 중도컷 0).
+  반면 P2·P3(track_g)는 **arm 단위 영속**이라 컷에도 완료 arm 생존.
+- **가동**: `bash <REPO>/runs/track_h/run_b200_batch.sh` (env·sed·스모크 내장; 완료 셀은 큐에서 `#` 주석 후 재제출 = 재개).
 
 ### 📌 실측 셀 비용 (드라이버 로그 확정치 — 예산 산정 근거)
 
