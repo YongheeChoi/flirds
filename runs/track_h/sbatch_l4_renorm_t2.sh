@@ -15,10 +15,12 @@
 # no HVP, so the A6000 OOM guard that forces 3 does not apply here.  Chunk-sum is exact
 # -> phi identical either way.
 #
-# ⚠ REVIVED 2026-07-25 by the R4 **R=200 -> 100** decision.  At R=200 this leg measured
-#   ~100 h/cell (900 GPU-h) = infeasible and was dropped; at R=100 it is ~26 h/cell on
-#   A6000 (~13 h on B200), so it is back in scope as **G4c**.  ROUNDS=100 is baked in and
-#   `rounds` is now a rundir IDENTITY field -> RUNDIR_REPLACE=1 (also baked in).
+# ⛔ OUT OF SCOPE 2026-07-25 (Yonghee): the LLM downstream table keeps only
+#    {vanilla/observer, oracle_excl, random_excl, flirds-family}; the 4 renorm sources are
+#    dropped from it (their collapse is shown by CNN §5.3 and by LLM §5.2 fidelity).
+#    DO NOT SUBMIT.  The file is kept because the leg is otherwise ready: if the deadline
+#    moves, run it at R=200 (~100 h/cell, 900 GPU-h) or halve R first.
+#    Everything below is the pre-cut runbook.
 #
 # 9 tasks = {clean, noisy(nr0.7), frzero} x 3 seed.  SEED-MAJOR (3/seed).  Each task =
 # 1 observer trajectory + 4 t2_sign retrains (arm-level persistent across a kill).

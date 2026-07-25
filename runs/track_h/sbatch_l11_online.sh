@@ -12,23 +12,26 @@
 #
 # GPU: A6000 48GB (retrain-scoring class ~32 GiB; 24GB insufficient).  B200-independent.
 #
-# ⚠ R4 = **R=100** since 2026-07-25 (was 200; Yonghee).  ROUNDS=100 is baked in below and
-#   `rounds` is now a rundir IDENTITY field -> re-running an R=200 cell needs
-#   RUNDIR_REPLACE=1 (also baked in).  Any R=200 L11 job still queued must be scancel'd
-#   and resubmitted with this file, or the table mixes two stages.
+# ⚠ SCOPE CUT 2026-07-25 (Yonghee): the LLM downstream table keeps only
+#   {vanilla/observer, oracle_excl, random_excl, flirds-family} + anchors.  The 4 renorm
+#   sources (gtg fedsv comfedsv shapleyfl) are OUT of the LLM downstream table -- their
+#   collapse is already shown by CNN §5.3 (8 sources, both tables, 3-seed) and by LLM
+#   §5.2 fidelity (G1 emits all 9 methods).  R4 therefore stays at **R=200** (the R=100
+#   plan existed only to fit those legs; dropping them means the already-complete
+#   3-seed L1 needs no re-run).
 #
-# 63 tasks = 7 src x {clean, noisy(nr0.7), frzero} x 3 seed.  SEED-MAJOR (21/seed).
-# Split by SEED across accounts (REMAINING-00-INDEX.md §2):
-#   HJ:  sbatch --array=0-41%8  runs/track_h/sbatch_l11_online.sh   # seed0,1 (42 run)
-#   JB:  sbatch --array=42-62%8 runs/track_h/sbatch_l11_online.sh   # seed2   (21 run)
+#   => From this file, run **flirds1st ONLY** (SRC_I 0), i.e. 9 cells:
+#        sbatch --array=0-2,21-23,42-44%8 runs/track_h/sbatch_l11_online.sh
+#      That fills the online table's Flirds-1st row so online matches the retrain table
+#      (which already has flirds/flirds1st/lossheur/fedif t2_sign at 3 seeds on disk).
+#   ⚠ Check `rundirs_llm_hj` first -- the earlier R=200 run may have already landed some
+#      flirds1st cells (cheap sources land first).  Those are VALID (same R=200 stage);
+#      submit only the missing indices.
+#
+# 63 tasks = 7 src x {clean, noisy(nr0.7), frzero} x 3 seed.  SEED-MAJOR (21/seed);
+# within a seed, SRC_I = (IDX%21)/3 orders the sources as listed in SRCS below.
 # The landing root auto-routes by seed (seed2 -> rundirs_llm_yh, else rundirs_llm_hj);
-# JB overrides RUNDIR_ROOT=.../rundirs_llm_jb.  Override RUNDIR_ROOT for work-steal.
-# seed0 first (0-20) = paper 착수선.  After: python runs/track_h/make_analysis.py
-#
-# Cheap-first tip: the 3 same-game/FedIF sources (SRC_I 0-2 = flirds1st lossheur fedif,
-# ~1.6h at R=100) are indices where (IDX%21)/3 < 3, i.e. 0-8 / 21-29 / 42-50.  The 4
-# renorm sources (~13h) are the rest.  Submitting the cheap block first closes 3-seed
-# rows for 3 of the 7 methods within a few hours.
+# override RUNDIR_ROOT for work-steal.  After: python runs/track_h/make_analysis.py
 #
 #SBATCH --job-name=l11on
 #SBATCH --partition=suma_a6000,gigabyte_a6000,asus_6000ada
@@ -79,7 +82,7 @@ cd "$REPO/codes"
 env PYTHONPATH=. HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
   PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
   REGIME=gsm50k5 THREAT="$THREAT" SEED="$SEED" \
-  ROUNDS="${ROUNDS:-100}" RUNDIR_REPLACE=1 VAL_CHUNK="$(val_chunk_for "$SRC")" \
+  RUNDIR_REPLACE=1 VAL_CHUNK="$(val_chunk_for "$SRC")" \
   ARMS="${SRC}_gate_v2" OBS_SOURCES="$SRC" T2=0 T2_LEGACY=0 T2_P5=0 \
   RUNDIR_ROOT="$RR" \
   "$PY" -u experiments/track_g.py

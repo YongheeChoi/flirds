@@ -4,18 +4,21 @@
 > **역할 = R4 §5.3 online 표의 7 비-flirds 행 중 seed0·1**(42셀; seed2 = JB).
 > **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 3-seed(seed-major). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 >
-> ## ★ 즉시 조치 — R=200 잡 전량 중단 → R=100 재제출
+> ## ★ 즉시 조치 — L11 을 **flirds1st 9셀로 축소**
 >
-> **R4 무대가 R=200 → R=100 으로 재정의됐다**(2026-07-25 Yonghee; 근거·판단 = `REMAINING-00-INDEX.md` §0).
-> 지금 도는 63셀은 R=200 이라 **산출물이 무대 밖**이다 — 살려도 표에 못 넣는다. "도는 잡은 죽이지 않는다" 원칙의 예외.
+> **LLM downstream 스코프 컷(2026-07-25 Yonghee)**: §5.3 비교 대상 = {vanilla·oracle_excl·random_excl·flirds류}.
+> **loss-heur·FedIF·renorm-4 의 online 셀은 전부 스코프 밖**이 됐다(근거·보전 = `REMAINING-00-INDEX.md` §0·§1).
+> **R4 는 R=200 유지** — R=100 전환은 함께 철회됐다(이미 완결된 L1 3-seed 를 재실행할 이유가 없어짐).
 > ```
-> scancel <l11 jobid>                                    # 63셀 전량
+> scancel <l11 jobid>                       # 63셀 배열 전량 중단
+> ls runs/track_h/rundirs_llm_hj | grep flirds1st     # ← 먼저 착지분 확인
 > cd $REPO && mkdir -p runs/track_h/_logs
-> sbatch --array=0-41%8 runs/track_h/sbatch_l11_online.sh # HJ = seed0·1 (42셀, R=100)
+> sbatch --array=0-2,21-23,42-44%8 runs/track_h/sbatch_l11_online.sh   # flirds1st 9셀
 > ```
-> - `ROUNDS=100` · `RUNDIR_REPLACE=1` · 소스별 `VAL_CHUNK` 가 **sbatch 에 배선 완료** — `--export` 로 따로 줄 필요 없다.
-> - `--time` 은 파일 기본값 **24:00:00** 이면 충분하다(R=100 최장 셀 ~12.5h). 앞서 renorm-4 에 걸어둔 42h 증액은 R=200 기준이라 불필요.
-> - **seed2 21셀은 JB 가 맡는다** — HJ 는 0-41 만 제출할 것.
+> - **이미 착지한 flirds1st 셀은 그대로 유효하다**(같은 R=200 무대). **빠진 인덱스만** 제출할 것 — 싼 소스가 먼저 착지하므로 seed0 은 이미 있을 가능성이 높다.
+> - `RUNDIR_REPLACE=1` · 소스별 `VAL_CHUNK`(flirds1st=3) 는 **sbatch 배선 완료** → `--export` 불요. `--time` 기본 24h 로 충분(셀 ~7.4h).
+> - **왜 flirds1st 만 살리나**: online 표가 flirds 단독이면 "vanilla·random 보다 낫다"까지만 말할 수 있다. Flirds-1st 를 넣으면 **§5.6①(2차항) 주장이 online 에서도 성립**한다 — retrain 표엔 이미 flirds·flirds1st·loss-heur·FedIF 가 3-seed 로 있다.
+> - **완주 후(~8 wall-h) 3090 으로 넘어가 CNN work-steal** — 그쪽이 남은 물량의 대부분이다(§4).
 
 ## 0. 환경 (실제 셋업 결과)
 
@@ -44,7 +47,21 @@
 - 산출 = `runs/phase2_matrix/rundirs/1B_silo5_{threat}_aonly_s{seed}` · 조인 = `PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py`.
 - **⚠ 수록 위치 미정**: 07-25 확정 계획서의 본문·부록 목록에 **silo5 (a)-leg 항목이 없다**(LLM (a) 역할은 "1B-LLM 소형 앵커 듀얼오라클 vs (a)" = anchor5 가 담당, ● 완료). 이미 디스크에 있는 완성품이므로 **버리지 말고 Yonghee 판정 대기** — 되살릴 경우 추가 실행 0.
 
-## 2. 진행 중 — L11 = G4 online 레그 (63셀 전량 제출됨)
+## 2. L11′ — online Flirds-1st (9셀 · ~67 GPU-h · ~8 wall-h)
+
+- **셀**: `flirds1st_gate_v2` × {clean, noisy, frzero} × seed{0,1,2} = **9**(array `0-2,21-23,42-44`).
+- 단가 **~7.4h**(HJ 재측정, R=200). 착지 root = `rundirs_llm_hj`(seed2 는 자동으로 `rundirs_llm_yh` — 집계는 둘 다 읽는다).
+- **분모 의존(분석 시)**: recovery 분모(vanilla/oracle_excl/random_excl)는 B200 L1 이 **이미 3-seed 로 산출해 뒀다**(noisy·frzero). clean 분모는 B200 c4 의 clean seed1·2 로 닫힌다.
+
+## 4. CNN work-steal (L11′ 완주 후 · 3090)
+
+- 남은 물량의 대부분이 CNN(760 GPU-h)이고 **CNN 은 어느 파티션에서도 돈다**. HJ 는 ~8h 만에 비므로 3090 으로 넘어간다.
+- 흡수 대상(먼저 비는 순): **JW 의 `sbatch_c1_axis.sh` 잔여**(최대 물량) → YH 의 G10. 제출 시 `--array` 로 남은 범위만 지정(중복 = GPU 낭비).
+- CNN 은 conda `lora4cl`(torch 2.11) + torchvision 데이터만 있으면 된다 — HF 캐시 불요.
+
+---
+
+## (이하 참고) 종전 L11 63셀 계획 — **스코프 컷으로 폐기**
 
 > R4 §5.3 online 표는 CNN 처럼 8방법인데 현재 online 은 **flirds 만**(B200 L1) → 나머지 **7방법 T1 부호-게이트**를 채운다.
 > **손대지 않는다** — 재제출·재정렬 금지. 완료분만 커밋.

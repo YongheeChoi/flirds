@@ -1,27 +1,56 @@
 # ════════════════════════════════════════════════════════════════════════════
-# B200 **세션 B** / 컨테이너 4 (GPU 1장) — L1 R=100 재실행(frzero·clean-online) + G4c seed0
+# B200 **세션 B** / 컨테이너 4 (GPU 1장) — L1 clean 보강 → G5 → G12
 #   가동: CID=4 bash <repo>/runs/track_h/run_b200_batch.sh
 #   ⚠ 완료 줄은 '#' 주석(줄 삭제 금지) · 가동 후 순서 변경 금지
 #
-# 세션 B(CID 3·4) = L1 R=100 재실행 18셀 + G4c seed0 3셀.  세션 A(G1·G4c s1)와 독립.
-# ⚠ L1 은 R=200 으로 완주·커밋된 셀의 **R=100 재실행**이다(R=200 산출은 superseded,
-#   git 이력에 보존).  `rounds` 가 IDENTITY 필드라 RUNDIR_REPLACE=1 없이는 즉시 실패한다.
+# **우선순위 순서다.** 위에서부터 필수 → 본문 → 부록이고, 꼬리(G12)는 마감에 걸리면
+# 그대로 안 돌아도 된다(부록·P2). 큐가 74h를 넘겨 잡혀 있는 건 의도된 것이다.
+# `track_g`·`track_d` 는 arm/셀 단위 영속이라 중도 컷에도 완료분이 살아남는다.
 # ════════════════════════════════════════════════════════════════════════════
 
-# ─── L1 frzero : 관찰자(+same-game T2 4종) → 온라인(천장·바닥 앵커 동반) ────
-track_g.py|L1_frzero_obs_t2_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1_frzero_obs_t2_s1|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1_frzero_obs_t2_s2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1_frzero_online_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1_frzero_online_s1|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1_frzero_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-
-# ─── L1 clean 온라인 : §5.3 clean 열(오발화 대조) ───────────────────────────
+# ─── ① L1 clean seed1·2 : §5.3 clean 열의 3-seed 정본 (필수 · 18.6 GPU-h) ──
+# 디스크 확인(2026-07-25): clean 은 **seed0 만** 있다(observer·flirds_gate_v2·t2_sign×4).
+# noisy·frzero 는 이미 3-seed 완결이라 재실행하지 않는다.
+# clean 은 kept=전원이라 T2 가 `equals_vanilla` 로 스킵 → 저비용(obs 5.5h·online 3.8h).
 # clean 에선 oracle_excl/random_excl 가 자동으로 빠진다(제외 대상 부재; track_g l.618).
-track_g.py|L1_clean_online_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1_clean_online_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_clean_obs_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_clean_obs_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_clean_online_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
 
-# ─── G4c seed0 : R4 retrain renorm-4 (별도 root · VAL_CHUNK 낮추지 않음) ────
-track_g.py|G4c_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_g4c
-track_g.py|G4c_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_g4c
+# ─── ② G5 : 2차항(HVP) LLM 레그 seed 보강 — **본문 §5.6①** (~20 GPU-h) ─────
+# std50k5(N=50·5/50) rank sweep. r16 은 이미 3-seed → r32·r64 의 seed1·2 만.
+# ⚠ R4 무대가 아니다 → ROUNDS 를 주지 않는다(track_d 가 자기 레짐 값을 쓴다).
+track_d.py|1B_std50k5_r32_seed1|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=32 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_std50k5_r32_seed2|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=32 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_std50k5_r64_seed1|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=64 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_std50k5_r64_seed2|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=64 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+
+# ─── ③ G12 : A축 lever probe seed 보강 — 부록·최저 우선 (꼬리부터 버려도 됨) ─
+# 핵심 질문 = "lr 로 커진 φ가 cross-seed 실재 신호인가"(예측 ρ≈0) → lr{2,3}e-3 을 먼저.
+track_d.py|1B_anchor5_lr2e-3_st20_seed1|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr2e-3_st20_seed2|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr2e-3_st30_seed1|REGIME=anchor5 LR=2e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr2e-3_st30_seed2|REGIME=anchor5 LR=2e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st20_seed1|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st20_seed2|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st30_seed1|REGIME=anchor5 LR=3e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st30_seed2|REGIME=anchor5 LR=3e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr1e-3_st20_seed1|REGIME=anchor5 LR=1e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr1e-3_st20_seed2|REGIME=anchor5 LR=1e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr1e-3_st30_seed1|REGIME=anchor5 LR=1e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr1e-3_st30_seed2|REGIME=anchor5 LR=1e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_r32_seed1|REGIME=anchor5 LORA_R=32 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_r32_seed2|REGIME=anchor5 LORA_R=32 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_r64_seed1|REGIME=anchor5 LORA_R=64 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_r64_seed2|REGIME=anchor5 LORA_R=64 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+probe_val_noise.py|noise_1B_r64_seed1|LORA_R=64 SEED=1
+probe_val_noise.py|noise_1B_r64_seed2|LORA_R=64 SEED=2
+
+# ─── (옵션) LLM P1w T1 — 여유 시 최우선 추가 (9런 ~35 GPU-h) ────────────────
+#   CNN P1w 는 G3·G10 rundir 에 동반 산출되므로, LLM 레그만 얹으면 "전 범위 3-seed
+#   승격" 판정이 성립한다.  관찰자 불요라 canonical `rundirs_llm` 에 직접 착지.
+#   G12 를 주석 처리하고 아래를 해제하면 맞교환된다.
+# track_g.py|P1w_T1_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
