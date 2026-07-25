@@ -55,3 +55,6 @@ runs/track_g/_smoke/
 runs/track_g/_smoke_run.log
 runs/track_h/_logs/
 runs/track_h/_logs_*.log
+# HJ 계정 셋업 프로브: 스크립트는 추적, 잡 출력·빌드 로그는 transient (REMAINING-slurm-HJ §4.4)
+runs/_probe/*.log
+runs/_probe/*.out
