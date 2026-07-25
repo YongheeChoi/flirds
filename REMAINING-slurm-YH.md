@@ -100,15 +100,15 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh
 | **P0** | **C-b** 코드 | — | **JW·JB·HJ 의 c1축 을 막고 있다** |
 | **P0** | **C-a** 코드(1줄) | — | **HJ 의 G10(216런) · 자신의 G8 을 막고 있다** |
 | **P1** | G3 seed0 → 전량 | 96런 · ~80 | 본문 downstream 의 빈 절반 · **코드 불요 → 즉시 착수** |
-| **P2** | **c1축 cifar10 seed0** | 8셀 · ~73 | **본문 G2 의 P0 seed** — 균등분배 몫 |
+| **P2** | **c1축 cifar10 seed0 + s1 1셀** | 9셀 · ~82 | **본문 G2 의 P0 seed** — 균등분배 몫 |
 | **P3** | G8 | 24런 · ~25 | 부록 fidelity+탐지가 한 rundir |
 | **P4** | G6 | 9런 · ~15 | 본문 ablation |
 
 ```
-sbatch --array=0-7%8  runs/track_c/c1/sbatch_c1_axis.sh    # cifar10 seed0 (C-b 착지 후)
+sbatch --array=0-7,16%8  runs/track_c/c1/sbatch_c1_axis.sh    # cifar10 seed0 8셀 + seed1 1셀 (C-b 착지 후)
 ```
 
-- **YH 몫 ~193 GPU-h** / 8슬롯 → **~24 wall-h** → **07-27 오전**. 코드 작성 중에도 **G3 는 게이트가 없어 병행 가동**할 수 있다.
+- **YH 몫 ~202 GPU-h** / 8슬롯 → **~25 wall-h** → **07-27 오전**. 코드 작성 중에도 **G3 는 게이트가 없어 병행 가동**할 수 있다.
 - **c1축 cifar10 seed0(0-7)을 YH 가 맡는 이유**: 본문 G2 의 최우선 seed 인데, C-b 를 쓰는 사람이 직접 돌려야 게이트 해제 즉시 착수된다.
 - **G10 은 HJ, G5·G12 는 B200 c4** — 여기가 아니다.
 - 슬롯이 남으면 JW·JB 잔여를 work-steal(남은 `--array` 범위만).

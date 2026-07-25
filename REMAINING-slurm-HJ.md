@@ -4,16 +4,24 @@
 > **역할 = R4 §5.3 online 표의 7 비-flirds 행 중 seed0·1**(42셀; seed2 = JB).
 > **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 3-seed(seed-major). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 >
-> ## ★ 즉시 조치 — **LLM 전면 철수. 도는 잡 전량 취소 → 3090 CNN 으로 전환.**
+> ## ★ 즉시 조치 — **flirds1st 3셀만 완주, 나머지 L11 취소**
 >
-> **2026-07-25 Yonghee: HJ 는 LLM 실험을 전혀 돌리지 않는다.** 원래 돌리던 것도 취소하고 **LLM 은 전부 B200** 이 맡는다.
+> 07-25 19:50 진행 상황 기준. 실행 중 8셀의 정체는 `SRC_I=(IDX%21)/3` 로 갈린다:
+>
+> | idx | 정체 | 스코프 | 조치 |
+> |---|---|---|---|
+> | **0·1·2** | **flirds1st seed0** × clean/noisy/frzero (58%, ~23:00 완주) | ✅ 안 | **완주** |
+> | 3·4·5 | lossheur seed0 × 3 (46%) | ❌ 밖 | `scancel` |
+> | 6·7 | fedif seed0 × clean·noisy (44%, frzero=idx 8 미착수라 2/3) | ❌ 밖 | `scancel` |
+>
 > ```
-> scancel <l11 jobid>          # L11 배열 전량 (실행 중 포함)
-> squeue -u $USER              # 잔재 확인 후 §3 로 전환
+> scancel <jobid>_[3-20]       # lossheur·fedif·renorm-4 = 스코프 밖 (실행 중 포함)
+> squeue -u $USER              # 0·1·2 만 남았는지 확인
 > ```
-> - **왜**: online flirds1st 셀은 FL 학습이 비용을 지배해(라운드당 132초 중 110초) **B200 이 ~1.6× 빠르다**(A6000 7.4h → B200 ~4.2h). LLM 을 전부 B200 으로 모으면 **Slurm 4계정을 전부 3090 에 붙일 수 있다** — 3090 여유 21장 vs A6000 여유 10장(가동률 90%).
-> - **이미 착지한 rundir 은 지우지 않는다.** `rundirs_llm_hj` 에 남아 있어도 집계는 canonical `rundirs_llm`(B200 산출)이 dup-win 으로 이긴다 → 별도 조치 불요.
-> - **A6000·HF 캐시 셋업은 이제 안 쓴다.** CNN 은 conda `lora4cl`(torch 2.11) + torchvision 데이터만 필요하다(§3).
+> - **flirds1st seed0 3셀은 B200 c4 의 해당 3줄을 지운다** — c4 는 seed1·2 6셀만 맡는다(폴백용 주석은 c4 하단에 있다).
+> - **lossheur·fedif 를 끊는 이유**: LLM downstream 스코프 컷으로 표에서 빠졌고, **1-seed 는 3-seed 규칙상 논문에 못 넣는다**. 3-seed 로 승격하려면 seeds1·2 에 +50 GPU-h(B200)가 더 드는데 c4 에 그 여유가 없다(G5 를 밀어내야 한다).
+> - **이미 착지한 rundir 은 지우지 않는다** — 집계는 canonical `rundirs_llm` 이 dup-win 으로 이긴다.
+> - **그 뒤 HJ 는 A6000 을 그대로 이어 G12(§3) → 3090 으로 G10(§3b)** 순으로 간다.
 
 ## 0. 환경 (실제 셋업 결과)
 
@@ -42,7 +50,23 @@
 - 산출 = `runs/phase2_matrix/rundirs/1B_silo5_{threat}_aonly_s{seed}` · 조인 = `PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py`.
 - **⚠ 수록 위치 미정**: 07-25 확정 계획서의 본문·부록 목록에 **silo5 (a)-leg 항목이 없다**(LLM (a) 역할은 "1B-LLM 소형 앵커 듀얼오라클 vs (a)" = anchor5 가 담당, ● 완료). 이미 디스크에 있는 완성품이므로 **버리지 말고 Yonghee 판정 대기** — 되살릴 경우 추가 실행 0.
 
-## 3. 담당 ① — G10: mnist downstream (216런 · ~135 GPU-h · 3090)
+## 3. 담당 ① — G12: A축 lever probe seed 보강 (16셀 · ~64 GPU-h · **A6000**)
+
+> **B200 c4 에서 넘친 유일한 물량**이다. c4 = L1 clean(18.6) + flirds1st s1·2(25.2) + G5(20) + G12 앞 3셀(9) ≈ 72.8h 로 74h 창을 채우고, **G12 나머지 16셀만 흘러넘친다**.
+> HJ 가 맡는 이유 = **A6000·HF 캐시 셋업이 이미 있고 지금도 거기 있다** → 전환 마찰 0. 끝나면 3090 으로 넘어간다.
+
+- **셀**: anchor5 `lr{1,2,3}e-3 × st{20,30}` seed1·2 중 잔여 + anchor5 `r{32,64}` seed1·2 + `noise_1B_r64` seed1·2 = **16**(c4 가 `lr2e-3_st20` s1·s2 와 `lr3e-3_st20` s1 을 가져감).
+- 러너 `track_d.py` / `probe_val_noise.py`, 착지 `runs/probe_signal/rundirs`(noise 는 `noise_probe/`).
+- **R4 무대가 아니다 → `ROUNDS` 를 주지 않는다.** anchor5 는 N=5·R=30 이라 작지만 flirds HVP 경로이므로 **`VAL_CHUNK=2`** 권장(청크 합산 exact → **φ 동일**).
+```
+# 예: 한 셀
+REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 \
+  SEED=2 LORA_R=16 RUN_NAME=1B_anchor5_lr3e-3_st20_seed2 VAL_CHUNK=2 \
+  RUNDIR_ROOT=$REPO/runs/probe_signal/rundirs PYTHONPATH=. $PY -u experiments/track_d.py
+```
+- **부록·최저 우선**이라 마감에 걸리면 꼬리부터 버려도 된다. 다만 핵심 질문("lr 로 커진 φ가 cross-seed 실재 신호인가", 예측 ρ≈0)에 필요한 **`lr{2,3}e-3` 계열을 먼저** 돌린다.
+
+## 3b. 담당 ② — G10: mnist downstream (216런 · ~135 GPU-h · 3090)
 
 - **⚠ 착수 게이트 = 코드 C-a**(`track_c2.py:157` MODEL_FN 에 `"mnist": LeNet5` 1줄; YH 담당).
 ```
@@ -52,17 +76,6 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh   # seeds 1-2
 ```
 - 2파티션 × 4위협 × (**8**소스 + 관측자) × 3seed = 216. mnist 는 track_g 그리드가 없어 **flirds 소스도 여기서 생성**(7이 아니라 8인 이유). **P1w 는 같은 rundir 에서 동반 산출**(추가 런 0).
 - CNN 은 conda `lora4cl`(torch 2.11) + torchvision 데이터만 필요 — HF 캐시 불요. 파티션 `base_suma_rtx3090`(sbatch 내장).
-
-## 3b. 담당 ② — c1축 cifar10 seed1 일부 (6셀 · ~55 GPU-h · 균등분배 몫)
-
-> Slurm 4계정 wall-time 을 맞추기 위한 배분이다(전 계정 ~23 wall-h). **⚠ 게이트 = 코드 C-b**(YH 담당).
-
-```
-cd $REPO && mkdir -p runs/track_c/c1/_logs
-sbatch --array=16-21%8  runs/track_c/c1/sbatch_c1_axis.sh    # cifar10 seed1 중 6셀
-```
-- 셀 = (a) 2¹⁰ 재학습 오라클 + (b) 2¹⁰ + 9방법 φ. 실측 **cifar10 9.1h/셀**. `--time=24:00:00` 내장 — **줄이지 말 것**(중도 컷 = 그 셀 전손).
-- 인덱스 규약: `SEED=IDX/16` · 그 안에서 `0-7`=cifar10, `8-15`=mnist · 파티션 `iid,dir1` × 4위협.
 
 ## 3c. 완주 후
 

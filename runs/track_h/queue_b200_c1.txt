@@ -22,7 +22,6 @@
 phase2_matrix.py|G1_L2_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0
 phase2_matrix.py|G1_L2_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1
 phase2_matrix.py|G1_L2_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2
-
-# ─── L1 clean 온라인 seed1 (필수 · 1.9h) — seed2 는 c2 에 있다 ──────────────
-# clean 에선 oracle_excl/random_excl 가 자동으로 빠진다(제외 대상 부재; track_g l.618).
-track_g.py|L1_clean_online_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# 이 컨테이너는 G1 noisy 전용이다(배치 규약: c1/c2/c3 = G1, c4 = 나머지 전부).
+# 완주 시각 ≈ 58.8h.  남는 창(~15h)은 컷·재시도 마진으로 비워 둔다 —
+# G1 은 셀당 19.6h 이고 cell-end 1회 persist 라 여유가 곧 보험이다.

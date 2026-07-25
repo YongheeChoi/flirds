@@ -39,13 +39,13 @@
   → **48셀 ≈ 505 GPU-h** · 8슬롯 **~63 wall-h**.
 - **⚠ 착수 게이트 = 코드 변경 C-b**(YH 담당 · `REMAINING-slurm-YH.md` §2). 요구 env 계약 = `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE=0.70`. **C-b 착지 전에는 제출해도 실패**한다.
 
-**JW 몫 = 18셀 ~182 GPU-h** — c1축 48셀을 **4계정에 균등 분배**한 결과다(전 계정 ~23 wall-h; YH 0-7 · HJ 16-21 · JB 24-31,40-47).
+**JW 몫 = 21셀 ~205 GPU-h** — Slurm 4계정을 **GPU-h 로 균등화**한 결과다(전 계정 ~25 wall-h; YH `0-7,16` · JB `14-15,24-31,40-47` · HJ 는 c1축 없이 G12+G10).
 
 ```
 mkdir -p runs/track_c/c1/_logs
-sbatch --array=32-39%8      runs/track_c/c1/sbatch_c1_axis.sh   # cifar10 seed2 (본문 G2 먼저)
-sbatch --array=22-23%8      runs/track_c/c1/sbatch_c1_axis.sh   # cifar10 seed1 잔여 2셀
-sbatch --array=8-15%8       runs/track_c/c1/sbatch_c1_axis.sh   # mnist seed0 (부록 G9)
+sbatch --array=32-39%8   runs/track_c/c1/sbatch_c1_axis.sh   # cifar10 seed2 (본문 G2 먼저)
+sbatch --array=17-23%8   runs/track_c/c1/sbatch_c1_axis.sh   # cifar10 seed1 잔여 7셀
+sbatch --array=8-13%8    runs/track_c/c1/sbatch_c1_axis.sh   # mnist seed0 6셀 (부록 G9)
 ```
 인덱스 규약: `SEED=IDX/16` · 그 안에서 `0-7`=cifar10, `8-15`=mnist · 파티션 `iid,dir1` × 4위협.
 **cifar10 을 먼저** 제출한다(본문 G2 > 부록 G9).
@@ -57,10 +57,10 @@ sbatch --array=8-15%8       runs/track_c/c1/sbatch_c1_axis.sh   # mnist seed0 (�
 | P | 무엇 | 셀 | GPU-h | 근거 |
 |---|---|---|---|---|
 | **P0** | G2 cifar10 seed2 (32-39) | 8 | ~73 | **본문** fidelity 표 |
-| **P1** | G2 cifar10 seed1 잔여 (22-23) | 2 | ~18 | 〃 |
-| **P2** | G9 mnist seed0 (8-15) | 8 | ~91 | 부록 fidelity |
+| **P1** | G2 cifar10 seed1 잔여 (17-23) | 7 | ~64 | 〃 |
+| **P2** | G9 mnist seed0 일부 (8-13) | 6 | ~68 | 부록 fidelity |
 
-- **예상 종료 = 07-26 후반~07-27 오전**(182 GPU-h / 8슬롯 ≈ **23 wall-h**; **C-b 착지 시각만큼 밀린다**).
+- **예상 종료 = 07-27 오전**(205 GPU-h / 8슬롯 ≈ **26 wall-h**; **C-b 착지 시각만큼 밀린다**).
 - **HJ 가 07-26 오전, JB 가 07-26 후반에 비므로 그쪽이 꼬리를 work-steal** 한다 — 같은 3090·같은 env·셀 단위 idempotent 라 안전하다. 제출 시 남은 `--array` 범위만 지정할 것(중복 = GPU 낭비).
 - 셀 하나가 ~9–11h 라 **중도 컷 = 그 셀 전손**(rundir 은 셀 종료 시 기록). `--time` 을 줄이지 말 것.
 
