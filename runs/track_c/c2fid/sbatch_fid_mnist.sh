@@ -26,7 +26,8 @@
 # After: python runs/track_c/c2fid/make_analysis.py
 #
 #SBATCH --job-name=c2fidmn
-#SBATCH --partition=base_suma_rtx3090
+#SBATCH --partition=base_suma_rtx3090,dell_rtx3090
+# ^ 3090 풀 전체.  base_suma 단독은 07-25 여유 0 / dell 에 9장 유휴(JW 실측).
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G

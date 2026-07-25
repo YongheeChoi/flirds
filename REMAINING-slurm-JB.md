@@ -28,7 +28,17 @@
 - **셀**: **`--array=14-15,24-31,40-47` = 18셀 ~205 GPU-h**(mnist seed0 잔여 2 + seed1 8 + seed2 8). Slurm 4계정을 **GPU-h 로 균등화**한 몫이다(YH `0-7,16` · JW `32-39,17-23,8-13` · HJ 는 c1축 없이 G12+G10).
   인덱스 규약: `SEED=IDX/16` · 그 안에서 `0-7`=cifar10, `8-15`=mnist · 파티션 `iid,dir1` × 4위협(clean·lf@0.70·free_rider·grad_noise).
 - **비용(실측)**: `t_a` = cifar10 **32,808 s ≈ 9.1 h** · mnist **41,168 s ≈ 11.4 h**(`runs/track_c/c1_oracle/*/metrics.json`). 궤적 ~103 s·전 방법 합 ~8분은 무시 가능 → **셀 ≈ t_a**.
-- **⚠ 착수 게이트 = 코드 변경 C-b**(YH 담당). 요구 env = `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE=0.70`. **C-b 착지 전에는 제출해도 실패**한다.
+- **⚠ 착수 게이트 = C-b 가 `origin/main` 에 있는 것.** 요구 env = `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE=0.70`.
+  **정정(07-25)**: 구 러너로 제출하면 **실패하지 않고 조용히 틀린다** — 미지 env 는 무시되고
+  `C1_SCENARIO=iid` 로 도는데 `C1_RUN_NAME`(l.432)만 먹혀 위협 라벨 붙은 이름에 iid-clean
+  데이터가 들어가고 EXIT=0. **JB 의 워처 술어(`grep C1_THREAT` on `origin/main`)가 정확히
+  옳은 방어**다 — 그대로 유지. 제출을 보류하고 슬롯을 idle 로 둔 판단도 맞다.
+- **C-b 는 이미 구현·검증 완료(YH 워킹트리)** — 남은 건 `git push`(Yonghee) 하나다.
+  JB 가 포팅하지 않기로 한 판단이 결과적으로 옳았다: JW 는 별도 구현(`989f5ca`)을 만들어
+  **정본이 두 벌 되는 문제**가 생겼고, 지금 그걸 되돌리는 중이다.
+- 착지 후 JB 계획대로 `C1_ORACLE_A=0` 빌드-only 스모크(별도 `_smoke` 이름)로 새 threat 경로를
+  먼저 검증할 것. 대조 기준점(YH 스모크 실측): `cifar10/dir1_free_rider seed=0` →
+  `corrupt=[1,3]` · `rates=[0,…]`(free_rider 는 라벨 무접촉) · `corrupt=round(0.4N)`.
 
 ```
 cd $REPO && mkdir -p runs/track_c/c1/_logs

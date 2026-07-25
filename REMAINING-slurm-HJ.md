@@ -51,12 +51,27 @@
 - 산출 = `runs/phase2_matrix/rundirs/1B_silo5_{threat}_aonly_s{seed}` · 조인 = `PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py`.
 - **⚠ 수록 위치 미정**: 07-25 확정 계획서의 본문·부록 목록에 **silo5 (a)-leg 항목이 없다**(LLM (a) 역할은 "1B-LLM 소형 앵커 듀얼오라클 vs (a)" = anchor5 가 담당, ● 완료). 이미 디스크에 있는 완성품이므로 **버리지 말고 Yonghee 판정 대기** — 되살릴 경우 추가 실행 0.
 
-## 3. 담당 ① — G12: A축 lever probe seed 보강 (16셀 · ~64 GPU-h · **A6000**)
+## 3. 담당 ① — G12: A축 lever probe seed 보강 (**15셀** · ~60 GPU-h · **A6000**) — 🟢 제출 완료 `1878707`
 
 > **B200 c4 에서 넘친 유일한 물량**이다. c4 = L1 clean(18.6) + flirds1st s1·2(25.2) + G5(20) + G12 앞 3셀(9) ≈ 72.8h 로 74h 창을 채우고, **G12 나머지 16셀만 흘러넘친다**.
 > HJ 가 맡는 이유 = **A6000·HF 캐시 셋업이 이미 있고 지금도 거기 있다** → 전환 마찰 0. 끝나면 3090 으로 넘어간다.
 
-- **셀**: anchor5 `lr{1,2,3}e-3 × st{20,30}` seed1·2 중 잔여 + anchor5 `r{32,64}` seed1·2 + `noise_1B_r64` seed1·2 = **16**(c4 가 `lr2e-3_st20` s1·s2 와 `lr3e-3_st20` s1 을 가져감).
+- **셀**: anchor5 `lr{1,2,3}e-3 × st{20,30}` seed1·2 중 잔여 + anchor5 `r{32,64}` seed1·2 + `noise_1B_r64` seed1·2 = **15**(c4 가 `lr2e-3_st20` s1·s2 와 `lr3e-3_st20` s1 을 가져감).
+  **16 → 15 (07-25 HJ 확인, 코드 대조 완료)**: `lr1e-3_st10 seed0` 은 **추가 실행이 필요 없다** —
+  `track_d.py` 의 `ANCHOR5` 기본값이 `lr=1e-3 · max_steps=10 · r=16` 이라 기존
+  `runs/track_d/rundirs/1B_anchor5_seed0` 이 곧 그 셀이고, `runs/probe_signal/make_figures.py:120`
+  이 이미 그것을 `("lrsteps", 1e-3, 10)` / `("rank_anchor", 16)` baseline 으로 읽는다.
+- **제출 = `--array=0-14%8`** (`1878707`). 배열 순서를 우선순위로 깔았다:
+  `0-4` lr3e-3·lr2e-3 → `5-8` lr1e-3 → `9-12` r32/r64 → `13-14` noise.
+  **마감에 걸리면 뒤 인덱스부터 자르면 핵심 질문은 지켜진다.** config 는 대응 seed0 셀과 일치
+  (lr 격자 `MMLU_LIMIT=40` · rank 셀 MMLU 전체) — cross-seed 비교는 같은 셀의 seed 간 비교라
+  **이 일치가 축의 유효성 자체**다. 현재 `0-4` 실행 중 · OOM 0.
+- **⚠ 다른 계정에 파급되는 발견 — track_d 의 HF 캐시 공백**: `vicgalle/alpaca-gpt4` 와 `cais/mmlu`
+  가 공유 캐시에도 HJ 캐시에도 없었다(gsm8k 계열 6종 + Llama-1B 뿐). track_d 는 이 둘이 없으면
+  **오프라인에서 시작조차 못 한다**. `hf_pin.py` 의 `REVISIONS` 가 비어 있어 최신 커밋으로 받으면
+  되고 둘 다 public → HJ 의 `HF_HOME` 에만 추가(공유 캐시 무수정, +238MB) · 오프라인 재로딩 검증 완료.
+  → **B200 c4 의 G5·G12 도 track_d 계열이므로 같은 공백을 먼저 확인**해야 한다
+  (B200 은 과거 anchor5·probe_signal 을 돌렸으니 있을 가능성이 높지만, 확인 전 제출 금지).
 - 러너 `track_d.py` / `probe_val_noise.py`, 착지 `runs/probe_signal/rundirs`(noise 는 `noise_probe/`).
 - **R4 무대가 아니다 → `ROUNDS` 를 주지 않는다.** anchor5 는 N=5·R=30 이라 작지만 flirds HVP 경로이므로 **`VAL_CHUNK=2`** 권장(청크 합산 exact → **φ 동일**).
 ```
@@ -93,7 +108,14 @@ sbatch --array=0-71%8    runs/track_h/sbatch_cnn_mnist_comp.sh   # seed0 (72)
 sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh   # seeds 1-2
 ```
 - 2파티션 × 4위협 × (**8**소스 + 관측자) × 3seed = 216. mnist 는 track_g 그리드가 없어 **flirds 소스도 여기서 생성**(7이 아니라 8인 이유). **P1w 는 같은 rundir 에서 동반 산출**(추가 런 0).
-- CNN 은 conda `lora4cl`(torch 2.11) + torchvision 데이터만 필요 — HF 캐시 불요. 파티션 `base_suma_rtx3090`(sbatch 내장).
+- CNN 은 conda `lora4cl`(torch 2.11) + torchvision 데이터만 필요 — HF 캐시 불요.
+- **파티션 = `base_suma_rtx3090,dell_rtx3090`**(sbatch 내장 · 07-25 확장). base_suma 단독은 여유 0
+  (총 71장, 빈 6장은 draining node01)이고 dell 에 9장이 놀고 있었다 — JW 실측. 같은 RTX3090 이라
+  스택 캐비엇 동일. `sinfo -o "%P %G %a"` 로 다른 3090 파티션이 보이면 더 붙여도 된다.
+- **깨끗한 상태에서 시작한다**: YH 가 이전 판 근거로 큐에 넣어 둔 216셀을 **취소했다**(전량 PD ·
+  mnist rundir 0개). 중복·팬텀 없음.
+- **torchvision 미설치 가능성**: JW 계정은 없어서 `0.26.0+cu128` 을 별도 설치했다(torch 2.11.0+cu128
+  불변). HJ 도 CNN 첫 제출 전 `python -c "import torchvision"` 로 확인할 것.
 
 ## 3c. 완주 후
 
