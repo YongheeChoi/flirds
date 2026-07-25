@@ -140,6 +140,21 @@ tags: [flirds, results, fidelity]
 | frrand | **1.000±0.000** | <u>1.000±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
 
 > near-additive 레짐이라 Flirds·Flirds-1st 모두 (b)와 **완전일치(+1.000)** — 변별은 vs (a)(§1B)·detection(§3)에서. (b) 타깃 자체의 seed 안정성은 §1C.
+>
+> **제외 위협축 참고 — poison**(clean-preserving backdoor, 07-22 스코프 밖): 같은 silo5 셀에서 **Flirds ρ 0.600±0.283 · Flirds-1st ρ 0.000±0.000**(Pearson +0.155±0.561 / −0.959±0.006). silo5 4위협 중 same-game 추정이 (b)와 **어긋나는 유일한 칸** — 실패는 게임이 아니라 Taylor 추정 쪽. *(원본 `01_silo5/csv/spearman_vs_boracle.csv`는 ddof1로 0.600±0.346 표기 — 본 페이지 규약은 ddof0.)*
+
+#### 교차-사일로 스케일 레그 (3B) `[보류]` — ◐ 1-seed
+
+> **세팅**: 위 silo5와 동일 무대에 Llama-3.2-3B. seed0만(coalition off). 탐지 leg는 [[flirds-results-detection]].
+
+| 위협 | Flirds ρ | Flirds-1st ρ | Flirds r | Flirds-1st r |
+|---|---|---|---|---|
+| noisy(answer-swap) | **1.000** | <u>1.000</u> | **1.000** | <u>1.000</u> |
+| free-rider(frzero) | **1.000** | <u>1.000</u> | **1.000** | <u>1.000</u> |
+| frrand | **1.000** | <u>1.000</u> | **1.000** | <u>1.000</u> |
+| *poison (제외 위협)* | *0.000* | *0.000* | *−0.893* | *−0.934* |
+
+> 1B와 동일하게 near-additive 포화(+1.000). **poison에선 1B(0.600)보다 더 붕괴(0.000)** — 스케일이 커져도 clean-preserving 공격은 1차·2차 Taylor 모두 못 잡음.
 
 #### 표준 부분참여 충실도 (1B·3B·7B) `[제외]` (07-23 삭제; 되살림 후보)
 
@@ -151,9 +166,59 @@ tags: [flirds, results, fidelity]
 | 3B | **1.000±0.000** | <u>0.997±0.002</u> | **1.000±0.000** | <u>1.000±0.000</u> |
 | 7B | **0.999±0.001** | <u>0.998±0.001</u> | **1.000±0.000** | <u>1.000±0.000</u> |
 
-#### 대규모 교차-디바이스 앵커 충실도 `[부록]` · N=10 완전열거 `[부록·비용]`
+#### 대규모 교차-디바이스 앵커 충실도 `[부록]`
 
-> device100 앵커(N=100 α=0.5, (b) per-round): Flirds·Flirds-1st ρ ≈ **+1.000**(near-additive; 비-anchor 칸은 Flirds-proxy 참값). N=10 2¹⁰ 완전열거(◐ 1-seed): Flirds vs exact (b) **+1.000**. 두 무대의 값은 규모·비용 축이 주라 상세·std는 [[flirds-results-cost]] 부록E. **신호 실재성 매트릭스**(iid vs 비IID) `[제외·진단]`의 (b) cross-seed ρ는 §1C에 통합.
+> **세팅**: Llama-3.2-1B LoRA · **N=100, Dirichlet α=0.5, 부분참여** · (b) **per-round** exact oracle을 앵커 3셀에만 부착 · seed{0,1,2}. 같은 sweep의 비-anchor α 칸은 (b)가 없어 **Flirds-proxy가 참값** → fidelity 표 대상 아님(그 칸은 detection·비용 축에서만 사용). N=100 규모에서 exact (b)와 대조 가능한 **유일한 LLM 무대**.
+
+| 위협 | Flirds ρ | Flirds-1st ρ | Flirds r | Flirds-1st r |
+|---|---|---|---|---|
+| noisy(answer-swap) | **1.000±0.000** | <u>1.000±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
+| free-rider(frzero) | **1.000±0.000** | <u>1.000±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
+| frrand | **1.000±0.000** | <u>1.000±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
+| **평균(3위협)** | **1.000** | <u>1.000</u> | **1.000** | <u>1.000</u> |
+
+> **N=100·부분참여에서도 near-additive가 유지**돼 Flirds·Flirds-1st 모두 exact (b)와 완전일치 — 즉 이 무대는 *fidelity 변별력이 없고* **비용 축**(1/159, [[flirds-results-cost]] 부록E)이 본론. 같은 셀 전 9방법 대조(FedIF 0.72~0.83·GTG 0.78~0.84·ComFedSV −0.05)는 `04_device100_anchor/csv/spearman_vs_bperround.csv`. **⚠ (b) 타깃 자체는 이 무대에서 seed-불안정**(xseed ρ −0.04~+0.12, §1C) — +1.000의 해석 조건.
+
+#### N=10 완전열거(2¹⁰) 충실도 `[부록·비용]` — ◐ 1-seed
+
+> **세팅**: Llama-3.2-1B LoRA · N=10 **전원참여** · (b) **exact 2¹⁰=1024 부분집합 완전열거** · seed0만. 고-power 확장 + 지수-비용 실측(1/160)이 목적. 방법 세트 축소(Flirds·Flirds-1st·loss-heur·Fed-LOO).
+
+| 방법 | Spearman vs (b) | Pearson vs (b) |
+|---|---|---|
+| **Flirds** | **1.000** | **1.000** |
+| Flirds-1st | <u>1.000</u> | <u>1.000</u> |
+
+> N=10 완전열거에서도 +1.000 — near-additive 레짐 확인. 3-seed 미확보(◐)라 본문 fidelity 근거로는 못 쓰고 **비용 축 근거**로만 사용.
+
+#### 신호 실재성: 오염×비IID 매트릭스 `[제외·진단]`
+
+> **세팅**: Llama-3.2-1B LoRA · N=5 · full · R=10 · (b) 2⁵ exact · seed{0,1,2} · **{IID 5분할, 비IID 5도메인(silo5)} × {clean, noisy, frzero, frrand}** 2×4. 목적은 방법 비교가 아니라 **"클라 간 실재 신호가 *어디서* 생기나"** 진단 — 즉 헤드라인 +1.000이 *의미 있는 순위*를 맞힌 건지, *무정보 순위*를 맞힌 건지 가르는 실험. 07-02~07-07 신호크기 진단의 B축.
+
+**표 A — 추정 충실도는 두 레짐 모두 포화** (Flirds·Flirds-1st vs (b), ● 3-seed)
+
+| 위협 | IID · Flirds ρ | IID · Flirds-1st ρ | 비IID · Flirds ρ | 비IID · Flirds-1st ρ |
+|---|---|---|---|---|
+| clean | **1.000±0.000** | <u>1.000±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
+| noisy(answer-swap) | **1.000±0.000** | <u>1.000±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
+| free-rider(frzero) | **1.000±0.000** | <u>1.000±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
+| frrand | **1.000±0.000** | <u>1.000±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
+
+> 8칸 전부 +1.000 → **fidelity 지표만으론 두 레짐이 구별되지 않는다**. 진단의 실제 payload는 표 B.
+
+**표 B — (b) 타깃 자체의 cross-seed 재현성 = 신호의 실재성** (● 3-seed, seed쌍 3개 평균)
+
+| 위협 | IID (iid5) | 비IID (silo5) | 차 |
+|---|---|---|---|
+| **clean (오염 0)** | 0.133 | **0.867** | +0.734 |
+| noisy(answer-swap) | 0.600 | **0.933** | +0.333 |
+| free-rider(frzero) | 0.700 | **0.933** | +0.233 |
+| frrand | 0.800 | **0.933** | +0.133 |
+| **평균(오염 3위협)** | 0.700 | **0.933** | +0.233 |
+| *poison (제외 위협)* | *0.733* | ***1.000*** | *+0.267* |
+
+> **결정타는 clean 행**: 오염이 하나도 없는데 IID 0.133(=순위가 seed마다 뒤바뀜, 사실상 무정보) vs **비IID 0.867**(도메인 이질성만으로 안정된 실재 신호). 오염 축만 켜도 IID가 0.60~0.80으로 올라오므로 — **오염과 비IID 각각이 독립적으로 신호를 만들고, 비IID는 오염 없이도 충분하다**. 따라서 IID-clean 무대의 +1.000은 *불안정한 GT를 좇은 값*이고, 본문 LLM 무대를 비IID/오염 쪽에 두는 근거가 여기서 나온다. 전 무대 확장판은 §1C. **출처**: `runs/phase2_matrix/rundirs/1B_{iid5,silo5}_*` + `target_stability.csv`.
+>
+> ⚠ **재생성 주의**: `runs/phase2_matrix/make_analysis.py`는 iid5 레짐과 clean 위협을 **설계상 건너뛴다**(taxonomy가 이 셀들보다 먼저 만들어짐 — 해당 소스 §load_cells). 위 두 표는 `analysis/` CSV가 아니라 **rundir phi.parquet 직접 계산**이다.
 
 ---
 
@@ -250,17 +315,32 @@ tags: [flirds, results, fidelity]
 
 > 헤드라인 +1.000은 *(b)와의 일치*다 — 그 매칭 대상 (b) 자신이 seed 간 재현되나(리뷰 C-2 대응). **IID-clean은 (b) 타깃이 seed-불안정 → 거기의 +1.000은 불안정한 GT를 좇는 것**. 비-IID(silo5)선 (b) 안정. 신호 실재성 매트릭스(iid vs 비IID)의 결론이 여기로 수렴. **출처**: `runs/track_d/target_stability.csv`·`runs/phase2_matrix/target_stability.csv`(파생).
 
-| 무대 (cell) | mean xseed ρ ↑ | 성격 |
-|---|---|---|
-| IID-clean · 1B anchor5 | −0.367 | 불안정 |
-| IID-clean · 1B std20 | −0.114 | 불안정 |
-| IID-clean · 3B anchor5 | +0.033 | 불안정 |
-| IID-clean · 7B anchor5 | +0.733 | 스케일↑ 안정↑ |
-| IID · iid5 | +0.133 | 저-신호 |
-| **비-IID · silo5 clean** | **+0.867** | 안정(실재 신호) |
-| **비-IID · silo5 noisy** | **+0.933** | 안정 |
-| **비-IID · silo5 frzero** | **+0.933** | 안정 |
-| device100 anchor · noisy | −0.042 | per-round·N100 |
+**전 LLM 무대 전량** (canonical `target_stability.csv` 2종 전 행; seed쌍 3개 평균, n_seeds=3)
+
+| 그룹 | 무대 (cell) | mean xseed ρ ↑ | 성격 |
+|---|---|---|---|
+| IID-clean · 소형 | 1B anchor5 (N=5) | −0.367 | 불안정 |
+| IID-clean · 소형 | 3B anchor5 | +0.033 | 불안정 |
+| IID-clean · 소형 | **7B anchor5** | **+0.733** | 스케일↑ 안정↑ |
+| IID-clean · 부분참여 | 1B std20 (N=20) | −0.114 | 불안정 |
+| IID-clean · 부분참여 | 3B std20 | −0.243 | 불안정 |
+| IID-clean · 부분참여 | 7B std20 | +0.164 | 저-신호 |
+| IID · 매트릭스 | iid5 clean | +0.133 | 저-신호 |
+| IID · 매트릭스 | iid5 noisy | +0.600 | 오염이 신호 생성 |
+| IID · 매트릭스 | iid5 frzero | +0.700 | 〃 |
+| IID · 매트릭스 | iid5 frrand | +0.800 | 〃 |
+| IID · 매트릭스 | *iid5 poison (제외)* | *+0.733* | 〃 |
+| **비IID · 매트릭스** | **silo5 clean** | **+0.867** | **오염 0인데 안정 = 실재 신호** |
+| **비IID · 매트릭스** | **silo5 noisy** | **+0.933** | 안정 |
+| **비IID · 매트릭스** | **silo5 frzero** | **+0.933** | 안정 |
+| **비IID · 매트릭스** | **silo5 frrand** | **+0.933** | 안정 |
+| 비IID · 매트릭스 | *silo5 poison (제외)* | ***+1.000*** | 안정 |
+| 교차-디바이스 | device100 anchor · noisy | −0.042 | per-round·N=100 |
+| 교차-디바이스 | device100 anchor · frzero | +0.120 | 〃 |
+| 교차-디바이스 | device100 anchor · frrand | +0.124 | 〃 |
+| ⬚ | 3B silo5 (4셀) | — | n_seeds=1 → 산출 불가 |
+
+> **서열**: 비IID silo5(0.87~1.00) ≫ IID+오염(0.60~0.80) ≫ IID-clean 소형·부분참여(−0.37~+0.16) ≈ device100 per-round(−0.04~+0.12). **주무대를 비IID·오염 쪽에 두는 근거**이자, IID-clean·device100 셀의 +1.000을 fidelity 헤드라인으로 쓰면 안 되는 근거. 7B anchor5만 IID-clean인데도 +0.733 — 스케일이 커지면 클라 간 차이가 seed 잡음을 넘기 시작.
 
 ---
 

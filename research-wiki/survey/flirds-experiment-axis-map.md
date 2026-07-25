@@ -19,6 +19,8 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 ## 범례
 
 **데이터 상태**: ● 3-seed 실측 · ◐ 부분/1-seed(정본 아님) · ⬚ 설계했으나 미실행 · ⟐ 파생/재분석(재실행 0) · – 해당없음
+
+> **실측 상태 감사 (2026-07-25)**: 아래 전 행의 마커를 **실제 rundir와 1:1 대조**했다(`phi.parquet` seed 열 / `metrics.json` 키 / rundir 존재 여부). **결과: 마커 오류 0** — ⬚ 2건(R4-L2 gsm50k5 (b), silo5 (a)-leg)은 rundir 부재 확인, anchor5의 "1B만 (a)"는 `(a)oracle` 키가 1B 3-seed에만 존재함을 확인, N=10은 seed0 단독 확인, C1·c2fid·device100·silo5·iid5·std20 전부 3-seed 확인. 같은 감사에서 **누락 2건을 발견해 아래에 반영**했다: ① 1A-LLM에 3B silo5 (b)-leg 행 추가(◐ 1-seed) ② 2-CNN 확장 파티션은 "⬚ 미실행"이 아니라 **flirds 단독 3-seed 실측 ◐** 였음(누락된 건 비-flirds 점수원 7종).
 **현 논문 위치**: `[본문]` 수록 확정 · `[부록]` 부록 배치 · `[후보]` 미정(넣을 수도) · `[보류]` 일시 보류 · `[제외]` 현재 뺌(사유 병기) · `[기록/전제/근거/각주]` 본문을 뒷받침하나 독립 표는 아님
 
 **상위 5축 ↔ 프로젝트 기존 E1–E7 분류**(자매 문서 `prior-work-taxonomy/validation-experiments.md`와 1:1): Fidelity=E1 · Downstream=E2 · Detection=E3 · **비용·규모=E6** · Ablation ⊇ {E4 fairness(미설계)·E5 stability·E7 aggregation} + 방법-내부 검증. — 상위 4축은 Yonghee 지정, 비용은 독립 5번째 축으로 승격(2026-07-25).
@@ -51,14 +53,15 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 #### 1A-LLM
 
-| 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
-|---|---|---|---|---|
-| **주무대 정확도-무대 충실도** | R4 GSM8K(N=50, 5/50)에 exact (b) per-round 부착. **R4 개입·탐지의 유일 fidelity 대조축** | ⬚ 미실행 | `[본문·주무대]` (§5.2 R4-L2) | `runs/phase2_matrix`(gsm50k5) |
-| **교차-사일로 도메인 충실도 ((b)-leg)** | N=5 5도메인(의료·법률·금융·수리·일반) 비IID에서 (b) 2⁵ 대비. (a)-leg는 §1B | ● 3-seed | `[본문·보조]` | `runs/phase2_matrix`(1B_silo5) |
-| **표준 부분참여 충실도 (1B·3B·7B)** | N=20(2/round) alpaca, (b) per-round 대비. "스케일 무관 ρ≥0.999" 근거였음 | ● 3-seed | `[제외]` (07-23 삭제; 되살림 후보) | `runs/track_d`(std20) |
-| **대규모 교차-디바이스 앵커 충실도** | N=100 α=0.5 anchor 셀에 exact (b) per-round 부착 | ● 3-seed | `[부록]` | `runs/phase2_matrix`(device100 anchor) |
-| **N=10 완전열거(2¹⁰) 충실도** | N=10 전원 exact 2¹⁰. 고-power 확장 + 지수-비용 실측 | ◐ 1-seed | `[부록·비용]` | `runs/track_d/rundirs_e5_n10` |
-| **신호 실재성: 오염×비IID 매트릭스** | iid vs 비IID(도메인)×오염 2×2. (b) cross-seed 신호가 *어디서* 생기나(비IID clean ρ 0.87 vs IID 0.13) 진단 | ● 3-seed | `[제외]` (진단용) | `runs/matrix_cxni`→`phase2_matrix`(iid5/silo5) |
+| 실험                           | 무엇을 보여주나 · 세팅                                                                           | 데이터      | 위치                        | 출처                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------- | -------- | ------------------------- | ---------------------------------------------- |
+| **주무대 정확도-무대 충실도**           | R4 GSM8K(N=50, 5/50)에 exact (b) per-round 부착. **R4 개입·탐지의 유일 fidelity 대조축**             | ⬚ 미실행    | `[본문·주무대]` (§5.2 R4-L2)   | `runs/phase2_matrix`(gsm50k5)                  |
+| **교차-사일로 도메인 충실도 ((b)-leg)** | N=5 5도메인(의료·법률·금융·수리·일반) 비IID에서 (b) 2⁵ 대비. (a)-leg는 §1B                                 | ● 3-seed | `[본문·보조]`                 | `runs/phase2_matrix`(1B_silo5)                 |
+| **교차-사일로 스케일 레그 (3B)**       | 위 무대에 3B. near-additive 포화 재확인 + poison서 1B(0.60)보다 더 붕괴(0.00)                              | ◐ 1-seed | `[보류]`                    | `runs/phase2_matrix`(3B_silo5)                 |
+| **표준 부분참여 충실도 (1B·3B·7B)**   | N=20(2/round) alpaca, (b) per-round 대비. "스케일 무관 ρ≥0.999" 근거였음                           | ● 3-seed | `[제외]` (07-23 삭제; 되살림 후보) | `runs/track_d`(std20)                          |
+| **대규모 교차-디바이스 앵커 충실도**       | N=100 α=0.5 anchor 셀에 exact (b) per-round 부착                                            | ● 3-seed | `[부록]`                    | `runs/phase2_matrix`(device100 anchor)         |
+| **N=10 완전열거(2¹⁰) 충실도**       | N=10 전원 exact 2¹⁰. 고-power 확장 + 지수-비용 실측                                                | ◐ 1-seed | `[부록·비용]`                 | `runs/track_d/rundirs_e5_n10`                  |
+| **신호 실재성: 오염×비IID 매트릭스**     | iid vs 비IID(도메인)×오염 2×2. (b) cross-seed 신호가 *어디서* 생기나(비IID clean ρ 0.87 vs IID 0.13) 진단 | ● 3-seed | `[제외]` (진단용)              | `runs/matrix_cxni`→`phase2_matrix`(iid5/silo5) |
 
 ### 1B. retrain (a) 오라클 대비 — 방법-중립 참값(전 방법 채점)
 
@@ -91,7 +94,10 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
 | **점수원 경쟁 — 개입 정확도** | 같은 개입 정책에서 **8점수원 중 어느 φ 정의가 학습을 잘 만드나**. {온라인 배포게이팅, 재학습 부호게이트}×위협, cifar10/dir1, 절대 acc. vanilla(바닥)·oracle_excl(천장)·random_excl 앵커 | ● 3-seed | `[본문·주무대]` (§5.3) | `runs/track_h/rundirs_cnn` |
-| **fmnist·iid 경쟁 확장** | 위 경쟁을 fmnist·iid로 (개입 실효성의 데이터셋·파티션 강건성) | ⬚ 미실행 | `[후보]` | (W-fm) `runs/track_h` |
+| **확장 파티션·데이터셋 개입** | 위 경쟁을 cifar10{iid,qskew,shard}·fmnist{dir1,iid}로. **정정(07-25 감사)**: flirds 단독 점수원 × P1~P4 online은 **3-seed 실측 존재**(이전 "⬚ 미실행" 표기는 오류). 미실행은 비-flirds 7종(W-D)·비-dir1 retrain | ◐ 3-seed·flirds only | `[후보]` | `runs/track_h`(p1w_cnn) |
+| **개입 정책 축 (P1~P5)** | 같은 무대서 7정책(sign/sign-weight/soft-mult/z-gate/신뢰 hard·soft) × 8점수원 종합 경쟁점수 + clean parity | ● 3-seed | `[본문·주무대 보조]` | `runs/track_h`(competition_score) |
+| **강한-주류 label-flip(strmain) 경쟁** | lf-strmain 3셀서 8점수원 × P1~P4. renorm도 살아남는 유일 오염 | ● 3-seed | `[후보]` | `runs/track_h`(stage_cell=strmain) |
+| **clean 오발화(부호 게이트 발화율)** | 관찰자 런서 점수원별 clean 오발화·오염 발화율 — parity 위반의 원인 분해 | ● 3-seed | `[근거]` | `runs/track_h`(observer_zero_semantics) |
 | **완전참여·동적재추첨·신뢰게이트 확증** | Scale 100/100 완전참여(비용선형)·Dyn 매라운드 오염 재추첨(신호파괴 한계)·P5 신뢰기반 sign 정책 | ● 3-seed | `[부록E]` | `runs/track_h/{scale,dyn,p5}` |
 | **φ 부호-게이팅 그리드** | sign/z/V2w/V3 게이트를 skew 레짐서 완주(144셀). 점수원 경쟁과 내용 중복이라 **표 미게재** | ● 3-seed(완주) | `[제외]` (경쟁과 중복) | `runs/track_g/rundirs_cnn` |
 
@@ -100,7 +106,8 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
 | **표준 개입 무해성 (clean do-no-harm)** | clean-IID에서 φ-가중/선택이 성능을 안 깎나(MMLU·ROUGE parity) | ● 3-seed | `[본문·근거]` | `runs/track_d`(arms) |
-| **온라인 φ-게이팅 + 재학습 회수** | silo5·iid5서 부호-게이팅 배제 recovery(frzero 1.000·clean 무발화). **독립 표는 제외**, 결과는 R4 online leg로 흡수 | ● 3-seed(일부 seed0) | `[제외 표 / R4로 흡수]` | `runs/track_g/rundirs`(LLM) |
+| **온라인 φ-게이팅 + 재학습 회수** | silo5·iid5서 부호-게이팅 배제 recovery(frzero 1.000·clean 무발화·**noisy는 (b)로 채점해도 recall 0 = 게이트 작동영역 밖**). **독립 표는 제외**, 결과는 R4 online leg로 흡수 | ● 3-seed | `[제외 표 / R4로 흡수]` | `runs/track_g/rundirs`(LLM)→`track_h`(llm_competition) |
+| **대규모 부분참여 혼합오염 게이팅** | std50k5(N=50, 5/50) mixed 오염서 Flirds P1 recovery 1.203(천장 초과)·오배제 ShapleyFL의 절반 | ◐ arm별 seed 1~3 | `[후보]` (정본 아님) | `runs/track_h`(regime=std50k5) |
 | **주무대 정확도 개입 (GSM8K EM)** | R4에서 **재학습 부호게이트 + 온라인 배포게이팅**의 절대 EM 회수. 순위정보의 가치(vs 무작위·vs 1차) 실측 | ● noisy·frzero 3-seed(retrain+online) / clean ◐ / frrand·strmain ⬚ | `[본문·주무대]` (§5.3) | `runs/track_h/rundirs_llm`(gsm50k5) |
 
 ---
@@ -119,7 +126,8 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
 | **교차-사일로 탐지 + 전용탐지기 4종** | silo5 noisy/frzero/frrand서 φ-AUROC + FLDetector·FLTrust·STD-DAGMM·FedDQC | ● 3-seed | `[제외 표]` (§3.3.1; R4가 탐지 본무대) | `runs/phase2_matrix`(1B_silo5) |
-| **교차-디바이스 α-sweep 탐지 (규모)** | N=100 Dirichlet α 스윕서 φ·전용탐지기 AUROC·runtime | ● 3-seed | `[부록E]` | `runs/phase2_matrix`(device100) |
+| **교차-디바이스 α-sweep 탐지 (규모)** | N=100 Dirichlet α∈{0.0,0.01,0.1,0.5,5.0} × φ·전용탐지기 AUROC·runtime. **α=0.5 앵커엔 exact (b)가 있어 H-13 오라클-동행을 N=100서 직접 판정**(noisy Δ=0.000) | ● 3-seed | `[부록E]` | `runs/phase2_matrix`(device100) |
+| **IID 소형 무대 탐지 (매트릭스 탐지 레그)** | iid5 3위협 φ-AUROC + 전용탐지기 4종. silo5와 짝 — φ는 양쪽 다 1.000이고 전용탐지기만 갈림(FLDetector IID noisy 0.000) | ● 3-seed | `[제외·진단]` | `runs/phase2_matrix`(1B_iid5) |
 | **delta-재활용 free-rider 한계** | frdelta서 (b)와 **동일하게 실패**(0.33) = "기여도≠탐지"의 정직한 한계(게임 공통) | ● 3-seed | `[제외]` (§6 한계 1문장 후보) | `runs/phase2_matrix`(frdelta) |
 | **3B 탐지** | 3B silo5 탐지(스케일) | ◐ 1-seed | `[보류]` | `runs/phase2_matrix`(3B_silo5) |
 | **주무대 탐지 (R4 φ + 4탐지기)** | gsm50k5서 φ-AUROC + 전용 4종(§2 약속 이행) | ⬚ 미실행 | `[본문·주무대]` (§5.4 L2) | `runs/phase2_matrix`(gsm50k5) |
@@ -213,4 +221,4 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 - 구 overview 2종(수록분 미러·전량 카탈로그) = git 이력으로 대체됨
 - 승패 메커니즘 해석: [[flirds-principle-analysis]]
 - 선행연구 E1–E7 분류(CNN/LLM 트랙): [[prior-work-taxonomy/validation-experiments]] · [[prior-work-taxonomy/README]]
-- 논문 구조·수록/제외 결정 정본: `paper/workplan/00-INDEX.md`
+- 논문 구조·수록/제외 결정 정본이던 `paper/workplan/00-INDEX.md`는 **2026-07-25 삭제됨**(커밋 `71ad73e`) — 결정 근거가 필요하면 git 이력 참조. 현행 수록/제외 상태는 이 축-지도의 `[본문]/[부록]/[후보]/[보류]/[제외]` 표기가 대신한다.
