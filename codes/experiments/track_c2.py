@@ -70,7 +70,7 @@ from flirds.models.cnn import FedSVCNN, LeNet5
 from flirds.repro import seed_everything
 from flirds.run_logger import RunLogger
 
-DATASET = os.environ.get("C2_DATASET", "cifar10")        # cifar10 | fmnist
+DATASET = os.environ.get("C2_DATASET", "cifar10")        # cifar10 | fmnist | mnist
 PARTITION = os.environ.get("C2_PARTITION", "iid")        # iid | dir1 | shard | qskew
 THREAT = os.environ.get("C2_THREAT", "clean")            # clean | label_flip | free_rider | frrand | grad_noise
 STRENGTH = os.environ.get("C2_STRENGTH", "main")         # 'main' | float (grid point)
@@ -154,7 +154,7 @@ CFG = {
 WIDTH = float(os.environ.get("C2_WIDTH", "1"))            # signal-size probe lever: capacity (width mult)
 if os.environ.get("C2_FRAC"):                             # signal-size probe lever: participation frac
     CFG["frac"] = float(os.environ["C2_FRAC"])
-MODEL_FN = partial({"cifar10": FedSVCNN, "fmnist": LeNet5}[DATASET], width=WIDTH)
+MODEL_FN = partial({"cifar10": FedSVCNN, "fmnist": LeNet5, "mnist": LeNet5}[DATASET], width=WIDTH)
 MAL_FRAC = 0.4                                            # noisy/malicious client fraction (main)
 TAU = 0.5                                                 # FedCorr per-client rate lower bound
 GAMMA_GRADNOISE = 0.1                                     # FedIF main sigma

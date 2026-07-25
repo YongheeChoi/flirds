@@ -44,22 +44,38 @@
   iid-clean 데이터**가 들어가고 EXIT=0. 4위협이 한 셀로 붕괴하고 로그로는 구별이 안 된다.
   → 제출 전 술어: `git show origin/main:codes/experiments/track_c1.py | grep -q C1_THREAT`.
 
-### 🚨 C-b 정본 = `origin/main` 하나 (JW 조치 필요)
+### 🚨 오염-집합 draw 는 **위협별로 다르다** — 고정 4/10 은 label_flip 에서만 규약 위반
 
-C-b 구현이 **두 벌** 있었다 — YH 워킹트리(구현·e2e 스모크 완료, 푸시 대기) + **JW 로컬 `989f5ca`**.
-둘 다 개수는 `round(0.4·N)`=4/10 으로 수렴했고 이는 `track_c2.py:154 MAL_FRAC = 0.4`(CNN 정본)와
-일치한다 — **JW 의 판단 근거는 옳았다**(FedCorr Bernoulli 는 N=10 에서 2~6 으로 흔들려 위협 간
-비교가 깨진다). 다만 **어느 클라를 고르는지**(RNG 스트림)까지 같다는 확인이 없다.
+`track_c2.py:248-259`(감사 2026-07-23) + 논문 `paper-ko.md:863-869`:
 
-- 셀 하나의 내부 정합성은 어느 쪽이든 성립한다((a)·(b)·9방법이 같은 집합을 본다).
-  깨지는 건 **cross-seed 집계** — seed2(JW)와 seed0(YH)·seed1(JB)이 다른 추출 규칙이면
-  3-seed 평균이 두 프로토콜의 혼합이 된다.
-- **조치**: ① push 후 `git reset --hard origin/main`(자기 `989f5ca` 폐기) ② **이미 돌고 있는 8셀
-  (cifar10 seed2 ~73 GPU-h)의 `corrupt=` 집합을 정본 규칙과 대조** — `C1_ORACLE_A=0` 빌드-only
-  스모크로 같은 (ds,part,threat,seed) 를 찍어 비교하면 몇 분이면 된다. 같으면 **그대로 유지**,
-  다르면 그 8셀만 재제출(9.1h×8, 창에 여유 있음).
-- 대조 기준점(YH 스모크 실측): `cifar10/dir1_free_rider seed=0` → `corrupt=[1,3]`,
-  `rates=[0,0,0,0,0,0]`(free_rider 는 라벨 무접촉 = update-level 이 맞다).
+| 위협 | 규약 | 근거 |
+|---|---|---|
+| **label_flip@0.70** | **독립 Bernoulli(ρ=0.4)** → **개수가 시드마다 변동** · 강도만 0.70 고정 | FedCorr 공식 구현 그대로 |
+| free_rider · grad_noise | 고정 `⌊ρN⌉` 비복원 추출 | update-level = 준거 문헌 없음 → 논문이 예외로 기술 |
+
+- **JW 의 진단은 옳았다** — N=10 Binomial 은 2~6 으로 흔들리고(sd 1.55), `MAL_FRAC = 0.4` 를
+  기준으로 잡은 것도 맞다. **틀린 것은 그 규칙을 label_flip 에까지 적용한 부분 하나**다.
+  논문이 이미 "오염 수가 시드마다 변동하며 표에는 명목 ρ 대신 **실현 수**를 병기" 를 규약으로
+  못 박아 두었고, 기존 N=100 rundir 이 그 규약으로 만들어졌다(실현 39/48/47).
+- **⟹ 도는 8셀 중 재실행 대상은 `label_flip` 2셀뿐**(cifar10 {iid,dir1} seed2). 나머지 6셀
+  (clean×2 · free_rider×2 · grad_noise×2)은 고정 `⌊ρN⌉` 가 맞으므로, 스트림 첫-소비만
+  확인되면 **그대로 유지**한다.
+
+**N=10 실현값 = 미리 계산해 둔 대조 기준**(같은 코드로 N=100 을 돌리면 논문 기재값 39/48/47 을
+정확히 재생산 → 신뢰 가능). draw 는 **seed-only** 라 dataset/partition 과 무관하다(l.255-257):
+
+| | seed0 | seed1 | **seed2 (JW 몫)** |
+|---|---|---|---|
+| **label_flip** | k=3 `[3,5,6]` | k=7 `[1,2,4,5,7,8,9]` | **k=6 `[0,1,3,4,6,7]`** |
+| fr · gn (고정 4) | `[1,4,6,7]` | `[0,4,6,7]` | **`[3,4,6,9]`** |
+
+전 셀 k≥2 → **AUROC 가 모든 셀에서 정의된다**. 걱정한 붕괴 케이스(k=0/1)는 실제로 안 나온다.
+
+**조치**: ① push 후 `git reset --hard origin/main`(`989f5ca` 폐기 — 같은 결론에 도달한 별도
+구현이라 잃는 내용 없음) ② `C1_ORACLE_A=0` 빌드-only 스모크로 위 표와 `corrupt=` 대조
+③ label_flip 2셀만 재제출, 나머지 6셀 유지.
+YH 스모크 참고점: `cifar10/dir1_free_rider seed=0` → `rates=[0,…]`(free_rider 는 라벨 무접촉 =
+update-level 이 맞다).
 
 **JW 몫 = 21셀 ~205 GPU-h** — Slurm 4계정을 **GPU-h 로 균등화**한 결과다(전 계정 ~25 wall-h; YH `0-7,16` · JB `14-15,24-31,40-47` · HJ 는 c1축 없이 G12+G10).
 
