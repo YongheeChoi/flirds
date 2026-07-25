@@ -97,15 +97,16 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh
 
 | P | 무엇 | 물량 | 근거 |
 |---|---|---|---|
-| **P0** | **C-b**(+C-a 1줄) 코드 | — | **JW·JB 의 505 GPU-h 를 막고 있다** |
-| **P1** | G3 seed0 → 전량 | 96런 · ~80 | 본문 downstream 의 빈 절반 · 코드 불요 |
+| **P0** | **C-b** 코드 | — | **JW·JB 의 505 GPU-h 를 막고 있다** |
+| **P0** | **C-a** 코드(1줄) | — | **HJ 의 G10(216런) 을 막고 있다** |
+| **P1** | G3 seed0 → 전량 | 96런 · ~80 | 본문 downstream 의 빈 절반 · 코드 불요 → 즉시 착수 |
 | **P2** | G8 | 24런 · ~25 | 부록 fidelity+탐지가 한 rundir |
-| **P3** | G10 | 216런 · ~135 | 부록 downstream(P1·P1w 동시) |
-| **P4** | G6 | 9런 · ~15 | 본문 ablation |
+| **P3** | G6 | 9런 · ~15 | 본문 ablation |
 
-- **CNN 계 ~255 GPU-h** / 8슬롯 → **~32 wall-h** → **07-27 오전**(+코드 시간).
-- 슬롯이 남으면 **JW·JB 의 `sbatch_c1_axis.sh` 잔여를 work-steal** — 같은 3090·같은 env·셀 단위 idempotent. 남은 `--array` 범위만 지정할 것.
-- **G5·G12(LLM probe)는 여기가 아니다** — B200 c4 큐로 옮겼다(HVP 경로라 B200 이 제자리이고, YH 는 CNN 만 맡는다).
+- **YH 몫 ~120 GPU-h** / 8슬롯 → **~15 wall-h** + 코드 시간 → **07-26 후반**.
+- **G10(mnist downstream 216런)은 HJ 로 넘겼다** — 4계정을 전부 3090 에 붙이는 배분(3090 여유 21장). YH 는 코드가 임계경로라 물량을 가볍게 뒀다.
+- **G5·G12(LLM probe)도 여기가 아니다** — B200 c4 로 옮겼다(HVP 경로).
+- 슬롯이 남으면 **JW·JB 의 `sbatch_c1_axis.sh` 잔여를 work-steal**(남은 `--array` 범위만; 중복 = GPU 낭비).
 
 ## 9. 완료 후 · 미해결 배선
 

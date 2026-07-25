@@ -9,3 +9,6 @@
 phase2_matrix.py|G1_L2_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0
 phase2_matrix.py|G1_L2_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1
 phase2_matrix.py|G1_L2_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2
+
+# ─── L1 clean 온라인 seed2 (필수 · 1.9h) — seed1 은 c1 에 있다 ──────────────
+track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm

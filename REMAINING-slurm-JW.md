@@ -39,14 +39,15 @@
   → **48셀 ≈ 505 GPU-h** · 8슬롯 **~63 wall-h**.
 - **⚠ 착수 게이트 = 코드 변경 C-b**(YH 담당 · `REMAINING-slurm-YH.md` §2). 요구 env 계약 = `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE=0.70`. **C-b 착지 전에는 제출해도 실패**한다.
 
-**JW = seed0·1 (32셀 ~337 GPU-h). seed2 16셀은 JB 가 맡는다**(부하 분할; `REMAINING-slurm-JB.md`).
+**JW = array 0-23 (24셀 ~237 GPU-h). 24-47 은 JB 가 맡는다**(부하 반분; `REMAINING-slurm-JB.md`).
 
 ```
 mkdir -p runs/track_c/c1/_logs
 sbatch --array=0-7%8    runs/track_c/c1/sbatch_c1_axis.sh   # cifar10 seed0 (본문 G2 먼저)
 sbatch --array=8-15%8   runs/track_c/c1/sbatch_c1_axis.sh   # mnist   seed0
-sbatch --array=16-31%8  runs/track_c/c1/sbatch_c1_axis.sh   # seed1 (cifar10 16-23 / mnist 24-31)
+sbatch --array=16-23%8  runs/track_c/c1/sbatch_c1_axis.sh   # cifar10 seed1
 ```
+인덱스 규약: `SEED=IDX/16` · 그 안에서 `0-7`=cifar10, `8-15`=mnist · 파티션 `iid,dir1` × 4위협.
 - `--time=24:00:00` 내장(최장 셀 11.4h + 여유). 완료 판정 = rundir + 로그 EXIT=0.
 - **채우는 것**: 계획서 §2.1 "1B-CNN 소형 교차-사일로 vs (a)"(본문) · §3.1 "1B-CNN mnist vs (a)"(부록) · §3.4 φ 부호 감사의 **CNN 레그 재감사**(현 감사 스냅샷에 frzero·grad-noise 가 없다).
 
@@ -54,12 +55,12 @@ sbatch --array=16-31%8  runs/track_c/c1/sbatch_c1_axis.sh   # seed1 (cifar10 16-
 
 | P | 무엇 | 셀 | GPU-h | 근거 |
 |---|---|---|---|---|
-| **P0** | G2 cifar10 seed0 | 8 | ~73 | **본문** fidelity 표 |
-| **P1** | G9 mnist seed0 | 8 | ~91 | 부록 fidelity |
-| **P2** | seed1 (양 데이터셋) | 16 | ~173 | 3-seed 규칙 |
-| — | seed2 16셀 | — | ~168 | **JB 담당** |
+| **P0** | G2 cifar10 seed0 (0-7) | 8 | ~73 | **본문** fidelity 표 |
+| **P1** | G9 mnist seed0 (8-15) | 8 | ~91 | 부록 fidelity |
+| **P2** | cifar10 seed1 (16-23) | 8 | ~73 | 3-seed 규칙 |
+| — | array 24-47 | — | ~255 | **JB 담당** |
 
-- **예상 종료 = 07-27 후반**(337 GPU-h / 8슬롯 ≈ 42h; **C-b 착지 시각만큼 밀린다**).
+- **예상 종료 = 07-27 오전**(237 GPU-h / 8슬롯 ≈ 30h; **C-b 착지 시각만큼 밀린다**).
 - **HJ 가 07-26 오전, JB 가 07-26 후반에 비므로 그쪽이 꼬리를 work-steal** 한다 — 같은 3090·같은 env·셀 단위 idempotent 라 안전하다. 제출 시 남은 `--array` 범위만 지정할 것(중복 = GPU 낭비).
 - 셀 하나가 ~9–11h 라 **중도 컷 = 그 셀 전손**(rundir 은 셀 종료 시 기록). `--time` 을 줄이지 말 것.
 

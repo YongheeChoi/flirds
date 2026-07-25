@@ -14,3 +14,7 @@
 phase2_matrix.py|G1_L2_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=0
 phase2_matrix.py|G1_L2_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=1
 phase2_matrix.py|G1_L2_frzero_s2|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=2
+
+# ─── L1 clean 관찰자 seed1 (필수 · 5.5h) — seed2 는 c4 에 있다 ──────────────
+# clean 은 kept=전원이라 T2 가 `equals_vanilla` 로 스킵 → 저비용.
+track_g.py|L1_clean_obs_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
