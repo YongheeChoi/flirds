@@ -43,19 +43,25 @@
 
 ### 실측 단가 (200 라운드 학습부 · `VAL_CHUNK=3`)
 
-| source | 실측 | 셀 수 | 소계 |
-|---|---|---|---|
-| flirds1st · fedif | ~2.5 h | 18 | ~45 |
-| lossheur | ~3.2 h | 9 | ~29 |
-| **renorm-4**(gtg·fedsv·comfedsv·shapleyfl) | **~23–28 h**(JB 실측) | 36 | **~900** |
-| | | **63** | **~980 GPU-h** |
+> **⚠ 종전 표(same-game 2.5 h / lossheur 3.2 h)는 HJ 오측정이었다 — 실측은 그 ~3×.** 07-25 19:00 8셀 동시 가동분에서 `train_runtime` 호출수(=라운드×K=5)로 재측정. 라운드당 132 s(same-game) / 166 s(lossheur) — 그중 학습만 110 s 라 `VAL_CHUNK` 영향은 미미하고, **비용은 200라운드 학습 자체**다. 아래 값은 8셀 전부 ±2% 내로 일치.
 
-- **`--time` = `24:00:00` 권장**(원 sbatch 기본 `08:00:00` 은 renorm 소스에서 timeout 위험). renorm 이 24h 를 넘길 조짐이면 **`42:00:00`**.
+| source | 실측(재측정) | 셀 수 | 소계 |
+|---|---|---|---|
+| flirds1st | 7.33 / 7.37 / 7.51 h (clean/noisy/frzero) → **~7.4 h** | 9 | ~67 |
+| fedif | 7.41 / 7.23 h (clean/noisy) → **~7.4 h** | 9 | ~67 |
+| lossheur | 9.23 / 9.15 / 9.59 h → **~9.3 h** | 9 | ~84 |
+| **renorm-4**(gtg·fedsv·comfedsv·shapleyfl) | **~23–28 h**(JB 실측, 미검증) | 36 | **~900** |
+| | | **63** | **~1,120 GPU-h** |
+
+- 값은 진행률 외삽(200라운드 학습부)이며 **모델 로드 + 말미 downstream 평가는 미포함** — 실제 end-to-end 는 이보다 다소 길다. 첫 셀 착지 시 확정치로 교체할 것.
+- **`--time` 조치 완료(07-25 19:00)**: 대기 셀 34개 중 **renorm-4 24셀만 `scontrol update TimeLimit=42:00:00`** 으로 증액(같은 근거 = 실측 23–28 h 가 24 h 벽에 걸림; rundir 은 말미에 한 번에 써지므로 timeout = 셀당 24 GPU-h 전손). **same-game 10셀은 24 h 유지**(7–10 h 면 충분 + 긴 `--time` 은 backfill 불리). **실행 중 잡은 건드리지 않았고**(INDEX §0 운용 원칙), `scancel`·재제출 0 — 증액은 비파괴 갱신이다. 파티션 `MaxTime=14-00:00:00` 이라 42 h 는 한도 내.
 - **renorm 이 느린 이유**: 라운드마다 coalition/submodel 평가(`shapleyfl_round_raw` = val forward)가 들어간다 — forward 만 하는 lossheur 대비 2.4×, same-game 대비 라운드당 ~13×. **이건 버그가 아니라 논문이 주장하는 지수 비용 그 자체**(op-count §7.3: (b)·ShapleyFL 은 K 에 지수).
 
 ### 예상 종료 · 리스크
 
-- HJ 몫(seed0·1 42셀) ~654 GPU-h → 8슬롯 **~82 wall-h ≈ 07-29**. **JB 가 L9 를 전량 중단하고 seed2 를 먼저 끝낸 뒤(07-27) 꼬리를 work-steal** 하면 07-28 내로 당겨진다. 단 **A6000 클러스터 여유가 10장**이라 HJ+JB 가 상시 16슬롯을 채우지는 못한다.
+- **HJ 몫(seed0·1 42셀) = ~700–820 GPU-h**(재측정 반영; 종전 ~654 는 same-game 오측정 기반). 내역 = same-game 18셀 **~145**(flirds1st 44 + fedif 44 + lossheur 56) + renorm-4 24셀 **~552–672**. 8슬롯 → **~88–103 wall-h → 07-29 오전 ~ 07-30 새벽**. **마감(실험 07-28 24:00)을 HJ 단독으로는 못 맞춘다.**
+- **JB 가 L9 를 전량 중단하고 seed2 를 먼저 끝낸 뒤(07-27) 꼬리를 work-steal** 하면 당겨지지만, 재측정치로는 **07-28 내 63셀 완주가 빠듯**하다. 단 **A6000 클러스터 여유가 10장**이라 HJ+JB 가 상시 16슬롯을 채우지는 못한다.
+- **착지 순서가 방어선**: seed-major + 소스-major(21셀/seed = flirds1st→lossheur→fedif→gtg→fedsv→comfedsv→shapleyfl)라 **싼 same-game 이 먼저 착지**한다. 07-26 오전이면 seed0 same-game 9셀이 다 들어와 §5.3 online 표의 G4a 3행은 **1-seed 로 조기 확보**된다. 물량이 마감에 걸리면 잘리는 쪽은 항상 renorm 꼬리(seed1)다.
 - **⚠ clean 은 컷하지 않는다 (2026-07-25 Yonghee: "clean 은 필수").** renorm-4 의 clean 12셀을 빼면 ~300 GPU-h 를 아낄 수 있지만, clean 열은 **오발화(false-firing) 판정의 근거**라 유지한다 — renorm 은 flirds 와 달리 clean 에서도 음수 φ 로 발화해 `equals_vanilla` 스킵이 안 되고 실제 개입이 일어난다. 즉 renorm 의 clean 칸은 "비어도 되는 대조"가 아니라 **결과 그 자체**다.
 - **판정 시점 = 07-27 아침**: seed0 착지 + seeds1·2 진척으로 완주 여부를 본다.
 
