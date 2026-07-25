@@ -343,7 +343,8 @@ tags: [flirds, results, downstream]
 
 ### 주무대 정확도 개입 (R4 GSM8K EM) `[본문·주무대]`
 
-> **세팅**: Llama-3.2-1B-Instruct LoRA r16/α32 · N=50 · 5/50 · R=200 · GSM8K test 1,119 EM · seed{0,1,2}(noisy·frzero) / clean ◐ seed0. renorm 4종=L4 ⬚ · online 7방법=L11 ⬚ · frrand·strmain 열=신규 ⬚.
+> **세팅**: Llama-3.2-1B-Instruct LoRA r16/α32 · N=50 · 5/50 · R=200 · GSM8K test 1,119 EM · seed{0,1,2}(noisy·frzero) / clean ◐ seed0.
+> **수록 범위 = 5 arm 고정**(2026-07-25 Yonghee 결정): 앵커 3종(observer·oracle_excl·random_excl) + 점수원 **Flirds·Flirds-1st**. **loss-heur·FedIF·renorm 4종(GTG·FedSV·ComFedSV·ShapleyFL)은 이 표에서 제외** — 이 무대가 답하는 질문은 "순위정보가 학습을 얼마나 되살리나(vs 무작위)"와 "2차항이 필요한가(vs 1차)"뿐이다. 제외한 방법들의 rundir·집계는 존속하며, **LLM 스케일에서의 이들 비교는 fidelity 축(R4-L2, 9방법 φ)이 담당**한다. frrand·strmain 열=신규 ⬚.
 
 **retrain (T2 부호-게이트, 절대 EM)** (● noisy·frzero 3-seed)
 
@@ -352,12 +353,10 @@ tags: [flirds, results, downstream]
 | observer (바닥) | 0.3727±0.0000 | 0.3274±0.0057 | 0.3560±0.0129 |  |  |
 | oracle_excl (천장) | – | 0.3625±0.0099 | 0.3625±0.0099 |  |  |
 | random_excl (무작위) | – | 0.3280±0.0048 | 0.3476±0.0146 |  |  |
-| Flirds | 0.3727±0.0000 | 0.3479±0.0030 | **0.3625±0.0099** |  |  |
-| Flirds-1st | 0.3727±0.0000 | 0.3458±0.0015 | 0.3625±0.0099 |  |  |
-| loss-heur | 0.3727±0.0000 | **0.3497±0.0055** | 0.3625±0.0099 |  |  |
-| FedIF | 0.3727±0.0000 | <u>0.3491±0.0033</u> | 0.3625±0.0099 |  |  |
+| Flirds | 0.3727±0.0000 | **0.3479±0.0030** | **0.3625±0.0099** |  |  |
+| Flirds-1st | 0.3727±0.0000 | <u>0.3458±0.0015</u> | **0.3625±0.0099** |  |  |
 
-**online (배포 게이팅 gate_v2, 절대 EM)** (● noisy·frzero 3-seed · online 7방법 ⬚)
+**online (배포 게이팅 gate_v2, 절대 EM)** (● noisy·frzero 3-seed · Flirds-1st 레그 ⬚)
 
 | arm | clean ◐ | noisy(swap@.7) | frzero |
 |---|---|---|---|
@@ -365,11 +364,9 @@ tags: [flirds, results, downstream]
 | oracle_excl (천장) | – | 0.3625±0.0099 | 0.3625±0.0099 |
 | random_excl (무작위) | – | 0.3280±0.0048 | 0.3476±0.0146 |
 | Flirds (gate v2) | 0.3664±0.0000 | **0.3479±0.0044** | 0.3566±0.0088 |
-| Flirds-1st |  |  |  |
-| loss-heur |  |  |  |
-| FedIF |  |  |  |
+| Flirds-1st (gate v2) |  |  |  |
 
-> **읽기**: noisy — 4 estimator가 vanilla .3274 대비 회수(Flirds +.0206·loss-heur +.0223·FedIF +.0217·1st +.0184) vs random_excl +.0006(천장 oracle_excl +.0351). **순위정보의 가치** = vs-무작위 +2pt. frzero — 4 estimator 전부 **.3625 = oracle_excl 동값**(free-rider 만장일치 배제 → kept=oracle 집합). **online vs retrain**(Flirds): noisy 동급(둘 다 .3479), frzero online .3566<retrain .3625(배포 게이팅 burn-in 지연), **clean online −0.63pt**(probation 오배제) vs retrain 무해(kept=전원). ⚠ EM 노이즈 바닥 ±0.5pt라 안전한 주장은 vs-random·vs-1차까지(flirds↔loss-heur 0.36pt는 미분리). **출처**: `runs/track_h/analysis/llm_competition.csv`(regime=gsm50k5).
+> **읽기**: noisy — 두 estimator가 observer .3274 대비 회수(Flirds **+.0206** · Flirds-1st +.0185) vs **random_excl +.0006**(천장 oracle_excl +.0352). 같은 수를 배제해도 "누구를 배제하나"가 회수의 전부다 = **순위정보의 가치 vs-무작위 +2pt**. frzero — 두 estimator 전부 **.3625 = oracle_excl 동값**(free-rider 만장일치 배제 → kept=oracle 집합; random_excl은 −.0083으로 오히려 악화). **online vs retrain**(Flirds): noisy 동급(둘 다 .3479), frzero online .3566<retrain .3625(배포 게이팅 burn-in 지연), **clean online −0.63pt**(probation 오배제) vs retrain 무해(kept=전원). ⚠ **2차항 이득은 이 무대에서 미분리** — Flirds↔Flirds-1st 차는 noisy 0.21pt로 EM 노이즈 바닥(±0.5pt) 아래이고 seed별 부호도 갈린다(seed0만 Flirds +0.80pt 우세, seed1·2는 1st가 각 +0.09pt), frzero는 완전 동값. 안전한 주장은 **vs-무작위**까지다. **출처**: `runs/track_h/analysis/llm_competition.csv`(regime=gsm50k5).
 
 ### 표준 개입 무해성 (clean do-no-harm) `[본문·근거]` ● 3-seed
 
@@ -498,6 +495,7 @@ tags: [flirds, results, downstream]
 | R4 GSM8K · silo5/iid5/std50k5 게이팅 | `analysis/llm_competition.csv` |
 | 무해성(MMLU·ROUGE) | `runs/track_d/rundirs/*/metrics.json` → `arms` 블록 |
 
-- **⬚ 미실행**: 확장 파티션 중 cifar10{iid,qskew,shard}·fmnist/dir1의 **비-flirds 점수원 7종** · R4 renorm 4종(L4)·online 7방법(L11)·frrand·strmain 열.
+- **⬚ 미실행**: 확장 파티션 중 cifar10{iid,qskew,shard}·fmnist/dir1의 **비-flirds 점수원 7종** · R4 **online Flirds-1st 레그**·clean 열 seed1·2 · R4 frrand·strmain 열.
+- **스코프 아웃(수록 안 함)**: R4 개입 표의 renorm 4종(L4)·online 비-Flirds 계열(L11 중 loss-heur·FedIF·renorm 4종) — 07-25 arm 축소 결정. LLM 스케일의 이들 비교는 fidelity 축(R4-L2)이 담당한다.
 - **◐ 정본 아님**: **fmnist/iid 8점수원(비-flirds seed0 단독)** · std50k5 mixed(arm별 seed 1~3 불균형) · fmnist/iid lf-strmain(rundir 존재, 집계기 위협 파싱 밖).
 - 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §3.2 = git 이력)

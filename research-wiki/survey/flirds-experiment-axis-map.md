@@ -110,7 +110,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | **표준 개입 무해성 (clean do-no-harm)** | clean-IID에서 φ-가중/선택이 성능을 안 깎나(MMLU·ROUGE parity) | ● 3-seed | `[본문·근거]` | `runs/track_d`(arms) |
 | **온라인 φ-게이팅 + 재학습 회수** | silo5·iid5서 부호-게이팅 배제 recovery(frzero 1.000·clean 무발화·**noisy는 (b)로 채점해도 recall 0 = 게이트 작동영역 밖**). **독립 표는 제외**, 결과는 R4 online leg로 흡수 | ● 3-seed | `[제외 표 / R4로 흡수]` | `runs/track_g/rundirs`(LLM)→`track_h`(llm_competition) |
 | **대규모 부분참여 혼합오염 게이팅** | std50k5(N=50, 5/50) mixed 오염서 Flirds P1 recovery 1.203(천장 초과)·오배제 ShapleyFL의 절반 | ◐ arm별 seed 1~3 | `[후보]` (정본 아님) | `runs/track_h`(regime=std50k5) |
-| **주무대 정확도 개입 (GSM8K EM)** | R4에서 **재학습 부호게이트 + 온라인 배포게이팅**의 절대 EM 회수. 순위정보의 가치(vs 무작위·vs 1차) 실측 | ● noisy·frzero 3-seed(retrain+online) / clean ◐ / frrand·strmain ⬚ | `[본문·주무대]` (§5.3) | `runs/track_h/rundirs_llm`(gsm50k5) |
+| **주무대 정확도 개입 (GSM8K EM)** | R4에서 **재학습 부호게이트 + 온라인 배포게이팅**의 절대 EM 회수. 순위정보의 가치(vs 무작위·vs 1차) 실측. **수록 arm = 앵커 3종(vanilla·oracle_excl·random_excl) + Flirds·Flirds-1st만**(07-25 축소; loss-heur·FedIF·renorm 4종은 표에서 제외 — LLM 스케일 방법 비교는 fidelity 축이 담당) | retrain ● noisy·frzero 3-seed / online **Flirds ●·Flirds-1st ⬚** / clean ◐ seed0 / frrand·strmain ⬚ | `[본문·주무대]` (§5.3) | `runs/track_h/rundirs_llm`(gsm50k5) |
 
 ---
 
@@ -203,6 +203,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 - **비교군 제외**: Banzhaf(2026-07-22) · Ripple(2026-07-19; 감사 근거 [[ripple-audit-2026-07/ripple-baseline-exclusion]]) · Fed-LOO(2026-07-23). — 러너는 계속 열을 생성하므로 집계·표 단계에서만 제외.
 - **위협축 제외**: poison(clean-preserving backdoor, 2026-07-22) — (b) oracle은 AUROC 1.0으로 잡으나 1차 Taylor 추정 쪽 실패라 스코프 밖.
 - **비교군 9종(수록)** = same-game(Flirds·Flirds-1st·loss-heur) + cross-game(GTG·FedSV·ComFedSV·ShapleyFL β=0.3·FedIF). 전용 탐지기 4종은 §3(Detection).
+  - **예외 — LLM 주무대 정확도 개입(R4)만 5 arm**: 앵커 3종 + Flirds·Flirds-1st(07-25 축소). 9종 비교는 fidelity·detection 축에서 유지되고, 개입 표는 "순위정보의 가치(vs 무작위)·2차항의 필요(vs 1차)" 두 질문만 답한다.
 
 ---
 
