@@ -24,16 +24,23 @@
 > - **이미 착지한 rundir 은 지우지 않는다** — 집계는 canonical `rundirs_llm` 이 dup-win 으로 이긴다.
 > - **그 뒤 HJ 는 A6000 을 그대로 이어 G12(§3) → 3090 으로 G10(§3b)** 순으로 간다.
 >
-> ### 착지 현황 — **1/3** (07-25 23:12 기준, B200 통보 트리거)
+> ### ✅ 착지 완료 — **3/3, 실패 0** (07-25 23:36) · **B200 확정통보 발송됨**
 >
-> | idx | 셀 | 상태 |
-> |---|---|---|
-> | 2 | `gsm50k5_frzero_flirds1st_gate_v2_seed0` | ✅ **EXIT=0 · 23:08 착지** · 7.53 GPU-h · gate P=.963 R=.945 오배제 138pair fallback 0라운드 · gsm8k_em=.3691 rouge_l=.3452 · `phi_rounds` 10,000행 |
-> | 0 | `gsm50k5_clean_...` | 🟢 FL 200/200 완주(22:55) → val-curve·downstream 단계 · **~23:33 착지 예상** |
-> | 1 | `gsm50k5_noisy_...` | 🟢 FL 200/200 완주(22:57) → 동상 · **~23:36 착지 예상** |
+> | 셀 (`runs/track_h/rundirs_llm_hj/`) | 착지 | GPU-h | gate P / R | 오배제 | fallback | val_loss | gsm8k_em | rouge_l |
+> |---|---|---|---|---|---|---|---|---|
+> | `gsm50k5_clean_flirds1st_gate_v2_seed0` | 23:30 | 7.90 | 0 / None | 103 (1.03%) | 1 | 0.6021 | .3655 | .3468 |
+> | `gsm50k5_noisy_nr0.7_flirds1st_gate_v2_seed0` | 23:36 | 8.00 | .859 / **.0447** | 28 | 0 | 0.6052 | .3387 | .3409 |
+> | `gsm50k5_frzero_flirds1st_gate_v2_seed0` | 23:08 | 7.53 | .963 / .945 | 138 | 0 | 0.6024 | .3691 | .3452 |
 >
-> 근거: frzero 의 `timing.json` = FL 24,818 s → val-curve 1,699 s → downstream 574 s. FL 이후 꼬리가 **38 분** 고정이다. clean·noisy 는 free-rider 가 없어 학습 호출이 922 가 아니라 1,000 회라 그만큼 늦다. **실패 시그니처 0**.
-> **→ B200 통보는 3셀 전부 정착한 뒤 1회로 보낸다**(현재는 "폴백 잠금 유지" 상태).
+> 전부 `EXIT=0` · R=200 완주 · `phi_rounds` 10,000행(50클라×200라운드). 커밋 `ae4f212`·`17315c3`·`381a5fd`.
+> **→ B200 에 "3/3 완주 = 큐 그대로, c4 폴백 3줄 해제 불필요" 확정 통보 완료.**
+>
+> **집계 검증**: `make_analysis.py:95` 가 `rundirs_llm_hj` 를 로드하고 canonical `rundirs_llm` 을 **마지막에** 실어 dup-win 시킨다. 세 셀 모두 `_load()` 로 파싱 성공 확인(read-only 호출; `analysis/` 는 캠페인 중이라 재생성하지 않았다 — 부분 데이터로 tracked 산출물을 덮어쓰지 않기 위해).
+>
+> **읽을 때 주의 3가지** (전부 정상값이며 오독하기 쉬운 자리):
+> 1. **noisy 셀 이름에 `nr0.7` 이 들어간다** — `rundirs_llm` canonical 명명과 같은 규칙이다. `gsm50k5_noisy_flirds1st_*` 로 글롭을 짜면 놓친다(실제로 이 세션 감시자가 이걸로 **오탐 FAIL** 을 냈다; 실체는 `EXIT=0`).
+> 2. **clean 의 `precision=0 / recall=None` 은 축퇴값**이다 — 오염 클라가 0이라 참양성이 정의되지 않고 배제 103건이 정의상 전부 오배제가 된다. 읽을 값은 **오발화율 1.03%**.
+> 3. **noisy recall 4.5% 는 미스가 아니라 §2.1 히트**다 — `runs/track_g/README.md:42` 에 "noisy@canon 부호-게이트 = parity(게이트 침묵); nr∈(0,1] 에 0-교차 없음(Flirds ~3.4 extrapolated=도달불가)" 로 **사전 등록된 예측**과 방향이 같다. 회수는 z-게이트/V2w 몫. (등록 예측은 Flirds 기준, 이 셀은 flirds1st 라 그 차이는 명시할 것.)
 
 ## 0. 환경 (실제 셋업 결과)
 
