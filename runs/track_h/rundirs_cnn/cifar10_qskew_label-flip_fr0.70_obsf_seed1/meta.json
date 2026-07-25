@@ -1,0 +1,19 @@
+{
+  "name": "cifar10_qskew_label-flip_fr0.70_obsf_seed1",
+  "git_sha": "7bef74ed25b430c31e45dca45cd8b2f931102abd",
+  "git_dirty": true,
+  "git_diff_stat": "REMAINING-slurm-YH.md                      | 38 ++++++------\n runs/track_h/analysis/p1w_cnn.csv          | 60 +++++++++++++++++++\n runs/track_h/analysis/p1w_cnn_README.md    | 26 ++++----\n runs/track_h/analysis/p1w_cnn_recovery.csv | 96 +++++++++++++++---------------\n 4 files changed, 138 insertions(+), 82 deletions(-)",
+  "env_hash": "be4b11eda33078df",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "5.5.4",
+    "peft": "0.19.1",
+    "trl": "1.2.0",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.4",
+    "numpy": "2.4.4",
+    "python": "3.11.15",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  }
+}
