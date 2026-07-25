@@ -18,6 +18,7 @@
 > scancel <jobid>_[3-20]       # lossheur·fedif·renorm-4 = 스코프 밖 (실행 중 포함)
 > squeue -u $USER              # 0·1·2 만 남았는지 확인
 > ```
+> **✅ 실행 완료 07-25 20:20 — 단 범위는 `[3-41]`.** 문서의 `[3-20]` 은 seed0(0–20)까지만 끊어 **seed1 21셀(idx 21–41)이 대기로 남는다** — `21·22·23` = flirds1st seed1(= B200 c4 몫), `24–29` = lossheur·fedif seed1, `30–41` = renorm-4 seed1 로 **전부 스코프 밖**이다. 판정 기준이 "`squeue` 에 0·1·2 만"이라 그쪽을 따랐다. 결과 = `1876764_0,1,2` 만 잔존(flirds1st seed0 clean/noisy/frzero, 확인 완료).
 > - **flirds1st seed0 3셀은 B200 c4 의 해당 3줄을 지운다** — c4 는 seed1·2 6셀만 맡는다(폴백용 주석은 c4 하단에 있다).
 > - **lossheur·fedif 를 끊는 이유**: LLM downstream 스코프 컷으로 표에서 빠졌고, **1-seed 는 3-seed 규칙상 논문에 못 넣는다**. 3-seed 로 승격하려면 seeds1·2 에 +50 GPU-h(B200)가 더 드는데 c4 에 그 여유가 없다(G5 를 밀어내야 한다).
 > - **이미 착지한 rundir 은 지우지 않는다** — 집계는 canonical `rundirs_llm` 이 dup-win 으로 이긴다.
@@ -65,6 +66,23 @@ REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 \
   RUNDIR_ROOT=$REPO/runs/probe_signal/rundirs PYTHONPATH=. $PY -u experiments/track_d.py
 ```
 - **부록·최저 우선**이라 마감에 걸리면 꼬리부터 버려도 된다. 다만 핵심 질문("lr 로 커진 φ가 cross-seed 실재 신호인가", 예측 ρ≈0)에 필요한 **`lr{2,3}e-3` 계열을 먼저** 돌린다.
+
+#### 제출 완료 — job `1878707` (07-25 20:32, `--array=0-14%8`)
+
+- 스크립트 `runs/probe_signal/sbatch_g12_lever_seeds.sh`(신규). **16 이 아니라 15셀**이다 — `lr1e-3_st10 seed0` 은 **별칭이 유효**해서 뺐다: anchor5 기본값이 `lr=1e-3 / max_steps=10 / r=16`(`track_d.py:89`)이라 `runs/track_d/rundirs/1B_anchor5_seed0` 가 곧 그 셀이고, **`make_figures.py:120` 이 이미 그것을 baseline 으로 읽고 있다**(README 도 동일 명시). 추가 실행 0.
+- **배열 순서 = 우선순위**: `0-4` lr3e-3·lr2e-3 → `5-8` lr1e-3 → `9-12` rank r32/r64 → `13-14` val-noise r64. 마감에 걸리면 **뒤 인덱스부터 `scancel`** 하면 핵심 질문은 지켜진다.
+- **config 는 대응 seed0 셀과 정확히 일치**시켰다 — lr×steps 셀은 `MMLU_LIMIT=40`, rank 셀은 MMLU 전체(=0). cross-seed 비교는 같은 셀의 seed 간 비교라 이 일치가 축의 유효성 그 자체다. `VAL_CHUNK=2` 만 다른데 이건 메모리 knob 이고 청크 합산이 exact → **같은 게임**이다(참조셀 B200 peak 98.9 GiB → 48GB 에선 축소 필수).
+
+##### ⚠ 선행 조치 — HF 캐시에 **alpaca-gpt4·cais/mmlu 가 없었다**
+
+- 공유 캐시(`/scratch/chyoyhr/hf_home`)에도 **없다** — 거기엔 gsm8k 계열 6종 + Llama-3.2-1B 뿐이다. track_d(anchor5)는 `vicgalle/alpaca-gpt4`(학습 데이터)와 `cais/mmlu`(downstream)를 쓰므로 **오프라인으로는 시작 자체가 불가**했다.
+- `flirds/hf_pin.py` 의 `REVISIONS` 가 전부 비어 있어(`rev()`→None) 최신 커밋을 받으면 되고, 둘 다 public(토큰 불요). **HJ 자체 `HF_HOME` 에만 추가**했다(공유 캐시 무수정, +238 MB → 419 MB). 오프라인 재로딩 확인 완료(alpaca 52,002 / mmlu-test 14,042 / 클라 샤드 4,000×5).
+- **B200·YH 쪽에서 track_d 계열을 새로 돌린다면 같은 공백을 먼저 확인해야 한다.**
+
+## 3b′. G10 착수 게이트 — **아직 안 열렸다** (07-25 20:35 확인)
+
+- `codes/experiments/track_c2.py:157` 이 여전히 `MODEL_FN = partial({"cifar10": FedSVCNN, "fmnist": LeNet5}[DATASET], ...)` — **`"mnist"` 키 없음**. 반면 `sbatch_cnn_mnist_comp.sh:67` 은 `C2_DATASET=mnist` 를 넘긴다 → 지금 제출하면 **216런 전량이 `KeyError: 'mnist'` 로 즉사**한다.
+- 따라서 **미제출**. 코드 C-a(YH) 착지 후 §3b 의 2줄을 그대로 제출한다.
 
 ## 3b. 담당 ② — G10: mnist downstream (216런 · ~135 GPU-h · 3090)
 
@@ -123,9 +141,10 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh   # seeds 1-2
 ### ⚠⚠ 최대 변수 = A6000 노드 drain (07-25 19:50 관측, 신규)
 
 - **12노드 중 7노드가 `drng`/`drain`**(`Reason=Kill task failed`, root@07-25T17:19 및 T19:35). 클러스터 총 96 GPU 중 **할당 70 / 유휴 26 인데 유휴 26장이 전부 drain 노드 위**에 있다 → **스케줄 가능한 유휴 GPU = 0**.
-- `PrivateData=jobs` 라 `squeue` 로는 내 잡 8개만 보인다. **"클러스터가 비어 있다"는 오독** — 실제로는 73% 점유 중이다. 따라서 `ArrayTaskThrottle=8` 을 올려도 **지금은 아무 효과가 없다**(대기 사유가 `JobArrayTaskLimit`→`Resources` 로 바뀔 뿐).
+- `PrivateData=jobs` 라 `squeue` 로는 내 잡만 보인다. **"클러스터가 비어 있다"는 오독** — 실제로는 73% 점유 중이다.
+- **`ArrayTaskThrottle` 증액은 무효 — 상한은 QOS 다.** 20:35 에 두 잡(L11 3 + G12 5)이 8 GPU 를 채우자 대기 사유가 **`QOSMaxGRESPerUser`** 로 바뀌었다. 즉 §0 의 "동시 8-GPU/user" 는 **QOS 하드 캡**이고, 배열 `%8` 은 그 캡을 넘지 않는 표현일 뿐이다(단일 배열만 보면 사유가 `JobArrayTaskLimit` 로 가려져 이 캡이 안 보인다). **8슬롯은 영구 천장이다.**
 - **실행 중 8셀 가운데 5셀이 drain 노드 위**(node44×3, node51, node27). drng 는 **실행 중인 잡을 죽이지 않으므로 이 5셀은 안전**하다. 문제는 **끝난 뒤**다 — drain 노드는 새 잡을 받지 않으므로 그 슬롯이 나에게 되돌아오지 않는다. 재활용되는 건 mix 노드 3셀(node26·45·47)뿐이고 그마저 타 사용자와 경쟁한다.
-- **동시성 감쇠 시나리오**(잔여 666–786 GPU-h 기준):
+- **아래 감쇠 시나리오는 취소된 42셀 계획 기준이라 지금은 무효**(잔여가 L11 3 + G12 15 로 줄었다). 20:35 현재 drain 에도 불구하고 **8/8 슬롯을 다 받고 있다** — mix 노드에서 GPU 가 풀렸다. 기록으로만 남긴다:
 
   | 유효 슬롯 | wall-h | 완주 |
   |---|---|---|
