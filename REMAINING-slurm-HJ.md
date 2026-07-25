@@ -65,6 +65,21 @@
 - **⚠ clean 은 컷하지 않는다 (2026-07-25 Yonghee: "clean 은 필수").** renorm-4 의 clean 12셀을 빼면 ~300 GPU-h 를 아낄 수 있지만, clean 열은 **오발화(false-firing) 판정의 근거**라 유지한다 — renorm 은 flirds 와 달리 clean 에서도 음수 φ 로 발화해 `equals_vanilla` 스킵이 안 되고 실제 개입이 일어난다. 즉 renorm 의 clean 칸은 "비어도 되는 대조"가 아니라 **결과 그 자체**다.
 - **판정 시점 = 07-27 아침**: seed0 착지 + seeds1·2 진척으로 완주 여부를 본다.
 
+### ⚠⚠ 최대 변수 = A6000 노드 drain (07-25 19:50 관측, 신규)
+
+- **12노드 중 7노드가 `drng`/`drain`**(`Reason=Kill task failed`, root@07-25T17:19 및 T19:35). 클러스터 총 96 GPU 중 **할당 70 / 유휴 26 인데 유휴 26장이 전부 drain 노드 위**에 있다 → **스케줄 가능한 유휴 GPU = 0**.
+- `PrivateData=jobs` 라 `squeue` 로는 내 잡 8개만 보인다. **"클러스터가 비어 있다"는 오독** — 실제로는 73% 점유 중이다. 따라서 `ArrayTaskThrottle=8` 을 올려도 **지금은 아무 효과가 없다**(대기 사유가 `JobArrayTaskLimit`→`Resources` 로 바뀔 뿐).
+- **실행 중 8셀 가운데 5셀이 drain 노드 위**(node44×3, node51, node27). drng 는 **실행 중인 잡을 죽이지 않으므로 이 5셀은 안전**하다. 문제는 **끝난 뒤**다 — drain 노드는 새 잡을 받지 않으므로 그 슬롯이 나에게 되돌아오지 않는다. 재활용되는 건 mix 노드 3셀(node26·45·47)뿐이고 그마저 타 사용자와 경쟁한다.
+- **동시성 감쇠 시나리오**(잔여 666–786 GPU-h 기준):
+
+  | 유효 슬롯 | wall-h | 완주 |
+  |---|---|---|
+  | 8 (drain 해소) | 83–98 | **07-29 07:00 ~ 22:00** |
+  | 5 | 133–157 | 07-31 ~ 08-01 |
+  | 3 (drain 지속) | 222–262 | **08-04 ~ 08-05** |
+
+- **`Kill task failed` 은 통상 stale 프로세스 정리로 관리자가 수 시간 내 해제**하는 상태다. 내 8셀은 전부 정상 진행 중(19:50 기준 실패 시그니처 0)이라 원인은 내 잡이 아닐 가능성이 높다. **관리자에게 undrain 요청이 필요한지 Yonghee 판단 요망** — 이 한 건이 완주일을 07-29 ↔ 08-05 로 가르는 최대 변수다.
+
 ## 3. 완료 후
 
 1. rundir 커밋(push는 Yonghee) → `runs/track_h/make_analysis.py`(LLM 로더가 `rundirs_llm_hj` 를 이미 읽는다) → `flirds-results-downstream` §5.3 R4 online 표 7행.
