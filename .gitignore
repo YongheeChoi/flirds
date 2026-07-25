@@ -58,3 +58,5 @@ runs/track_h/_logs_*.log
 # HJ 계정 셋업 프로브: 스크립트는 추적, 잡 출력·빌드 로그는 transient (REMAINING-slurm-HJ §4.4)
 runs/_probe/*.log
 runs/_probe/*.out
+# 본문 수렴곡선 그림 + 파생 CSV (runs/plots/make_paper_curves.py; rundir에서 재생성 — 스크립트만 추적):
+runs/plots/figs/
