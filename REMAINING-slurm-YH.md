@@ -97,16 +97,23 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh
 
 | P | 무엇 | 물량 | 근거 |
 |---|---|---|---|
-| **P0** | **C-b**(+C-a 1줄) 코드 | — | JW 의 505 GPU-h 를 막고 있다 |
-| **P1** | G3 seed0 → 전량 | 96런 · 60–100 | 본문 downstream 의 빈 절반 · 코드 불요 |
-| **P2** | G8 | 24런 · ~25 | 부록 fidelity+탐지가 한 rundir |
-| **P3** | G10 | 216런 · 110–160 | 부록 downstream(P1·P1w 동시) |
-| **P4** | G6 | 9런 · 10–20 | 본문 ablation |
+| **P0** | **C-b** 코드 | — | **JW·JB·HJ 의 c1축 을 막고 있다** |
+| **P0** | **C-a** 코드(1줄) | — | **HJ 의 G10(216런) · 자신의 G8 을 막고 있다** |
+| **P1** | G3 seed0 → 전량 | 96런 · ~80 | 본문 downstream 의 빈 절반 · **코드 불요 → 즉시 착수** |
+| **P2** | **c1축 cifar10 seed0 + s1 1셀** | 9셀 · ~82 | **본문 G2 의 P0 seed** — 균등분배 몫 |
+| **P3** | G8 | 24런 · ~25 | 부록 fidelity+탐지가 한 rundir |
+| **P4** | G6 | 9런 · ~15 | 본문 ablation |
 
-- **총 ~205–305 GPU-h** / 8슬롯 → **26–38 wall-h** → **07-27 오전 완주** 예상.
-- 완주 후 **JW 의 G9(mnist (a)-오라클) 꼬리를 work-steal** 권장 — 같은 3090·같은 env·셀 단위 idempotent.
+```
+sbatch --array=0-7,16%8  runs/track_c/c1/sbatch_c1_axis.sh    # cifar10 seed0 8셀 + seed1 1셀 (C-b 착지 후)
+```
 
-## 8. 완료 후 · 미해결 배선
+- **YH 몫 ~202 GPU-h** / 8슬롯 → **~25 wall-h** → **07-27 오전**. 코드 작성 중에도 **G3 는 게이트가 없어 병행 가동**할 수 있다.
+- **c1축 cifar10 seed0(0-7)을 YH 가 맡는 이유**: 본문 G2 의 최우선 seed 인데, C-b 를 쓰는 사람이 직접 돌려야 게이트 해제 즉시 착수된다.
+- **G10 은 HJ, G5·G12 는 B200 c4** — 여기가 아니다.
+- 슬롯이 남으면 JW·JB 잔여를 work-steal(남은 `--array` 범위만).
+
+## 9. 완료 후 · 미해결 배선
 
 1. rundir 커밋(push는 Yonghee) → `make_analysis.py` 재생성 → `flirds-results-{downstream,fidelity,detection}` → paper.
 2. **rundir 정체성 잔여**: `track_c1`·`track_c2`·`track_c2_fid`·`track_d`·`phase1_*` 는 아직 `identity=None`(C1 재실행이 `*_<hash>` 를 낸 원인). **C-b 작업 중 `track_c1` 만이라도 정합**시키면 G2·G9 착지가 깨끗해진다.

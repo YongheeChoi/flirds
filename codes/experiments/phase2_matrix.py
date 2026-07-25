@@ -596,7 +596,9 @@ def report_vs_a(methods, selected):
 # Re-running a cell whose stored config predates one of these needs RUNDIR_REPLACE=1 once.
 IDENTITY = ("scale", "model", "regime", "alpha", "threats", "seeds", "oracle_b",
             "coalition", "noisy_rate", "dose_mult",
-            "sfl_beta", "removal", "client_opt")
+            "sfl_beta", "removal", "client_opt", "rounds")
+# `rounds` promoted 2026-07-25 (R4 200 -> 100): the cell NAME does not carry R, so without
+# it an R=100 re-run silently overwrites the R=200 canonical (the beta 0.5->0.3 failure mode).
 
 
 def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=None):
@@ -616,6 +618,7 @@ def _persist(phi_rows, run_metrics, threats, seeds, oracle_b, coalition, timing=
     name = os.environ.get("RUN_NAME") or f"{SCALE}_{_setting}_{_cond}{_anchor}{_dose}{_seedtok}"
     rcfg = {k: (sorted(v) if isinstance(v, (set, frozenset)) else v) for k, v in RCFG.items()}
     config = {"scale": SCALE, "model": MODEL, "regime": REGIME, "alpha": ALPHA,
+              "rounds": RCFG["rounds"],                          # identity field (see IDENTITY)
               "threats": threats, "seeds": seeds, "oracle_b": oracle_b, "coalition": coalition,
               "oracle_a": ORACLE_A,                                # L8/T5: (a) retrain oracle ran (gsm5)
               "noisy_rate": NOISY_RATE, "dose_mult": DOSE_MULT, "removal": REMOVAL,

@@ -1,29 +1,27 @@
 # ════════════════════════════════════════════════════════════════════════════
-# B200 컨테이너 1 (GPU 1장) — **noisy 레인**
+# B200 **세션 A** / 컨테이너 1 (GPU 1장) — G1 noisy 레인
 #   가동: CID=1 bash <repo>/runs/track_h/run_b200_batch.sh
 #   형식: SCRIPT|LOGNAME|envs     ·  __REPO__ = 런처가 sed 치환
-#   ⚠ 완료 줄은 '#' **주석**(줄 삭제 금지 — 드라이버가 consumed 인덱스로 위치 추적)
-#   ⚠ 가동 후 줄 순서 변경 금지.  정지 = 드레인(실행 중 셀 완주 후 종료)
+#   ⚠ 완료 줄은 '#' **주석**(줄 삭제 금지 — 드라이버가 consumed 인덱스로 추적)
+#   ⚠ 가동 후 줄 순서 변경 금지 · 정지는 드레인(실행 중 셀 완주 후 종료)
+#
+# 배치(2026-07-25 스코프 컷 반영):  세션 A = CID 1(noisy) + CID 2(clean)
+#                                  세션 B = CID 3(frzero) + CID 4(L1 clean·G5·G12)
+# **R4 = R=200 유지.**  LLM downstream 을 {vanilla·oracle·random·flirds류}로 줄이면서
+# L11·G4c 가 빠졌고, 그 둘을 넣으려던 R=100 전환도 함께 철회됐다 → 이미 완결·커밋된
+# L1 3-seed 를 재실행 없이 그대로 쓴다.  ROUNDS 를 주지 않는다(레짐 기본 200).
+#
+# ⚠ G1 은 셀당 ~19.6h 이고 `phase2_matrix` 는 **cell-end 1회 persist** 다 —
+#   컨테이너가 중도에 끊기면 그 셀은 전손이다(직전 컨테이너 실사례).
+#   컷이 예상되면 신규 투입을 먼저 끊고 드레인할 것(seal watchdog 운용 권장).
 # ════════════════════════════════════════════════════════════════════════════
 
-# ─── G1 : R4-L2 주무대 (b) 오라클 · noisy(=answer-swap@0.7) ───────────────────
-# 산출 = §5.2 LLM fidelity + §5.4 LLM 탐지 + §5.5 canonical timing (한 rundir 3축)
-# THREAT 토큰은 phase2_matrix 규약(`noisy`|`clean`|`freerider_zero`) — track_g 의 `frzero` 와 다름
+# ─── G1 : R4-L2 주무대 (b) 오라클 · noisy(=answer-swap@0.7) ─────────────────
+# 한 rundir 이 §5.2 fidelity + §5.4 탐지 + §5.5 canonical timing 세 축을 동시에 연다.
+# THREAT 토큰은 phase2_matrix 규약(clean|noisy|freerider_zero) — track_g 의 frzero 와 다름.
 phase2_matrix.py|G1_L2_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0
 phase2_matrix.py|G1_L2_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1
 phase2_matrix.py|G1_L2_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2
-
-# ─── (옵션) LLM P1w — 여유 시 최우선 추가 (INDEX §5a) ────────────────────────
-#   아래 3줄을 해제하고 그 아래 G12 6줄을 주석 처리하면 맞교환된다(≈ 12h ↔ 12–24h).
-#   T1(online 가중 게이팅)만 = 관찰자 불요 → canonical `rundirs_llm` 에 직접 착지(arm명 신규라 충돌 0).
-# track_g.py|P1w_T1_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-# track_g.py|P1w_T1_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-# track_g.py|P1w_T1_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-
-# ─── G12 batch A : A축 lever probe seed 보강 (부록 P2 · 최저 우선) ───────────
-track_d.py|1B_anchor5_lr1e-3_st20_seed1|REGIME=anchor5 LR=1e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr1e-3_st20_seed2|REGIME=anchor5 LR=1e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr1e-3_st30_seed1|REGIME=anchor5 LR=1e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr1e-3_st30_seed2|REGIME=anchor5 LR=1e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr2e-3_st20_seed1|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr2e-3_st20_seed2|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+# 이 컨테이너는 G1 noisy 전용이다(배치 규약: c1/c2/c3 = G1, c4 = 나머지 전부).
+# 완주 시각 ≈ 58.8h.  남는 창(~15h)은 컷·재시도 마진으로 비워 둔다 —
+# G1 은 셀당 19.6h 이고 cell-end 1회 persist 라 여유가 곧 보험이다.
