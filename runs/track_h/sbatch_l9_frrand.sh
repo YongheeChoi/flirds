@@ -48,7 +48,7 @@ if [ "$J" -lt 7 ]; then                        # T1 online: one source's sign-ga
   SRC=${SRCS[$J]}
   echo "[l9frr $IDX] frrand seed$SEED ${SRC}_gate_v2 (T1) -> $RR  $(date '+%F %T')"
   env PYTHONPATH=. HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
-    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True VAL_CHUNK="${VAL_CHUNK:-10}" \
     REGIME=gsm50k5 THREAT=frrand SEED="$SEED" \
     ARMS="${SRC}_gate_v2" OBS_SOURCES="$SRC" T2=0 T2_LEGACY=0 T2_P5=0 \
     RUNDIR_ROOT="$RR" \
@@ -56,7 +56,7 @@ if [ "$J" -lt 7 ]; then                        # T1 online: one source's sign-ga
 else                                           # T2 retrain: observer scored by all 7 -> 7 t2_sign
   echo "[l9frr $IDX] frrand seed$SEED observer+T2(all-7) -> $RR  $(date '+%F %T')"
   env PYTHONPATH=. HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1 \
-    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True VAL_CHUNK="${VAL_CHUNK:-10}" \
     REGIME=gsm50k5 THREAT=frrand SEED="$SEED" \
     ARMS=observer OBS_SOURCES=flirds1st,lossheur,fedif,gtg,fedsv,comfedsv,shapleyfl \
     T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 \
