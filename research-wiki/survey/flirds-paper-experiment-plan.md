@@ -10,6 +10,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 
 > **무엇**: Yonghee가 2026-07-25에 확정한 **논문 본문/부록 수록 실험 목록**을 [[flirds-experiment-axis-map]]의 분류·이름 체계로 옮기고, 각 항목이 **지금 실측으로 채워져 있는지**를 rundir 대조로 판정한 문서.
 > **왜 두 용도인가**: ① 논문 집필 세션은 "무엇을 어느 표로 싣나"를 여기서 읽는다 ② **실험 설계 세션은 §4(결손 목록)를 입력으로 받아** 부족한 실험을 설계한다. 그래서 "완료"만이 아니라 **무엇이 비었고 몇 런이 필요하며 코드 변경이 필요한지**까지 적는다.
+> **미결 없음(2026-07-25)**: 설계 질문 7건(Q1~Q7)은 Yonghee 답변으로 **전건 종결**됐다 — 결정과 그 반영은 §6, 논문 본문 삭제 대상은 §6.1. 문서-전용 작업 2건(5-CNN runtime 표 · φ 부호 감사 표)은 같은 날 작성 완료했고, **남은 건 전부 실제 실행이 필요한 결손**이다.
 > **수치는 여기 없다** — 실제 값은 축별 결과 페이지가 담당한다: [[flirds-results-fidelity]] · [[flirds-results-downstream]] · [[flirds-results-detection]] · [[flirds-results-ablation]] · [[flirds-results-cost]]
 > **판정 근거**: 2026-07-25 기준 `runs/` rundir 전수 대조(c2fid `fidelity.csv` · track_h `cnn_competition.csv`/`llm_competition.csv` · track_h/track_g rundir 이름 파싱 · track_c/c1 · track_d · phase2_matrix · removal_dose · probe_signal). 마커는 실측이며 추정이 아니다.
 
@@ -39,7 +40,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | 제외 (기존) | Banzhaf(07-22) · Ripple(07-19) · Fed-LOO(07-23 → 이번에 재확인) |
 
 > 러너는 계속 이 열들을 산출한다 — **집계·표 단계에서만 뺀다**(rundir·CSV는 존속). 기존 결과 페이지의 _기울임_ 탐지기 행과 Fed-LOO·Banzhaf 행은 전부 삭제 대상이다.
-> ⚠ 파급: [[flirds-results-detection]] §3-LLM의 전용탐지기 대조가 사라지면서 "φ-as-detector의 noisy 약세를 전용 탐지기가 이긴다"는 서술의 근거도 함께 빠진다 → §6 미결 질문 Q5.
+> ⚠ 파급: [[flirds-results-detection]] §3-LLM의 전용탐지기 대조가 사라지면서 "φ-as-detector의 noisy 약세를 전용 탐지기가 이긴다"는 서술의 근거도 함께 빠진다 — **각주로도 살리지 않는다**(Q5 확정). 논문 본문에 해당 서술이 없음은 §6.1에서 확인됨.
 
 ### 0.3 seed — 예외 없이 3-seed
 
@@ -53,36 +54,35 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 
 ## 1. 한눈에 — 배치 × 축 × 상태
 
-| 배치 | 축 | 실험 (축-지도 이름) | 상태 |
-|---|---|---|---|
-| **본문** | Fidelity | 1A-CNN 대규모 교차-디바이스 부분참여 — cifar10 {dir1, iid} | ● 완료 |
-| **본문** | Fidelity | 1A-LLM 주무대 정확도-무대 충실도 (R4) | ⬚ **미실행** |
-| **본문** | Fidelity | 1A-LLM 표준 부분참여 충실도 (1B·3B·7B) | ● 완료(오염축 0 → Q1) |
-| **본문** | Fidelity | 1B-CNN vs (a) — cifar10 {dir1, iid} | ◐ **무대 불일치**(오염축·파티션 재실행) |
-| **본문** | Fidelity | 1B-LLM 소형 앵커 듀얼오라클 vs (a) | ● 완료(1B; 오염축 0 → Q1) |
-| **본문** | Downstream | 2-CNN P1 부호-게이트 online/retrain — cifar10 {dir1, iid} | dir1 ● / **iid ⬚(flirds 단독)** |
-| **본문** | Downstream | 2-LLM 주무대 정확도 개입 (R4 GSM8K EM) vs 전체 baseline | ◐ **4/9 방법만** |
-| **본문** | Cost | 5-공통 op-count 모델 — **N·R·K 파라메트릭** | ⟐ **재작성**(실행 0) |
-| **본문** | Cost | 5-LLM 실측 runtime — device100 앵커 | ● 완료 |
-| **본문** | Ablation | 2차항(HVP)의 기여 — CNN 레그 | ● 완료 |
-| **본문** | Ablation | 2차항(HVP)의 기여 — LLM 레그 | ◐ **seed 부족** |
-| **본문** | Ablation | Removal-curve — CNN | ◐ **오염축 불일치** |
-| **본문** | Ablation | Removal-curve — LLM | ● 완료 |
-| **부록** | Fidelity | 1A-CNN mnist {dir1, iid} | ⬚ **전량 미실행** |
-| **부록** | Fidelity | 1A-LLM 교차-사일로 (b)-leg | ● 완료 |
-| **부록** | Fidelity | 1A-LLM 대규모 교차-디바이스 앵커 | ● 완료 |
-| **부록** | Fidelity | 1B-CNN mnist {dir1, iid} vs (a) | ⬚ **전량 미실행** |
-| **부록** | Fidelity | 1C 재현성·안정성 | ⟐ **재산출**(스코프 축소분) |
-| **부록** | Downstream | 2-CNN mnist {dir1, iid} P1 online/retrain | ⬚ **전량 미실행** |
-| **부록** | Downstream | 2-CNN P1w — cifar10/mnist {dir1, iid} | cifar10/dir1 ● / 나머지 **⬚(동반 산출)** |
-| **부록** | Downstream | 2-LLM 표준 개입 무해성 (vanilla·Flirds 가중/선택만) | ● 완료 |
-| **부록** | Cost | 5-LLM runtime — silo5 · anchor5 · std20 | ● 완료 |
-| **부록** | Cost | 5-CNN runtime 상세(방법별) | ⟐ **재작성**(실행 0 — §4 주의) |
-| **부록** | Ablation | A축 용량 lever probe — CNN | ● 완료 |
-| **부록** | Ablation | A축 용량 lever probe — LLM | ◐ **seed 부족** |
-| **부록** | Ablation | Dose-response — LLM | ● 완료(noisy) |
-| **부록** | Ablation | Dose-response — CNN | ◐ **정의 결정 필요**(→ Q3) |
-| **부록** | Detection | 본문/부록 무대에서 발췌 | 무대 상태에 종속(§3.5) |
+| 배치     | 축          | 실험 (축-지도 이름)                                         | 상태                                |
+| ------ | ---------- | ---------------------------------------------------- | --------------------------------- |
+| **본문** | Fidelity   | 1A-CNN 대규모 교차-디바이스 부분참여 — cifar10 {dir1, iid}        | ● 완료                              |
+| **본문** | Fidelity   | 1A-LLM 주무대 정확도-무대 충실도 (R4)                           | ⬚ **미실행**                         |
+| **본문** | Fidelity   | 1A-LLM 표준 부분참여 충실도 (1B·3B·7B)                        | ● 완료 (clean-IID 전용 무대 — 확정)                  |
+| **본문** | Fidelity   | 1B-CNN vs (a) — cifar10 {dir1, iid}                  | ◐ **무대 불일치**(오염축·파티션 재실행)         |
+| **본문** | Fidelity   | 1B-LLM 소형 앵커 듀얼오라클 vs (a)                            | ● 완료(1B) (clean-IID 전용 무대 — 확정)              |
+| **본문** | Downstream | 2-CNN P1 부호-게이트 online/retrain — cifar10 {dir1, iid} | dir1 ● / **iid ⬚(flirds 단독)**     |
+| **본문** | Downstream | 2-LLM 주무대 정확도 개입 (R4 GSM8K EM) vs 전체 baseline        | ◐ **4/9 방법만**                     |
+| **본문** | Cost       | 5-공통 op-count 모델 — **N·R·K 파라메트릭**                   | ⟐ **재작성**(실행 0)                   |
+| **본문** | Cost       | 5-LLM 실측 runtime — device100 앵커                      | ● 완료                              |
+| **본문** | Ablation   | 2차항(HVP)의 기여 — CNN 레그                                | ● 완료                              |
+| **본문** | Ablation   | 2차항(HVP)의 기여 — LLM 레그                                | ◐ **seed 부족**                     |
+| **본문** | Ablation   | Removal-curve — CNN                                  | ◐ **오염축 불일치**                     |
+| **본문** | Ablation   | Removal-curve — LLM                                  | ● 완료                              |
+| **부록** | Fidelity   | 1A-CNN mnist {dir1, iid}                             | ⬚ **전량 미실행**                      |
+| **부록** | Fidelity   | 1A-LLM 교차-사일로 (b)-leg                                | ● 완료                              |
+| **부록** | Fidelity   | 1A-LLM 대규모 교차-디바이스 앵커                                | ● 완료                              |
+| **부록** | Fidelity   | 1B-CNN mnist {dir1, iid} vs (a)                      | ⬚ **전량 미실행**                      |
+| **부록** | Fidelity   | 1C 재현성·안정성                                           | ⟐ **재산출**(스코프 축소분)                |
+| **부록** | Downstream | 2-CNN mnist {dir1, iid} P1 online/retrain            | ⬚ **전량 미실행**                      |
+| **부록** | Downstream | 2-CNN P1w — cifar10/mnist {dir1, iid}                | cifar10/dir1 ● / 나머지 **⬚(동반 산출)** |
+| **부록** | Downstream | 2-LLM 표준 개입 무해성 (vanilla·Flirds 가중/선택만)              | ● 완료                              |
+| **부록** | Cost       | 5-LLM runtime — silo5 · anchor5 · std20              | ● 완료                              |
+| **부록** | Cost       | 5-CNN runtime 상세(방법별)                                | ⟐ **작성 완료**(실행 0 — 07-25 반영)      |
+| **부록** | Ablation   | A축 용량 lever probe — CNN                              | ● 완료                              |
+| **부록** | Ablation   | A축 용량 lever probe — LLM                              | ◐ **seed 부족**                     |
+| **부록** | Ablation   | **φ 부호 감사 — 게이팅의 작동 전제**                            | ⟐ **작성 완료**(실행 0 — 07-25 반영)      |
+| **부록** | Detection  | 본문/부록 무대에서 발췌                                        | 무대 상태에 종속(§3.5)                   |
 
 > **결손의 무게중심 3곳**: ① **LLM 주무대 (b) 오라클(R4-L2)** — 본문 fidelity·부록 detection이 동시에 걸려 있다 ② **mnist 무대 전량** — 부록 fidelity·downstream 4항목이 여기 걸린다 ③ **cifar10/iid 비-flirds 점수원 7종** — 본문 downstream의 절반.
 
@@ -96,11 +96,11 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 |---|---|---|---|---|
 | **1A-CNN 대규모 교차-디바이스 부분참여** | FedSVCNN · cifar10 {dir1, iid} · N=100 · 10/100 · R=120 · (b) per-round | lf@0.70 ● · frzero ● · gn ● (+clean ●) | **● 완료** | 없음. 기존 표에서 qskew·shard·fmnist 파티션 및 축 밖 위협 열 삭제만 |
 | **1A-LLM 주무대 정확도-무대 충실도 (R4)** | Llama-3.2-1B · gsm50k5 N=50 · 5/50 · R=200 · (b) per-round · GSM8K | swap@0.7 ⬚ · frzero ⬚ | **⬚ 미실행** | **G1** — 6 셀(+clean 3) |
-| **1A-LLM 표준 부분참여 충실도 (1B·3B·7B)** | alpaca IID · N=20 · 2/round · R=200 · (b) per-round | 오염 없음(clean-IID 전용) | **● 완료** | 오염축을 붙일지 결정(**Q1**). 붙이면 전면 재실행 |
+| **1A-LLM 표준 부분참여 충실도 (1B·3B·7B)** | alpaca IID · N=20 · 2/round · R=200 · (b) per-round | 오염 없음(clean-IID 전용) | **● 완료** | **없음** — 오염축을 붙이지 않기로 확정(Q1). 표 캡션에 "clean-IID 전용 무대" 명시만 |
 | **1B-CNN 소형 교차-사일로 vs (a)** | 현: LeNet5/FedSVCNN · N=10 · full · R=10 · (a) 2¹⁰ + (b) 2¹⁰ | 현 시나리오 = {feature-noise, label-flip(dose 사다리), quantity-skew, label-skew, iid} → **축 3종 중 0개 일치** | **◐ 무대 불일치** | **G2** — 러너 확장 + cifar10 18 셀 |
-| **1B-LLM 소형 앵커 듀얼오라클 vs (a)** | Llama-3.2-1B · anchor5 N=5 · full · R=30 · (a) 2⁵ | 오염 없음(clean-IID 전용) | **● 완료(1B)** | 3B/7B (a)는 ⬚(수록 대상 아님). 오염축 결정 **Q1** |
+| **1B-LLM 소형 앵커 듀얼오라클 vs (a)** | Llama-3.2-1B · anchor5 N=5 · full · R=30 · (a) 2⁵ | 오염 없음(clean-IID 전용) | **● 완료(1B)** | **없음** — 오염축 미부착 확정(Q1). 3B/7B (a)는 ⬚(수록 대상 아님) |
 
-> **1B-CNN 주의**: (a) 재학습 오라클은 2^N 재학습이라 **N=100에서 원리적으로 불가** → 1A-CNN(N=100·부분참여)과 **N·참여율은 맞출 수 없다**. 정렬 가능한 건 **오염축과 파티션**뿐이다. 이 비교불가성은 논문에도 명시해야 한다(현 track_c2_fid 헤더의 CAVEAT와 같은 취지).
+> **1B-CNN 주의**: (a) 재학습 오라클은 2^N 재학습이라 **N=100에서 원리적으로 불가** → 1A-CNN(N=100·부분참여)과 **N·참여율은 맞출 수 없다**. 정렬 가능한 건 **오염축과 파티션**뿐이다(N=10 유지 확정 — Q7). 이 비교불가성은 논문에도 명시해야 한다(현 track_c2_fid 헤더의 CAVEAT와 같은 취지).
 
 ### 2.2 Downstream `[본문]`
 
@@ -159,13 +159,14 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **5-LLM runtime — 교차-사일로 silo5** | **● 3-seed** | 탐지기 4종·Fed-LOO·Banzhaf 행 삭제 |
 | **5-LLM runtime — 소형 앵커 anchor5 (1B·3B·7B)** | **● 3-seed** (+(a)oracle 1B) | 〃. loss-heur C6 교정본 병기 유지 |
 | **5-LLM runtime — 표준 부분참여 std20 (1B·3B·7B)** | **● 3-seed** | 〃. 소-cohort 역전(Flirds 1.61×) 서술 유지 |
-| **5-CNN runtime 방법별 상세** | **⟐ 재작성 — 추가 실험 불필요** | **G11**. 아래 주의 참조 |
+| **5-CNN runtime 방법별 상세** | **⟐ 작성 완료 (2026-07-25)** | **G11 종결** — [[flirds-results-cost]] §5-CNN에 반영. 아래 주의 참조 |
 
 > ⚠ **"5-CNN은 추가 실험이 필요하다"는 전제는 실측과 다르다.** 방법별 CNN runtime은 **이미 3-seed로 존재**한다:
 > - `runs/track_c/c2fid/analysis/fidelity.csv`의 **`runtime_s` 열** — 9방법 × 144셀(6 데이터셋·파티션 × 8위협 × 3seed) 전량. 예: cifar10/dir1 오염 3종 평균(n=9) → Flirds-1st 4.21±0.10 · FedIF 5.35±0.17 · loss-heur 9.22±0.12 · **Flirds 10.64±0.37** · ComFedSV 23.65±0.58 · FedSV 293.98±4.90 · **(b)oracle 836.58±14.07** · GTG 1079.92±131.64 · ShapleyFL 1468.47±16.34.
 > - `runs/track_c/c1/*/metrics.json`의 `methods.<m>.runtime` + `traj_time`(학습) — N=10 full 무대, 3-seed.
 >
-> 즉 **LLM 표와 같은 입도의 CNN 표를 지금 데이터로 만들 수 있다**. 새 실험이 필요한 경우는 딱 하나 — **N=100 무대의 학습(client-training) wall-clock을 함께 싣고 싶을 때**(현재 CNN rundir에 `timing.json` 미배선). 판단은 §6 **Q4**.
+> 즉 **LLM 표와 같은 입도의 CNN 표를 지금 데이터로 만들 수 있고, 2026-07-25에 만들었다**([[flirds-results-cost]] §5-CNN: N=100 무대 9방법 2파티션 + N=10 무대 9방법 2데이터셋 + 참조 행 2개).
+> **Q4 확정 = 학습 wall-clock은 싣지 않는다**(valuation-only) → CNN rundir `timing.json` 배선 불필요. 다만 N=10 무대엔 학습 궤적 `traj_time`(mnist 136.3 s / cifar10 104.5 s)과 **(a) 2¹⁰ 재학습 `t_a`(41,168 s / 32,912 s = Flirds의 64,730× / 28,177×)** 를 비교 대상 아닌 _참조 행_으로 병기했다 — (a)-무대를 N=10에 묶어둘 수밖에 없는 이유의 가격표다.
 
 ### 3.4 Ablation `[부록]`
 
@@ -173,8 +174,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 |---|---|---|
 | **A축 용량 lever probe — CNN** | **● 완료** (폭 {0.5,1,2,4}× × 참여 {0.2,0.5,1.0}, 22 프리픽스 3-seed + c2 8 프리픽스 3-seed) | 기준칸 w=1·k=1.0은 C1 rundir 재사용 — provenance 각주 |
 | **A축 용량 lever probe — LLM** | **◐** 핵심축만 3-seed | **G12** — 23 셀 |
-| **Dose-response — LLM** | **● 완료** — silo5 noisy nr∈{0,0.1,0.25,0.5,0.75,1.0} 3-seed | frrand dm 스윕·poison pf 스윕 삭제. **frzero는 dose가 정의되지 않음**(Δ=0 이진) |
-| **Dose-response — CNN** | **◐ 정의 결정 필요** | c2fid의 lf@{0.15,0.35,0.70} 3-seed가 **곧바로 label-flip dose 사다리**다(추가 실행 0). grad-noise 강도 스윕은 ⬚ → **Q3** |
+| **φ 부호 감사 — 게이팅의 작동 전제** | **⟐ 작성 완료 (2026-07-25)** | Q5로 부록 승격. 표 2개 작성 완료([[flirds-results-ablation]] §4-공통): **표 A** clean 클라 φ≤0 비율(오배제 위험) · **표 B** 오염 클라 φ≤0 비율 + exact-0 병기. 재실행 0 |
 
 ### 3.5 Detection `[부록 — 발췌]`
 
@@ -207,7 +207,8 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **G10** | 2-CNN mnist downstream | track_h CNN | 관측자 **24** + 점수원 **192** = **216** | G8 확장 공유 | 부록 downstream(P1·P1w 동시) | **P2** |
 | **G12** | A축 lever probe LLM seed 보강 | `probe_signal/rundirs`·`noise_probe` | **23** | 불필요 | 부록 ablation | **P2** |
 | **G7** | op-count를 N·R·K 파라메트릭으로 재작성 | `runs/measured_2026-07/op_counts.py` | **0**(실행 없음) | 출력 포맷만 | 본문 cost | **P0(문서)** |
-| **G11** | 5-CNN 방법별 runtime 표 작성 | c2fid `runtime_s` + C1 `runtime` | **0**(실행 없음) | 없음 | 부록 cost | **P0(문서)** |
+| ~~G11~~ | ~~5-CNN 방법별 runtime 표 작성~~ | c2fid `runtime_s` + C1 `runtime` + c1_oracle `t_a` | **0** | 없음 | 부록 cost | ✅ **2026-07-25 종결** |
+| ~~G14~~ | ~~φ 부호 감사 표 작성~~ | `track_g/audit/sign_table.csv` | **0** | 없음 | 부록 ablation | ✅ **2026-07-25 종결** |
 | **G13** | *(선택)* loss-heur C6 교정 3B/7B 재측정 | `track_d` rundirs_e4 | **12** | 불필요 | 부록 cost 각주 | **P3** |
 
 ### 4.1 G12 내역 (seed 부족 셀)
@@ -232,9 +233,9 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **P0 (본문 필수)** | G1 6~9 · G3 96 · G4 ~111 = **~215** | 없음 |
 | **P1 (본문 필수, 러너 확장)** | G2 18~24 · G5 4 · G6 6~9 = **~30** | `track_c1.py` 위협·파티션 확장 |
 | **P2 (부록)** | G8 24 · G9 18~24 · G10 216 · G12 23 = **~285** | `track_c2.py` mnist 1줄 + G2 확장 공유 |
-| **문서 전용** | G7 · G11 = **0** | 없음 |
+| **문서 전용** | G7 = **0** (G11·G14는 07-25 종결) | 없음 |
 
-> **mnist 축(G8·G9·G10 = ~264 런)이 전체의 절반 이상**이다. 부록 항목이므로 우선순위·범위 축소(예: dir1만, 또는 downstream 생략) 여지가 가장 큰 지점 → **Q2**.
+> **mnist 축(G8·G9·G10 = ~264 런)이 전체의 절반 이상**이다 — **Q2에서 전량 실행으로 확정**(단계적 게이트 없음). 코드 변경은 `track_c2.py` mnist 1건 + `track_c1.py` 위협·파티션 확장 1건뿐이고 나머지는 셀 수 문제다.
 
 ---
 
@@ -257,26 +258,40 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | Cost | 지수-비용 스케일링 표 · 학습↔가치평가 위상분리 계측 | `[부록E]`·`[본문/부록]` |
 | Cost | Fed-LOO · Banzhaf 행 | 전 runtime 표 |
 | Ablation | Taylor 물리잔차(P3) · AdamW 브리지 · TF32 A/B · β 통일 provenance | `[보류·부록A]`·`[제외]`·`[검증-전용]`·`[각주]` |
-| Ablation | **φ 부호 감사**(309 rundir) | `[전제]` — 표는 아니고 게이팅 전제 서술의 근거 |
+| Ablation | **Dose-response (CNN·LLM 모두)** — 07-25 Yonghee 제외 결정(Q3) | `[보조]` → `[제외]`. LLM noisy nr 스윕 3-seed 실측은 존치 |
 | 위협축 | frrand · lf@{0.15,0.35} · lf-strmain · frdelta · mixed · poison · LLM gnoise | 전 축 |
 
-> ⚠ **주의가 필요한 삭제 2건**: ① **clean 오발화 분해**를 빼면 "Flirds가 clean parity를 P1에서 −0.74pt 위반한다"는 정직 보고의 **원인 설명이 사라진다**(발화율 0.39~0.43). ② **φ 부호 감사**를 빼면 "frzero exact-0"·"noisy에 sign-게이트 작동영역 없음"이 근거 없는 주장이 된다. 둘 다 **표 없이 본문 1~2문장 + 각주**로 살리는 게 안전하다 → **Q5**.
+> ✅ **Q5 처리 완료**: ① **φ 부호 감사는 부록으로 승격**(표 2개) — "frzero exact-0"·"noisy에 sign-게이트 작동영역 없음"이 이제 수치로 뒷받침된다. ② **clean 오발화 분해는 완전 제외** — 논문 본문 L578–579의 서술도 삭제 대상(§6.1). 잃는 건 −0.7pt의 *인과 설명*이고 수치 자체는 개입 주 표의 clean 열에 남는다. ③ **탐지기 4종은 논문에 애초에 없어** 삭제할 서술도 없다(§6.1).
 
 ---
 
-## 6. 설계 세션에 넘기는 미결 질문
+## 6. 결정 기록 (Q1~Q7 — 2026-07-25 Yonghee 확정 · 전건 종결)
 
-| # | 질문 | 왜 지금 물어야 하나 | 기본안(내 권고) |
+| # | 질문 | **결정** | 반영 |
 |---|---|---|---|
-| **Q1** | **clean-IID 전용 무대(std20 · anchor5)에 오염축 2종을 붙일 것인가?** | 두 무대는 현재 오염 arm이 0이다. 붙이면 std20 18셀 × 2위협 × 3seed = **108셀 전면 재실행**(1B/3B/7B) | **붙이지 않는다.** 이 둘의 역할은 "스케일 무관 ρ≥0.999"와 "(a)↔(b) 듀얼오라클 일치"이고 오염축이 없어도 성립. 대신 표 캡션에 "clean-IID 전용 무대"임을 명시 |
-| **Q2** | **mnist 축(~264 런)을 전부 돌릴 것인가?** | 부록 4항목이 여기 걸리고 전체 결손의 절반 이상 | 단계적: **G8(fidelity 24셀) 먼저** → 결과 보고 G9·G10 승인 게이트. G10(216런)은 P1w 동반 산출이 있으니 취소 시 부록 downstream 2항목이 함께 빠짐 |
-| **Q3** | **CNN Dose-response의 정의**: label-flip dose {0.15,0.35,0.70}을 쓰는가(=오염축 예외 허용), 아니면 grad-noise 강도 스윕을 새로 도는가? | 전자는 **추가 실행 0**(c2fid 기존 3-seed), 후자는 신규 셀 | **전자.** dose 실험은 본질적으로 강도를 변화시키는 것이므로 "축은 lf@0.70, dose 절은 그 축의 강도 스윕"으로 규정 |
-| **Q4** | **5-CNN cost 표에 학습(client-training) wall-clock을 함께 실을 것인가?** | valuation runtime은 이미 3-seed 존재(추가 실험 0). 학습 시간까지 넣으려면 CNN rundir에 `timing.json` 배선 + 재실행 | **넣지 않는다.** LLM 표와의 대칭은 valuation-only로 이미 성립하고, "학습보다 2~3자릿수 저렴"은 C1 `traj_time`으로 이미 말할 수 있음 |
-| **Q5** | 탐지기 4종·clean 오발화·φ 부호 감사를 **표 없이 각주로도** 뺄 것인가? | §5 주의 2건 참조 — 전부 빼면 세 개의 서술이 근거를 잃는다 | **각주로 살린다**(표 0개, 본문 1~2문장씩) |
-| **Q6** | 신호 실재성 매트릭스(iid5)를 §1C 서술 근거로 **인용만** 할 것인가? | "IID-clean의 +1.000은 불안정한 GT를 좇은 값"이라는 §1C 해석 조건의 유일한 실측 근거 | **인용만**(표는 §1C의 무대별 안정성 표 1개로 통합) |
-| **Q7** | 1B-CNN을 "N=10 full"로 유지하는가? | (a) 2^N 재학습이라 N=100 불가 — 1A-CNN과 N·참여율이 영원히 다르다 | **유지 + 논문에 비교불가 명시.** 대안(N=100에서 몬테카를로 (a))은 "exact 참값"이라는 성질을 잃음 |
+| **Q1** | clean-IID 전용 무대(std20·anchor5)에 오염축 2종을 붙일 것인가 | **붙이지 않는다 — "지금 완료된 것만 쓴다"** | 두 무대는 현 상태(clean-IID·오염 arm 0)로 **● 완료 확정**. 표 캡션에 "clean-IID 전용 무대" 명시. 재실행 0 |
+| **Q2** | mnist 축(~264 런)을 전부 돌릴 것인가 | **전부 돌린다** | G8·G9·G10 전건 승인. 단계적 게이트 없음 |
+| **Q3** | CNN Dose-response를 어떻게 정의할 것인가 | **Dose-response를 논문에서 제외한다(CNN·LLM 모두)** | 부록 ablation에서 항목 삭제 → §5로 이동. 재실행 0. 기존 LLM dose rundir·표는 [[flirds-results-ablation]]에 `[제외]` 표기로 존치 |
+| **Q4** | 5-CNN cost 표에 학습 wall-clock을 함께 실을 것인가 | **싣지 않는다(valuation-only)** | CNN rundir `timing.json` 배선 불필요. 단 **N=10 무대의 `traj_time`·(a) `t_a`는 참조 행으로 병기**(비교 대상 아님) |
+| **Q5** | 탐지기 4종·clean 오발화·φ 부호 감사를 각주로도 뺄 것인가 | **탐지기 4종·clean 오발화는 완전 제외**(각주도 없이 논문 서술 삭제) · **φ 부호 감사는 부록 수록(표 포함)** | §3.4에 φ 부호 감사 항목 추가 — 표 2개 작성 완료([[flirds-results-ablation]] §4-공통). 논문 삭제 대상은 §6.1 |
+| **Q6** | 신호 실재성 매트릭스(iid5)를 §1C 근거로 인용만 할 것인가 | **자동 해소 — 논문에 iid5는 애초에 없다** | §6.1 참조. 논문 수정 불필요, iid5는 결과 페이지에서만 뺀다 |
+| **Q7** | 1B-CNN을 "N=10 full"로 유지하는가 | **유지(N=10)** | 1A-CNN(N=100)과 N·참여율 비교불가를 논문에 명시. G2·G9는 N=10 그대로 **오염축·파티션만** 정렬 |
 
----
+### 6.1 논문 본문(`paper/paper-ko.md`) 삭제·수정 대상 — Q5·Q6의 실제 착지점
+
+> 2026-07-25 `paper/paper-ko.md`(1,099행) 전수 검색 결과. **이 문서는 목록만 제시하고 논문 파일은 수정하지 않았다** — 해당 파일에 Yonghee의 미커밋 변경이 있어서다.
+
+| 제외 항목 | 논문 내 위치 | 판정 |
+|---|---|---|
+| **전용 탐지기 4종** | **없음** — `탐지기`/`detector`/`FLDetector`/`FLTrust`/`STD-DAGMM`/`FedDQC` 검색 전부 0건. 부록 F(탐지) 표 F.1도 in-run GT · Flirds · Flirds-1st · individual utility **4행뿐** | **삭제 대상 없음.** 결과 페이지에서 행만 빼면 끝 |
+| **clean 오발화** | **L578–579** — §5.3 읽기 ④ "**clean 오발화의 정직 보고**: online에서 Flirds −0.7pt·individual utility −1.3pt(누적 부호의 0-교차 노이즈), Flirds-1st·FedIF는 무발화" | **이 문장이 유일한 삭제 대상.** ⚠ 단 **−0.7pt 수치 자체는 개입 주 표의 clean 열에서 나오고 그 표는 남는다** — 잃는 건 "왜 발화했나"(0-교차 노이즈)의 인과 설명뿐. 정직 보고를 지키려면 **인과절만 지우고 수치는 남기는** 편이 안전 |
+| **Fed-LOO** | **L383** 제외 사유 문단에 Banzhaf·Ripple만 명시(Fed-LOO 미기재) | 같은 문단에 Fed-LOO 추가 |
+| **신호 실재성 매트릭스(iid5)** | **없음** — 부록 D.2 표(L1026–1034) 행은 `Anchor` / `Silo clean` / `Silo answer-swap` / `Silo free-rider(zero)` / `CNN-Grid` / `LLM-Main ⬚` / `CNN-Main ⬚`로 **iid5 행이 없다**. 본문 L459·L465가 인용하는 +0.87 / +0.93 / −0.37은 전부 **silo5·anchor5**(= 수록 무대) 값 | **삭제 대상 없음.** iid5는 결과 페이지에서만 빼면 되고, 논문의 IID↔비IID 대조는 `Anchor −0.367` vs `Silo clean +0.867`로 이미 자립 |
+| **Dose-response** | 별도 절 없음(미작성) | 신설하지 않음 |
+
+> ✅ **Q6 답**: 우려했던 "서술이 근거를 잃는" 상황은 **iid5에선 발생하지 않는다.** 논문이 실제로 쓰는 건 `Anchor(IID-clean) −0.367` vs `Silo clean(비IID) +0.867` 대조이고 둘 다 수록 무대라 자립한다. 진짜로 근거를 잃는 건 **clean 오발화 1건뿐**이며, 그것도 수치가 아니라 인과 설명이다.
+>
+> 부수 확인: 부록 D.2 표엔 `LLM-Main ⬚` · `CNN-Main ⬚` 두 칸이 비어 있는데, 각각 **G1(R4-L2)** 과 **c2fid rundir 파생**으로 채워진다 → §3.1의 1C 항목과 같은 작업이다.
 
 ## 7. 실행 규약 (설계 세션 참고)
 

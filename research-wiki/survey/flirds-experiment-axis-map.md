@@ -160,7 +160,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | **2차항(HVP)의 기여 — LLM 레그** | std50k5 부분참여(5/50)서 Flirds +1.000 vs 1차계열(ComFedSV/ShapleyFL/FedIF) 음수 붕괴. *↔ CNN 짝* | ● 3-seed(경량) | `[본문]` (§5.6①) | `runs/probe_signal`(std50k5) |
 | **A축 용량 lever probe — LLM** | rank·lr·steps·참여·noise lever가 cross-seed 신호를 못 만듦(lr는 공통 shift만). fidelity lever 전반 1.000. *↔ CNN 짝* | ● 핵심축 3-seed(나머지 seed0) | `[본문]` (§5.6②) | `runs/probe_signal/rundirs`+`noise_probe` |
 | **Removal-curve — LLM** | silo5서 worst-first 제거가 val-loss↓·best-first↑ = 게임-무관 인과 검증. *↔ CNN 짝* | ● 3-seed | `[본문]` (§5.6③) | `runs/removal_dose/rundirs` |
-| **Dose-response** | φ 탐지 문턱 vs 오염강도(silo5 noisy nr·frrand dm 스윕) | ● 3-seed | `[보조]` | `runs/removal_dose/rundirs`(B) |
+| **Dose-response** | φ 탐지 문턱 vs 오염강도(silo5 noisy nr·frrand dm 스윕) | ● 3-seed | `[제외]` (07-25 Yonghee: CNN·LLM 모두 논문 미수록) | `runs/removal_dose/rundirs`(B) |
 | **AdamW 브리지 — external validity** | SGD→AdamW optimizer 갭서 fidelity(+0.77; (a)↔(b) 자체 괴리 caveat) | ● 3-seed | `[제외]` | `runs/removal_dose/rundirs_trackd`(A1/D) |
 | **Taylor 물리잔차 (명제 P3)** | 2차 근사가 1차보다 물리잔차 ~3× 작음(1B 실측). 2차항 추가의 물리적 정당화 | ● 3-seed | `[보류·부록A]` | `runs/measured_2026-07/taylor` |
 
@@ -168,7 +168,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **φ 부호 감사 (게이팅 전제)** | 309 rundir 전수 φ 부호 감사. clean 오배제-0·frzero exact-0 확정, 게이팅 예측표 확정/수정 | ⟐ 파생 | `[전제]` | `runs/track_g/audit` |
+| **φ 부호 감사 (게이팅 전제)** | 309 rundir 전수 φ 부호 감사(73,288행). clean 클라 φ≤0 비율(오배제 위험) · 오염 클라 φ≤0 + exact-0 비율(게이트 발화) 2표 | ⟐ 파생 | `[부록]` (07-25 승격 — 표 작성 완료) | `runs/track_g/audit` |
 | **β 통일 재실행 provenance** | ShapleyFL EMA β 0.5→0.3 통일 재실행·대조. **현재 폐기**(수록 대상 전부 제외됨) | ⟐ 파생/폐기 | `[각주]` | `runs/rerun_beta03` |
 
 ---
@@ -194,7 +194,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **CNN runtime 요약** | Track C 방법별 runtime(학습 자체보다 2~3자릿수 저렴) | ● | `[부록]` | `runs/track_c`(RESULTS) |
+| **CNN 실측 runtime — 무대별 전 방법** | N=100 부분참여(9방법 × cifar10 dir1/iid) + N=10 전원참여(9방법 × mnist/cifar10) + 참조 행(학습 궤적 · (a) 2¹⁰ 재학습). **추가 실험 0** — c2fid `runtime_s` 열과 C1 `metrics.json`에 3-seed 실측이 이미 있음 | ● 3-seed | `[부록]` (07-25 상세화) | `runs/track_c/c2fid/analysis/fidelity.csv`(runtime_s) · `runs/track_c/{c1,c1_oracle}` |
 | **자기-궤적 재실행 비용 (제외 baseline)** | 제외 비교군의 자기-궤적 재실행 비용을 별도 위상으로 분리 실측 | ● seed0 | `[검증-전용]` | `runs/measured_2026-07/e3_cost_smoke` |
 
 ---

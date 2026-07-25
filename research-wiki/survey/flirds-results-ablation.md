@@ -151,7 +151,7 @@ tags: [flirds, results, ablation]
 
 > **2차항 추가의 물리적 정당화**: 2차 잔차가 1차 잔차의 **0.25배**(≈ 4× 작음; median 기준 3.0×, max 기준 6.5×) — 즉 HVP 항이 실제 손실 변화를 유의하게 더 잘 설명한다. 단 **log-log 기울기는 r1 2.27 / r2 1.56**으로 이론값(각각 2·3)과 어긋나는데, ‖ΔW‖ 범위가 좁고(라운드 간 4e-3 부근) 잔차가 fp32 ULP(2.4e-07) 근방이라 **수치 바닥에 걸린 것**으로 보인다 — 배율 주장은 유효하고 차수 주장은 이 데이터로 못 한다. closed-form↔Flirds(2차) max|Δφ| ~1e-10(대수적 동치 확인). **출처**: `runs/measured_2026-07/taylor/llama1b_r10_seed{0,1,2}/summary.json`.
 
-### Dose-response — 오염강도 vs 탐지 문턱 `[보조]` ● 3-seed
+### Dose-response — 오염강도 vs 탐지 문턱 `[제외]` (07-25 Yonghee: 논문 미수록) ● 3-seed
 
 > **세팅**: silo5 · N=5 · **오염 강도를 연속으로 낮춰가며** AUROC가 언제 무너지나. noisy는 답 교체율 nr∈{0, 0.1, 0.25, 0.5, 0.75, 1.0}, frrand는 델타 배율 dm∈{0.25, 0.5, 1, 2, 4}.
 
@@ -207,9 +207,49 @@ tags: [flirds, results, ablation]
 
 ## 4-공통 (모델-무관)
 
-### φ 부호 감사 (게이팅 전제) `[전제]` ⟐ 파생
+### φ 부호 감사 — 게이팅의 작동 전제 `[부록]` ⟐ 파생(3-seed rundir 전수)
 
-> 309 rundir 전수 φ 부호 감사(73,288행). **판정**: ①clean 오배제-0 전제 성립(canonical clean 전 method·클라 누적 φ 양수 → τ=0 게이트 무발화) ②frzero **exact-0**(Flirds·(b)·Flirds-1st·loss-heur·FedIF bit-exact 0.0; renorm은 exact-0 아님) ③noisy엔 sign-게이트 작동영역 없음(0-교차 nr≈3.44 도달불가) ④frrand 누적부호 = seed-코인플립. **출처**: `runs/track_g/audit/{SIGN_AUDIT.md,sign_table.csv}`.
+> **무엇**: 309 rundir · 73,288행 전수에서 **클라별 누적 φ의 부호**를 세었다. 부호 게이트(P1: 누적 φ>0만 참여)의 두 전제가 실제로 성립하는지 — ① **clean 클라를 오배제하지 않는가**(clean 쪽 φ≤0 비율 = 오발화율의 상한) ② **오염 클라를 발화시키는가**(오염 쪽 φ≤0 비율 = 회수 가능성의 상한) — 를 개입 실험과 **독립적으로** 검증하는 표다. 개입 결과(recovery·parity)의 상한을 여기서 미리 읽을 수 있다.
+> **세팅**: canonical variant · Llama-3.2-1B · 오염축 {answer-swap@0.7, free-rider-zero} + clean 대조 · seed{0,1,2}. `φ≤0` = exact-0 또는 음수 = **τ=0 게이트가 배제 판정**하는 조건. exact-0은 별도 병기(명제 P2의 0-공리 성립 여부).
+> ⚠ ComFedSV는 silo5·iid5(N=5 전원참여)에 미산출 → 해당 칸 `–`. device100에서 **(b)·GTG·FedSV·ShapleyFL은 앵커 α=0.5 셀에만 존재**(나머지 α는 exact (b) 불가·해당 baseline 미실행)라 클라-행 수가 나머지의 1/9이다(275 vs 2,475).
+
+**표 A — clean 클라이언트 φ≤0 비율 (%) — 오배제 위험, 낮을수록 좋음** (● 3-seed)
+
+| 방법 | silo5 clean | silo5 swap | silo5 frzero | device100 swap | device100 frzero |
+|---|---|---|---|---|---|
+| **(b)oracle** | **0.0** | **0.0** | **0.0** | **0.0** | **0.0** |
+| Flirds | <u>0.0</u> | <u>0.0</u> | <u>0.0</u> | <u>0.0</u> | <u>0.0</u> |
+| Flirds-1st | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| loss-heur | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| FedIF | 20.0 | 0.0 | 0.0 | 2.5 | 1.7 |
+| GTG | 0.0 | 0.0 | 0.0 | 3.3 | 1.8 |
+| FedSV | 0.0 | 0.0 | 0.0 | 5.1 | 4.7 |
+| ComFedSV | – | – | – | **51.4** | **51.4** |
+| ShapleyFL | 13.3 | 0.0 | 0.0 | 4.0 | 2.9 |
+| *(클라-행 수 n)* | *15* | *24* | *24* | *275~2,475* | *275~2,475* |
+
+**표 B — 오염 클라이언트 φ≤0 비율 (%) — 게이트 발화, 높을수록 좋음. 괄호=그중 exact-0 비율** (● 3-seed)
+
+| 방법 | silo5 swap | silo5 frzero | device100 swap | device100 frzero |
+|---|---|---|---|---|
+| **(b)oracle** | **0.0** | **100.0** (100.0) | **0.0** | **100.0** (100.0) |
+| Flirds | <u>0.0</u> | <u>100.0</u> (100.0) | <u>0.0</u> | <u>100.0</u> (100.0) |
+| Flirds-1st | 0.0 | 100.0 (100.0) | 0.0 | 100.0 (100.0) |
+| loss-heur | 0.0 | 100.0 (100.0) | 0.0 | 100.0 (100.0) |
+| FedIF | 100.0 (100.0) | 100.0 (100.0) | 36.3 (36.3) | 100.0 (100.0) |
+| GTG | 100.0 (0.0) | 100.0 (0.0) | 26.7 (0.0) | 100.0 (0.0) |
+| FedSV | 100.0 (0.0) | 100.0 (0.0) | 33.3 (0.0) | 100.0 (0.0) |
+| ComFedSV | – | – | 38.5 (0.0) | 34.8 (0.0) |
+| ShapleyFL | 100.0 (0.0) | 100.0 (100.0) | 26.7 (0.0) | 73.3 (73.3) |
+| *(클라-행 수 n)* | *6* | *6* | *15~135* | *15~135* |
+
+> **읽기 세 줄**.
+> ① **free-rider(zero)는 부호 게이트의 이상적 작동 칸**: same-game 계열 + FedIF가 **100% exact-0**(bit-exact 0.0 — 명제 P2의 0-공리) → 게이트가 100% 발화하고 clean 오배제는 0.0%다. 개입 실험의 "frzero recovery 1.000·precision 1.000"([[flirds-results-downstream]])이 여기서 이미 예고된다. renorm 계열도 발화는 하지만 **exact-0이 아니라 음수**(GTG·FedSV 0.0% exact-0)라 0-공리는 성립하지 않는다. ⚠ **정정**: 종전 감사 요약의 "renorm은 exact-0 아님"은 GTG·FedSV·ComFedSV엔 맞지만 **ShapleyFL엔 부분적으로 틀리다** — silo5 frzero에선 100% exact-0이고 device100에선 73.3%로 갈린다(나머지 26.7%는 양수). EMA 평활이 0-업데이트를 그대로 통과시키는 셀이 있다는 뜻이라, ShapleyFL은 "조건부 0-공리"로 읽어야 한다.
+> ② **answer-swap은 부호 게이트의 작동영역 밖**: (b)oracle·Flirds·Flirds-1st·loss-heur 모두 오염 클라에게 **φ>0을 준다**(발화 0.0%). 이건 추정 오차가 아니라 **게임의 답** — (b)로 채점해도 같다. 그래서 noisy 회수는 게이트가 아니라 연속 가중(P3)으로 가야 한다. dose 감사에서 0-교차 지점은 nr≈3.44로 **도달 불가**(nr 정의역이 (0,1])라 이 결론은 강도를 올려도 안 바뀐다.
+> ③ **ComFedSV의 clean 51.4%가 renorm 파국의 근원**: 오염이 무엇이든 clean 클라의 **절반을 음수로 찍는다** → 게이트를 씌우면 clean을 절반 내쫓는다. [[flirds-results-downstream]] 정책 축의 renorm online −2.6~−3.3 파국과 정확히 대응하는 수치다. GTG·FedSV·ShapleyFL도 device100에서 clean 오배제가 1.8~5.1%로 same-game(0.0%)과 갈린다.
+>
+> ⚠ **CNN 레그는 이 감사에 없다**: 감사 스냅샷의 CNN 슬라이스(`scale=cnn`)는 재편성 전 C1 시나리오 집합(iid·label_flip·feature_noise·label_skew·quantity_skew)이라 **free-rider-zero·gradient-noise 칸이 존재하지 않는다**. CNN 오염축 정렬 재실행([[flirds-paper-experiment-plan]] G2·G8) 후 재감사 대상.
+> **출처**: `runs/track_g/audit/sign_table.csv`(`variant==canon` 필터 → `contribution` 부호 집계) · `SIGN_AUDIT.md`.
 
 ### β 통일 재실행 provenance `[각주]` ⟐ 파생/폐기
 
@@ -223,6 +263,6 @@ tags: [flirds, results, ablation]
 - lever: `runs/probe_signal/figures/{cnn_c1_realness,llm_probe_summary}.csv`.
 - removal·dose·AdamW: `runs/removal_dose/{rundirs,rundirs_cnn,rundirs_trackd}`.
 - Taylor: `runs/measured_2026-07/taylor/llama1b_r10_seed{0,1,2}/summary.json`(pooled resid1/resid2).
-- 감사: `runs/track_g/audit`. β: `runs/rerun_beta03`. TF32: `runs/measured_2026-07/tf32_ab`.
+- **φ 부호 감사**: `runs/track_g/audit/sign_table.csv` → `variant=="canon"` 필터 후 (scale, regime, threat, method, corrupt)별 `contribution` 부호 집계(양수 / exact-0 / 음수). β: `runs/rerun_beta03`. TF32: `runs/measured_2026-07/tf32_ab`.
 - **◐ seed0만**: LLM lever의 lr·steps 셀(rank16·lr1e-3·10st만 3-seed) · std50k5 rank32/64.
 - 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §4·§5 = git 이력)

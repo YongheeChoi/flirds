@@ -43,23 +43,23 @@ tags: [flirds, results, cost]
 
 **교차-사일로 silo5 (N=5 · full · R=10 · 1B)** (● 3-seed · noisy 셀)
 
-| 방법 | runtime(s) |
-|---|---|
-| **Flirds-1st** | <u>34.85±0.85</u> |
-| Flirds | 106.59±1.96 |
-| loss-heur | 98.86±1.95 |
-| FedIF | 35.43±0.67 |
-| GTG | 537.28±9.56 |
-| FedSV | 532.42±15.49 |
-| ComFedSV | 386.96±54.76 |
-| ShapleyFL | 530.01±10.34 |
-| Fed-LOO | 118.28±2.37 |
-| Banzhaf | 532.11±10.48 |
-| **(b)oracle (2⁵)** | 531.45±11.60 |
-| _FLDetector_ | 90.79±6.47 |
-| _FLTrust_ | 35.70±0.81 |
-| _STD-DAGMM_ | 341.49±57.55 |
-| _FedDQC_ | **21.81±0.41** |
+| 방법                 | runtime(s)        |
+| ------------------ | ----------------- |
+| **Flirds-1st**     | <u>34.85±0.85</u> |
+| Flirds             | 106.59±1.96       |
+| loss-heur          | 98.86±1.95        |
+| FedIF              | 35.43±0.67        |
+| GTG                | 537.28±9.56       |
+| FedSV              | 532.42±15.49      |
+| ComFedSV           | 386.96±54.76      |
+| ShapleyFL          | 530.01±10.34      |
+| Fed-LOO            | 118.28±2.37       |
+| Banzhaf            | 532.11±10.48      |
+| **(b)oracle (2⁵)** | 531.45±11.60      |
+| _FLDetector_       | 90.79±6.47        |
+| _FLTrust_          | 35.70±0.81        |
+| _STD-DAGMM_        | 341.49±57.55      |
+| _FedDQC_           | **21.81±0.41**    |
 
 **표준 부분참여 std20 (N=20 · 2/round · R=200 · alpaca)** (● 3-seed)
 
@@ -136,15 +136,46 @@ tags: [flirds, results, cost]
 
 ---
 
-## 5-CNN · runtime `[부록]`
+## 5-CNN · 실측 runtime — 무대별 전 방법 `[부록]`
 
-> Track C CNN: 방법별 valuation runtime이 **학습 자체보다 2~3자릿수 저렴**(Flirds 0.27~0.36 s vs 공유 valuation 65.8/163.9 s vs 자기-궤적 재학습 2,151/4,275 s). 제외 baseline의 자기-궤적 재실행 비용은 셀 total의 ~95%. **출처**: `runs/track_c`(RESULTS) · `runs/measured_2026-07/e3_cost_smoke/`.
+> **세팅**: valuation-only wall-clock(초) · **낮을수록 좋음** → 최저=볼드·2위=<u>밑줄</u>. LLM 표와 같은 입도(방법별·무대별)로 맞췄다. 학습(trajectory) 시간은 비교 대상이 아니라 **참조 행**으로 아래에 별도 표기(_기울임_).
+> ⚠ **CNN runtime은 위협에 거의 무관**하다(cifar10/dir1 오염 3종 간 편차: Flirds 10.4~11.0 · (b) 826~846 s) → 아래 값은 **오염 3종(frzero·grad-noise·lf@0.70) × 3 seed = n9 평균 ± std(ddof0)**. 유일한 예외가 GTG로, guided-truncation이 데이터에 반응해 파티션 간 1080↔873 s로 갈린다.
 
-| 항목 (mnist / cifar10, iid seed0) | mnist | cifar10 |
+**대규모 교차-디바이스 부분참여 (N=100 · 10/100 · R=120 · FedSVCNN)** (● 3-seed · n9)
+
+| 방법 | cifar10/dir1 | cifar10/iid |
 |---|---|---|
-| Flirds valuation | **0.27** | **0.36** |
-| 전 방법 공유 valuation | <u>65.8</u> | <u>163.9</u> |
-| 자기-궤적 재학습(제외 baseline) | 2,151 | 4,275 |
+| **Flirds-1st** | **4.21±0.10** | **4.24±0.05** |
+| FedIF | <u>5.35±0.17</u> | <u>5.40±0.20</u> |
+| loss-heur | 9.22±0.12 | 9.23±0.15 |
+| **Flirds** | 10.64±0.37 | 10.58±0.37 |
+| ComFedSV | 23.65±0.58 | 23.59±0.46 |
+| FedSV | 293.98±4.90 | 293.03±3.60 |
+| **(b)oracle (per-round exact)** | 836.58±14.07 | 827.66±8.89 |
+| GTG | 1079.92±131.64 | 872.80±161.62 |
+| ShapleyFL | 1468.47±16.34 | 1464.07±18.10 |
+
+> **cohort=10에서 CNN도 LLM과 같은 구조**: (b) exact가 837 s인데 **Flirds는 10.6 s = 79× 저렴**하고, 그 (b)급 비용을 ShapleyFL(1468 s)·GTG(1080 s)이 함께 문다 — coalition 열거를 피하는 계열만 평평하다. LLM device100(159×)보다 배율이 작은 건 CNN 모델이 작아 forward 1회가 싸서 HVP/forward 비율이 다르기 때문이지 구조가 다른 게 아니다.
+
+**소형 전원참여 (N=10 · full · R=10 · LeNet5/FedSVCNN · label-flip 셀)** (● 3-seed)
+
+| 방법 | mnist | cifar10 |
+|---|---|---|
+| **Flirds-1st** | **0.100±0.001** | **0.338±0.003** |
+| loss-heur | <u>0.174±0.002</u> | 0.762±0.009 |
+| FedIF | 0.176±0.009 | <u>0.442±0.013</u> |
+| **Flirds** | 0.636±0.117 | 1.168±0.057 |
+| ComFedSV | 5.830±0.111 | 19.127±0.566 |
+| FedSV | 7.058±0.081 | 23.137±0.451 |
+| GTG | 18.495±1.484 | 87.748±3.721 |
+| ShapleyFL | 34.947±0.425 | 114.533±1.069 |
+| **(b)oracle (2¹⁰ in-run)** | 35.900±0.570 | 114.503±1.425 |
+| _(참조) 학습 궤적 자체_ | _136.275±1.326_ | _104.457±1.426_ |
+| _(참조) **(a)oracle 2¹⁰ 재학습**_ | _41,167.8±1,244.3_ | _32,912.4±133.0_ |
+
+> **두 참조 행이 이 표의 요점**이다. ① **valuation은 학습보다 싸다** — Flirds 0.64/1.17 s vs 학습 궤적 136/104 s = 학습의 **0.5~1.1%**. ② **(a) 재학습 오라클은 학습보다도 2~3자릿수 비싸다** — 32,912 s(cifar10) = **Flirds의 28,177× · (b) in-run의 287× · 학습 궤적 자체의 315×**(mnist는 41,168 s = Flirds의 64,730×). 이것이 (a)-무대를 N=10에 묶어둘 수밖에 없는 이유이자, 같은-게임 정답으로 (b)를 쓰는 비용 근거다.
+> ⚠ **N=10 vs N=100 무대는 서로 비교 금지**(게임이 다름 — 전원참여 vs 10/100 부분참여, R=10 vs 120). 각 표 안에서만 방법을 비교한다.
+> ⚠ **provenance**: 위 N=10 표는 **재편성 전 오염축**(label-flip dose 사다리) 셀에서 측정한 값이다. 오염축을 {lf@0.70, frzero, grad-noise}로 정렬해 재실행하면(설계 세션 G2) 재측정 대상이지만, **runtime은 위협에 무관**하므로 값 자체는 유지될 것으로 예상한다.
 
 ---
 
@@ -153,8 +184,9 @@ tags: [flirds, results, cost]
 - op-count: `python runs/measured_2026-07/op_counts.py`(해석적, seed-무관).
 - microbench: `runs/measured_2026-07/microbench/summary.json`.
 - runtime(LLM): `runs/phase2_matrix/analysis/{01_silo5,04_device100_anchor,02_device100_sweep,05_scale_3b}/csv/runtime_table.csv`(`make_analysis.py`) · `runs/track_d/rundirs*/*/metrics.json` → `runtime` dict.
+- **runtime(CNN)**: N=100 = `runs/track_c/c2fid/analysis/fidelity.csv`의 **`runtime_s` 열**(`make_analysis.py` 재생성 → 오염 3종 × 3seed 평균) · N=10 = `runs/track_c/c1/{ds}_label-flip_seed{0,1,2}/metrics.json`의 `methods.<m>.runtime` 및 `traj_time` · (a) 재학습 = `runs/track_c/c1_oracle/{ds}_label-flip_aonly_seed{0,1,2}/metrics.json`의 `t_a`.
 - loss-heur C6 교정본: `runs/measured_2026-07/loss_heur_acct/`(silo5) · `runs/track_d/rundirs_e4_fedloo/`(anchor5·std20).
-- 위상분리·CNN: `runs/measured_2026-07/{timing_device100,e3_cost_smoke}/` · `runs/track_c/RESULTS.txt`.
-- **⬚ 미실행**: anchor5 3B/7B의 (a) 재학습 오라클 · loss-heur 3B/7B 재측정 · CNN 방법별 3-seed runtime 표.
+- 위상분리: `runs/measured_2026-07/{timing_device100,e3_cost_smoke}/`.
+- **⬚ 미실행**: anchor5 3B/7B의 (a) 재학습 오라클 · loss-heur 3B/7B 재측정 · CNN rundir의 학습↔가치평가 위상분리 계측(`timing.json` 미배선 — 수록 안 함, [[flirds-paper-experiment-plan]] Q4).
 - ⚠ 런타임은 fp32·CPU·재구현 caveat 있는 단일/소수 측정 → **op-count가 하드웨어-독립 정본**. 상세 방법론 [[cost-comparison-methodology-2026-07/cost-comparison-methodology]].
 - 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §3.4 = git 이력)
