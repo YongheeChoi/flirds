@@ -1,0 +1,105 @@
+# ════════════════════════════════════════════════════════════════════════════
+# B200 **단일 서버 4-GPU 통합 큐** (2026-07-25 재편)
+#   가동:  bash <repo>/runs/track_h/run_b200_batch.sh        ← 한 번만
+#   형식:  SCRIPT|LOGNAME|envs      ·  __REPO__ = 런처가 sed 치환
+#
+#   종전 queue_b200_c{1,2,3,4}.txt(레인 고정 4개)를 이 파일 하나로 병합했다. GPU 4장을
+#   한 서버에서 동시 제어하게 되면서 레인을 사람이 쪼갤 이유가 없어졌고, 드라이버
+#   (runs/rerun_beta03/run_multi_driver.sh)가 **비는 GPU 에 큐 순서대로** 배정한다
+#   = 자동 부하분산.  종전 분할은 c4 가 72.8/74h 로 아슬아슬하고 c1–c3 는 15h씩
+#   놀았다;  병합 후 유휴는 총 6h.
+#
+# ⚠ 하드룰
+#   · 완료/보류 줄은 '#' **주석**으로 처리한다 — **줄 삭제 금지**(드라이버가 consumed
+#     인덱스로 위치를 추적한다).
+#   · **가동 후 줄 순서 변경 금지**(같은 이유).
+#   · 정지는 드레인(실행 중 셀 완주 후 드라이버 자동 종료). 중도 kill 금지.
+#   · G1(phase2_matrix)은 **cell-end 1회 persist** → 중도 컷 = 그 셀 19.6h 전손
+#     (07-24 실사례).  컷 예상 시 seal_watchdog 재가동.
+#     ④–⑥(track_g·track_d)은 arm/셀 단위 영속이라 컷에 강하다.
+#   · **R4 = R=200 유지** → 어디에도 ROUNDS 를 주지 않는다(레짐 기본 200).
+#
+# 스케줄(실측 단가 기준 list-scheduling 시뮬레이션): 26셀 · 249.2 GPU-h
+#   → **4-GPU 63.8 wall-h**.  07-25 23:00 기동 시 07-28 15:00 완주(창 73h, 마진 ~9h).
+#   블록별 마지막 셀 완주:  ② 18.6h · ③ **58.8h(G1 전량)** · ④ 52.3h · ⑤ 62.3h · ⑥ 63.8h
+#
+# 순서를 이렇게 잡은 이유
+#   ① G1 seed0 3위협을 맨 앞에 → 어떤 컷이 나도 **전 위협 1-seed 행**이 먼저 완성된다.
+#   ② 값싼 L1 clean 4셀을 뒤에 붙여 남는 1장이 놀지 않게 → 18.6h 에 §5.3 clean 열 종료.
+#   ③ 그 다음 G1 6셀 → **G1 전량이 58.8h(가능한 최조기)에 끝난다** = cell-end persist 보험.
+#   ④–⑥ arm 단위 영속이라 꼬리에 둬도 컷 손실이 작다.  ⑥ 은 부록·최저 = droppable.
+# ════════════════════════════════════════════════════════════════════════════
+
+# ─── ① G1 seed0 : R4-L2 주무대 (b) 오라클 · 3위협 (58.8 GPU-h) ★임계경로 ────
+# 한 rundir 이 §5.2 fidelity + §5.4 탐지 + §5.5 canonical timing 세 축을 동시에 연다.
+# ⚠ THREAT 토큰은 phase2_matrix 규약(clean|noisy|freerider_zero) — track_g 의 frzero 와 다름.
+# NOISY_RATE 는 gsm50k5 기본 0.7 이라 생략.
+phase2_matrix.py|G1_L2_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0
+phase2_matrix.py|G1_L2_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0
+phase2_matrix.py|G1_L2_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=0
+
+# ─── ② L1 clean seed1·2 : §5.3 clean 열의 3-seed 정본 (필수 · 18.6 GPU-h) ──
+# 디스크 확인(07-25): noisy·frzero 는 이미 3-seed 완결(observer·oracle_excl·
+# random_excl·flirds online + t2_sign×4). **clean 만 seed0** 이다.
+# clean 은 kept=전원이라 T2 가 equals_vanilla 로 스킵되고, online 에선
+# oracle_excl/random_excl 가 자동으로 빠진다(track_g l.618) → 저비용.
+# ⚠ noisy·frzero 는 절대 재실행하지 않는다 — 완결·커밋본이다.
+track_g.py|L1_clean_obs_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_clean_obs_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_clean_online_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+
+# ─── ③ G1 seed1·2 : 3-seed 규칙 (117.6 GPU-h) ★임계경로 ────────────────────
+phase2_matrix.py|G1_L2_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1
+phase2_matrix.py|G1_L2_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1
+phase2_matrix.py|G1_L2_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=1
+phase2_matrix.py|G1_L2_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2
+phase2_matrix.py|G1_L2_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2
+phase2_matrix.py|G1_L2_frzero_s2|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=2
+
+# ─── ④ online Flirds-1st seed1·2 (본문 · 6셀 · 25.2 GPU-h) ─────────────────
+# online 표가 flirds 단독이면 "vanilla·random 보다 낫다"까지만 말할 수 있다.
+# Flirds-1st 를 넣으면 **§5.6①(2차항) 주장이 online 에서도 성립**한다
+# (retrain 표엔 이미 flirds·flirds1st·loss-heur·FedIF 가 3-seed 로 있다).
+# seed0 3셀 = HJ 완주분(rundirs_llm_hj, 같은 R=200 무대) → 실패 시 하단 폴백 해제.
+track_g.py|L11_f1st_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L11_f1st_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L11_f1st_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L11_f1st_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L11_f1st_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L11_f1st_frzero_s2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+
+# ─── ⑤ G5 : 2차항(HVP) LLM 레그 seed 보강 — 본문 §5.6① (4셀 · 20 GPU-h) ────
+# std50k5(N=50·5/50) rank sweep. r16 은 이미 3-seed → r32·r64 의 seed1·2 만.
+# ⚠ R4 무대가 아니다 → ROUNDS 를 주지 않는다(track_d 가 자기 레짐 값을 쓴다).
+# ⚠ track_d 는 vicgalle/alpaca-gpt4 · cais/mmlu 가 HF 캐시에 있어야 오프라인 기동된다.
+track_d.py|1B_std50k5_r32_seed1|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=32 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_std50k5_r32_seed2|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=32 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_std50k5_r64_seed1|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=64 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_std50k5_r64_seed2|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=64 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+
+# ─── ⑥ G12 앞 3셀 (부록·최저 = droppable) — 나머지 15셀은 HJ(A6000) ────────
+# 핵심 질문 = "lr 로 커진 φ가 cross-seed 실재 신호인가"(예측 ρ≈0) → lr{2,3}e-3 우선.
+track_d.py|1B_anchor5_lr2e-3_st20_seed1|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr2e-3_st20_seed2|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st20_seed1|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+
+# ─── (폴백) HJ 의 flirds1st seed0 3셀이 실패했을 때만 해제 ──────────────────
+# track_g.py|L11_f1st_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|L11_f1st_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|L11_f1st_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+
+# ─── (옵션) LLM P1w T1 — ⑥ 과 **맞교환**할 때만 해제 (9런 ~35 GPU-h) ───────
+# CNN P1w 는 G3·G10 rundir 에 동반 산출되므로 LLM 레그만 얹으면 "전 범위 3-seed 승격"
+# 판정이 성립한다.  ⑥(9 GPU-h)을 주석 처리하고 아래 9줄을 해제 → 275.2 GPU-h /
+# 4-GPU **69.6 wall-h**(창 73h, 마진 +3.4h).  ⑥ 을 남긴 채 추가하면 73.5h = 초과.
+# 마진 3.4h 는 G1 재시도 여유가 없다 → **①–③ 이 58.8h 에 정상 종료된 걸 본 뒤 결정.**
+# track_g.py|P1w_T1_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_frzero_s2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm

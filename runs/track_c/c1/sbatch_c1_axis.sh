@@ -9,50 +9,42 @@
 #   N·참여율은 맞출 수 없다 — **맞출 수 있는 건 오염축과 파티션뿐**이고 이 잡이 그걸 한다.
 #   (이 비교불가성은 논문에도 명시한다: 현 track_c2_fid 헤더 CAVEAT 와 같은 취지.)
 #
-#   ⚠ 선행 코드 변경 **C-b** 필요 — 이 파일이 요구하는 env 계약:
-#       C1_PARTITION = iid | dir1              (신규: 파티션 축을 시나리오에서 분리)
-#       C1_THREAT    = clean | label_flip | free_rider | grad_noise   (신규)
+#   ✅ 선행 코드 변경 **C-b 착지 완료**(`d09e528`, 07-25).  env 계약:
+#       C1_PARTITION = iid | dir1              (파티션 축을 시나리오에서 분리)
+#       C1_THREAT    = clean | label_flip | free_rider | grad_noise
 #       C1_FLIP_RATE = 0.70                    (label_flip 도즈; 기존 사다리 대체)
-#     구 track_c1.py:79 는 `C1_SCENARIO` 하나에 파티션+오염을 섞어 두고 있고
-#     free_rider·grad_noise 구현이 없다.  코퍼스는 track_c2 쪽에 이미 있다
-#     (flirds/data/corruptors.py CNN_CORRUPTORS · fl.partition dir1) → 이식이 주작업.
+#     `git pull` 후 바로 제출 가능.  구 러너로 돌던 시절의 위험(아래)은 기록으로만 남긴다.
 #
-#   🚨 **C-b 미착지 상태로 제출하면 "실패"가 아니라 "조용히 틀린 결과"가 나온다**
-#     (2026-07-25 JW 지적 · 코드로 확인).  구 러너는 `os.environ.get` 로 아는 키만 읽으므로
-#     위 3개 env 를 **무시**하고 `C1_SCENARIO` 기본값 `iid` 로 돌지만, l.432 의
-#     `C1_RUN_NAME` 은 그대로 먹힌다 → `cifar10_iid_free-rider_seed0` 라는 이름의 rundir 에
-#     **iid-clean 데이터**가 들어가고 EXIT=0 으로 정상 종료한다.  4위협이 한 셀로 붕괴하고
-#     로그로는 구별이 안 된다.  48셀 = 505 GPU-h 전량 폐기 위험.
-#     → **제출 전 필수 게이트**: `git show origin/main:codes/experiments/track_c1.py |
-#        grep -q C1_THREAT` (JW·JB 워처가 쓰는 술어와 동일).  통과 못 하면 제출 금지.
+#   🚨 **구 러너로 제출하면 "실패"가 아니라 "조용히 틀린 결과"가 나왔다**
+#     (2026-07-25 JW 지적 · 코드로 확인).  구 러너는 `os.environ.get` 로 아는 키만 읽어
+#     위 3개 env 를 **무시**하고 `C1_SCENARIO` 기본값 `iid` 로 돌지만, `C1_RUN_NAME` 은
+#     그대로 먹혀 `cifar10_iid_free-rider_seed0` 이름의 rundir 에 **iid-clean 데이터**가
+#     들어가고 EXIT=0 으로 정상 종료했다.  4위협이 한 셀로 붕괴하고 로그로는 구별이 안 된다.
+#     → 구 클론에서 도는 잡이 있는지 확인할 때의 술어(워처와 동일):
+#        `git show origin/main:codes/experiments/track_c1.py | grep -q C1_THREAT`
 #
-#   🚨 **오염-집합 draw 는 위협별로 다르다 — 균일 규칙(고정 4/10)을 쓰면 안 된다.**
-#     `track_c2.py:248-259`(감사 2026-07-23) + 논문 paper-ko.md:863-869 가 정본:
-#       · label_flip  = **독립 Bernoulli(rho=0.4)** -> **개수가 시드마다 변동**.
-#                       FedCorr 공식 구현 그대로(gamma_s = binomial(1,rho,n)).
-#                       강도만 0.70 고정(FedCorr 의 tau~U(0.5,1) draw 아님).
-#       · free_rider  = 고정 `round(rho*n)` 비복원 추출  (update-level = 준거 문헌 없음
-#       · grad_noise    -> 논문이 이미 예외로 기술.  C2_STRENGTH 는 진폭을 쓸어간다)
-#     → **이식은 track_c2.py:258-259 를 그대로**(새로 유도 금지):
-#         mal = rng.random(n) < _strength(MAL_FRAC) if THREAT == "label_flip" else \
-#             set(rng.choice(n, size=max(1, int(round(MAL_FRAC*n))), replace=False).tolist())
-#       + rate 는 l.280-281 대로 `C1_FLIP_RATE=0.70` 고정.
-#     ⚠ mal draw 는 `np.random.default_rng(1000+seed)` 의 **첫 소비**여야 한다 — 파티션이
-#       스트림을 먼저 먹으면 집합이 partition-dependent 가 되어 기존 corpus 와 갈린다
-#       (l.271-275 가 바로 그 위험을 기록해 둔 지점).  draw 가 seed-only 인 덕분에 같은
-#       seed 는 dataset/partition/dose/track 을 넘어 같은 집합을 준다(l.255-257).
+#   ★ **오염-집합 규약 = 전 위협 고정 round(rho*N) = 4/10** (확정 · Yonghee 판정 07-25).
+#     구현은 `track_c1.py:187-196`.  **N=100 주무대(track_c2)와 의도적으로 다르다** —
+#     거기선 label_flip 만 FedCorr 공식 구현의 Bernoulli(rho=0.4) 를 써서 개수가 시드마다
+#     변동한다(실현 39/48/47; track_c2.py:248-259 · 논문 paper-ko.md:863-869).
+#     이 무대에서 고정 개수를 쓰는 근거(l.188-192):
+#       ① 도즈를 0.70 으로 고정해 **FedCorr 를 재현하는 게 아니다**(tau~U(0.5,1) 미사용)
+#          -> "공식 구현 준수"의 대상이 아니다.
+#       ② N=10 에서 Bernoulli 는 **3/7/6** 으로 흔들려(평균 5.33 vs 명목 4, sd 1.55)
+#          label_flip 열이 다른 도즈가 되고 **4위협이 한 fidelity 표를 공유할 수 없다**.
+#          (N=100 은 39-48 = 상대변동 ~12% 라 무해하지만 N=10 은 ~39% 다.)
+#     스트림/오프셋은 track_c2 와 동일(`default_rng(1000+seed)` 의 첫 소비) → **seed-only** =
+#     같은 seed 가 dataset/partition/dose 를 넘어 같은 집합을 준다.
 #
-#     **N=10 실현값 — 미리 계산해 둔 기대치(assert 로 쓸 것)**.  같은 코드로 N=100 을
-#     돌리면 논문 기재값 39/48/47 을 정확히 재생산하므로 아래는 신뢰 가능:
-#       label_flip  seed0 k=3 [3,5,6] · seed1 k=7 [1,2,4,5,7,8,9] · seed2 k=6 [0,1,3,4,6,7]
-#       fr / gn     seed0 [1,4,6,7]   · seed1 [0,4,6,7]            · seed2 [3,4,6,9]
-#     전 셀 k>=2 -> AUROC 가 모든 셀에서 정의된다(k=0/1 붕괴 케이스 없음).  평균 5.33 이
-#     명목 4 보다 높고 seed1 은 7/10 이지만, 논문 규약이 "명목 rho 대신 **실현 수**를 병기"
-#     이므로 그대로 보고한다.
+#     **기대 corrupt 집합 (전 위협 공통 · 스모크 assert 기준)**
+#       seed0 [1,4,6,7] · seed1 [0,4,6,7] · seed2 [3,4,6,9]
 #
-#   🚨 **정본은 push 된 origin/main 하나** — C-b 구현이 두 벌 존재했다(YH 워킹트리 ·
-#     JW 로컬 989f5ca).  다른 계정은 자기 구현을 쓰지 말고 reset 한다.  이미 자기 구현으로
-#     돌린 셀이 있으면 위 실현값과 `corrupt=` 를 대조하고, 다르면 그 셀만 재제출.
+#     ⚠ **논문에 stage-분리 1문장이 필요하다** — 부록 B 의 오염-집합 문단이 지금은 Bernoulli
+#       규약만 서술하므로, 이 무대에 대해서는 거짓이 된다.  코드가 아니라 서술이 미결 항목.
+#
+#   ★ 정본 = `origin/main`(`d09e528`, YH 버전).  다른 계정은 자기 구현을 쓰지 말고 reset 한다
+#     (JW 의 중복 구현 989f5ca 는 철회됨 = f056b16).  JW 가 자기 버전으로 돌린 8셀은
+#     같은 고정-개수 규칙이라 **전부 유효**하다(재실행 0) — 위 집합만 대조하면 된다.
 #
 # 48 cells = {cifar10, mnist} x {iid, dir1} x 4 threats x 3 seeds  (SEED-MAJOR 16/seed)
 #   셀 내부: (a) 2^10 재학습 오라클 + (b) 2^10 in-run + 9방법 φ  (N=10 full, R=10)

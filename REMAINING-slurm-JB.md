@@ -28,30 +28,28 @@
 - **셀**: **`--array=14-15,24-31,40-47` = 18셀 ~205 GPU-h**(mnist seed0 잔여 2 + seed1 8 + seed2 8). Slurm 4계정을 **GPU-h 로 균등화**한 몫이다(YH `0-7,16` · JW `32-39,17-23,8-13` · HJ 는 c1축 없이 G12+G10).
   인덱스 규약: `SEED=IDX/16` · 그 안에서 `0-7`=cifar10, `8-15`=mnist · 파티션 `iid,dir1` × 4위협(clean·lf@0.70·free_rider·grad_noise).
 - **비용(실측)**: `t_a` = cifar10 **32,808 s ≈ 9.1 h** · mnist **41,168 s ≈ 11.4 h**(`runs/track_c/c1_oracle/*/metrics.json`). 궤적 ~103 s·전 방법 합 ~8분은 무시 가능 → **셀 ≈ t_a**.
-- **⚠ 착수 게이트 = C-b 가 `origin/main` 에 있는 것.** 요구 env = `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE=0.70`.
-  **정정(07-25)**: 구 러너로 제출하면 **실패하지 않고 조용히 틀린다** — 미지 env 는 무시되고
-  `C1_SCENARIO=iid` 로 도는데 `C1_RUN_NAME`(l.432)만 먹혀 위협 라벨 붙은 이름에 iid-clean
-  데이터가 들어가고 EXIT=0. **JB 의 워처 술어(`grep C1_THREAT` on `origin/main`)가 정확히
-  옳은 방어**다 — 그대로 유지. 제출을 보류하고 슬롯을 idle 로 둔 판단도 맞다.
-- **C-b 는 이미 구현·검증 완료(YH 워킹트리)** — 남은 건 `git push`(Yonghee) 하나다.
-  JB 가 포팅하지 않기로 한 판단이 결과적으로 옳았다: JW 는 별도 구현(`989f5ca`)을 만들어
-  **정본이 두 벌 되는 문제**가 생겼고, 지금 그걸 되돌리는 중이다.
-- 착지 후 JB 계획대로 `C1_ORACLE_A=0` 빌드-only 스모크(별도 `_smoke` 이름)로 새 threat 경로를
-  먼저 검증할 것. **⚠ 대조 기준은 `round(0.4N)` 균일이 아니다** — 오염-집합 draw 는 위협별로
-  갈린다(`track_c2.py:248-259` 감사 · 논문 `paper-ko.md:863-869`):
-  **label_flip = 독립 Bernoulli(ρ=0.4) 라 개수가 시드마다 변동**(강도만 0.70 고정),
-  free_rider·grad_noise = 고정 `⌊ρN⌉` 비복원(update-level = 준거 문헌 없음 → 논문이 예외 기술).
-  draw 는 **seed-only** 라 dataset/partition 과 무관하다(l.255-257).
+- **✅ 착수 게이트 해소 — C-b·C-a 가 `origin/main` 에 착지했다**(`d09e528`, 07-25). `git pull` 후
+  바로 제출한다. env = `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE=0.70`.
+- **JB 의 두 판단이 결과적으로 옳았다.**
+  ① 워처 술어(`grep C1_THREAT` on `origin/main`) — 구 러너로 제출하면 **실패하지 않고 조용히
+  틀린다**(미지 env 무시 → `C1_SCENARIO=iid` 로 도는데 `C1_RUN_NAME` 만 먹혀 위협 라벨 이름에
+  iid-clean 데이터가 들어가고 EXIT=0). 술어로 막는 게 유일한 방어였다. 슬롯 idle 도 맞다.
+  ② C-b 를 포팅하지 않은 것 — JW 는 별도 구현(`989f5ca`)을 만들어 정본이 두 벌 됐고 철회했다
+  (`f056b16`). JB 는 그 왕복이 없었다.
+- 계획대로 `C1_ORACLE_A=0` 빌드-only 스모크(별도 `_smoke` 이름)로 새 threat 경로를 먼저 검증할 것.
 
-  **JB 몫(mnist seed1·2)의 미리 계산된 실현값** — 스모크에서 이 값이 나와야 한다
-  (같은 코드로 N=100 을 돌리면 논문 기재값 39/48/47 을 정확히 재생산 → 신뢰 가능):
+  **대조 기준 = 전 위협 공통 고정 `⌊ρN⌉`=4** (`track_c1.py:187-196`; **seed-only** =
+  dataset/partition/dose 무관, `default_rng(1000+seed)` 의 첫 소비):
 
-  | | seed1 | seed2 | (참고) seed0 |
-  |---|---|---|---|
-  | **label_flip** | k=7 `[1,2,4,5,7,8,9]` | k=6 `[0,1,3,4,6,7]` | k=3 `[3,5,6]` |
-  | fr · gn (고정 4) | `[0,4,6,7]` | `[3,4,6,9]` | `[1,4,6,7]` |
+  | **seed1 (JB)** | **seed2 (JB)** | (참고) seed0 |
+  |---|---|---|
+  | `[0,4,6,7]` | `[3,4,6,9]` | `[1,4,6,7]` |
 
-  전 셀 k≥2 → AUROC 가 모든 셀에서 정의된다. `rates=[0,…]` = free_rider 라벨 무접촉(정상).
+  `rates=[0,…]` = free_rider 라벨 무접촉(정상).
+  ⚠ **N=100 주무대(`track_c2`)는 label_flip 만 Bernoulli(ρ=0.4)라 개수가 변동한다**(실현
+  39/48/47). 이 무대가 고정을 쓰는 건 의도적이다 — 도즈를 0.70 으로 고정해 FedCorr 재현이
+  아니고, N=10 에서 Bernoulli 는 3/7/6 으로 흔들려 4위협이 한 fidelity 표를 공유할 수 없다.
+  따라서 **`corrupt=` 가 위협마다 같게 나오는 것이 정상**이다(버그로 오해하지 말 것).
 
 ```
 cd $REPO && mkdir -p runs/track_c/c1/_logs

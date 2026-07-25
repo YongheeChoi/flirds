@@ -49,7 +49,7 @@
 
 - **총 69.9 GPU-h**(사전 추정 26 은 2.7× 과소평가 — 실제 7.8 GPU-h/leg). peak 26.3 GiB > 24 → **48GB 필수**가 실측으로 재확인됐다.
 - 산출 = `runs/phase2_matrix/rundirs/1B_silo5_{threat}_aonly_s{seed}` · 조인 = `PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py`.
-- **⚠ 수록 위치 미정**: 07-25 확정 계획서의 본문·부록 목록에 **silo5 (a)-leg 항목이 없다**(LLM (a) 역할은 "1B-LLM 소형 앵커 듀얼오라클 vs (a)" = anchor5 가 담당, ● 완료). 이미 디스크에 있는 완성품이므로 **버리지 말고 Yonghee 판정 대기** — 되살릴 경우 추가 실행 0.
+- **✅ 수록 예정**(Yonghee 확인 07-25). 앞선 "수록 위치 미정" 메모는 오독이었다 — anchor5 듀얼오라클과 **별개 항목으로 논문에 들어간다**. 추가 실행 0, 조인만 하면 된다(`merge_silo5_a.py`).
 
 ## 3. 담당 ① — G12: A축 lever probe seed 보강 (**15셀** · ~60 GPU-h · **A6000**) — 🟢 제출 완료 `1878707`
 

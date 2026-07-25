@@ -27,68 +27,39 @@ online 오염평균 acc P1 +0.650 / P1w +0.653 → **gap +0.003**(dir1 참조 +0
 
 **취소·폐기(재제안 금지)**: fmnist competition Part B(취소 시점 seed0 45/96 보존·seeds1-2 미착수) · C-fr frrand(완주했으나 frrand 는 축 밖) · LLM downstream 보조(미제출). 전부 **표에서만 제외**, rundir 은 존치.
 
-## 2. ★ 선행 코드 변경 2건 — **구현·검증 완료(07-25). 남은 것은 `push` 하나다**
+## 2. ✅ 선행 코드 변경 2건 — **착지 완료 (`d09e528`, 07-25). 게이트 전부 해소**
 
-> **상태 전환**: C-a·C-b 는 YH 워킹트리에서 구현 + CPU 폴백 e2e 스모크까지 끝났다
-> (`corrupt=round(0.4N)` · dir1 Dirichlet 불균등 · free_rider update-level · rundir 이름·
-> identity precheck 통과 · 실제 rundir 무접촉). **코딩은 블로커가 아니다.**
+> C-a·C-b 가 `origin/main` 에 있다. JW·JB 워처가 풀렸고 **c1축 492 GPU-h(4계정)와 G10 216런이
+> 착수 가능**하다. 정본 = **YH 버전**(Yonghee 판정) · JW 의 중복 구현 `989f5ca` 는 철회(`f056b16`).
 >
-> **유일한 블로커 = `git push` (Yonghee 직접)**. JW·JB 워처가 `origin/main` 을 5분 폴링하므로
-> (`git show origin/main:codes/experiments/track_c1.py | grep -q C1_THREAT`) 푸시 없이는
-> 안 풀린다. 걸린 물량 = **JB 18셀 205 GPU-h + JW 잔여 13셀**, 그리고 그 전에 생성되는
-> 모든 rundir 의 `meta.json` 에 `git_dirty: true` 가 박힌다(YH 예정 42셀 = c1축 9 + G8 24 + G6 9).
+> ### 오염-집합 규약 — 확정 + **논문 1문장이 남았다**
 >
-> 대상 6파일:
-> ```
-> git add codes/experiments/track_c1.py codes/experiments/track_c2.py \
->         codes/flirds/fl/server.py codes/flirds/oracle/exact_sv.py \
->         codes/tests/test_c1_axis.py runs/removal_dose/sbatch_cnn_removal_axis.sh
-> ```
->
-> ### ⚠ push 전 게이트 2건 (둘 다 몇 분)
->
-> **(1) 공용 코어 2파일의 파급 확인.** `flirds/fl/server.py` · `flirds/oracle/exact_sv.py` 는
-> **전 러너 공용**이다 — 지금 돌고 있는 G3(86셀 track_c2) · **B200 G1(phase2_matrix, 임계경로
-> 176 GPU-h)** · track_g 가 전부 이 두 파일을 지난다. C-a 는 `{"cifar10":…, "fmnist":…}` 에
-> `"mnist": LeNet5` 키를 더한 것이라 cifar10/fmnist 경로에 **원리적으로 무해**하지만(그래서
-> G3 의 dirty 는 데이터 문제가 아니라 provenance 흠집일 뿐), 코어 2파일은 그 보장이 없다.
-> → `git diff` 가 **신규 위협 토큰에 게이트된 추가분뿐**임을 확인 + 기존 테스트 green
-> (`tests/test_signgate.py` 15 + 레거시 5). 아니면 B200 G1 이 push 전/후로 쪼개진다.
->
-> **(2) 🚨 오염-집합 draw 가 위협별로 다르다 — 균일 규칙(고정 4/10)이면 논문과 어긋난다.**
-> `track_c2.py:248-259`(감사 2026-07-23) + 논문 `paper-ko.md:863-869` 가 정본이고, **위협별로
-> 규약이 갈린다**:
->
-> | 위협 | 규약 | 근거 |
+> | 무대 | label_flip | update-level(fr·gn) |
 > |---|---|---|
-> | **label_flip@0.70** | **독립 Bernoulli(ρ=0.4)** → **개수가 시드마다 변동** · 강도만 0.70 고정 | FedCorr 공식 구현 그대로(`gamma_s = binomial(1,ρ,n)`) |
-> | free_rider · grad_noise | 고정 `⌊ρN⌉` 비복원 추출 | update-level = **준거 문헌 없음** → 논문이 이미 예외로 기술 |
+> | N=100 주무대(`track_c2`) | **Bernoulli(ρ=0.4)** → 개수 변동(실현 39/48/47) | 고정 `⌊ρN⌉`=40 |
+> | **N=10 (a) 무대**(`track_c1`) | **고정 `⌊ρN⌉`=4** | **고정 4** (동일) |
 >
-> → **이식은 `track_c2.py:258-259` 를 그대로**(새로 유도 금지) + rate 는 l.280-281 대로
-> `C1_FLIP_RATE=0.70` 고정(FedCorr 의 `τ~U(0.5,1)` draw 아님).
-> ⚠ mal draw 가 `np.random.default_rng(1000+seed)` 의 **첫 소비**여야 한다 — 파티션이 스트림을
-> 먼저 먹으면 집합이 partition-dependent 가 되어 기존 corpus 와 갈린다(l.271-275 가 그 위험을
-> 기록해 둔 지점). seed-only 인 덕분에 같은 seed 가 dataset/partition/dose/track 을 넘어 같은
-> 집합을 준다(l.255-257).
+> `track_c1.py:188-192` 의 근거가 채택됐다: ① 도즈를 0.70 으로 고정해 **FedCorr 를 재현하는 게
+> 아니다**(τ~U(0.5,1) 미사용) → "공식 구현 준수"의 대상이 아니다 ② N=10 Bernoulli 는 **3/7/6**
+> 으로 흔들려(평균 5.33 vs 명목 4 · sd 1.55) label_flip 열이 다른 도즈가 되고 **4위협이 한
+> fidelity 표를 공유할 수 없다**. N=100 은 39–48 = 상대변동 ~12% 라 무해하지만 N=10 은 ~39% 다.
+> (재현 검증: 같은 draw 를 N=100 에 적용하면 논문 기재값 39/48/47 을 정확히 재생산한다.)
 >
-> **N=10 실현값 = 미리 계산해 둔 기대치**(같은 코드로 N=100 을 돌리면 논문 기재값 39/48/47 을
-> 정확히 재생산 → 신뢰 가능). C-b 스모크에서 이 값이 나오는지 대조할 것:
+> **⚠ 미결 = 논문 부록 B 에 stage-분리 1문장.** 현 §B 는 Bernoulli 규약만 서술하므로 이 무대에
+> 대해 거짓이 된다. **코드가 아니라 서술이 유일한 남은 항목이다.**
 >
-> | | seed0 | seed1 | seed2 |
-> |---|---|---|---|
-> | **label_flip** | k=3 `[3,5,6]` | k=7 `[1,2,4,5,7,8,9]` | k=6 `[0,1,3,4,6,7]` |
-> | fr · gn (고정 4) | `[1,4,6,7]` | `[0,4,6,7]` | `[3,4,6,9]` |
+> **기대 corrupt 집합**(전 위협 공통 · seed-only · `default_rng(1000+seed)` 첫 소비 =
+> `track_c2` 와 동일 스트림): seed0 `[1,4,6,7]` · seed1 `[0,4,6,7]` · seed2 `[3,4,6,9]`.
 >
-> 전 셀 **k≥2 → AUROC 가 모든 셀에서 정의된다**(k=0/1 붕괴 없음). 평균 5.33 이 명목 4 보다
-> 높고 seed1 은 7/10 이지만, 논문 규약이 "명목 ρ 대신 **실현 수**를 병기" 이므로 그대로 보고한다.
-> **논문에 추가할 문장 1개**: (a) 무대(N=10)에도 같은 규약을 적용했고 label_flip 실현 수는 3/7/6.
+> ### 착지한 6파일 중 공용 코어 2개 — B200 과의 관계
 >
-> **정본은 push 된 origin/main 하나.** 구현이 두 벌 있었다 — YH 워킹트리 + **JW 로컬 `989f5ca`**
-> (전 위협 고정 4/10 = label_flip 에서 규약 위반). **JW 는 그 버전으로 8셀을 이미 돌리는 중이나
-> 규약이 갈리는 건 label_flip 2셀뿐**이다 — 나머지 6셀(clean×2·fr×2·gn×2)은 스트림 첫-소비만
-> 확인되면 유지한다.
+> `flirds/fl/server.py` · `flirds/oracle/exact_sv.py` 는 **전 러너 공용**이다(G3 track_c2 ·
+> B200 G1 phase2_matrix · track_g). **B200 은 아직 미기동**이라 착지 이후에 시작하면 전 셀이
+> 같은 sha 로 기록된다 = 쪼개짐 없음. 반대로 **기동 후에는 pull 하지 않는다**(같은 표의 셀이
+> 다른 코드로 갈린다). C-a 는 dict 키 추가라 cifar10/fmnist 경로에 원리적으로 무해하므로
+> 이미 도는 G3 는 무영향이다.
 
-### C-a — mnist 무대 개방 (**1줄**) — 구현 완료, 아래는 명세 기록
+### C-a — mnist 무대 개방 (**1줄**) — 착지 완료, 아래는 명세 기록
 
 ```
 codes/experiments/track_c2.py:157
@@ -154,14 +125,15 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh
 
 ## 7. 우선순위 · 예상 종료
 
-| P | 무엇 | 물량 | 상태(07-25 22시) | 근거 |
+| P | 무엇 | 물량 | 상태 | 근거 |
 |---|---|---|---|---|
-| **P0** | **`git push` (Yonghee)** | 6파일 | ⛔ **대기 — 유일한 블로커** | JB 205 GPU-h + JW 잔여 + 42셀 `git_dirty` |
-| **P1** | G3 `hiidcomp` | 96런 · ~80 | 🟢 10/96 완료 · 8 실행 · 86 남음 | 본문 downstream 의 빈 절반 · 게이트 없음 |
+| ✅ | **코드 C-a·C-b + push** | 6파일 | ✅ **완료 `d09e528`** | 4계정 게이트 전부 해소 |
+| **P1** | G3 `hiidcomp` | 96런 · ~80 | 🟢 10/96 완료 · 8 실행 · 86 남음 | 본문 downstream 의 빈 절반 |
 | **P2** | **c1축 `c1axis` `0-7,16`** | 9셀 · ~82 | 🟡 PD(셀 ~9.1h) | **본문 G2 의 P0 seed** — C-b 를 쓴 사람이 직접 |
 | **P3** | G8 `c2fidmn` | 24런 · ~25 | 🟡 PD | 부록 fidelity+탐지가 한 rundir |
 | **P4** | G6 `c1rmax` | 9런 · ~15 | 🟡 PD | 본문 ablation |
 | — | ~~G10 216런~~ | — | ✅ **HJ 로 이관 → 취소(전량 PD·mnist rundir 0)** | 개정 배분 §5 |
+| **NEW** | **논문 부록 B 오염-집합 문단에 stage-분리 1문장** | — | ⬚ | §2 — 코드 아님, 서술 미결 |
 
 - 실측 재집계: **128 태스크 ~172 GPU-h**(G3 일부 선행분 반영). 임계경로 = G3 배수 ~6.5h 후
   c1축 8슬롯 2웨이브 ~18h → **07-26 밤~07-27 오전**. 마감 07-28 24:00 대비 여유.

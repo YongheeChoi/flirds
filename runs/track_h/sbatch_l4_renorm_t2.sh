@@ -27,7 +27,8 @@
 # Split by SEED (REMAINING-00-INDEX.md §2).  This leg is ~3.6x cheaper on B200
 # (~13.9 h/cell vs ~50 h/cell on A6000: the observer scores renorm-4 every round and
 # that scoring is ~92% of the cell), so B200 takes 2 of the 3 seeds:
-#   B200 : seed0 (queue_b200_c4.txt) + seed1 (queue_b200_c2.txt)   <- no sbatch
+#   B200 : seed0·seed1 을 큐에 추가 (queue_b200.txt)   <- no sbatch
+#          (구 레인별 queue_b200_c{1..4}.txt 는 07-25 4-GPU 통합으로 폐지·병합됨)
 #   JB   : sbatch --array=6-8%8 runs/track_h/sbatch_l4_renorm_t2.sh   # seed2 only
 # After: python runs/track_h/make_analysis.py
 #
