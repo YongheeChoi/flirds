@@ -95,7 +95,9 @@ def analyze_llm():
              + _load(ROOT / "rundirs_llm_l4") + _load(ROOT / "rundirs_llm_hj")
              + _load(ROOT / "rundirs_llm_jw") + _load(ROOT / "rundirs_llm_jb")
              + _load(ROOT / "rundirs_llm_yh") + _load(ROOT / "rundirs_llm_p1w")
-             + _load(ROOT / "rundirs_llm"))                       # track_h canonical wins on dup
+             + _load(ROOT / "rundirs_llm_g4c")                    # renorm-4 T2 (own root: its
+             + _load(ROOT / "rundirs_llm"))                       # `observer` arm would collide
+    # with L1's same-game observer under the same cell name.  track_h canonical wins on dup.
     groups = {}
     for c in cells:
         cfg = c["cfg"]

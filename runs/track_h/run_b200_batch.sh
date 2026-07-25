@@ -1,7 +1,12 @@
 #!/bin/bash
-# B200 배치 런처 — **컨테이너 1개당 GPU 1장** 구성 (2026-07-25 개편).
-#   사용:  CID=1 bash <repo>/runs/track_h/run_b200_batch.sh     # 컨테이너 1..4 에서 CID만 바꿔 제출
+# B200 배치 런처 — **컨테이너 1개당 GPU 1장**, **세션 2개 × GPU 2장** 구성 (2026-07-25).
+#   사용:  CID=1 bash <repo>/runs/track_h/run_b200_batch.sh     # 컨테이너마다 CID만 바꿔 제출
 #   KARIS 배치 폼 "배치 실행 명령어" 에 위 한 줄을 그대로 넣는다.
+#
+#   세션 A = CID 1, 2   →  G1(주무대 (b) 오라클 9셀) + G4c seed1
+#   세션 B = CID 3, 4   →  L1 R=100 재실행 18셀 + G4c seed0
+#   두 세션은 서로 의존하지 않는다 — 한쪽이 늦게 잡혀도 다른 쪽 산출물은 그대로 쓸 수 있다.
+#   (세션 A만 살면 §5.2/§5.4/§5.5 가, 세션 B만 살면 §5.3 이 각각 자립한다.)
 #
 # 큐 = queue_b200_c<CID>.txt  (__REPO__ 토큰을 아래 REPO 로 sed 치환)
 # 드라이버 = runs/rerun_beta03/run_multi_driver.sh — 큐 소진 시 자동 종료 = 배치 친화·재개형.
