@@ -1,0 +1,24 @@
+# ════════════════════════════════════════════════════════════════════════════
+# B200 컨테이너 2 (GPU 1장) — **clean 레인**
+#   가동: CID=2 bash <repo>/runs/track_h/run_b200_batch.sh
+#   형식: SCRIPT|LOGNAME|envs     ·  __REPO__ = 런처가 sed 치환
+#   ⚠ 완료 줄은 '#' **주석**(줄 삭제 금지) · 가동 후 순서 변경 금지
+# ════════════════════════════════════════════════════════════════════════════
+
+# ─── G1 : R4-L2 주무대 (b) 오라클 · clean(대조 앵커) ─────────────────────────
+phase2_matrix.py|G1_L2_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0
+phase2_matrix.py|G1_L2_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1
+phase2_matrix.py|G1_L2_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2
+
+# ─── (옵션) LLM P1w clean — INDEX §5a (해제 시 아래 G12 6줄 주석) ───────────
+# track_g.py|P1w_T1_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+
+# ─── G12 batch B (부록 P2 · 최저 우선) ──────────────────────────────────────
+track_d.py|1B_anchor5_lr2e-3_st30_seed1|REGIME=anchor5 LR=2e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr2e-3_st30_seed2|REGIME=anchor5 LR=2e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st20_seed1|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st20_seed2|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st30_seed1|REGIME=anchor5 LR=3e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st30_seed2|REGIME=anchor5 LR=3e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs

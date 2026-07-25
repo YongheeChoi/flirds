@@ -1,60 +1,68 @@
-# REMAINING (Slurm · JB 계정) — A6000 48GB: L9 frrand 비-flirds arms
+# REMAINING (Slurm · JB) — A6000 48GB: **frrand 종료 → R4 online seed2 인수**
 
-> 실행처별 인수인계 **5-서버 분할** 중 **JB**(신규 계정) 몫. 짝 = `REMAINING-b200.md`(HVP 전용)·`REMAINING-slurm-YH.md`(CNN)·`REMAINING-slurm-HJ.md`(silo5-a·L11)·`REMAINING-slurm-JW.md`(L4 renorm T2).
-> **역할 = A6000 48GB에서 L9 frrand 비-flirds arms**(7방법 × {T1,T2} × 3seed). **자체완결 = B200 cum 독립**(즉시 가동). flirds arm은 B200 관찰자와 묶여 B200; 나머지 7방법 arm = 여기.
-> **마감: 실험 07-28 / 논문 07-29 21:00** — seed0 우선. push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
-> 논문·문서 정본 = `paper/workplan/00-INDEX.md`. 기존 rundir은 read-only.
+> 배분 정본 = **`REMAINING-00-INDEX.md`** · 수록목록 정본 = `research-wiki/survey/flirds-paper-experiment-plan.md`.
+> **역할 변경(2026-07-25)**: 담당이던 **L9 frrand 가 스코프에서 빠졌다**(계획서 §0.1 오염축 5종에 frrand 없음 → §5 "위협축 제외" 목록).
+> **새 역할 = L11 seed2 21셀**(현재 **아무도 안 맡고 있는 3-seed 구멍**) + HJ 꼬리 work-steal.
+> **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 3-seed. push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 
-## 0. 신규 계정 셋업 (최초 1회 · HJ/JW와 동일 체크리스트)
+## 0. 환경
 
-1. **repo**: `/home/<JB>/projects/flirds/`(clone 또는 공유 `/home`).
-2. **conda env**: `lora4cl`(torch 2.11) — 공유 재사용 or 재생성.
-3. **HF 캐시**(offline): model(Llama-3.2-1B-Instruct)+gsm8k. `HF_HOME` = YH `/scratch/chyoyhr/hf_home` 공유-읽기 or 복제. `HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1`.
-4. **QOS/파티션**: `base_qos` → A6000 48GB(`suma_a6000`/`gigabyte_a6000`). 동시 **8-GPU/user**.
-5. 공통: `codes/`에서 `PYTHONPATH=.`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`.
+- torch 2.11 스택 · `HF_HOME` 자체 구성(오프라인) · 파티션 `suma_a6000,gigabyte_a6000` + `--qos=base_qos` · 8-GPU/user.
+- `codes/` 에서 `PYTHONPATH=.`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`.
+- **OOM knob**(A6000 48GB 고유): `VAL_CHUNK` T1=3~5 · observer=2. 청크 합산은 `flirds_estimator._chunked` 상 **수학적 exact → φ 불변**, peak 만 내려간다. **`VAL_MAXLEN` 은 φ를 바꾸므로 금지.**
 
-> **왜 48GB**: L9 비-flirds arms = **retrain-scoring 클래스 ~32 GiB**(값 산출 + T2 재학습; `REMAINING-b200.md` §1 실측) → **24GB 불가·48GB 필요**. HVP는 없음(비-flirds는 값·1차 스코어).
+## 1. ⚠ L9 frrand — 스코프 아웃 (처리 결정 필요)
 
-## 1. L9 arms — R4 frrand 비-flirds (자체완결·B200 독립)
+**사실**: frrand(랜덤-델타 free-rider)는 확정 오염축 5종({CNN: lf@0.70, frzero, grad-noise} / {LLM: swap@0.7, frzero})에 없다 → **어떤 표에도 들어가지 않는다.** 지금 도는 24셀은 전부 그 위협이다.
 
-> `REMAINING-b200.md` §3 L9(frrand full-8)의 **비-flirds arm 몫**. R4(gsm50k5)의 free-rider 축은 frzero만 있고 frrand 전무 → full-method로 완성해 "exact-0 생존 vs renorm 붕괴"를 random free-rider에서도 시연(frzero 대칭화).
+**동시에**: A6000 은 클러스터 여유 **10장 / 98**(가동률 90%)로 **논문에 들어가는 LLM 작업의 유일한 병목**이다. frrand 가 점유하는 슬롯이 곧 §5.3 표가 못 채워지는 이유가 된다.
 
-- **무엇**: frrand(zero 대신 무작위 free-rider) × 7 비-flirds(same-game flirds1st·lossheur + FedIF + renorm-4 gtg·fedsv·comfedsv·shapleyfl) × {T1 online, T2 retrain} × seed{0,1,2}. `track_g build_arm`이 매 실행 fresh 누적기로 **자체 인라인 스코어**(HVP 없음·저장 cum 미로드) → B200 독립.
-- **실행(sbatch — REMAINING만 보고 실행)**: `runs/track_h/sbatch_l9_frrand.sh`(A6000 48GB·24셀 seed-major·root `rundirs_llm_jb`). seed당 8셀 = **7 T1**(각 `<src>_gate_v2` online) + **1 T2**(`observer OBS_SOURCES=7소스 T2=1` → 7 t2_sign 재학습; 한 관찰자 셀 = rundir 레이스 회피, ~33h arm-영속). §0 셋업 후:
-  ```
-  cd $REPO && mkdir -p runs/track_h/_logs
-  sbatch --array=0-7%8 runs/track_h/sbatch_l9_frrand.sh        # seed0 파일럿(J0-6=T1 먼저, J7=T2) → GPU-h 보고
-  sbatch --array=8-23%8 runs/track_h/sbatch_l9_frrand.sh       # seeds 1-2
-  ```
-  (env·모델=1B 전부 sbatch 내장. **분모·flirds arms = B200 L9**가 같은 셀키로 산출 → make_analysis 병합; 잡은 B200 대기 없이 실행.)
-- **비용**: ≈ **~150–170 GPU-h**(7방법×{T1,T2}×3seed; 8슬롯 ~20 wall-h; seed0 ~7 wall-h).
-- **분석**: `make_analysis.py` LLM 로더에 `rundirs_llm_jb` root 추가(dup-win) → 셀키 병합. **채우는 overview ⬚**: §5.3 R4 frrand 열(비-flirds+retrain) + §5.4 frrand 탐지 AUROC.
+**실측 잔여**(07-25 17:40 기준 · 총 ~580 GPU-h · wall 3–4일):
 
-## 1.5 실측 wall-time · --time 배당 · 예상 종료 (2026-07-25 측정, A6000)
-
-> 위 §1 "~150–170 GPU-h·8슬롯 ~20 wall-h·seed0 ~7 wall-h" 추정은 **과소**(renorm·observer 저평가). 실측 기반 정정. **방법별 셀 시간이 최대 ~7×까지 차이 → 균일 --time 금지.**
-
-| 셀 유형 | wall-time | 근거 | 권장 --time |
+| 셀 유형 | wall | 상태 | 종료 예상 |
 |---|---|---|---|
-| **lossheur** T1 | **9.1h·8.8h** (완주 ×2) | timing.json total_s (fl+scoring ~8.4h + val-curve ~0.5h + downstream ~0.15h) | **18h** |
-| **renorm-4** T1 (gtg·fedsv·comfedsv·shapleyfl) | **~23–28h** (추정) | ~40 train/h(측정) vs lossheur 94/h; s0 4셀 ~14h에 ~557 train(~60%) | **42h** |
-| **flirds1st·fedif** T1 (fixed VAL_CHUNK=5) | **~11–15h** (추정·미완) | grad-only(HVP 없음)·lossheur+청크 overhead; 재제출 후 갱신 | **30h** |
-| **observer** T2 (VAL_CHUNK=2) | **~44–78h** (추정·미완) | FL(7방법/round = renorm급 ~28–38h) + N distinct t2_sign retrain(~8h/개) | **96h** |
+| renorm-4 T1 s0 (4셀) | ~23–28h | ~14h 경과(~60%) | 07-25 23시–07-26 04시 |
+| renorm-4 T1 s1·s2 + lossheur s2 | ~23–28h / 9h | 대기·초반 | 07-26 낮–밤 |
+| flirds1st·fedif T1 (6셀, `VAL_CHUNK=5`) | ~11–15h | 슬롯 대기 | 07-26 |
+| **observer T2 (3셀, `--time=96h`, `VAL_CHUNK=2`)** | **~44–78h** | seed0 우선 | **07-27~28** |
 
-- **renorm이 느린 이유**: 라운드마다 coalition/submodel 평가(`shapleyfl_round_raw`=val forward) → forward만 하는 lossheur 대비 2.4×. **observer는 7방법 동시 채점 → renorm 비용 + 2차 HVP 상속**, 그 뒤 retrain.
-- **OOM 주의(A6000 48GB)**: flirds1st·fedif(functorch val-grad)·observer(2차 HVP)는 기본 VAL_CHUNK로 OOM. `VAL_CHUNK` 축소 필수(sbatch 두 env블록에 `VAL_CHUNK="${VAL_CHUNK:-10}"` 배선; **T1=5, observer=2**). 청크 합산은 `flirds_estimator._chunked`상 수학적 exact → **φ 불변**, peak 메모리만 감소. renorm·lossheur는 grad 경로 없어 안전.
-- **총 GPU-h ≈ 580** (renorm 12셀×~25h≈300 + observer 3셀×~60h≈180 + lossheur/grad ~100). 8-GPU/user 한도 → wall ≈ 3–4일.
+**택일**:
+- **★권고 — 부분 전환**: ① **PD(대기) 원소 전량 취소** ② **observer T2 3셀은 실행 중이어도 중단**(셀당 44–78h = 마감까지 슬롯을 통째로 점유하는데 산출은 표에 못 들어간다) ③ **거의 끝난 renorm s0 4셀은 완주**(잔여 ~10h, "도는 잡은 죽이지 않는다" 원칙을 비용이 작은 곳에서 지킨다). → **~450 GPU-h 즉시 회수**.
+- **보수안**: PD 만 취소하고 실행 중은 전부 완주 → 회수 ~250 GPU-h, JB 는 07-27까지 사실상 기여 없음.
+- **유지안**: 전량 완주 → JB 기여 0, L11 seed2 는 미실행으로 남는다(= §5.3 표가 2-seed).
 
-**현 run 예상 종료** (job 1873996/1874031 + fixed 1875968 obs/1875969 T1; 07-25 17:40 기준, 8-GPU 한도):
-- renorm **s0** (gtg·fedsv·comfedsv·shapleyfl, ~14h째): **~07-25 23시 – 07-26 04시**
-- renorm **s1·s2** + lossheur s2: **~07-26 낮–밤**
-- **flirds1st·fedif** fixed 6셀(1875969): 슬롯 확보 후 각 ~12h → **~07-26**
-- **observer T2** 3셀(1875968, --time 96h): seed0(_7, must-land) 먼저 → **~07-27**; seeds1-2(_15·_23) → **07-27~28**(경합 시 리스크)
+취소 예: `scancel <jobid>` (배열 전체) / `scancel <jobid>_[8-23]` (PD 원소만).
 
-## 2. 우선순위·큐 운용
+> frrand rundir·러너 산출은 **존속**한다 — 표에서만 빠진다. 되살릴 일은 없다(재제안 금지).
 
-- **seed0 우선**: L9-arms seed0 먼저 → 논문 착수선. 이후 seeds 1-2.
-- **가동**: 셋업 직후 **L9-arms seed0**(독립·즉시) → seeds 1-2.
-- **work-stealing**: L9-arms는 arm-level 독립·idempotent → JB 큐가 비면 HJ(L11)의 잔여 물량을 가져와도 무방(착지 root만 계정별 분리 후 병합). L9-arms가 상대적으로 가벼우니 **완주 후 HJ L11 tail 흡수 권장**(L11이 최대 물량).
-- **스택 캐비엇**: A6000(torch2.11) vs canonical(B200 torch2.12) — fidelity/개입은 recovery 정규화로 읽음(W-A mean|Δ|≤0.006). **timing.json은 §5.5 cost에 사용 금지**(B200 실측만).
-- **완료 판정**: `TRACK G DONE`+rundir mtime. 완료분 커밋(push는 Yonghee).
+## 2. ★ L11 seed2 — R4 online 점수원 경쟁 seed2 (21셀 · **현재 무주공산**)
+
+> **왜 JB 인가**: L11 63셀은 seed 로 3계정에 쪼개져 있었는데(HJ s0·1 = 42셀 제출 완료 / **YH s2 = 21셀**), **YH 의 seed2 몫이 취소·미제출**됐다. 그대로 두면 §5.3 online 표 7행이 **2-seed** 로 끝난다(3-seed 규칙 위반). JB 는 같은 A6000·같은 env·같은 sbatch 라 **셋업 마찰 0** 으로 인수할 수 있다.
+
+- **셀**: 7 비-flirds(flirds1st·lossheur·fedif·gtg·fedsv·comfedsv·shapleyfl) × {clean, noisy, frzero} × **seed2** = **21**(array 42-62).
+- 비-flirds 는 online 스코어링에 **HVP 불요**(값·1차) → 자체 인라인 스코어 = **B200 독립·즉시 가동**.
+- **비용**: renorm-4 12셀 × ~23–28h ≈ **~300** + same-game·FedIF 9셀 × 2.5–3.2h ≈ **~26** → **~326 GPU-h**(8슬롯 ~41 wall-h).
+
+```
+cd $REPO && mkdir -p runs/track_h/_logs
+RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_jb \
+  sbatch --export=ALL,VAL_CHUNK=3 --time=24:00:00 --array=42-62%8 runs/track_h/sbatch_l11_online.sh
+```
+- `RUNDIR_ROOT` 를 주지 않으면 seed2 는 `rundirs_llm_yh` 로 자동 라우팅된다(그래도 집계는 되지만, 계정별 분리를 위해 명시 권장).
+- **`--time` 24h**(원 기본값 08h 는 renorm 소스에서 timeout). renorm 이 24h 를 넘길 조짐이면 `42:00:00`.
+- **싼 것 먼저**: same-game·FedIF 는 `--array=42,45,48,51,54,57,60%8` 류로 먼저 뽑아 몇 시간 만에 3-seed 를 닫을 수 있다(인덱스 = `SRC_I = (IDX%21)/3`).
+
+## 3. 여유 시 — HJ 꼬리 work-steal
+
+- HJ 의 L11 seed0·1(42셀 ~980 GPU-h)이 8슬롯으로는 07-30 까지 밀린다. JB 슬롯이 비면 흡수한다:
+```
+RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_jb \
+  sbatch --export=ALL,VAL_CHUNK=3 --time=24:00:00 --array=<HJ 잔여 범위>%8 runs/track_h/sbatch_l11_online.sh
+```
+- arm-level idempotent · 착지 root 만 계정별로 분리하면 `make_analysis` 가 dup-win 으로 병합한다. **HJ 가 이미 완주한 인덱스는 빼고** 제출할 것(중복 = GPU 낭비).
+
+## 4. 완료 후
+
+1. rundir 커밋(push는 Yonghee) → `runs/track_h/make_analysis.py`(LLM 로더가 `rundirs_llm_jb` 를 이미 읽는다) → `flirds-results-downstream` §5.3 R4 online 표.
+2. **스택 캐비엇**: A6000(torch 2.11) vs canonical(B200 torch 2.12) — recovery 정규화로 병치(mean|Δ|≤0.006). **`timing.json` 은 §5.5 cost 표에 쓰지 않는다.**
+3. **완료 판정**: 로그 `TRACK G DONE` + rundir mtime.

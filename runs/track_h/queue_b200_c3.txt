@@ -1,0 +1,24 @@
+# ════════════════════════════════════════════════════════════════════════════
+# B200 컨테이너 3 (GPU 1장) — **free-rider-zero 레인**
+#   가동: CID=3 bash <repo>/runs/track_h/run_b200_batch.sh
+#   ⚠ 완료 줄은 '#' **주석**(줄 삭제 금지) · 가동 후 순서 변경 금지
+# ════════════════════════════════════════════════════════════════════════════
+
+# ─── G1 : R4-L2 주무대 (b) 오라클 · free-rider-zero ─────────────────────────
+# ⚠ phase2_matrix 의 토큰은 **`freerider_zero`** (rundir 이름만 `frzero` 로 축약; track_g 의 `frzero` 와 다름)
+phase2_matrix.py|G1_L2_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=0
+phase2_matrix.py|G1_L2_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=1
+phase2_matrix.py|G1_L2_frzero_s2|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=2
+
+# ─── (옵션) LLM P1w frzero — INDEX §5a (해제 시 아래 G12 6줄 주석) ──────────
+# track_g.py|P1w_T1_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# track_g.py|P1w_T1_frzero_s2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+
+# ─── G12 batch C (부록 P2 · 최저 우선) ──────────────────────────────────────
+track_d.py|1B_anchor5_r32_seed1|REGIME=anchor5 LORA_R=32 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_r32_seed2|REGIME=anchor5 LORA_R=32 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_r64_seed1|REGIME=anchor5 LORA_R=64 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_r64_seed2|REGIME=anchor5 LORA_R=64 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+probe_val_noise.py|noise_1B_r64_seed1|LORA_R=64 SEED=1
+probe_val_noise.py|noise_1B_r64_seed2|LORA_R=64 SEED=2
