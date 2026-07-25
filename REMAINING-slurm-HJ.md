@@ -142,6 +142,8 @@ REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 \
 
 - C-a 가 `d09e528` 로 착지(`track_c2.py:157` 에 `"mnist": LeNet5`) → HEAD 에 포함 확인. 파티션도 C-b 로 `base_suma_rtx3090,dell_rtx3090` 확장 반영됨.
 - **제출**: `1878912`(`--array=0-71%8`, seed0) · `1878913`(`--array=72-215%8`, seeds1·2).
+- **✅ 첫 셀 착지로 배선 검증 (07-25 23:28)** — `mnist_iid_clean_flirds_seed0` EXIT=0, arm 4종 전부 기입(`flirds_gate_v2 .9794 / gatew .9819 / mult .9830 / zgate .9821`, r2t 전부 7). `AUROC=nan` 은 clean 이라 오염 클라가 없어 **정의되지 않는 정상값**이다. override 3종(`--output`·`REPO`·`PY`)과 C-a(`"mnist": LeNet5`) 모두 살아 있음이 실행으로 확인됐다.
+- **실측 단가 = 20.05 분/셀** (23:08:21→23:28:24) = 0.334 GPU-h → **216셀 ≈ 72 GPU-h**. 계획치 135 의 **절반**이다(계획은 셀당 ~37분 가정). clean 셀 1개 표본이라 오염 무대에서 다소 오를 수 있으나 자릿수는 이 쪽이다.
 
 ### ⚠ HJ 계정에서 제출할 때 필요한 3개 override (스크립트 파일은 **무수정**)
 
