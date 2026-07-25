@@ -27,7 +27,7 @@ tags: [flirds, results, fidelity]
 ### 1A-CNN · 대규모 교차-디바이스 부분참여 충실도 `[본문·주무대]`
 
 > **세팅**: FedSVCNN(cifar10)/LeNet5(fmnist) · N=100 · 10/100 참여 · R=120 · (b) per-round oracle · seed{0,1,2}. 위협 8종, 데이터셋×파티션마다 별도 표. **detection(§3)과 같은 rundir**. clean 칸 = 신호-부재(오발화 대조, fidelity 해석 금지). *전 9방법·Kendall·거리·loss-heur는 원본 `fidelity.csv`/detection 페이지.*
-> ✅ **2026-07-25: 설계 144셀 완주**(6 데이터셋·파티션 × 8위협 × 3seed) — 직전까지 ◐2-seed였던 qskew lf@0.15·shard clean·shard lf@0.35가 채워져 **전 칸 3-seed**. 아래 수치는 완주본 재산출.
+> 설계 144셀(6 데이터셋·파티션 × 8위협 × 3seed) **전 칸 3-seed 완주**.
 
 **cifar10 / dir1** (● 3-seed)
 

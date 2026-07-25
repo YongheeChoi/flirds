@@ -16,15 +16,12 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 >
 > 각 행 끝의 `출처`는 추적·재생성용으로 **작게** 병기했을 뿐, 분류·이름은 모두 개념/자연어 기준이다.
 >
-> 🔻 **2026-07-25: 수록 실험이 확정됐다** → [[flirds-paper-experiment-plan]]. 이 축-지도는 **전체 지형도**로 계속 유지되고(제외·보류·미실행 포함), **무엇을 본문/부록에 싣고 무엇이 비었는지**는 그 문서가 정본이다. 확정 스코프는 오염축 5종(CNN lf@0.70·frzero·grad-noise / LLM answer-swap·frzero) · 전용탐지기 4종과 Fed-LOO 전면 제외 · 전 실험 3-seed. 아래 각 행의 `[본문]/[부록]/[후보]/[보류]/[제외]` 표기는 **그 확정 이전 상태**이므로 충돌 시 plan 쪽을 따른다.
+> 🔻 **수록 확정 목록은 [[flirds-paper-experiment-plan]]이 정본이다.** 이 축-지도는 **전체 지형도**로 유지되고(제외·보류·미실행 포함), 무엇을 본문/부록에 싣고 무엇이 비었는지는 그 문서가 답한다. 확정 스코프 = 오염축 5종(CNN lf@0.70·frzero·grad-noise / LLM answer-swap·frzero) · 전용탐지기 4종과 Fed-LOO 전면 제외 · 전 실험 3-seed. 아래 각 행의 `[본문]/[부록]/[후보]/[보류]/[제외]` 표기는 그 확정 **이전** 상태이므로 충돌 시 plan을 따른다.
 
 ## 범례
 
 **데이터 상태**: ● 3-seed 실측 · ◐ 부분/1-seed(정본 아님) · ⬚ 설계했으나 미실행 · ⟐ 파생/재분석(재실행 0) · – 해당없음
 
-> **신규 착지 (2026-07-25 저녁)**: ① **c2fid 144/144 완주** — 남아 있던 ◐2-seed 3칸(qskew lf@0.15·shard clean·shard lf@0.35)이 채워져 fidelity·detection **전 칸 3-seed**(수치 재산출 반영) ② **cifar10/dir1 frrand 전 점수원 3-seed**(retrain 포함) → 정책 축 n_corrupt 10→12, **retrain P1 1위가 Flirds→FedIF로 역전** ③ **확장 파티션 retrain(flirds P1·P1w) 3-seed 착지** ④ **fmnist/iid 8점수원 경쟁 seed0 파일럿** 신규.
->
-> **실측 상태 감사 (2026-07-25)**: 아래 전 행의 마커를 **실제 rundir와 1:1 대조**했다(`phi.parquet` seed 열 / `metrics.json` 키 / rundir 존재 여부). **결과: 마커 오류 0** — ⬚ 2건(R4-L2 gsm50k5 (b), silo5 (a)-leg)은 rundir 부재 확인, anchor5의 "1B만 (a)"는 `(a)oracle` 키가 1B 3-seed에만 존재함을 확인, N=10은 seed0 단독 확인, C1·c2fid·device100·silo5·iid5·std20 전부 3-seed 확인. 같은 감사에서 **누락 2건을 발견해 아래에 반영**했다: ① 1A-LLM에 3B silo5 (b)-leg 행 추가(◐ 1-seed) ② 2-CNN 확장 파티션은 "⬚ 미실행"이 아니라 **flirds 단독 3-seed 실측 ◐** 였음(누락된 건 비-flirds 점수원 7종).
 **현 논문 위치**: `[본문]` 수록 확정 · `[부록]` 부록 배치 · `[후보]` 미정(넣을 수도) · `[보류]` 일시 보류 · `[제외]` 현재 뺌(사유 병기) · `[기록/전제/근거/각주]` 본문을 뒷받침하나 독립 표는 아님
 
 **상위 5축 ↔ 프로젝트 기존 E1–E7 분류**(자매 문서 `prior-work-taxonomy/validation-experiments.md`와 1:1): Fidelity=E1 · Downstream=E2 · Detection=E3 · **비용·규모=E6** · Ablation ⊇ {E4 fairness(미설계)·E5 stability·E7 aggregation} + 방법-내부 검증. — 상위 4축은 Yonghee 지정, 비용은 독립 5번째 축으로 승격(2026-07-25).
@@ -53,7 +50,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **대규모 교차-디바이스 부분참여 충실도** | 부분참여 N=100(10/100)에서 (b) per-round 대비 순위·값·거리. cifar10 4파티션(iid·dir1·shard·qskew)+fmnist 2파티션 × 8위협. **탐지와 동일 rundir** | ● 3-seed **완주 144/144**(07-25) | `[본문·주무대]` (§5.2) | `runs/track_c/c2fid` |
+| **대규모 교차-디바이스 부분참여 충실도** | 부분참여 N=100(10/100)에서 (b) per-round 대비 순위·값·거리. cifar10 4파티션(iid·dir1·shard·qskew)+fmnist 2파티션 × 8위협. **탐지와 동일 rundir** | ● 3-seed (144/144 완주) | `[본문·주무대]` (§5.2) | `runs/track_c/c2fid` |
 
 #### 1A-LLM
 
@@ -98,7 +95,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
 | **점수원 경쟁 — 개입 정확도** | 같은 개입 정책에서 **8점수원 중 어느 φ 정의가 학습을 잘 만드나**. {온라인 배포게이팅, 재학습 부호게이트}×위협, cifar10/dir1, 절대 acc. vanilla(바닥)·oracle_excl(천장)·random_excl 앵커 | ● 3-seed | `[본문·주무대]` (§5.3) | `runs/track_h/rundirs_cnn` |
-| **확장 파티션·데이터셋 개입** | 위 경쟁을 cifar10{iid,qskew,shard}·fmnist{dir1,iid}로. **정정(07-25 감사)**: flirds 단독 점수원 × P1~P4 online은 **3-seed 실측 존재**(이전 "⬚ 미실행" 표기는 오류). **07-25 retrain(P1·P1w)도 3-seed 착지** | ● 3-seed(flirds 단독) | `[후보]` | `runs/track_h`(p1w_cnn) |
+| **확장 파티션·데이터셋 개입** | 위 경쟁을 cifar10{iid,qskew,shard}·fmnist{dir1,iid}로. flirds 단독 점수원 × P1~P4 online + retrain(P1·P1w)이 3-seed 실측. 비-flirds 7종은 미실행 | ● 3-seed(flirds 단독) | `[후보]` | `runs/track_h`(p1w_cnn) |
 | **fmnist·iid 8점수원 경쟁** | 주무대 경쟁을 fmnist/iid로 확장(데이터셋·파티션 강건성). grad-noise 1차-계열 실명·frzero renorm 붕괴가 dir1과 동일 재현. **비-flirds 7종은 seed0 단독** | ◐ seed0(flirds만 ●) | `[후보]` (3-seed 전 인용 금지) | `runs/track_h`(fmnist/iid) |
 | **개입 정책 축 (P1~P5)** | 같은 무대서 7정책(sign/sign-weight/soft-mult/z-gate/신뢰 hard·soft) × 8점수원 종합 경쟁점수 + clean parity | ● 3-seed | `[본문·주무대 보조]` | `runs/track_h`(competition_score) |
 | **강한-주류 label-flip(strmain) 경쟁** | lf-strmain 3셀서 8점수원 × P1~P4. renorm도 살아남는 유일 오염 | ● 3-seed | `[후보]` | `runs/track_h`(stage_cell=strmain) |
@@ -160,7 +157,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | **2차항(HVP)의 기여 — LLM 레그** | std50k5 부분참여(5/50)서 Flirds +1.000 vs 1차계열(ComFedSV/ShapleyFL/FedIF) 음수 붕괴. *↔ CNN 짝* | ● 3-seed(경량) | `[본문]` (§5.6①) | `runs/probe_signal`(std50k5) |
 | **A축 용량 lever probe — LLM** | rank·lr·steps·참여·noise lever가 cross-seed 신호를 못 만듦(lr는 공통 shift만). fidelity lever 전반 1.000. *↔ CNN 짝* | ● 핵심축 3-seed(나머지 seed0) | `[본문]` (§5.6②) | `runs/probe_signal/rundirs`+`noise_probe` |
 | **Removal-curve — LLM** | silo5서 worst-first 제거가 val-loss↓·best-first↑ = 게임-무관 인과 검증. *↔ CNN 짝* | ● 3-seed | `[본문]` (§5.6③) | `runs/removal_dose/rundirs` |
-| **Dose-response** | φ 탐지 문턱 vs 오염강도(silo5 noisy nr·frrand dm 스윕) | ● 3-seed | `[제외]` (07-25 Yonghee: CNN·LLM 모두 논문 미수록) | `runs/removal_dose/rundirs`(B) |
+| **Dose-response** | φ 탐지 문턱 vs 오염강도(silo5 noisy nr·frrand dm 스윕) | ● 3-seed | `[제외]` (논문 미수록) | `runs/removal_dose/rundirs`(B) |
 | **AdamW 브리지 — external validity** | SGD→AdamW optimizer 갭서 fidelity(+0.77; (a)↔(b) 자체 괴리 caveat) | ● 3-seed | `[제외]` | `runs/removal_dose/rundirs_trackd`(A1/D) |
 | **Taylor 물리잔차 (명제 P3)** | 2차 근사가 1차보다 물리잔차 ~3× 작음(1B 실측). 2차항 추가의 물리적 정당화 | ● 3-seed | `[보류·부록A]` | `runs/measured_2026-07/taylor` |
 
@@ -168,7 +165,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **φ 부호 감사 (게이팅 전제)** | 309 rundir 전수 φ 부호 감사(73,288행). clean 클라 φ≤0 비율(오배제 위험) · 오염 클라 φ≤0 + exact-0 비율(게이트 발화) 2표 | ⟐ 파생 | `[부록]` (07-25 승격 — 표 작성 완료) | `runs/track_g/audit` |
+| **φ 부호 감사 (게이팅 전제)** | 309 rundir 전수 φ 부호 감사(73,288행). clean 클라 φ≤0 비율(오배제 위험) · 오염 클라 φ≤0 + exact-0 비율(게이트 발화) 2표 | ⟐ 파생 | `[부록]` | `runs/track_g/audit` |
 | **β 통일 재실행 provenance** | ShapleyFL EMA β 0.5→0.3 통일 재실행·대조. **현재 폐기**(수록 대상 전부 제외됨) | ⟐ 파생/폐기 | `[각주]` | `runs/rerun_beta03` |
 
 ---
@@ -194,7 +191,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **CNN 실측 runtime — 무대별 전 방법** | N=100 부분참여(9방법 × cifar10 dir1/iid) + N=10 전원참여(9방법 × mnist/cifar10) + 참조 행(학습 궤적 · (a) 2¹⁰ 재학습). **추가 실험 0** — c2fid `runtime_s` 열과 C1 `metrics.json`에 3-seed 실측이 이미 있음 | ● 3-seed | `[부록]` (07-25 상세화) | `runs/track_c/c2fid/analysis/fidelity.csv`(runtime_s) · `runs/track_c/{c1,c1_oracle}` |
+| **CNN 실측 runtime — 무대별 전 방법** | N=100 부분참여(9방법 × cifar10 dir1/iid) + N=10 전원참여(9방법 × mnist/cifar10) + 참조 행(학습 궤적 · (a) 2¹⁰ 재학습). **추가 실험 0** — c2fid `runtime_s` 열과 C1 `metrics.json`에 3-seed 실측이 이미 있음 | ● 3-seed | `[부록]` | `runs/track_c/c2fid/analysis/fidelity.csv`(runtime_s) · `runs/track_c/{c1,c1_oracle}` |
 | **자기-궤적 재실행 비용 (제외 baseline)** | 제외 비교군의 자기-궤적 재실행 비용을 별도 위상으로 분리 실측 | ● seed0 | `[검증-전용]` | `runs/measured_2026-07/e3_cost_smoke` |
 
 ---
