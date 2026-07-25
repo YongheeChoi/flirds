@@ -241,6 +241,20 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 
 > **mnist 축(G8·G9·G10 = ~264 런)이 전체의 절반 이상**이다 — **전량 실행**(단계적 게이트 없음). 코드 변경은 `track_c2.py` mnist 1건 + `track_c1.py` 위협·파티션 확장 1건뿐이고 나머지는 셀 수 문제다.
 
+### 4.3 clean 대조가 없고, 채울 계획도 없는 무대
+
+§0.1은 **"clean은 오염이 아니라 대조 앵커이므로 전 무대에서 열/행으로 유지한다"**고 정했다. 그 규칙과 현재 실행 계획이 어긋나는 지점은 아래 4곳이 전부다(rundir 전수 대조).
+
+| 무대 (수록 위치) | 남는 오염 열 | clean 열 | 필요 런 | 비용 | 판정 |
+|---|---|---|---|---|---|
+| **1A-LLM 대규모 교차-디바이스 앵커** `[부록 fidelity]` — 본문 cost(device100 runtime)·부록 detection이 **공유하는 무대** | noisy · frzero (frrand는 축 밖 삭제) | **전무** — α 전 구간(0.0/0.01/0.1/0.5/5.0) 어디에도 clean 셀이 없다 | **3** (clean × 3seed · α=0.5 앵커 + `ORACLE_B`) | (b) per-round valuation만 셀당 24,975 s ≈ 6.9 h → **~21 GPU-h**(학습시간 별도·미계측) | **결정 필요** — 이 무대의 부록 fidelity 표가 오염 2행만 남는다 |
+| **Removal-curve — LLM** `[본문 ablation]` | noisy · frzero (frrand 삭제) | **전무** | **3** (silo5 clean × 3seed) | removal 재학습 **317.7 s/런** + silo5 학습·valuation → **1 GPU-h 미만** | **채우기 권고** — 거의 공짜인데 CNN 짝과의 비대칭이 사라진다 |
+| **Removal-curve — CNN** `[본문 ablation]` | label_flip · feature_noise (→ G6로 frzero·gn·lf@0.70 정렬) | 표엔 없으나 **rundir는 있다** — `{cifar10,mnist}_iid_seed{0,1,2}` (`rates` 전부 0.0 = 완전 무오염) | **0** | — | **표에 행만 추가**(파생) |
+| **2-LLM R4 downstream · renorm 4종의 clean 열** `[본문 downstream]` | noisy · frzero | 위 §2.2·§4는 clean 3-seed화를 **~45런**으로 잡았지만, 실행 배분(`REMAINING-00-INDEX.md` §4)은 GPU-h 부족을 이유로 **renorm-4 clean 열을 이미 컷**했다(same-game+FedIF+(b)만 유지) | 컷 유지 시 **0** / 되살리면 4종 × 2timing × 3seed | — | **문서 불일치 — 정리 필요** |
+
+> **그 외 수록 무대는 clean 대조가 있다**: 1A-CNN(c2fid clean 3-seed) · 1A-LLM silo5 (b)-leg · 1B-LLM silo5 (a)-leg · 2-CNN cifar10/dir1. 결손 목록도 clean을 명시적으로 포함한다 — G1 **+clean 3** · G2 **+clean 6** · G3의 84에 clean 포함 · G8의 4위협에 clean 포함 · G9 **+clean 6** · G10의 4위협에 clean 포함.
+> **iid(저-이질성) 축은 결손 없다**: CNN은 전 무대가 {dir1, iid} 쌍으로 계획돼 있고(G3·G8·G9·G10), LLM은 **본문 주무대 R4(gsm50k5)가 N=50 IID**이고 부록 silo5가 비IID라 IID↔비IID 대조가 수록분만으로 성립한다(제외된 iid5 진단 매트릭스 없이도).
+
 ---
 
 ## 5. 이번 목록에 없는 기존 실험 (= 표에서 빠짐)
