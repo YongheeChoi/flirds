@@ -91,6 +91,19 @@ REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 \
 - **배열 순서 = 우선순위**: `0-4` lr3e-3·lr2e-3 → `5-8` lr1e-3 → `9-12` rank r32/r64 → `13-14` val-noise r64. 마감에 걸리면 **뒤 인덱스부터 `scancel`** 하면 핵심 질문은 지켜진다.
 - **config 는 대응 seed0 셀과 정확히 일치**시켰다 — lr×steps 셀은 `MMLU_LIMIT=40`, rank 셀은 MMLU 전체(=0). cross-seed 비교는 같은 셀의 seed 간 비교라 이 일치가 축의 유효성 그 자체다. `VAL_CHUNK=2` 만 다른데 이건 메모리 knob 이고 청크 합산이 exact → **같은 게임**이다(참조셀 B200 peak 98.9 GiB → 48GB 에선 축소 필수).
 
+##### ⚠ 실측 단가 — 계획 `4 h/셀` 이 아니라 **A6000 에서 9–17 h/셀** (07-25 22:00)
+
+`train_runtime` 호출수로 5셀 동시 측정. **셀당 학습 호출 = 600 회**로 고정이다: phase-1 공유 FL(30라운드×5클라=150) + arm 3종 재학습(3×150=450). anchor5 는 `k_abs==n` 이라 `flirds_sel` 이 빠져(`track_d.py:319`) arm 이 4 가 아니라 **3**(`flirds_w·shapleyfl_w·fedif_w`; `base`·`vanilla` 는 재학습 없음).
+
+| 셀 | 하드웨어 | 실측 | 600회 환산 |
+|---|---|---|---|
+| st20 (idx0) | RTX6000Ada | 51.8 s/call | **~8.6 h** |
+| st30 (idx1–4) | A6000(노드 경합) | 104 s/call | **~17 h** |
+
+- **계획치 4 h/셀은 B200 기준이었다** — 참조셀 `1B_anchor5_lr1e-3_st10_seed1` 의 B200 실측이 12.1 s/call 이고, A6000 st30 이 104 s/call = 스텝당 ~2.9× 느림(fp32 하드웨어 비). 즉 **환산을 안 한 값**이다. G12 총량은 ~60 이 아니라 **~180 GPU-h** 로 봐야 한다.
+- **`--time` 조치**: 대기 10셀은 `scontrol update TimeLimit=24:00:00` 완료. **실행 중 5셀은 증액 불가**(`Access/permission denied` — 실행 잡의 TimeLimit 증액은 operator 권한) → **12 h 유지**.
+- **다만 손실은 제한적이다** — `track_d.py:438` 이 fidelity 직후 `_persist(...)  # CHECKPOINT` 로 **φ 를 먼저 영속화**하고 그 다음에 arm 단계를 `try/except` 로 돈다. phase-1 은 150 호출 = st30 기준 ~4.3 h 이므로 **12 h 안에 φ 는 반드시 착지**한다. 12 h 벽에 걸려도 잃는 건 arm(MMLU·ROUGE·r2t)뿐이고, **G12 의 핵심 질문("lr 로 커진 φ가 cross-seed 실재 신호인가")은 φ 축이라 온전하다**. arm 까지 필요하면 그 셀만 24 h 로 재제출하면 된다(φ 는 이미 은행에 있다).
+
 ##### ⚠ 선행 조치 — HF 캐시에 **alpaca-gpt4·cais/mmlu 가 없었다**
 
 - 공유 캐시(`/scratch/chyoyhr/hf_home`)에도 **없다** — 거기엔 gsm8k 계열 6종 + Llama-3.2-1B 뿐이다. track_d(anchor5)는 `vicgalle/alpaca-gpt4`(학습 데이터)와 `cais/mmlu`(downstream)를 쓰므로 **오프라인으로는 시작 자체가 불가**했다.
