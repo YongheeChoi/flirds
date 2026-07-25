@@ -8,7 +8,17 @@ them per (seed, client), and reports each method's agreement with:
 as Spearman (rank) AND Pearson (value-level), averaged over seeds per threat.  Both
 phi vectors are suspicion-oriented (good->low), so a positive correlation = agreement.
 The '(b)oracle' row's spearman_a is the headline dual-oracle agreement: does (a) rank
-the same real signal (b) does (overview §5.4: silo5 clean +0.87 / noisy +0.93).
+the same real signal (b) does.  Expected = +1.000 on all three threats
+(flirds-results-fidelity.md L300 "두 오라클이 silo5에선 완전히 같은 순위를 준다";
+paper-experiment-plan L106 "듀얼오라클 일치도 1.000").
+
+CAUTION -- do NOT confuse it with silo5's +0.87/+0.93.  Those are a DIFFERENT
+quantity: the (b) target's own cross-seed self-stability (xseed rho, fidelity §1C
+table L346-362), i.e. the precondition that makes this stage informative at all.
+This script computes neither of them from the same pair -- xseed is (b) vs (b)
+across seeds, this is (a) vs (b) within a seed.  Until 2026-07-26 the docstring and
+the closing print mislabeled the xseed numbers as this row's "target", which reads
+as a -0.07/-0.13 regression when the run is in fact exactly on spec.
 
 Standalone (paths repo-root relative; no PYTHONPATH):
   python runs/phase2_matrix/merge_silo5_a.py         # 1B (default)
@@ -110,7 +120,9 @@ def main():
             print(f"  {m:10s} " + " ".join(f"{x:>7s}" for x in cell))
         print()
     print("Headline (T5 §2): the '(b)oracle' row's rho_a = the two oracles' agreement "
-          "on the real signal (clean +0.87 / noisy +0.93 target; overview §5.4).")
+          "on the real signal.  Expected +1.000 on all three threats.")
+    print("  (The +0.87/+0.93 often quoted for silo5 is a DIFFERENT quantity -- the (b) "
+          "target's own\n   cross-seed self-stability, fidelity §1C -- not this row.)")
 
 
 if __name__ == "__main__":
