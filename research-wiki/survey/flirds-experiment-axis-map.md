@@ -20,6 +20,8 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 **데이터 상태**: ● 3-seed 실측 · ◐ 부분/1-seed(정본 아님) · ⬚ 설계했으나 미실행 · ⟐ 파생/재분석(재실행 0) · – 해당없음
 
+> **신규 착지 (2026-07-25 저녁)**: ① **c2fid 144/144 완주** — 남아 있던 ◐2-seed 3칸(qskew lf@0.15·shard clean·shard lf@0.35)이 채워져 fidelity·detection **전 칸 3-seed**(수치 재산출 반영) ② **cifar10/dir1 frrand 전 점수원 3-seed**(retrain 포함) → 정책 축 n_corrupt 10→12, **retrain P1 1위가 Flirds→FedIF로 역전** ③ **확장 파티션 retrain(flirds P1·P1w) 3-seed 착지** ④ **fmnist/iid 8점수원 경쟁 seed0 파일럿** 신규.
+>
 > **실측 상태 감사 (2026-07-25)**: 아래 전 행의 마커를 **실제 rundir와 1:1 대조**했다(`phi.parquet` seed 열 / `metrics.json` 키 / rundir 존재 여부). **결과: 마커 오류 0** — ⬚ 2건(R4-L2 gsm50k5 (b), silo5 (a)-leg)은 rundir 부재 확인, anchor5의 "1B만 (a)"는 `(a)oracle` 키가 1B 3-seed에만 존재함을 확인, N=10은 seed0 단독 확인, C1·c2fid·device100·silo5·iid5·std20 전부 3-seed 확인. 같은 감사에서 **누락 2건을 발견해 아래에 반영**했다: ① 1A-LLM에 3B silo5 (b)-leg 행 추가(◐ 1-seed) ② 2-CNN 확장 파티션은 "⬚ 미실행"이 아니라 **flirds 단독 3-seed 실측 ◐** 였음(누락된 건 비-flirds 점수원 7종).
 **현 논문 위치**: `[본문]` 수록 확정 · `[부록]` 부록 배치 · `[후보]` 미정(넣을 수도) · `[보류]` 일시 보류 · `[제외]` 현재 뺌(사유 병기) · `[기록/전제/근거/각주]` 본문을 뒷받침하나 독립 표는 아님
 
@@ -49,7 +51,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **대규모 교차-디바이스 부분참여 충실도** | 부분참여 N=100(10/100)에서 (b) per-round 대비 순위·값·거리. cifar10 4파티션(iid·dir1·shard·qskew)+fmnist 2파티션 × 8위협. **탐지와 동일 rundir** | ● 3-seed(141/144; 소수 ◐2) | `[본문·주무대]` (§5.2) | `runs/track_c/c2fid` |
+| **대규모 교차-디바이스 부분참여 충실도** | 부분참여 N=100(10/100)에서 (b) per-round 대비 순위·값·거리. cifar10 4파티션(iid·dir1·shard·qskew)+fmnist 2파티션 × 8위협. **탐지와 동일 rundir** | ● 3-seed **완주 144/144**(07-25) | `[본문·주무대]` (§5.2) | `runs/track_c/c2fid` |
 
 #### 1A-LLM
 
@@ -94,7 +96,8 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
 | **점수원 경쟁 — 개입 정확도** | 같은 개입 정책에서 **8점수원 중 어느 φ 정의가 학습을 잘 만드나**. {온라인 배포게이팅, 재학습 부호게이트}×위협, cifar10/dir1, 절대 acc. vanilla(바닥)·oracle_excl(천장)·random_excl 앵커 | ● 3-seed | `[본문·주무대]` (§5.3) | `runs/track_h/rundirs_cnn` |
-| **확장 파티션·데이터셋 개입** | 위 경쟁을 cifar10{iid,qskew,shard}·fmnist{dir1,iid}로. **정정(07-25 감사)**: flirds 단독 점수원 × P1~P4 online은 **3-seed 실측 존재**(이전 "⬚ 미실행" 표기는 오류). 미실행은 비-flirds 7종(W-D)·비-dir1 retrain | ◐ 3-seed·flirds only | `[후보]` | `runs/track_h`(p1w_cnn) |
+| **확장 파티션·데이터셋 개입** | 위 경쟁을 cifar10{iid,qskew,shard}·fmnist{dir1,iid}로. **정정(07-25 감사)**: flirds 단독 점수원 × P1~P4 online은 **3-seed 실측 존재**(이전 "⬚ 미실행" 표기는 오류). **07-25 retrain(P1·P1w)도 3-seed 착지** | ● 3-seed(flirds 단독) | `[후보]` | `runs/track_h`(p1w_cnn) |
+| **fmnist·iid 8점수원 경쟁** | 주무대 경쟁을 fmnist/iid로 확장(데이터셋·파티션 강건성). grad-noise 1차-계열 실명·frzero renorm 붕괴가 dir1과 동일 재현. **비-flirds 7종은 seed0 단독** | ◐ seed0(flirds만 ●) | `[후보]` (3-seed 전 인용 금지) | `runs/track_h`(fmnist/iid) |
 | **개입 정책 축 (P1~P5)** | 같은 무대서 7정책(sign/sign-weight/soft-mult/z-gate/신뢰 hard·soft) × 8점수원 종합 경쟁점수 + clean parity | ● 3-seed | `[본문·주무대 보조]` | `runs/track_h`(competition_score) |
 | **강한-주류 label-flip(strmain) 경쟁** | lf-strmain 3셀서 8점수원 × P1~P4. renorm도 살아남는 유일 오염 | ● 3-seed | `[후보]` | `runs/track_h`(stage_cell=strmain) |
 | **clean 오발화(부호 게이트 발화율)** | 관찰자 런서 점수원별 clean 오발화·오염 발화율 — parity 위반의 원인 분해 | ● 3-seed | `[근거]` | `runs/track_h`(observer_zero_semantics) |
