@@ -12,7 +12,7 @@
 
 | 폐기 | 있던 곳 | 사유 |
 |---|---|---|
-| **L9 frrand**(비-flirds arms + flirds 레그) | JB 전량 · B200 P3 | frrand = 축 밖 위협 → **실행 중 셀만 완주, 대기분 회수** |
+| **L9 frrand**(비-flirds arms + flirds 레그) | JB 전량 · B200 P3 | frrand = 축 밖 위협 → **07-25 전량 중단 확정**(실행 중 포함; ~580 GPU-h 회수) |
 | **L7 P1w-LLM** 18런 | B200 P4 | 계획서에 LLM P1w 항목 없음(P1w는 CNN 부록만) |
 | **L10 strmain-dose · L5 비등n · L6 graded-noisy** | B200 §2·§3 | 축 밖 |
 | **fmnist competition 288런 · c2fid fmnist** | YH §3.5 | fmnist 파티션 제외 → **mnist 무대로 대체** |
@@ -50,7 +50,7 @@
 | **YH** | CNN 완주(전부 done) | **G3 · G8 · G10 · G6** + 코드 C-a·C-b | 신규 착수 |
 | **JW** | L4(G4c) — 시간부족 배제 | **G2 · G9** = CNN (a)-오라클 | **A6000 → 3090 전환**(같은 torch 2.11 env + torchvision 데이터만 추가) |
 | **HJ** | L11 seed0·1 42셀 제출됨 | **유지**(=G4a+G4b 의 s0·1) | 손대지 않음. seed-major라 seed0부터 착지 |
-| **JB** | L9 frrand 24셀 제출됨 | **frrand 종료 → L11 seed2 21셀 인수** + HJ 꼬리 work-steal | PD 회수 + observer T2 중단 권고(§JB §1) |
+| **JB** | L9 frrand 24셀 제출됨 | **frrand 전량 중단 → L11 seed2 21셀 인수** + HJ 꼬리 work-steal | `scancel` 후 §JB §2 로 전환 |
 
 > **핵심 재배치 3건**:
 > ① **JW 8슬롯을 CNN으로** — LLM에서 빼도 A6000 총량은 손해가 없다(어차피 클러스터 여유 10장이라 HJ·JB가 그 대역을 다 쓴다). 반면 **3090 21장이 놀고 있었다** → 놀던 자원이 CNN 최대 물량(505 GPU-h)을 흡수한다.
@@ -82,14 +82,21 @@
 
 ## 5. ⚠ 스코프 결손 2건 (기록·판단)
 
-**(1) G4c = R4 retrain renorm-4 미실행** — JW 시간부족으로 배제 확정(07-25 Yonghee). 실측이 셀당 **~100h**(관찰자 arm이 라운드마다 renorm-4 부분집합 평가 → same-game 대비 라운드당 ~13×)라 9셀 900 GPU-h = A6000으로 마감 내 불가.
+**(1) G4c = R4 retrain renorm-4 미실행** (= 종전 "L4", JW 담당이던 것)
+
+> **G4c 가 뭔가**: §5.3 LLM 개입은 CNN 과 마찬가지로 **표가 두 개**다 — ① **online**(학습 중 매 라운드 φ 부호로 배포 게이팅) ② **retrain**(학습을 끝내고 φ>0 클라만 남겨 **처음부터 재학습**). 각 표가 8–9행(점수원)이다.
+> · online 표 = flirds(B200 L1 ✅) + 7 비-flirds(**L11** = HJ·JB) → 채워진다.
+> · retrain 표 = same-game 4종(Flirds·Flirds-1st·loss-heur·FedIF)은 **L1 에서 3-seed 완료** + **renorm-4(GTG·FedSV·ComFedSV·ShapleyFL) 4칸 = G4c**. 이 4칸만 비는 것이다.
+
+JW 시간부족으로 배제 확정(07-25 Yonghee). 실측 셀당 **~100h**(관찰자 arm 이 라운드마다 renorm-4 부분집합을 평가 → same-game 대비 라운드당 ~13×; clean 21.7분/R·noisy 19.7·frzero 29.4 × R=200 = 66–98h + T2 재학습 4arm ~24h) → 9셀 **~900 GPU-h** = A6000 으로 마감 내 불가.
 - **결과**: §5.3 **retrain 표의 renorm-4 4칸이 공백**으로 남는다. retrain 표의 나머지 5행(Flirds·Flirds-1st·loss-heur·FedIF의 exact-0 계열)은 L1으로 이미 3-seed 확보.
 - **완화**: renorm 붕괴는 ① **CNN §5.3**(8점수원 × online·retrain 양 표 3-seed 완비) ② **LLM §5.2 fidelity**(G1이 9방법 전량 산출)로 이미 시연된다 → LLM downstream retrain 칸의 공백은 "무대별 커버리지 차이"로 각주 처리 가능.
 - **되살리려면**: 마감을 07-30으로 밀거나 A6000 여유가 20장 이상으로 회복돼야 한다.
 
 **(2) G4b(online renorm-4) 3-seed 완주가 마감에 걸린다** — 36셀 × 23–28h = ~900 GPU-h.
-- **가속 레버(선택)**: L11 **clean 열 renorm-4 12셀을 대기에서 제외**하면 ~300 GPU-h 회수 → noisy·frzero 3-seed가 07-27~28로 당겨진다. 계획서 §2.2가 "clean 열 범위는 설계 선택"이라 명시했고, clean 열은 flirds·same-game·(b)로도 성립한다. **지금 도는 셀은 건드리지 않고 PD 원소만 뺀다.**
-- **판정 시점**: **07-27 아침** — seed0가 착지했고 seeds1·2가 절반 이상이면 완주, 아니면 noisy·frzero seed0만으로 표를 닫고 seeds1·2는 error-bar 없이 보고.
+- **clean 컷은 하지 않는다 (2026-07-25 Yonghee: "clean 은 필수").** ~300 GPU-h 를 아낄 수 있었으나, renorm 의 clean 칸은 **오발화(false-firing) 결과 그 자체**다 — flirds 와 달리 renorm 은 clean 에서도 음수 φ 로 발화해 `equals_vanilla` 스킵이 안 되고 실제 개입이 일어난다.
+- **대신 회수한 것**: JB 의 **L9 frrand 전량 중단**(~580 GPU-h · 8슬롯) → 그 슬롯이 L11 seed2 와 HJ 꼬리를 흡수한다.
+- **판정 시점**: **07-27 아침** — seed0 착지 + seeds1·2 진척으로 완주 여부 결정.
 
 ## 5a. 여유가 생기면 최우선 추가 = **LLM P1w**(가중 게이팅) — 규모 가늠
 

@@ -55,9 +55,9 @@
 
 ### 예상 종료 · 리스크
 
-- 8슬롯 → **~123 wall-h ≈ 07-30** ✗ 마감 초과. **JB 의 놀게 될 슬롯이 work-steal** 하면(§ JB 파일) 최대 16슬롯 → ~61 wall-h ≈ 07-28. 단 **A6000 클러스터 여유가 10장**이라 상시 16슬롯은 안 찬다.
-- **가속 레버(선택·Yonghee)**: **renorm-4 의 clean 12셀을 대기에서 제외**하면 ~300 GPU-h 회수 → noisy·frzero 3-seed 가 07-27~28 로 당겨진다. 계획서 §2.2 가 "clean 열 범위는 설계 선택"이라 명시했고 clean 열은 flirds·same-game·(b) 로도 성립한다. **실행 중 셀은 건드리지 않고 PD 원소만** 뺀다(`scancel <jobid>_[i-j]`).
-- **판정 시점 = 07-27 아침**: seed0 착지 + seeds1·2 절반 이상이면 완주, 아니면 noisy·frzero seed0 로 표를 닫는다.
+- HJ 몫(seed0·1 42셀) ~654 GPU-h → 8슬롯 **~82 wall-h ≈ 07-29**. **JB 가 L9 를 전량 중단하고 seed2 를 먼저 끝낸 뒤(07-27) 꼬리를 work-steal** 하면 07-28 내로 당겨진다. 단 **A6000 클러스터 여유가 10장**이라 HJ+JB 가 상시 16슬롯을 채우지는 못한다.
+- **⚠ clean 은 컷하지 않는다 (2026-07-25 Yonghee: "clean 은 필수").** renorm-4 의 clean 12셀을 빼면 ~300 GPU-h 를 아낄 수 있지만, clean 열은 **오발화(false-firing) 판정의 근거**라 유지한다 — renorm 은 flirds 와 달리 clean 에서도 음수 φ 로 발화해 `equals_vanilla` 스킵이 안 되고 실제 개입이 일어난다. 즉 renorm 의 clean 칸은 "비어도 되는 대조"가 아니라 **결과 그 자체**다.
+- **판정 시점 = 07-27 아침**: seed0 착지 + seeds1·2 진척으로 완주 여부를 본다.
 
 ## 3. 완료 후
 

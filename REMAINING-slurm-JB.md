@@ -11,7 +11,7 @@
 - `codes/` 에서 `PYTHONPATH=.`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`.
 - **OOM knob**(A6000 48GB 고유): `VAL_CHUNK` T1=3~5 · observer=2. 청크 합산은 `flirds_estimator._chunked` 상 **수학적 exact → φ 불변**, peak 만 내려간다. **`VAL_MAXLEN` 은 φ를 바꾸므로 금지.**
 
-## 1. ⚠ L9 frrand — 스코프 아웃 (처리 결정 필요)
+## 1. L9 frrand — 스코프 아웃 · **전량 중단 확정**
 
 **사실**: frrand(랜덤-델타 free-rider)는 확정 오염축 5종({CNN: lf@0.70, frzero, grad-noise} / {LLM: swap@0.7, frzero})에 없다 → **어떤 표에도 들어가지 않는다.** 지금 도는 24셀은 전부 그 위협이다.
 
@@ -26,10 +26,13 @@
 | flirds1st·fedif T1 (6셀, `VAL_CHUNK=5`) | ~11–15h | 슬롯 대기 | 07-26 |
 | **observer T2 (3셀, `--time=96h`, `VAL_CHUNK=2`)** | **~44–78h** | seed0 우선 | **07-27~28** |
 
-**택일**:
-- **★권고 — 부분 전환**: ① **PD(대기) 원소 전량 취소** ② **observer T2 3셀은 실행 중이어도 중단**(셀당 44–78h = 마감까지 슬롯을 통째로 점유하는데 산출은 표에 못 들어간다) ③ **거의 끝난 renorm s0 4셀은 완주**(잔여 ~10h, "도는 잡은 죽이지 않는다" 원칙을 비용이 작은 곳에서 지킨다). → **~450 GPU-h 즉시 회수**.
-- **보수안**: PD 만 취소하고 실행 중은 전부 완주 → 회수 ~250 GPU-h, JB 는 07-27까지 사실상 기여 없음.
-- **유지안**: 전량 완주 → JB 기여 0, L11 seed2 는 미실행으로 남는다(= §5.3 표가 2-seed).
+**결정 (2026-07-25 Yonghee): L9 전량 중단.** "논문에 수록할 실험에 포함되지 않으면 할 필요 없다" — 이 논리는 observer T2 3셀뿐 아니라 **frrand 셀 전부**에 적용된다(전부 축 밖). 거의 끝난 renorm s0 4셀도 잔여 ~10h × 4슬롯 = ~40 GPU-h 를 산출 0 에 쓰는 것이라 함께 중단한다.
+
+```
+scancel 1873996 1874031 1875968 1875969     # L9 배열 전체
+squeue -u $USER                             # 잔재 확인 후 §2 로 전환
+```
+→ **~580 GPU-h · 8슬롯 즉시 회수.** 이미 완주한 frrand rundir 은 디스크에 **그대로 둔다**(표에서만 제외; 삭제 불요).
 
 취소 예: `scancel <jobid>` (배열 전체) / `scancel <jobid>_[8-23]` (PD 원소만).
 
