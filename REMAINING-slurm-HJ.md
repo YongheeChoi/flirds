@@ -50,6 +50,9 @@
 - **총 69.9 GPU-h**(사전 추정 26 은 2.7× 과소평가 — 실제 7.8 GPU-h/leg). peak 26.3 GiB > 24 → **48GB 필수**가 실측으로 재확인됐다.
 - 산출 = `runs/phase2_matrix/rundirs/1B_silo5_{threat}_aonly_s{seed}` · 조인 = `PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py`.
 - **✅ 수록 예정**(Yonghee 확인 07-25). 앞선 "수록 위치 미정" 메모는 오독이었다 — anchor5 듀얼오라클과 **별개 항목으로 논문에 들어간다**. 추가 실행 0, 조인만 하면 된다(`merge_silo5_a.py`).
+- **✅ 조인 실행 완료(07-25 21:51)**: 87 (threat,seed,method) 행 → `runs/phase2_matrix/silo5_a_fidelity_1B.csv`. 재생성분이 커밋본과 **바이트 동일**(워킹트리 클린) = 재현성 확인.
+  - 3위협 전부 `Flirds / Flirds1st / Banzhaf / loss-heur = ρ_b, ρ_a 모두 +1.000`. 하위는 `FedIF +0.867/+0.933/+0.900`, `ComFedSV +0.833/+0.867`(clean 은 행 자체가 없다), `FedSV +0.933`(clean·frzero).
+  - **⚠ 스크립트 말미 headline 과 실측이 어긋난다**: `merge_silo5_a.py` 는 "`(b)oracle` 행의 `ρ_a` = 두 오라클의 실신호 일치도(**clean +0.87 / noisy +0.93** target; overview §5.4)"라고 찍는데, **실제 출력은 3위협 모두 `+1.000`** 이다. 즉 (a)-retrain 과 (b)-in-run 이 완전 일치했다. 둘 중 하나다 — ①기대값 +0.87/+0.93 이 다른 무대(anchor5?)의 수치라 문구가 잘못 붙었거나, ②N=5·등n 축퇴로 +1.000 이 무정보(07-04 감사의 "deferred 최상위" 항목)라 headline 자체를 재서술해야 하거나. **논문에 쓰기 전 Yonghee 판정 필요** — 지금 표를 그대로 옮기면 본문 주장과 숫자가 불일치한다.
 
 ## 3. 담당 ① — G12: A축 lever probe seed 보강 (**15셀** · ~60 GPU-h · **A6000**) — 🟢 제출 완료 `1878707`
 
@@ -94,10 +97,30 @@ REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 \
 - `flirds/hf_pin.py` 의 `REVISIONS` 가 전부 비어 있어(`rev()`→None) 최신 커밋을 받으면 되고, 둘 다 public(토큰 불요). **HJ 자체 `HF_HOME` 에만 추가**했다(공유 캐시 무수정, +238 MB → 419 MB). 오프라인 재로딩 확인 완료(alpaca 52,002 / mmlu-test 14,042 / 클라 샤드 4,000×5).
 - **B200·YH 쪽에서 track_d 계열을 새로 돌린다면 같은 공백을 먼저 확인해야 한다.**
 
-## 3b′. G10 착수 게이트 — **아직 안 열렸다** (07-25 20:35 확인)
+## 3b′. G10 착수 게이트 — **열렸다 · 제출 완료** (07-25 21:55)
 
-- `codes/experiments/track_c2.py:157` 이 여전히 `MODEL_FN = partial({"cifar10": FedSVCNN, "fmnist": LeNet5}[DATASET], ...)` — **`"mnist"` 키 없음**. 반면 `sbatch_cnn_mnist_comp.sh:67` 은 `C2_DATASET=mnist` 를 넘긴다 → 지금 제출하면 **216런 전량이 `KeyError: 'mnist'` 로 즉사**한다.
-- 따라서 **미제출**. 코드 C-a(YH) 착지 후 §3b 의 2줄을 그대로 제출한다.
+- C-a 가 `d09e528` 로 착지(`track_c2.py:157` 에 `"mnist": LeNet5`) → HEAD 에 포함 확인. 파티션도 C-b 로 `base_suma_rtx3090,dell_rtx3090` 확장 반영됨.
+- **제출**: `1878912`(`--array=0-71%8`, seed0) · `1878913`(`--array=72-215%8`, seeds1·2).
+
+### ⚠ HJ 계정에서 제출할 때 필요한 3개 override (스크립트 파일은 **무수정**)
+
+`sbatch_cnn_mnist_comp.sh` 는 YH 홈 기준이라 그대로 쓰면 **216런 전량이 기동 실패**한다 — `--output` 이 `/home/chyoyhr/projects/flirds/...`(700, 쓰기 불가)라 Slurm 이 출력 파일을 못 만든다. `REPO`·`PY` 도 같은 홈을 가리킨다. 제출 시 덮어썼다:
+
+```
+sbatch --qos=base_qos --output="$REPO/runs/track_h/_logs/%x_%A_%a.out" \
+       --export=ALL,REPO=/home/rlaguswls186790/flirds,PY=<HJ python> \
+       --array=0-71%8 runs/track_h/sbatch_cnn_mnist_comp.sh
+```
+
+### 선행 조치 2건
+
+- **torchvision 부재** → `0.26.0+cu128` 설치. **`--no-deps` 로 넣어 `torch 2.11.0+cu128` 을 보호**했다(그냥 설치하면 torch 를 갈아끼워 실행 중인 LLM 잡의 스택이 바뀐다). `pillow` 도 없어 같이 설치. 검증: `torch 2.11.0+cu128 / torchvision 0.26.0+cu128`.
+- **MNIST 미캐시** → `~/data` 에 선다운로드(60k/10k). `flirds/data/cnn.py:25` 가 `download=True` 라 **216런이 동시에 같은 경로로 내려받으면 레이스**가 난다(계산노드 인터넷 여부도 불확실).
+- **CPU 스모크 통과**: mnist/dir1/label_flip@0.70, flirds 4-arm → `AUROC 1.000/0.978/0.989/1.000`, `TRACK-C2 RUN OK`. 216런 투입 전 C-a 배선을 실증했다.
+
+### ⚠ QOS 캡은 **파티션을 가로지른다**
+
+G10 은 3090 인데도 대기 사유가 `QOSMaxGRESPerUser` 다 — A6000 잡 8장이 3090 잡을 막는다. 즉 **파티션을 늘려도 총 8슬롯은 그대로**이고, L11 잔여 + G12 + G10 이 **같은 8슬롯을 나눠 쓴다**(총 ~200 GPU-h → ~25 wall-h → 07-26 밤~07-27 아침). 제출 순서대로 G12 → G10 으로 흘러간다.
 
 ## 3b. 담당 ② — G10: mnist downstream (216런 · ~135 GPU-h · 3090)
 
