@@ -1,26 +1,27 @@
 # ════════════════════════════════════════════════════════════════════════════
-# B200 컨테이너 4 (GPU 1장) — **L1-clean 개입 + G5(2차항 LLM 레그)**
+# B200 **세션 B** / 컨테이너 4 (GPU 1장) — L1 R=100 재실행(frzero·clean-online) + G4c seed0
 #   가동: CID=4 bash <repo>/runs/track_h/run_b200_batch.sh
-#   ⚠ 완료 줄은 '#' **주석**(줄 삭제 금지) · 가동 후 순서 변경 금지
+#   ⚠ 완료 줄은 '#' 주석(줄 삭제 금지) · 가동 후 순서 변경 금지
+#
+# 세션 B(CID 3·4) = L1 R=100 재실행 18셀 + G4c seed0 3셀.  세션 A(G1·G4c s1)와 독립.
+# ⚠ L1 은 R=200 으로 완주·커밋된 셀의 **R=100 재실행**이다(R=200 산출은 superseded,
+#   git 이력에 보존).  `rounds` 가 IDENTITY 필드라 RUNDIR_REPLACE=1 없이는 즉시 실패한다.
 # ════════════════════════════════════════════════════════════════════════════
 
-# ─── L1-clean seed1·2 : §5.3 clean 열(무해성·오발화 대조)의 3-seed 정본 ─────
-# clean 개입 EM 은 track_g THREAT=clean 에서만 나온다(L2=phase2_matrix 는 fidelity·탐지만 산출).
-# seed0 는 완료·커밋됨 → 여기 없음.  실측 clean_obs 5.5h · clean_online 3.8h.
-track_g.py|L1c_clean_obs_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1c_clean_obs_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1c_clean_online_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-track_g.py|L1c_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+# ─── L1 frzero : 관찰자(+same-game T2 4종) → 온라인(천장·바닥 앵커 동반) ────
+track_g.py|L1_frzero_obs_t2_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_frzero_obs_t2_s1|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_frzero_obs_t2_s2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_frzero_online_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_frzero_online_s1|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_frzero_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=2 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=oracle_excl,random_excl,flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
 
-# ─── G5 : 2차항(HVP) LLM 레그 seed 보강 — **본문 ablation §5.6①** ───────────
-# std50k5(N=50·5/50) rank sweep. r16 은 이미 3-seed → r32·r64 의 seed1·2 만.
-track_d.py|1B_std50k5_r32_seed1|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=32 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_std50k5_r32_seed2|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=32 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_std50k5_r64_seed1|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=64 ORACLE_A=0 SEED=1 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_std50k5_r64_seed2|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=64 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+# ─── L1 clean 온라인 : §5.3 clean 열(오발화 대조) ───────────────────────────
+# clean 에선 oracle_excl/random_excl 가 자동으로 빠진다(제외 대상 부재; track_g l.618).
+track_g.py|L1_clean_online_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_clean_online_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
 
-# ─── G12 batch D ────────────────────────────────────────────────────────────
-# `1B_anchor5_lr1e-3_st10` 은 lr·steps 기준칸이라 seed0 이 **기존 `1B_anchor5_seed0` 로 대체**된다
-# (run_lrsteps.sh 주석: "기준 lr1e-3/steps10 = 기존 1B_anchor5_seed0 재사용").
-# → 별칭이 유효하면 이 셀은 이미 3-seed = **실행 불요**. 확인 후 필요할 때만 해제.
-# track_d.py|1B_anchor5_lr1e-3_st10_seed0|REGIME=anchor5 LR=1e-3 MAX_STEPS=10 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=0 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+# ─── G4c seed0 : R4 retrain renorm-4 (별도 root · VAL_CHUNK 낮추지 않음) ────
+track_g.py|G4c_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_g4c
+track_g.py|G4c_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=0 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_g4c

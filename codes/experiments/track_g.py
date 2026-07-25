@@ -565,13 +565,17 @@ def _cell_name(arm, seed):
 # loudly instead of silently overwriting it.  Everything else in `config` is provenance
 # and may grow without forking the rundir (the old whole-config compare forked on
 # dose_mult/mmlu/obs_sources/t2_csign being added, all irrelevant to which cell this is).
-IDENTITY = ("track", "regime", "threat", "noisy_rate", "arm", "seed", "scale", "model")
+IDENTITY = ("track", "regime", "threat", "noisy_rate", "arm", "seed", "scale", "model",
+            "rounds")   # `rounds` promoted 2026-07-25 (R4 200 -> 100): the name does not
+                        # carry R, so without this an R=100 re-run silently overwrites the
+                        # R=200 canonical and a mixed-R table reads as one stage.
 
 
 def _config(arm, seed, corrupt_cfg):
     return {"track": "G", "regime": REGIME, "threat": THREAT, "arm": arm, "seed": seed,
-            "scale": SCALE, "model": MODEL, "rcfg": {k: (sorted(v) if isinstance(v, set)
-                                                        else v) for k, v in RCFG.items()},
+            "scale": SCALE, "model": MODEL, "rounds": RCFG["rounds"],
+            "rcfg": {k: (sorted(v) if isinstance(v, set)
+                         else v) for k, v in RCFG.items()},
             "mcfg": MCFG, "lora": {"r": LORA_R, "alpha": LORA_ALPHA},
             "gate": GATE, "corrupt": corrupt_cfg, "noisy_rate": NOISY_RATE,
             "dose_mult": float(os.environ.get("DOSE_MULT", "1.0")),   # frrand amplitude (self-describing)

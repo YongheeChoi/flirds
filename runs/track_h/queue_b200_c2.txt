@@ -1,24 +1,22 @@
 # ════════════════════════════════════════════════════════════════════════════
-# B200 컨테이너 2 (GPU 1장) — **clean 레인**
+# B200 **세션 A** / 컨테이너 2 (GPU 1장) — G1 free-rider 레인 + G4c seed1
 #   가동: CID=2 bash <repo>/runs/track_h/run_b200_batch.sh
-#   형식: SCRIPT|LOGNAME|envs     ·  __REPO__ = 런처가 sed 치환
-#   ⚠ 완료 줄은 '#' **주석**(줄 삭제 금지) · 가동 후 순서 변경 금지
+#   ⚠ 완료 줄은 '#' 주석(줄 삭제 금지) · 가동 후 순서 변경 금지
 # ════════════════════════════════════════════════════════════════════════════
 
-# ─── G1 : R4-L2 주무대 (b) 오라클 · clean(대조 앵커) ─────────────────────────
-phase2_matrix.py|G1_L2_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0
-phase2_matrix.py|G1_L2_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1
-phase2_matrix.py|G1_L2_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2
+# ─── G1 : R4-L2 (b) 오라클 · free-rider-zero (~9.7h/셀 @R=100) ───────────────
+# ⚠ phase2_matrix 의 토큰은 **`freerider_zero`**(rundir 이름만 `frzero` 로 축약).
+#   track_g 의 `frzero` 와 다른 토큰이다.
+phase2_matrix.py|G1_L2_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=0 ROUNDS=100 RUNDIR_REPLACE=1
+phase2_matrix.py|G1_L2_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=1 ROUNDS=100 RUNDIR_REPLACE=1
+phase2_matrix.py|G1_L2_frzero_s2|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=2 ROUNDS=100 RUNDIR_REPLACE=1
 
-# ─── (옵션) LLM P1w clean — INDEX §5a (해제 시 아래 G12 6줄 주석) ───────────
-# track_g.py|P1w_T1_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-# track_g.py|P1w_T1_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-# track_g.py|P1w_T1_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-
-# ─── G12 batch B (부록 P2 · 최저 우선) ──────────────────────────────────────
-track_d.py|1B_anchor5_lr2e-3_st30_seed1|REGIME=anchor5 LR=2e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr2e-3_st30_seed2|REGIME=anchor5 LR=2e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr3e-3_st20_seed1|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr3e-3_st20_seed2|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr3e-3_st30_seed1|REGIME=anchor5 LR=3e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr3e-3_st30_seed2|REGIME=anchor5 LR=3e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+# ─── G4c seed1 : R4 retrain renorm-4 (§5.3 retrain 표의 빈 4칸) ─────────────
+# R=100 으로 부활한 레그.  B200 ~13.9h/셀 vs A6000 ~50h/셀(≈3.6×)이라 **B200 이 제자리**.
+# ⚠ 별도 root `rundirs_llm_g4c` — 이 셀의 `observer` arm 은 L1 의 same-game observer 와
+#   rundir 이름(regime_threat_arm_seed)이 같아서, 같은 root 면 서로 덮어쓴다.
+# ⚠ VAL_CHUNK 를 낮추지 않는다: renorm-4 는 forward-only(@no_grad)라 grad 경로의
+#   OOM 가드가 적용되지 않는다.  청크 합산은 exact → φ 동일.
+track_g.py|G4c_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_g4c
+track_g.py|G4c_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_g4c
+track_g.py|G4c_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ROUNDS=100 RUNDIR_REPLACE=1 ARMS=observer OBS_SOURCES=gtg,fedsv,comfedsv,shapleyfl T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm_g4c

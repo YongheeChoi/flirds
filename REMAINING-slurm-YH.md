@@ -93,20 +93,40 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh
 - frzero·grad-noise × 3seed = **6**(+ lf@0.70 재실행 시 3) · 추정 ~10–20 GPU-h.
 - 러너 = `runs/removal_dose/run_cnn_removal.sh` — **C-b 의 위협 토큰 확장을 공유**(별도 코드 없음).
 
-## 7. 우선순위 · 예상 종료
+## 7. CNN 완주 후 — LLM probe 2건 (48GB 파티션)
+
+> YH 의 CNN 몫은 ~32 wall-h 라 **07-27 오전에 슬롯이 빈다.** 그때 48GB 파티션으로 넘어가 아래 2건을 맡는다(둘 다 1B LoRA → 24GB 불가). R4 무대가 아니므로 **`ROUNDS` 를 주지 않는다**(각자 자기 레짐 값).
+
+| 항목 | 무엇 | 셀 | GPU-h |
+|---|---|---|---|
+| **G5** | 2차항(HVP) LLM 레그 seed 보강 — **본문 §5.6①** | 4 (`1B_std50k5_r{32,64}_seed{1,2}`) | ~20 |
+| **G12** | A축 lever probe seed 보강 — **부록**·최저 우선 | 19 | 50–90 |
+
+```
+# G5 (본문). ORACLE_A=0, 착지 = runs/probe_signal/rundirs
+REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=<32|64> SEED=<1|2> ORACLE_A=0 \
+  RUN_NAME=1B_std50k5_r<r>_seed<s> RUNDIR_ROOT=$REPO/runs/probe_signal/rundirs \
+  VAL_CHUNK=2 PYTHONPATH=. $PY -u experiments/track_d.py
+```
+- **`VAL_CHUNK=2`**: flirds HVP 경로라 48GB 에선 낮춰야 한다(청크 합산 exact → **φ 동일**).
+- **G12 내역**(19셀): anchor5 `lr{1,2,3}e-3 × st{20,30}` seed1·2 · anchor5 `r{32,64}` seed1·2 · `noise_1B_r64` seed1·2. 핵심 질문은 "lr 로 커진 φ가 cross-seed 실재 신호인가"(예측 ρ≈0)라 **`lr{2,3}e-3` 계열을 먼저** 돌린다.
+- 여유가 없으면 **G12 는 버린다**(부록·P2). G5 는 본문이라 우선.
+
+## 8. 우선순위 · 예상 종료
 
 | P | 무엇 | 물량 | 근거 |
 |---|---|---|---|
 | **P0** | **C-b**(+C-a 1줄) 코드 | — | JW 의 505 GPU-h 를 막고 있다 |
-| **P1** | G3 seed0 → 전량 | 96런 · 60–100 | 본문 downstream 의 빈 절반 · 코드 불요 |
+| **P1** | G3 seed0 → 전량 | 96런 · ~80 | 본문 downstream 의 빈 절반 · 코드 불요 |
 | **P2** | G8 | 24런 · ~25 | 부록 fidelity+탐지가 한 rundir |
-| **P3** | G10 | 216런 · 110–160 | 부록 downstream(P1·P1w 동시) |
-| **P4** | G6 | 9런 · 10–20 | 본문 ablation |
+| **P3** | G10 | 216런 · ~135 | 부록 downstream(P1·P1w 동시) |
+| **P4** | G6 | 9런 · ~15 | 본문 ablation |
+| **P5** | G5 → G12 (48GB) | 4 + 19런 · 70–110 | 본문 ablation seed 미달 → 부록 |
 
-- **총 ~205–305 GPU-h** / 8슬롯 → **26–38 wall-h** → **07-27 오전 완주** 예상.
-- 완주 후 **JW 의 G9(mnist (a)-오라클) 꼬리를 work-steal** 권장 — 같은 3090·같은 env·셀 단위 idempotent.
+- **CNN 계 ~255 GPU-h** / 8슬롯 → **~32 wall-h** → **07-27 오전** → 이후 §7(G5·G12) → **07-27 후반**.
+- 슬롯이 남으면 **JW 의 G9(mnist (a)-오라클) 꼬리를 work-steal** — 같은 3090·같은 env·셀 단위 idempotent.
 
-## 8. 완료 후 · 미해결 배선
+## 9. 완료 후 · 미해결 배선
 
 1. rundir 커밋(push는 Yonghee) → `make_analysis.py` 재생성 → `flirds-results-{downstream,fidelity,detection}` → paper.
 2. **rundir 정체성 잔여**: `track_c1`·`track_c2`·`track_c2_fid`·`track_d`·`phase1_*` 는 아직 `identity=None`(C1 재실행이 `*_<hash>` 를 낸 원인). **C-b 작업 중 `track_c1` 만이라도 정합**시키면 G2·G9 착지가 깨끗해진다.

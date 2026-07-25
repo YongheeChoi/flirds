@@ -1,8 +1,21 @@
 # REMAINING (Slurm · HJ) — A6000 48GB: R4 online 점수원 경쟁 (진행 중)
 
 > 배분 정본 = **`REMAINING-00-INDEX.md`** · 수록목록 정본 = `research-wiki/survey/flirds-paper-experiment-plan.md`.
-> **역할 = 계획서 G4 의 online 레그 전량**(R4 §5.3 표의 7 비-flirds 행). **63셀 전량 제출 완료 = 진행 중 → 손대지 않는다.**
-> **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 3-seed(seed-major). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만. 기존 rundir read-only.
+> **역할 = R4 §5.3 online 표의 7 비-flirds 행 중 seed0·1**(42셀; seed2 = JB).
+> **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 3-seed(seed-major). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
+>
+> ## ★ 즉시 조치 — R=200 잡 전량 중단 → R=100 재제출
+>
+> **R4 무대가 R=200 → R=100 으로 재정의됐다**(2026-07-25 Yonghee; 근거·판단 = `REMAINING-00-INDEX.md` §0).
+> 지금 도는 63셀은 R=200 이라 **산출물이 무대 밖**이다 — 살려도 표에 못 넣는다. "도는 잡은 죽이지 않는다" 원칙의 예외.
+> ```
+> scancel <l11 jobid>                                    # 63셀 전량
+> cd $REPO && mkdir -p runs/track_h/_logs
+> sbatch --array=0-41%8 runs/track_h/sbatch_l11_online.sh # HJ = seed0·1 (42셀, R=100)
+> ```
+> - `ROUNDS=100` · `RUNDIR_REPLACE=1` · 소스별 `VAL_CHUNK` 가 **sbatch 에 배선 완료** — `--export` 로 따로 줄 필요 없다.
+> - `--time` 은 파일 기본값 **24:00:00** 이면 충분하다(R=100 최장 셀 ~12.5h). 앞서 renorm-4 에 걸어둔 42h 증액은 R=200 기준이라 불필요.
+> - **seed2 21셀은 JB 가 맡는다** — HJ 는 0-41 만 제출할 것.
 
 ## 0. 환경 (실제 셋업 결과)
 
@@ -11,12 +24,13 @@
 - 파티션 `suma_a6000,gigabyte_a6000` + `--qos=base_qos` · 동시 **8-GPU/user** 확인.
 - 공통: `codes/` 에서 `PYTHONPATH=.`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`.
 
-### ⚠ 필수 knob — `VAL_CHUNK=3` (OOM 회피)
+### ⚠ `VAL_CHUNK` — 이제 **소스별로 자동**(sbatch 배선 완료)
 
-- **증상**: 기본 `VAL_CHUNK=10` 으로 L11(flirds1st)을 돌리면 **~82 라운드에서 CUDA OOM**(48GB 소진; `flirds_values → _chunked → grad`).
-- **원인**: 이 경로는 B200(180GB) 기준 설계 — 라운드마다 누적되는 궤적 + val-grad 피크가 48GB 초과. **A6000 고유 제약.**
-- **조치**: `VAL_CHUNK=3` 이면 정상(동일 셀 168 라운드 통과 확인). **φ 불변** — `_chunked` 는 청크별 grad 의 가중합이 전체 val-grad 와 **정확히 동일**(근사 아님) → 논문 수치 무영향. **`VAL_MAXLEN` 은 φ를 바꾸므로 건드리지 말 것.**
-- 제출 예: `sbatch --export=ALL,VAL_CHUNK=3 --time=24:00:00 --array=0-41%8 runs/track_h/sbatch_l11_online.sh`
+- **증상(원래 문제)**: 기본 `VAL_CHUNK=10` 으로 flirds1st 를 돌리면 **~82 라운드에서 CUDA OOM**(48GB 소진; `flirds_values → _chunked → grad`). B200(180GB) 기준 설계라 생기는 **A6000 고유 제약**.
+- **조치**: `VAL_CHUNK=3` 이면 정상(168 라운드 통과 확인). **φ 불변** — `_chunked` 는 청크별 grad 의 가중합이 전체 val-grad 와 **정확히 동일**(근사 아님). **`VAL_MAXLEN` 은 φ를 바꾸므로 건드리지 말 것.**
+- **개선(07-25)**: 이 제약은 **grad 경로에만** 필요한데 7개 소스 전부에 걸려 있었다. 이제 sbatch 가 소스별로 준다 — **flirds1st·fedif = 3**(functorch val-grad), **lossheur·renorm-4 = 10**(forward-only @no_grad, 메모리 여유). 청크 합산이 exact 라 **어느 값이든 φ 동일 = 무위험**.
+  속도 이득은 **미측정**이다: `make_llm_loss` docstring 은 (b) 오라클에서 청크를 키웠을 때 **~1.0×**(FLOP-bound)로 프로파일됐다고 적고 있고, 위 재측정상 same-game 셀은 학습이 지배한다. renorm 셀(스코어링 ~92%)에서만 여지가 있다.
+- 제출은 `sbatch --array=0-41%8 runs/track_h/sbatch_l11_online.sh` 로 충분(`--export` 불요).
 
 ## 1. 완료 — silo5 (a)-leg (9/9)
 
@@ -45,13 +59,15 @@
 
 > **⚠ 종전 표(same-game 2.5 h / lossheur 3.2 h)는 HJ 오측정이었다 — 실측은 그 ~3×.** 07-25 19:00 8셀 동시 가동분에서 `train_runtime` 호출수(=라운드×K=5)로 재측정. 라운드당 132 s(same-game) / 166 s(lossheur) — 그중 학습만 110 s 라 `VAL_CHUNK` 영향은 미미하고, **비용은 200라운드 학습 자체**다. 아래 값은 8셀 전부 ±2% 내로 일치.
 
-| source | 실측(재측정) | 셀 수 | 소계 |
-|---|---|---|---|
-| flirds1st | 7.33 / 7.37 / 7.51 h (clean/noisy/frzero) → **~7.4 h** | 9 | ~67 |
-| fedif | 7.41 / 7.23 h (clean/noisy) → **~7.4 h** | 9 | ~67 |
-| lossheur | 9.23 / 9.15 / 9.59 h → **~9.3 h** | 9 | ~84 |
-| **renorm-4**(gtg·fedsv·comfedsv·shapleyfl) | **~23–28 h**(JB 실측, 미검증) | 36 | **~900** |
-| | | **63** | **~1,120 GPU-h** |
+| source | R=200 실측(재측정) | **R=100** | 셀 수 | 소계 @R=100 |
+|---|---|---|---|---|
+| flirds1st | 7.33 / 7.37 / 7.51 h → ~7.4 h | **~3.7 h** | 9 | ~33 |
+| fedif | 7.41 / 7.23 h → ~7.4 h | **~3.7 h** | 9 | ~33 |
+| lossheur | 9.23 / 9.15 / 9.59 h → ~9.3 h | **~4.65 h** | 9 | ~42 |
+| **renorm-4**(gtg·fedsv·comfedsv·shapleyfl) | ~23–28 h(JB 실측, 미검증) | **~12.5 h** | 36 | **~450** |
+| | | | **63** | **~559 GPU-h** |
+
+> **R=100 환산이 거의 정확히 절반인 이유**: 비용이 라운드에 선형인 두 항(200라운드 학습 110 s/round + 라운드당 스코어링)으로만 이뤄져 있다. 고정비(모델 로드·말미 downstream 평가)는 소수라 셀당 약간의 하방 오차만 남는다.
 
 - 값은 진행률 외삽(200라운드 학습부)이며 **모델 로드 + 말미 downstream 평가는 미포함** — 실제 end-to-end 는 이보다 다소 길다. 첫 셀 착지 시 확정치로 교체할 것.
 - **`--time` 조치 완료(07-25 19:00)**: 대기 셀 34개 중 **renorm-4 24셀만 `scontrol update TimeLimit=42:00:00`** 으로 증액(같은 근거 = 실측 23–28 h 가 24 h 벽에 걸림; rundir 은 말미에 한 번에 써지므로 timeout = 셀당 24 GPU-h 전손). **same-game 10셀은 24 h 유지**(7–10 h 면 충분 + 긴 `--time` 은 backfill 불리). **실행 중 잡은 건드리지 않았고**(INDEX §0 운용 원칙), `scancel`·재제출 0 — 증액은 비파괴 갱신이다. 파티션 `MaxTime=14-00:00:00` 이라 42 h 는 한도 내.
@@ -59,8 +75,8 @@
 
 ### 예상 종료 · 리스크
 
-- **HJ 몫(seed0·1 42셀) = ~700–820 GPU-h**(재측정 반영; 종전 ~654 는 same-game 오측정 기반). 내역 = same-game 18셀 **~145**(flirds1st 44 + fedif 44 + lossheur 56) + renorm-4 24셀 **~552–672**. 8슬롯 → **~88–103 wall-h → 07-29 오전 ~ 07-30 새벽**. **마감(실험 07-28 24:00)을 HJ 단독으로는 못 맞춘다.**
-- **JB 가 L9 를 전량 중단하고 seed2 를 먼저 끝낸 뒤(07-27) 꼬리를 work-steal** 하면 당겨지지만, 재측정치로는 **07-28 내 63셀 완주가 빠듯**하다. 단 **A6000 클러스터 여유가 10장**이라 HJ+JB 가 상시 16슬롯을 채우지는 못한다.
+- **HJ 몫(seed0·1 42셀) = ~372 GPU-h @R=100**(same-game 18셀 ~72 + renorm-4 24셀 ~300). 8슬롯 → **~47 wall-h → 07-27 후반**. R=200 이었으면 88–103h(07-29~30)로 마감을 못 맞췄다 — **R=100 전환이 이 레그를 마감 안으로 들여놓은 것**이다.
+- **JB 가 seed2(21셀)를 병렬로 맡는다** → 63셀 전체가 07-27 후반 착지. 단 **A6000 클러스터 여유가 10장**이라 HJ+JB 가 상시 16슬롯을 채우지는 못한다 → `asus_6000ada`(RTX6000Ada 48GB 8장)를 파티션 목록에 추가해 뒀다.
 - **착지 순서가 방어선**: seed-major + 소스-major(21셀/seed = flirds1st→lossheur→fedif→gtg→fedsv→comfedsv→shapleyfl)라 **싼 same-game 이 먼저 착지**한다. 07-26 오전이면 seed0 same-game 9셀이 다 들어와 §5.3 online 표의 G4a 3행은 **1-seed 로 조기 확보**된다. 물량이 마감에 걸리면 잘리는 쪽은 항상 renorm 꼬리(seed1)다.
 - **⚠ clean 은 컷하지 않는다 (2026-07-25 Yonghee: "clean 은 필수").** renorm-4 의 clean 12셀을 빼면 ~300 GPU-h 를 아낄 수 있지만, clean 열은 **오발화(false-firing) 판정의 근거**라 유지한다 — renorm 은 flirds 와 달리 clean 에서도 음수 φ 로 발화해 `equals_vanilla` 스킵이 안 되고 실제 개입이 일어난다. 즉 renorm 의 clean 칸은 "비어도 되는 대조"가 아니라 **결과 그 자체**다.
 - **판정 시점 = 07-27 아침**: seed0 착지 + seeds1·2 진척으로 완주 여부를 본다.

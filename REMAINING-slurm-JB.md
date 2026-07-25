@@ -44,23 +44,37 @@ squeue -u $USER                             # 잔재 확인 후 §2 로 전환
 
 - **셀**: 7 비-flirds(flirds1st·lossheur·fedif·gtg·fedsv·comfedsv·shapleyfl) × {clean, noisy, frzero} × **seed2** = **21**(array 42-62).
 - 비-flirds 는 online 스코어링에 **HVP 불요**(값·1차) → 자체 인라인 스코어 = **B200 독립·즉시 가동**.
-- **비용**: renorm-4 12셀 × ~23–28h ≈ **~300** + same-game·FedIF 9셀 × 2.5–3.2h ≈ **~26** → **~326 GPU-h**(8슬롯 ~41 wall-h).
+- **⚠ R4 = R=100**(2026-07-25; INDEX §0). sbatch 에 `ROUNDS=100`·`RUNDIR_REPLACE=1`·소스별 `VAL_CHUNK` 가 **배선 완료** → `--export` 불요.
+- **비용 @R=100**: renorm-4 12셀 × ~12.5h ≈ **150** + same-game·FedIF 9셀 × 3.7–4.65h ≈ **36** → **~186 GPU-h**(8슬롯 ~23 wall-h).
 
 ```
 cd $REPO && mkdir -p runs/track_h/_logs
 RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_jb \
-  sbatch --export=ALL,VAL_CHUNK=3 --time=24:00:00 --array=42-62%8 runs/track_h/sbatch_l11_online.sh
+  sbatch --array=42-62%8 runs/track_h/sbatch_l11_online.sh
 ```
-- `RUNDIR_ROOT` 를 주지 않으면 seed2 는 `rundirs_llm_yh` 로 자동 라우팅된다(그래도 집계는 되지만, 계정별 분리를 위해 명시 권장).
-- **`--time` 24h**(원 기본값 08h 는 renorm 소스에서 timeout). renorm 이 24h 를 넘길 조짐이면 `42:00:00`.
+- `RUNDIR_ROOT` 를 주지 않으면 seed2 는 `rundirs_llm_yh` 로 자동 라우팅된다(집계는 되지만 계정별 분리를 위해 명시 권장).
+- `--time` 은 파일 기본값 **24:00:00** 이면 충분(R=100 최장 ~12.5h).
 - **싼 것 먼저**: same-game·FedIF 는 `--array=42,45,48,51,54,57,60%8` 류로 먼저 뽑아 몇 시간 만에 3-seed 를 닫을 수 있다(인덱스 = `SRC_I = (IDX%21)/3`).
+
+## 2b. G4c seed2 — R4 retrain renorm-4 (3셀 · ~150 GPU-h)
+
+> **R=100 으로 부활한 레그.** §5.3 **retrain 표의 renorm-4 4칸**을 채운다(나머지 5행 = same-game 계열은 B200 L1 담당).
+> seed0·seed1 은 **B200** 이 가져간다 — 이 셀은 관찰자가 매 라운드 renorm-4 를 채점하고 그게 비용의 ~92%라 B200 이 **3.6× 빠르다**(13.9h vs ~50h). seed2 만 여기.
+
+```
+sbatch --array=6-8%8 runs/track_h/sbatch_l4_renorm_t2.sh      # seed2 3셀
+```
+- 착지 root = `rundirs_llm_g4c`(sbatch 기본값). **⚠ 이 셀의 `observer` arm 은 L1 의 same-game observer 와 rundir 이름이 같아서** 같은 root 를 쓰면 서로 덮어쓴다 — root 를 바꾸지 말 것.
+- **`--time=72:00:00`**(파일 기본값): A6000 셀 ~50h(관찰자 ~38h + 재학습 4개 ~12h). rundir 은 arm 종료 시 써지므로 timeout = 관찰자 arm 전손.
+- **`VAL_CHUNK` 를 낮추지 않는다**: renorm-4 는 forward-only(@no_grad)라 grad 경로의 OOM 가드가 적용되지 않는다. 청크 합산은 exact → φ 동일.
+- **순서**: §2(L11 seed2)를 먼저 닫고 착수 — L11 이 §5.3 online 표 7행의 3-seed 를 완성하는 쪽이라 우선순위가 높다.
 
 ## 3. 여유 시 — HJ 꼬리 work-steal
 
-- HJ 의 L11 seed0·1(42셀 ~980 GPU-h)이 8슬롯으로는 07-30 까지 밀린다. JB 슬롯이 비면 흡수한다:
+- HJ 의 L11 seed0·1(42셀 ~372 GPU-h @R=100)은 8슬롯이면 07-27 후반에 끝나지만, A6000 여유가 10장뿐이라 실제로는 밀릴 수 있다. JB 슬롯이 비면 흡수한다:
 ```
 RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_jb \
-  sbatch --export=ALL,VAL_CHUNK=3 --time=24:00:00 --array=<HJ 잔여 범위>%8 runs/track_h/sbatch_l11_online.sh
+  sbatch --array=<HJ 잔여 범위>%8 runs/track_h/sbatch_l11_online.sh
 ```
 - arm-level idempotent · 착지 root 만 계정별로 분리하면 `make_analysis` 가 dup-win 으로 병합한다. **HJ 가 이미 완주한 인덱스는 빼고** 제출할 것(중복 = GPU 낭비).
 

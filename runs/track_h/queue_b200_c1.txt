@@ -1,29 +1,25 @@
 # ════════════════════════════════════════════════════════════════════════════
-# B200 컨테이너 1 (GPU 1장) — **noisy 레인**
+# B200 **세션 A** / 컨테이너 1 (GPU 1장) — G1 noisy·clean 레인
 #   가동: CID=1 bash <repo>/runs/track_h/run_b200_batch.sh
 #   형식: SCRIPT|LOGNAME|envs     ·  __REPO__ = 런처가 sed 치환
-#   ⚠ 완료 줄은 '#' **주석**(줄 삭제 금지 — 드라이버가 consumed 인덱스로 위치 추적)
-#   ⚠ 가동 후 줄 순서 변경 금지.  정지 = 드레인(실행 중 셀 완주 후 종료)
+#   ⚠ 완료 줄은 '#' **주석**(줄 삭제 금지 — 드라이버가 consumed 인덱스로 추적)
+#   ⚠ 가동 후 줄 순서 변경 금지 · 정지는 드레인(실행 중 셀 완주 후 종료)
+#
+# 세션 A(CID 1·2) = **G1 + G5** = "비어 있는 축을 여는" 몫.
+# 세션 B(CID 3·4) = L1 R=100 재실행 + G4c seed0.  두 세션은 서로 의존하지 않는다.
+#
+# ⚠ R4 = **R=100**(2026-07-25 Yonghee).  `rounds` 가 rundir IDENTITY 필드로 승격돼서
+#   R=200 셀을 덮으려면 RUNDIR_REPLACE=1 이 필요하다 — 아래 전 줄에 박혀 있다.
+#   G5(track_d probe)는 R4 무대가 아니므로 ROUNDS 를 주지 않는다(자기 레짐 값 유지).
 # ════════════════════════════════════════════════════════════════════════════
 
-# ─── G1 : R4-L2 주무대 (b) 오라클 · noisy(=answer-swap@0.7) ───────────────────
-# 산출 = §5.2 LLM fidelity + §5.4 LLM 탐지 + §5.5 canonical timing (한 rundir 3축)
-# THREAT 토큰은 phase2_matrix 규약(`noisy`|`clean`|`freerider_zero`) — track_g 의 `frzero` 와 다름
-phase2_matrix.py|G1_L2_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0
-phase2_matrix.py|G1_L2_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1
-phase2_matrix.py|G1_L2_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2
-
-# ─── (옵션) LLM P1w — 여유 시 최우선 추가 (INDEX §5a) ────────────────────────
-#   아래 3줄을 해제하고 그 아래 G12 6줄을 주석 처리하면 맞교환된다(≈ 12h ↔ 12–24h).
-#   T1(online 가중 게이팅)만 = 관찰자 불요 → canonical `rundirs_llm` 에 직접 착지(arm명 신규라 충돌 0).
-# track_g.py|P1w_T1_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-# track_g.py|P1w_T1_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-# track_g.py|P1w_T1_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ARMS=flirds_gatew_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
-
-# ─── G12 batch A : A축 lever probe seed 보강 (부록 P2 · 최저 우선) ───────────
-track_d.py|1B_anchor5_lr1e-3_st20_seed1|REGIME=anchor5 LR=1e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr1e-3_st20_seed2|REGIME=anchor5 LR=1e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr1e-3_st30_seed1|REGIME=anchor5 LR=1e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr1e-3_st30_seed2|REGIME=anchor5 LR=1e-3 MAX_STEPS=30 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr2e-3_st20_seed1|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr2e-3_st20_seed2|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=2 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+# ─── G1 : R4-L2 주무대 (b) 오라클 — 한 rundir 이 §5.2 fidelity + §5.4 탐지 + §5.5
+#         canonical timing 세 축을 동시에 연다.  셀당 ~9.7h @R=100.
+#         THREAT 토큰은 phase2_matrix 규약(clean|noisy|freerider_zero) — track_g 와 다름.
+#         seed0 을 위쪽에 몰아 3위협 seed0 이 ~19h 안에 착지하게 배치.
+phase2_matrix.py|G1_L2_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 ROUNDS=100 RUNDIR_REPLACE=1
+phase2_matrix.py|G1_L2_clean_s0|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=0 ROUNDS=100 RUNDIR_REPLACE=1
+phase2_matrix.py|G1_L2_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 ROUNDS=100 RUNDIR_REPLACE=1
+phase2_matrix.py|G1_L2_clean_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ROUNDS=100 RUNDIR_REPLACE=1
+phase2_matrix.py|G1_L2_noisy_s2|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=2 ROUNDS=100 RUNDIR_REPLACE=1
+phase2_matrix.py|G1_L2_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ROUNDS=100 RUNDIR_REPLACE=1
