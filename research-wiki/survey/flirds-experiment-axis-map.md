@@ -15,6 +15,8 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 > - 이 축-지도 + 5개 결과 페이지가 구 overview 2종(수록분 미러·전량 카탈로그)을 **대체함**(구 문서·caveats·종합판정은 git 이력).
 >
 > 각 행 끝의 `출처`는 추적·재생성용으로 **작게** 병기했을 뿐, 분류·이름은 모두 개념/자연어 기준이다.
+>
+> 🔻 **2026-07-25: 수록 실험이 확정됐다** → [[flirds-paper-experiment-plan]]. 이 축-지도는 **전체 지형도**로 계속 유지되고(제외·보류·미실행 포함), **무엇을 본문/부록에 싣고 무엇이 비었는지**는 그 문서가 정본이다. 확정 스코프는 오염축 5종(CNN lf@0.70·frzero·grad-noise / LLM answer-swap·frzero) · 전용탐지기 4종과 Fed-LOO 전면 제외 · 전 실험 3-seed. 아래 각 행의 `[본문]/[부록]/[후보]/[보류]/[제외]` 표기는 **그 확정 이전 상태**이므로 충돌 시 plan 쪽을 따른다.
 
 ## 범례
 
@@ -220,6 +222,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 > **선택 관점 힌트**: LLM 쪽 fidelity·detection 주무대(R4-L2)가 **미실행 ⬚**라 현재 본문 LLM 축은 downstream만 실측 완결 — 여기가 최우선 착지 후보. CNN은 fidelity·detection이 한 rundir로 완결돼 있고, downstream도 dir1 완결(fmnist·iid는 `[후보]`). 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".
 
 ## 상호 링크
+- **수록 확정·결손 정본**: [[flirds-paper-experiment-plan]] (본문/부록 목록 + 실험 설계 세션 입력)
 - 축별 결과 페이지(수치 정본): [[flirds-results-fidelity]] · [[flirds-results-downstream]] · [[flirds-results-detection]] · [[flirds-results-ablation]] · [[flirds-results-cost]]
 - 구 overview 2종(수록분 미러·전량 카탈로그) = git 이력으로 대체됨
 - 승패 메커니즘 해석: [[flirds-principle-analysis]]
