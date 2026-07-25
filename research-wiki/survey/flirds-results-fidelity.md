@@ -276,21 +276,46 @@ tags: [flirds, results, fidelity]
 #### 소형 앵커 듀얼오라클 vs (a) `[보류·폴백]`
 
 > **세팅**: Llama-3.2-1B LoRA r16 · N=5 · full · R=30 · (a) 2⁵ retrain · seed{0,1,2}. (b)-leg는 near-additive라 무정보 → vs (a)만 의미. 천장 효과: same-game 3종·GTG의 vs (a) 0.933 = (b)↔(a) 듀얼오라클 일치도 0.933 그 자체. 3B/7B는 (a) 미실행.
+> ⚠ **이 0.933 천장은 무대 탓이다** — 같은 (a) 2⁵ 대조를 비IID silo5에서 하면 듀얼오라클 일치도가 **1.000**으로 올라간다(아래 (a)-leg 절). anchor5는 IID-clean이라 (b) 타깃 자체가 seed-불안정(xseed −0.367, §1C)이고, 그 불안정성이 (a)와의 불일치로 나타난 것이다. **듀얼오라클 논거는 silo5 (a)-leg 쪽이 강하다.**
 
 | metric | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | Spearman vs (a) | **0.933±0.047** | <u>0.933±0.047</u> | 0.933±0.047 | 0.933±0.047 | 0.733±0.170 | 0.467±0.450 | 0.767±0.330 | 0.167±0.613 |
 | Pearson vs (a) | <u>0.933±0.055</u> | 0.929±0.060 | 0.931±0.057 | **0.937±0.052** | 0.685±0.249 | 0.598±0.280 | 0.916±0.084 | 0.048±0.585 |
 
-#### 교차-사일로 도메인 (a)-leg `[본문·보조 · 유일 (a)-무대]` — ⬚ 미실행
+#### 교차-사일로 도메인 (a)-leg `[본문·보조 · 유일 (a)-무대]` ● 3-seed
 
-> **세팅**: Llama-3.2-1B LoRA · N=5 5도메인 비IID · full · R=10 · (a) 2⁵ retrain · seed{0,1,2}. 실재 cross-seed 신호를 갖는 유일 (a)-무대(silo5 (a)-leg, L8). 채움 = `runs/track_d/rundirs/1B_silo5_*_aleg`.
+> **세팅**: Llama-3.2-1B LoRA · N=5 5도메인 비IID · full · R=10 · **(a) 2⁵=32 재학습** · seed{0,1,2}. **실재 cross-seed 신호를 갖는 유일 (a)-무대**(비IID silo5의 (b) 타깃 xseed ρ +0.87~+0.93, §1C). (b)-leg(§1A)와 **같은 궤적·같은 클라 인덱스**라 두 오라클을 직접 대조할 수 있다.
+> ⚠ **세팅 주의 2건**: ① answer-swap 비율은 이 무대의 canonical **nr=1.0**(R4 주무대의 0.7과 다름) ② **ComFedSV는 clean 셀 canonical rundir에 열 자체가 없어 ⬚**(그 rundir가 ComFedSV 추가 이전 산출).
+> ⚠ **N=5 Spearman은 0.1 격자**라 값 해상도가 거칠다 — 예컨대 FedSV clean의 0.933±0.047은 seed별로 {0.900, 0.900, 1.000}, 즉 **5명 중 인접 두 명의 순서가 seed 둘에서 뒤바뀐 것 하나**에 해당한다.
+
+**듀얼오라클 일치도 — (b) in-run ↔ (a) retrain** (● 3-seed)
+
+| 위협 | Spearman | Pearson |
+|---|---|---|
+| clean | **1.000±0.000** | **1.000±0.000** |
+| noisy(answer-swap) | **1.000±0.000** | **1.000±0.000** |
+| free-rider(frzero) | **1.000±0.000** | **1.000±0.000** |
+
+> **두 오라클이 silo5에선 완전히 같은 순위를 준다.** 이는 anchor5(IID-clean)의 듀얼오라클 일치도 **0.933**(아래 표의 천장)과 대비된다 — (b) 타깃이 seed-안정한 무대(silo5 xseed +0.87~+0.93)에선 (a)와 정확히 일치하고, 불안정한 무대(anchor5 xseed −0.367)에선 어긋난다. **"in-run (b)를 같은-게임 정답으로 쓴다"는 설계 선택을 방법-중립 참값이 직접 승인한 유일한 실측**이다. 부수 귀결: (b)↔(a) 순위가 같으므로 **모든 방법의 vs-(b) Spearman = vs-(a) Spearman**(아래 표는 두 채점이 값까지 동일).
+
+**Spearman vs (a)** (● 3-seed · 볼드=동점 최고군 · 밑줄=차순위 값)
 
 | 위협 | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
-| clean(Spearman vs a) |  |  |  |  |  |  |  |  |
-| noisy(Spearman vs a) |  |  |  |  |  |  |  |  |
-| frzero(Spearman vs a) |  |  |  |  |  |  |  |  |
+| clean | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | <u>0.933±0.047</u> | ⬚ | **1.000±0.000** | 0.867±0.094 |
+| noisy(answer-swap) | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | 0.833±0.170 | **1.000±0.000** | <u>0.933±0.047</u> |
+| free-rider(frzero) | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | <u>0.933±0.047</u> | 0.867±0.125 | **1.000±0.000** | 0.900±0.082 |
+
+**Pearson vs (a)** (● 3-seed)
+
+| 위협 | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
+|---|---|---|---|---|---|---|---|---|
+| clean | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | <u>0.994±0.004</u> | ⬚ | **1.000±0.000** | 0.767±0.052 |
+| noisy(answer-swap) | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | 0.992±0.004 | 0.899±0.101 | <u>0.999±0.000</u> | 0.804±0.040 |
+| free-rider(frzero) | **1.000±0.000** | **1.000±0.000** | **1.000±0.000** | <u>0.999±0.001</u> | 0.997±0.002 | 0.947±0.024 | 0.998±0.000 | 0.904±0.009 |
+
+> **읽기**: near-additive 레짐이라 same-game 3종에 더해 **GTG·ShapleyFL까지 (a)와 완전일치** — 이 무대의 변별은 **FedSV·ComFedSV·FedIF 세 방법에서만** 난다. **FedIF가 최약**(Spearman 0.867~0.933이지만 **Pearson 0.767~0.904**로 값-수준에서 크게 벌어짐 = 순위는 대충 맞히고 크기를 못 맞힘). ComFedSV는 오염 칸에서 0.833~0.867로 흔들린다. ⚠ 3자리 표기에서 1.000으로 보이는 값들은 실제로 0.9985~0.99995 구간이라 **서로 구분되지 않는다** — 이 무대의 결론은 "same-game이 이긴다"가 아니라 **"(a)-게임과 (b)-게임이 같은 답을 주고, 8방법 중 5방법(Flirds·Flirds-1st·loss-heur·GTG·ShapleyFL)이 3위협 전부에서 그 답에 도달한다"**(FedSV는 noisy 칸에서만 도달). **출처**: `runs/phase2_matrix/rundirs/1B_silo5_{clean,noisy,frzero}_aonly_s{0,1,2}` + `silo5_a_fidelity_1B.csv`(`merge_silo5_a.py` 재생성).
 
 ---
 
@@ -350,6 +375,7 @@ tags: [flirds, results, fidelity]
 - CNN in-run: `python runs/track_c/c2fid/make_analysis.py` → `analysis/fidelity.csv` → seed 평균(ddof0).
 - CNN vs (a): `runs/track_c/fidelity.csv`(ShapleyFL β0.3 재생성 = merge 대기).
 - LLM: `runs/track_d/rundirs/1B_anchor5_seed{0,1,2}/phi.parquet`(vs (a) 직접 계산) · `runs/phase2_matrix/rundirs/1B_silo5_*/phi.parquet`(vs (b)) · `runs/track_d/fidelity.csv`(std20).
+- LLM silo5 (a)-leg: `python runs/phase2_matrix/merge_silo5_a.py` → `silo5_a_fidelity_1B.csv`(rundir `1B_silo5_{threat}_aonly_s{0,1,2}` × canonical `1B_silo5_{threat}`).
 - 안정성: `runs/track_c/RESULTS.txt` · `runs/track_d/target_stability.csv`.
-- **⬚ 미실행**: R4-L2(gsm50k5 (b)) · silo5 (a)-leg — 착지 시 위 표 빈 칸을 mean±std로 교체.
+- **⬚ 미실행**: R4-L2(gsm50k5 (b)) — 착지 시 위 표 빈 칸을 mean±std로 교체.
 - 축 지도: [[flirds-experiment-axis-map]] (전량 카탈로그는 git 이력)

@@ -56,10 +56,13 @@ tags: [flirds, results, cost]
 | Fed-LOO            | 118.28±2.37       |
 | Banzhaf            | 532.11±10.48      |
 | **(b)oracle (2⁵)** | 531.45±11.60      |
+| **(a)oracle (2⁵ 재학습)** | **31137.4±860.3** |
 | _FLDetector_       | 90.79±6.47        |
 | _FLTrust_          | 35.70±0.81        |
 | _STD-DAGMM_        | 341.49±57.55      |
 | _FedDQC_           | **21.81±0.41**    |
+
+> **(a) 재학습 오라클의 silo5 가격**: noisy 셀 **31,137 s = Flirds의 292× · (b) in-run의 58.6×**. 다른 두 위협 칸도 같은 자릿수 — clean **31,407.0±453.0** · frzero **21,292.2±603.6**(free-rider 클라의 학습이 빠져 ~32% 싸다). 3 위협 × 3 seed = **9 런에 약 76 GPU-h**. 이 값은 §1B 듀얼오라클 표(silo5 (a)-leg, [[flirds-results-fidelity]])의 가격표다 — (b)가 같은-게임 정답으로 승인받는 데 든 비용. **출처**: `runs/phase2_matrix/rundirs/1B_silo5_*_aonly_s*/timing.json`.
 
 **표준 부분참여 std20 (N=20 · 2/round · R=200 · alpaca)** (● 3-seed)
 
@@ -126,6 +129,7 @@ tags: [flirds, results, cost]
 | N=10 완전열거 2¹⁰ | 117,649 s (32.7 h) | 733 s | **1/160** | ◐ 1-seed |
 | device100 anchor (per-round) | 24,975 s | 157 s | **1/159** | ● 3-seed |
 | anchor5 (a) 재학습 2⁵ | 30,817 s | 707 s | **1/44** | ● 3-seed |
+| silo5 (a) 재학습 2⁵ | 31,137 s | 107 s | **1/292** | ● 3-seed |
 | std20 (b) per-round (cohort=2) | 2,917 s | 4,697 s | 1.61× (역전) | ● 3-seed |
 
 > N=10 셀 전체 runtime: (b) 117,648.9 · Flirds 732.8 · Flirds-1st 239.8 · loss-heur 1,239.7 · Fed-LOO 1,372.7 s. **cohort가 커질수록 배율이 커지는 단조 구조**(cohort 2 → 1.61× 손해 · cohort 5 → 5.0× 이득 · cohort 10 → 159~160× 이득). **출처**: `runs/track_d/rundirs_e5_n10/1B_anchor10_seed0/metrics.json` · `runs/phase2_matrix/analysis/04_device100_anchor/csv/runtime_table.csv` + op-count 모델.

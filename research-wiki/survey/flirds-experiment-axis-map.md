@@ -76,7 +76,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **교차-사일로 도메인 (a)-leg** | silo5(비IID) 재학습(a) 오라클. 실재 cross-seed 신호를 갖는 **유일 (a)-무대** | ⬚ 미실행 | `[본문·보조]` (§5.2 sub) | silo5 (a)-leg |
+| **교차-사일로 도메인 (a)-leg** | silo5(비IID) 재학습(a) 오라클. 실재 cross-seed 신호를 갖는 **유일 (a)-무대** — 듀얼오라클 일치도 **1.000**(anchor5의 0.933 천장을 넘김) | ● 3-seed (clean·swap·frzero) | `[본문·보조]` (§5.2 sub) | `runs/phase2_matrix`(1B_silo5_*_aonly + `merge_silo5_a.py`) |
 | **소형 앵커 듀얼오라클 vs (a)** | N=5 전원, (a) 2⁵ retrain 대비 전 방법. (b)-leg도 있으나 near-additive라 무정보 → 폴백 참조 | ● 3-seed(1B; 3B/7B (a)⬚) | `[보류·폴백]` | `runs/track_d`(anchor5) |
 
 ### 1C. 재현성·안정성 (fidelity의 짝 — 순위의 seed 재현성)
@@ -210,13 +210,13 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 축 | CNN | LLM |
 |---|---|---|
-| **Fidelity** | 부분참여 충실도(in-run) ● · (retrain)C1 vs (a) ● | 정확도-무대 충실도(in-run) ⬚ · (retrain)silo5 (a)-leg ⬚ |
+| **Fidelity** | 부분참여 충실도(in-run) ● · (retrain)C1 vs (a) ● | 정확도-무대 충실도(in-run) ⬚ · (retrain)silo5 (a)-leg ● |
 | **Downstream** | 점수원 경쟁 ● | 정확도 개입(GSM8K) ● · (근거)무해성 ● |
 | **Detection** | 부분참여 φ-AUROC ● | 주무대 탐지 ⬚ |
 | **Ablation** | 2차항·lever·removal (CNN 레그) ● | 2차항·lever·removal (LLM 레그) ● |
 | **비용·규모** | op-count·microbench·runtime ● | 지수-스케일링 ●/◐ · 위상분리 ● |
 
-> **선택 관점 힌트**: LLM 쪽 fidelity·detection 주무대(R4-L2)가 **미실행 ⬚**라 현재 본문 LLM 축은 downstream만 실측 완결 — 여기가 최우선 착지 후보. CNN은 fidelity·detection이 한 rundir로 완결돼 있고, downstream도 dir1 완결(fmnist·iid는 `[후보]`). 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".
+> **선택 관점 힌트**: LLM 쪽 fidelity·detection 주무대(R4-L2)가 **미실행 ⬚**라 현재 본문 LLM in-run fidelity는 비어 있다 — 여기가 최우선 착지 후보. 단 **retrain (a) 쪽은 silo5 (a)-leg가 3-seed로 착지**해, LLM fidelity 축이 통째로 비어 있지는 않다. CNN은 fidelity·detection이 한 rundir로 완결돼 있고, downstream도 dir1 완결(fmnist·iid는 `[후보]`). 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".
 
 ## 상호 링크
 - **수록 확정·결손 정본**: [[flirds-paper-experiment-plan]] (본문/부록 목록 + 실험 설계 세션 입력)
