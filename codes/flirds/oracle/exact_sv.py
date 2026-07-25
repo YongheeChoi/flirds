@@ -16,7 +16,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from ..fl.server import evaluate, fedavg, subset_delta_transform
+from ..fl.server import evaluate, fedavg
 from ..repro import seed_everything
 
 
@@ -60,10 +60,13 @@ def subset_utility_valloss(model_fn, client_loaders, val_loader, subset, rounds,
     Empty S -> the seed-deterministic init model's score (the trajectory's w_0),
     or `empty_value` if given.
 
-    `delta_transform` (Track C1 corruption axis, 2026-07-25) is the GLOBAL-id
-    update-level threat seam; it is re-indexed onto the coalition here, so an
-    update-level attacker keeps attacking inside every S it belongs to.  None (the
-    default) leaves the call bit-identical to the pre-seam version.
+    `delta_transform(c, r, delta)` carries UPDATE-level threats (free-rider, grad-
+    noise) into the retrain (C-b 2026-07-25): data-level corruption already rides
+    in `client_loaders`, but a free-rider stays a free-rider only if the fabricated
+    delta is re-applied here too -- otherwise (a) silently retrains the threat away
+    and stops being an oracle of the game the estimator plays.  `c` is re-keyed to
+    the ORIGINAL client id, since fedavg sees `subset`-local indices.  None (the
+    default) => bit-identical to the pre-seam call.
     """
     if len(subset) == 0:
         if empty_value is not None:
@@ -72,10 +75,11 @@ def subset_utility_valloss(model_fn, client_loaders, val_loader, subset, rounds,
         model = model_fn()
         return -_val_loss(model, model.state_dict(), val_loader, device)
     loaders = [client_loaders[c] for c in subset]
+    dt = None if delta_transform is None else (
+        lambda i, r, d, _s=tuple(subset): delta_transform(_s[i], r, d))
     final, _ = fedavg(model_fn, loaders, None, rounds, local_epochs, lr,
                       sample_frac=1.0, device=device, seed=seed,
-                      eval_every=rounds + 1,
-                      delta_transform=subset_delta_transform(delta_transform, subset))
+                      eval_every=rounds + 1, delta_transform=dt)
     return -_val_loss(model_fn(), final, val_loader, device)
 
 

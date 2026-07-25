@@ -27,9 +27,42 @@ online 오염평균 acc P1 +0.650 / P1w +0.653 → **gap +0.003**(dir1 참조 +0
 
 **취소·폐기(재제안 금지)**: fmnist competition Part B(취소 시점 seed0 45/96 보존·seeds1-2 미착수) · C-fr frrand(완주했으나 frrand 는 축 밖) · LLM downstream 보조(미제출). 전부 **표에서만 제외**, rundir 은 존치.
 
-## 2. ★ 선행 코드 변경 2건 (최우선 — 다른 계정을 막고 있다)
+## 2. ★ 선행 코드 변경 2건 — **구현·검증 완료(07-25). 남은 것은 `push` 하나다**
 
-### C-a — mnist 무대 개방 (**1줄**)
+> **상태 전환**: C-a·C-b 는 YH 워킹트리에서 구현 + CPU 폴백 e2e 스모크까지 끝났다
+> (`corrupt=round(0.4N)` · dir1 Dirichlet 불균등 · free_rider update-level · rundir 이름·
+> identity precheck 통과 · 실제 rundir 무접촉). **코딩은 블로커가 아니다.**
+>
+> **유일한 블로커 = `git push` (Yonghee 직접)**. JW·JB 워처가 `origin/main` 을 5분 폴링하므로
+> (`git show origin/main:codes/experiments/track_c1.py | grep -q C1_THREAT`) 푸시 없이는
+> 안 풀린다. 걸린 물량 = **JB 18셀 205 GPU-h + JW 잔여 13셀**, 그리고 그 전에 생성되는
+> 모든 rundir 의 `meta.json` 에 `git_dirty: true` 가 박힌다(YH 예정 42셀 = c1축 9 + G8 24 + G6 9).
+>
+> 대상 6파일:
+> ```
+> git add codes/experiments/track_c1.py codes/experiments/track_c2.py \
+>         codes/flirds/fl/server.py codes/flirds/oracle/exact_sv.py \
+>         codes/tests/test_c1_axis.py runs/removal_dose/sbatch_cnn_removal_axis.sh
+> ```
+>
+> ### ⚠ push 전 게이트 2건 (둘 다 몇 분)
+>
+> **(1) 공용 코어 2파일의 파급 확인.** `flirds/fl/server.py` · `flirds/oracle/exact_sv.py` 는
+> **전 러너 공용**이다 — 지금 돌고 있는 G3(86셀 track_c2) · **B200 G1(phase2_matrix, 임계경로
+> 176 GPU-h)** · track_g 가 전부 이 두 파일을 지난다. C-a 는 `{"cifar10":…, "fmnist":…}` 에
+> `"mnist": LeNet5` 키를 더한 것이라 cifar10/fmnist 경로에 **원리적으로 무해**하지만(그래서
+> G3 의 dirty 는 데이터 문제가 아니라 provenance 흠집일 뿐), 코어 2파일은 그 보장이 없다.
+> → `git diff` 가 **신규 위협 토큰에 게이트된 추가분뿐**임을 확인 + 기존 테스트 green
+> (`tests/test_signgate.py` 15 + 레거시 5). 아니면 B200 G1 이 push 전/후로 쪼개진다.
+>
+> **(2) C-b 정본 확정.** 구현이 **두 벌** 있었다 — YH 워킹트리 + **JW 로컬 `989f5ca`**.
+> 둘 다 개수는 `round(0.4·N)`=4/10 으로 수렴했고 이는 `track_c2.py:154 MAL_FRAC = 0.4`
+> (CNN 정본)와 일치한다. 하지만 **어느 클라를 고르는지**(RNG 스트림)까지 같다는 확인은 없고,
+> **JW 는 자기 버전으로 8셀(cifar10 seed2 ~73 GPU-h)을 이미 돌리고 있다.**
+> → 푸시되는 origin/main 이 정본. JW 는 reset 후 자기 8셀의 `corrupt=` 집합을 정본 규칙과
+> 대조 → 다르면 그 8셀만 재제출(창에 여유 있음).
+
+### C-a — mnist 무대 개방 (**1줄**) — 구현 완료, 아래는 명세 기록
 
 ```
 codes/experiments/track_c2.py:157
@@ -39,7 +72,7 @@ codes/experiments/track_c2.py:157
 - `track_c2_fid.py` 는 `import experiments.track_c2 as c2` 후 `c2.MODEL_FN`·`c2.DATASET` 을 쓰므로 **이 1줄이 fidelity 러너까지 파급**된다.
 - **여는 것**: §4 G8(mnist fidelity+탐지) · §5 G10(mnist downstream).
 
-### C-b — C1 을 논문 오염축·파티션으로 정렬 (중)
+### C-b — C1 을 논문 오염축·파티션으로 정렬 — 구현 완료, 아래는 명세 기록
 
 현 `track_c1.py:79` 는 `C1_SCENARIO` 하나에 **파티션과 오염을 섞어** 두고(iid\|label_skew\|quantity_skew\|label_flip\|feature_noise) free-rider·grad-noise 구현이 없다 → 확정 오염축 3종과 **한 칸도 겹치지 않는다**.
 
@@ -95,14 +128,19 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh
 
 ## 7. 우선순위 · 예상 종료
 
-| P | 무엇 | 물량 | 근거 |
-|---|---|---|---|
-| **P0** | **C-b** 코드 | — | **JW·JB·HJ 의 c1축 을 막고 있다** |
-| **P0** | **C-a** 코드(1줄) | — | **HJ 의 G10(216런) · 자신의 G8 을 막고 있다** |
-| **P1** | G3 seed0 → 전량 | 96런 · ~80 | 본문 downstream 의 빈 절반 · **코드 불요 → 즉시 착수** |
-| **P2** | **c1축 cifar10 seed0 + s1 1셀** | 9셀 · ~82 | **본문 G2 의 P0 seed** — 균등분배 몫 |
-| **P3** | G8 | 24런 · ~25 | 부록 fidelity+탐지가 한 rundir |
-| **P4** | G6 | 9런 · ~15 | 본문 ablation |
+| P | 무엇 | 물량 | 상태(07-25 22시) | 근거 |
+|---|---|---|---|---|
+| **P0** | **`git push` (Yonghee)** | 6파일 | ⛔ **대기 — 유일한 블로커** | JB 205 GPU-h + JW 잔여 + 42셀 `git_dirty` |
+| **P1** | G3 `hiidcomp` | 96런 · ~80 | 🟢 10/96 완료 · 8 실행 · 86 남음 | 본문 downstream 의 빈 절반 · 게이트 없음 |
+| **P2** | **c1축 `c1axis` `0-7,16`** | 9셀 · ~82 | 🟡 PD(셀 ~9.1h) | **본문 G2 의 P0 seed** — C-b 를 쓴 사람이 직접 |
+| **P3** | G8 `c2fidmn` | 24런 · ~25 | 🟡 PD | 부록 fidelity+탐지가 한 rundir |
+| **P4** | G6 `c1rmax` | 9런 · ~15 | 🟡 PD | 본문 ablation |
+| — | ~~G10 216런~~ | — | ✅ **HJ 로 이관 → 취소(전량 PD·mnist rundir 0)** | 개정 배분 §5 |
+
+- 실측 재집계: **128 태스크 ~172 GPU-h**(G3 일부 선행분 반영). 임계경로 = G3 배수 ~6.5h 후
+  c1축 8슬롯 2웨이브 ~18h → **07-26 밤~07-27 오전**. 마감 07-28 24:00 대비 여유.
+- G3 가 10/96 인 이유 = 지난 세션 편집 창 사고로 62셀 사망 → 재제출(`1878494`), 그 62셀은 큐에 존재.
+- **c1축은 P2 로 올라와 G8·G6 보다 앞선다**(본문 > 부록). YH 가 이미 취소·재제출로 정렬 완료(손실 0).
 
 ```
 sbatch --array=0-7,16%8  runs/track_c/c1/sbatch_c1_axis.sh    # cifar10 seed0 8셀 + seed1 1셀 (C-b 착지 후)
@@ -116,4 +154,13 @@ sbatch --array=0-7,16%8  runs/track_c/c1/sbatch_c1_axis.sh    # cifar10 seed0 8�
 ## 9. 완료 후 · 미해결 배선
 
 1. rundir 커밋(push는 Yonghee) → `make_analysis.py` 재생성 → `flirds-results-{downstream,fidelity,detection}` → paper.
+   - **G2/G9 (a)-fidelity 집계기는 새로 쓰지 않는다** — `runs/track_c/make_figures.py` l.99-152
+     `load_c1()` 이 이미 c1 rundir ↔ (a) 페어링 + `phi_a` 음수화 + Spearman 을 한다(= G2 표).
+     막힌 건 l.36 `SCENARIOS` 상수가 구 5축이라는 것뿐 → `{PARTS} × {THREATS}` 격자 +
+     이름 패턴 `{ds}_{part}_{ttag}_seed{seed}`(sbatch l.65 고정)로 교체. 이름 패턴이 이미
+     고정이라 **첫 셀 착지를 기다리지 않고 지금 써도 되고**, 착지 후 검증하면 된다.
+     확인 1건: `C1_ORACLE_A=1` 의 `phi_a` 가 같은 rundir metrics.json 인지 별도
+     `c1_oracle/*_aonly_*/` 인지(l.174 각주는 후자 가정) — 페어링 경로가 여기서 갈린다.
+   - (구 세션이 `sbatch_c1_axis.sh` 헤더에 적은 `runs/track_c/c1/make_analysis.py` 는
+     **존재하지 않는 파일**이었다. 07-25 헤더 정정 완료.)
 2. **rundir 정체성 잔여**: `track_c1`·`track_c2`·`track_c2_fid`·`track_d`·`phase1_*` 는 아직 `identity=None`(C1 재실행이 `*_<hash>` 를 낸 원인). **C-b 작업 중 `track_c1` 만이라도 정합**시키면 G2·G9 착지가 깨끗해진다.

@@ -26,7 +26,11 @@
 # After: python runs/track_h/make_analysis.py
 #
 #SBATCH --job-name=hiidcomp
-#SBATCH --partition=base_suma_rtx3090
+#SBATCH --partition=base_suma_rtx3090,dell_rtx3090
+# ^ 3090 풀 전체를 대상으로 한다.  base_suma_rtx3090 단독은 07-25 시점 여유 0(총 71장,
+#   빈 6장은 draining node01)이고 dell_rtx3090 에 9장이 놀고 있었다 -- JW 실측.
+#   `sinfo -o "%P %G %a"` 로 다른 3090 파티션이 보이면 여기에 더 붙일 것(같은 RTX3090
+#   이므로 스택 캐비엇 동일).
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G

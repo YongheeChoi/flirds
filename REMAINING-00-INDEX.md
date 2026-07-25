@@ -4,6 +4,46 @@
 > **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 기준시각 = **07-25 23:00**(잔여 ~73h).
 > 규칙: 3-seed · **push는 Yonghee 직접** · 수치는 rundir/analysis 재생성 값만.
 
+## 0′. 현장 상태 (07-25 22시 · 4계정 보고 + 코드 대조)
+
+**⛔ 유일한 블로커 = `git push` (Yonghee). 코드는 다 됐다.**
+C-a·C-b 는 YH 워킹트리에서 구현 + e2e 스모크까지 끝났으나 커밋·푸시가 안 돼 **다른 계정 입장에선
+미착지와 같다**. JW·JB 워처가 `origin/main` 을 5분 폴링한다
+(`git show origin/main:codes/experiments/track_c1.py | grep -q C1_THREAT`).
+걸린 물량 = **JB 18셀 205 GPU-h + JW 잔여 13셀**, 추가로 그 전에 나오는 rundir 은 `meta.json`
+에 `git_dirty: true` 가 박힌다(YH 예정 42셀). 대상 6파일 = `REMAINING-slurm-YH.md` §2.
+**push 전 게이트 2건**(공용 코어 2파일 파급 확인 · C-b 정본 확정)도 같은 절에 있다.
+
+| 계정 | 상태 | 남은 것 |
+|---|---|---|
+| **YH** | 🟢 G3 10/96 완료 · 8 실행 · 큐 재정렬 완료(128 태스크 ~172 GPU-h) | push · c1축 9 · G8 24 · G6 9 → **07-26 밤~07-27 오전** |
+| **HJ** | 🟢 G12 제출 `1878707`(**15셀**, 0-4 실행 중 · OOM 0) · L11 정리 완료 | G10 216런(C-a 대기) |
+| **JW** | 🟡 c1축 8셀 실행 중 — **단 자기 C-b(`989f5ca`)로 돌고 있다**(§0″) | 정본 대조 후 잔여 13셀 |
+| **JB** | ⏸ 의도적 idle(워처 대기) — **판단 정확** | c1축 18셀 |
+
+**0″. C-b 정본이 두 벌이었다 — 조치 필요.** YH 워킹트리 + JW 로컬 `989f5ca`. 둘 다 오염 클라 개수는
+`round(0.4·N)`=4/10 으로 수렴했고 이는 `track_c2.py:154 MAL_FRAC = 0.4`(CNN 정본)와 일치한다.
+하지만 **어느 클라를 고르는지(RNG 스트림)** 까지 같다는 확인이 없고 **JW 는 이미 8셀(cifar10 seed2,
+~73 GPU-h)을 자기 버전으로 돌리고 있다**. 셀 내부 정합성은 어느 쪽이든 성립하지만 **cross-seed 집계가
+깨진다**(seed2 만 다른 프로토콜). → 정본 = 푸시된 `origin/main` 하나 · JW 는 `corrupt=` 집합 대조 후
+다르면 8셀만 재제출. 상세 = `REMAINING-slurm-JW.md` §2.
+
+**0‴. 이 문서군의 오류 2건 정정(07-25).**
+1. **"C-b 착지 전에는 제출해도 실패한다" → 틀렸다.** 실패하지 않고 **조용히 틀린다** — 구 러너는
+   미지 env 를 무시하고 `C1_SCENARIO=iid` 로 돌지만 `C1_RUN_NAME`(`track_c1.py:432`)은 먹혀
+   위협 라벨 붙은 rundir 에 iid-clean 데이터가 들어가고 EXIT=0. 4위협이 한 셀로 붕괴한다.
+   JW 지적 · 코드로 확인. 전 문서·sbatch 헤더 수정 완료. **방어 = 워처 술어**(JB 방식).
+2. **`runs/track_c/c1/make_analysis.py` 는 존재하지 않는 파일이었다**(sbatch 헤더가 가리킴).
+   다만 **집계기를 새로 쓸 필요는 없다** — `runs/track_c/make_figures.py` l.99-152 `load_c1()` 이
+   이미 c1 rundir ↔ (a) 페어링 + `phi_a` 음수화 + Spearman 을 한다(= G2 표 그 자체). 막힌 건 l.36
+   `SCENARIOS` 상수가 구 5축이라는 것뿐 → `{PARTS}×{THREATS}` + 이름 패턴
+   `{ds}_{part}_{ttag}_seed{seed}`(sbatch l.65 고정)로 교체. **이름이 이미 고정이라 지금 써도 된다.**
+
+**0⁗. 3090 파티션 확장(전 sbatch 반영 완료).** `base_suma_rtx3090` 단독은 07-25 여유 0
+(총 71장 · 빈 6장은 draining node01) — 최초 표의 "21장/186" 은 3090 **풀 전체** 집계였다.
+→ 4개 sbatch 전부 `--partition=base_suma_rtx3090,dell_rtx3090`. 같은 RTX3090 이라 스택 캐비엇 동일.
+`torchvision` 은 계정마다 없을 수 있다(JW 는 `0.26.0+cu128` 별도 설치 · torch 2.11.0+cu128 불변).
+
 ## 0. ★ 이번 결정 — LLM downstream 을 {vanilla · oracle · random · flirds류}로 축소
 
 **결정(Yonghee 07-25).** R4 §5.3(LLM 개입)의 비교 대상을 **이미 계산이 끝난 것**으로 한정하고, 주장을 **"vanilla·random 보다 낫다"** 수준으로 타협한다.

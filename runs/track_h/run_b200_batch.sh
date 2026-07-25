@@ -17,7 +17,12 @@ CID=${CID:?컨테이너 번호를 지정하세요: CID=1..4}
 
 # ── ① 컨테이너 경로 (★ 실제 값 확인) ────────────────────────────────────────
 export REPO=${REPO:-/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds}
-export BATCH=${BATCH:-/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds_batch}
+# ★ BATCH 은 **export 하지 않는다** — 세 러너 모두 `BATCH` 를 batch-size 노브로 읽는다
+#   (phase2_matrix.py:185 · track_g.py:136 · track_d.py:101 → `int(os.environ["BATCH"])`).
+#   export 하면 경로 문자열이 들어가 전 셀이 15초 만에 ValueError 로 죽고, 드라이버가
+#   큐를 그대로 소진해 버린다(07-25 c3 실사례). 아래 파생 경로는 런처 안에서만 쓴다.
+BATCH=${BATCH:-/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds_batch}
+export -n BATCH 2>/dev/null || true   # 호출 환경이 export 해 왔더라도 자식에게서 제거
 export HOME=$BATCH/home
 export HF_HOME=$BATCH/hf_home
 export HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1

@@ -37,7 +37,29 @@
   셀 내부 = (a) 2¹⁰ 재학습 오라클 + (b) 2¹⁰ in-run + 9방법 φ (N=10 full · R=10).
 - **비용(실측)**: (a) 2¹⁰ 재학습 `t_a` = **cifar10 32,808 s ≈ 9.1 h** · **mnist 41,168 s ≈ 11.4 h**(`runs/track_c/c1_oracle/*/metrics.json`). 궤적 ~103 s·전 방법 합 ~8분은 무시 가능 → **셀 ≈ t_a**.
   → **48셀 ≈ 505 GPU-h** · 8슬롯 **~63 wall-h**.
-- **⚠ 착수 게이트 = 코드 변경 C-b**(YH 담당 · `REMAINING-slurm-YH.md` §2). 요구 env 계약 = `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE=0.70`. **C-b 착지 전에는 제출해도 실패**한다.
+- **⚠ 착수 게이트 = C-b 가 `origin/main` 에 있는 것.** 요구 env 계약 = `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE=0.70`.
+  **정정(07-25, JW 지적 · 코드 확인)**: 구 러너로 제출하면 **실패하지 않고 조용히 틀린다.**
+  `os.environ.get` 은 아는 키만 읽어 위 3개를 무시하고 `C1_SCENARIO=iid` 로 도는데,
+  `track_c1.py:432` 의 `C1_RUN_NAME` 은 그대로 먹혀 **`cifar10_iid_free-rider_seed0` 이름에
+  iid-clean 데이터**가 들어가고 EXIT=0. 4위협이 한 셀로 붕괴하고 로그로는 구별이 안 된다.
+  → 제출 전 술어: `git show origin/main:codes/experiments/track_c1.py | grep -q C1_THREAT`.
+
+### 🚨 C-b 정본 = `origin/main` 하나 (JW 조치 필요)
+
+C-b 구현이 **두 벌** 있었다 — YH 워킹트리(구현·e2e 스모크 완료, 푸시 대기) + **JW 로컬 `989f5ca`**.
+둘 다 개수는 `round(0.4·N)`=4/10 으로 수렴했고 이는 `track_c2.py:154 MAL_FRAC = 0.4`(CNN 정본)와
+일치한다 — **JW 의 판단 근거는 옳았다**(FedCorr Bernoulli 는 N=10 에서 2~6 으로 흔들려 위협 간
+비교가 깨진다). 다만 **어느 클라를 고르는지**(RNG 스트림)까지 같다는 확인이 없다.
+
+- 셀 하나의 내부 정합성은 어느 쪽이든 성립한다((a)·(b)·9방법이 같은 집합을 본다).
+  깨지는 건 **cross-seed 집계** — seed2(JW)와 seed0(YH)·seed1(JB)이 다른 추출 규칙이면
+  3-seed 평균이 두 프로토콜의 혼합이 된다.
+- **조치**: ① push 후 `git reset --hard origin/main`(자기 `989f5ca` 폐기) ② **이미 돌고 있는 8셀
+  (cifar10 seed2 ~73 GPU-h)의 `corrupt=` 집합을 정본 규칙과 대조** — `C1_ORACLE_A=0` 빌드-only
+  스모크로 같은 (ds,part,threat,seed) 를 찍어 비교하면 몇 분이면 된다. 같으면 **그대로 유지**,
+  다르면 그 8셀만 재제출(9.1h×8, 창에 여유 있음).
+- 대조 기준점(YH 스모크 실측): `cifar10/dir1_free_rider seed=0` → `corrupt=[1,3]`,
+  `rates=[0,0,0,0,0,0]`(free_rider 는 라벨 무접촉 = update-level 이 맞다).
 
 **JW 몫 = 21셀 ~205 GPU-h** — Slurm 4계정을 **GPU-h 로 균등화**한 결과다(전 계정 ~25 wall-h; YH `0-7,16` · JB `14-15,24-31,40-47` · HJ 는 c1축 없이 G12+G10).
 
