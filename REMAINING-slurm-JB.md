@@ -25,18 +25,18 @@
 > **무엇**: N=10 전원참여에서 **(a) 2¹⁰ 재학습 오라클 + (b) 2¹⁰ + 9방법 φ**. (a)는 방법-중립 참값이라 **전 방법을 채점하는 유일한 무대**인데, 현 C1 시나리오가 확정 오염축과 한 칸도 안 겹쳐서 다시 정렬하는 것이다.
 > **비교불가성은 남는다**: (a)는 2^N 재학습이라 **N=100 에서 원리적으로 불가** → 1A-CNN(N=100 부분참여)과 N·참여율은 못 맞춘다. 맞출 수 있는 건 **오염축과 파티션뿐**이고 이 잡이 그걸 한다. 논문에도 명시.
 
-- **셀**: **array 24-47 = 24셀 ~255 GPU-h**(mnist seed1 8 + cifar10 seed2 8 + mnist seed2 8). 0-23 은 JW.
+- **셀**: **`--array=24-31,40-47` = 16셀 ~182 GPU-h**(mnist seed1 8 + mnist seed2 8). c1축 48셀을 **4계정에 균등 분배**한 몫이다(YH 0-7 · HJ 16-21 · JW 8-15,22-23,32-39).
   인덱스 규약: `SEED=IDX/16` · 그 안에서 `0-7`=cifar10, `8-15`=mnist · 파티션 `iid,dir1` × 4위협(clean·lf@0.70·free_rider·grad_noise).
 - **비용(실측)**: `t_a` = cifar10 **32,808 s ≈ 9.1 h** · mnist **41,168 s ≈ 11.4 h**(`runs/track_c/c1_oracle/*/metrics.json`). 궤적 ~103 s·전 방법 합 ~8분은 무시 가능 → **셀 ≈ t_a**.
 - **⚠ 착수 게이트 = 코드 변경 C-b**(YH 담당). 요구 env = `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE=0.70`. **C-b 착지 전에는 제출해도 실패**한다.
 
 ```
 cd $REPO && mkdir -p runs/track_c/c1/_logs
-sbatch --array=32-39%8  runs/track_c/c1/sbatch_c1_axis.sh   # cifar10 seed2 (본문 G2 먼저)
-sbatch --array=24-31%8  runs/track_c/c1/sbatch_c1_axis.sh   # mnist   seed1
-sbatch --array=40-47%8  runs/track_c/c1/sbatch_c1_axis.sh   # mnist   seed2
+sbatch --array=24-31%8  runs/track_c/c1/sbatch_c1_axis.sh   # mnist seed1
+sbatch --array=40-47%8  runs/track_c/c1/sbatch_c1_axis.sh   # mnist seed2
 ```
-- `--time=24:00:00` 내장(최장 11.4h + 여유). 셀 하나가 ~9–11h 라 **중도 컷 = 그 셀 전손** — `--time` 을 줄이지 말 것.
+- `--time=24:00:00` 내장(최장 11.4h + 여유). 셀 하나가 ~11.4h 라 **중도 컷 = 그 셀 전손** — `--time` 을 줄이지 말 것.
+- JB 몫은 **mnist 전량 seed1·2**(부록 G9)다. 본문 G2(cifar10)는 YH·HJ·JW 가 나눠 갖는다 — 그쪽이 먼저 착지해야 본문 표가 닫힌다.
 - **채우는 것**: 계획서 §2.1 "1B-CNN vs (a)"(본문) · §3.1 "1B-CNN mnist vs (a)"(부록) · §3.4 φ 부호 감사의 **CNN 레그 재감사**(현 감사에 frzero·grad-noise 없음).
 
 ## 3. 셋업 (LLM 계정 → CNN)
@@ -46,10 +46,10 @@ sbatch --array=40-47%8  runs/track_c/c1/sbatch_c1_axis.sh   # mnist   seed2
 3. **파티션**: `--partition=base_suma_rtx3090`(sbatch 내장) · 8-GPU/user.
 4. sbatch 상단 `REPO`/`PY` 기본값이 YH 경로다 → 다르면 `REPO=… PY=… sbatch …`.
 
-## 4. 완주 후 — work-steal (~07-26 후반)
+## 4. 완주 후 — work-steal (~07-27 오전)
 
-- JB 몫은 **21 wall-h** 라 먼저 빈다. 그 뒤 **JW 의 `sbatch_c1_axis.sh` seed0·1 잔여**(최대 물량) → YH 의 G10 순으로 흡수한다.
-- 남은 `--array` 범위만 지정할 것(같은 rundir 이름 = last-writer-wins라 중복 실행은 GPU 낭비).
+- 4계정을 **~23 wall-h 로 균등 배분**했으니 큰 편차는 없다. 그래도 먼저 비면 다른 계정의 `sbatch_c1_axis.sh` 잔여 → HJ 의 G10 순으로 흡수한다.
+- 남은 `--array` 범위만 지정할 것(같은 rundir 이름 = last-writer-wins 라 중복 실행은 GPU 낭비).
 
 ## 5. 완료 후
 

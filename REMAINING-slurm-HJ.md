@@ -4,21 +4,16 @@
 > **역할 = R4 §5.3 online 표의 7 비-flirds 행 중 seed0·1**(42셀; seed2 = JB).
 > **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 3-seed(seed-major). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 >
-> ## ★ 즉시 조치 — 스코프 밖 array 원소만 취소, **flirds1st 는 살린다**
+> ## ★ 즉시 조치 — **LLM 전면 철수. 도는 잡 전량 취소 → 3090 CNN 으로 전환.**
 >
-> **LLM downstream 스코프 컷(2026-07-25 Yonghee)**: §5.3 비교 대상 = {vanilla·oracle_excl·random_excl·flirds류}.
-> **loss-heur·FedIF·renorm-4 의 online 셀은 전부 스코프 밖**이다(근거·보전 = `REMAINING-00-INDEX.md` §0·§1).
-> **R4 는 R=200 유지**(R=100 전환 철회) → **지금 도는 셀의 산출물은 유효하다.**
->
+> **2026-07-25 Yonghee: HJ 는 LLM 실험을 전혀 돌리지 않는다.** 원래 돌리던 것도 취소하고 **LLM 은 전부 B200** 이 맡는다.
 > ```
-> squeue -u $USER -o '%i %t %a'                      # 실행(R) / 대기(PD) 구분
-> scancel <jobid>_[<PD 원소들>]                       # 스코프 밖 = loss-heur·FedIF·renorm-4
-> ls runs/track_h/rundirs_llm_hj | grep flirds1st_gate_v2   # 착지분 확인 → B200 에 알릴 것
+> scancel <l11 jobid>          # L11 배열 전량 (실행 중 포함)
+> squeue -u $USER              # 잔재 확인 후 §3 로 전환
 > ```
-> - **실행 중인 flirds1st 셀은 완주시킨다**(~7.4h, 같은 R=200 무대라 유효). 그 밖의 실행 중 셀은 산출물이 표에 못 들어가니 중단해도 된다.
-> - **남은 flirds1st 셀은 B200 c4 가 맡는다**(Yonghee 07-25). B200 이 ~1.6× 빠르고(이 셀은 FL 학습이 지배: A6000 7.4h → B200 ~4.2h), Slurm 8슬롯은 CNN 에 쓰는 게 낫다.
->   ⚠ **착지한 셀 목록을 B200 쪽에 전달해 `queue_b200_c4.txt` 의 해당 줄을 주석 처리**할 것 — root 가 달라 충돌은 없지만 중복 실행은 GPU 낭비다.
-> - **그 뒤 HJ 는 3090 으로 넘어가 CNN 을 맡는다**(§4) — 남은 물량의 대부분이 거기다.
+> - **왜**: online flirds1st 셀은 FL 학습이 비용을 지배해(라운드당 132초 중 110초) **B200 이 ~1.6× 빠르다**(A6000 7.4h → B200 ~4.2h). LLM 을 전부 B200 으로 모으면 **Slurm 4계정을 전부 3090 에 붙일 수 있다** — 3090 여유 21장 vs A6000 여유 10장(가동률 90%).
+> - **이미 착지한 rundir 은 지우지 않는다.** `rundirs_llm_hj` 에 남아 있어도 집계는 canonical `rundirs_llm`(B200 산출)이 dup-win 으로 이긴다 → 별도 조치 불요.
+> - **A6000·HF 캐시 셋업은 이제 안 쓴다.** CNN 은 conda `lora4cl`(torch 2.11) + torchvision 데이터만 필요하다(§3).
 
 ## 0. 환경 (실제 셋업 결과)
 
@@ -47,15 +42,7 @@
 - 산출 = `runs/phase2_matrix/rundirs/1B_silo5_{threat}_aonly_s{seed}` · 조인 = `PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py`.
 - **⚠ 수록 위치 미정**: 07-25 확정 계획서의 본문·부록 목록에 **silo5 (a)-leg 항목이 없다**(LLM (a) 역할은 "1B-LLM 소형 앵커 듀얼오라클 vs (a)" = anchor5 가 담당, ● 완료). 이미 디스크에 있는 완성품이므로 **버리지 말고 Yonghee 판정 대기** — 되살릴 경우 추가 실행 0.
 
-## 2. 실행 중 flirds1st 셀 완주 (그 외 L11 은 취소)
-
-- 살리는 것 = `flirds1st_gate_v2` × {clean,noisy,frzero} (array 인덱스 `0-2,21-23,42-44` 중 실행 중인 것). 단가 ~7.4h, 착지 root `rundirs_llm_hj`.
-- **분모 의존(분석 시)**: recovery 분모(vanilla/oracle_excl/random_excl)는 B200 L1 이 **이미 3-seed 로 산출해 뒀다**(noisy·frzero). clean 분모는 B200 c1·c2·c3·c4 의 clean seed1·2 로 닫힌다.
-- **미실행분은 B200 c4** — 위 배너 참조. 착지 목록을 B200 에 전달할 것.
-
-## 3. ★ 주 담당 = CNN G10 (mnist downstream · 216런 · ~135 GPU-h · 3090)
-
-> 남은 물량의 대부분이 CNN(760 GPU-h)이고 **CNN 은 어느 파티션에서도 돈다.** 3090 여유가 21장이라 4계정을 전부 3090 에 붙이는 게 최적이다(A6000 은 여유 10장·가동률 90%).
+## 3. 담당 ① — G10: mnist downstream (216런 · ~135 GPU-h · 3090)
 
 - **⚠ 착수 게이트 = 코드 C-a**(`track_c2.py:157` MODEL_FN 에 `"mnist": LeNet5` 1줄; YH 담당).
 ```
@@ -65,7 +52,21 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh   # seeds 1-2
 ```
 - 2파티션 × 4위협 × (**8**소스 + 관측자) × 3seed = 216. mnist 는 track_g 그리드가 없어 **flirds 소스도 여기서 생성**(7이 아니라 8인 이유). **P1w 는 같은 rundir 에서 동반 산출**(추가 런 0).
 - CNN 은 conda `lora4cl`(torch 2.11) + torchvision 데이터만 필요 — HF 캐시 불요. 파티션 `base_suma_rtx3090`(sbatch 내장).
-- 완주 후 **JW·JB 의 `sbatch_c1_axis.sh` 잔여를 work-steal**(남은 `--array` 범위만).
+
+## 3b. 담당 ② — c1축 cifar10 seed1 일부 (6셀 · ~55 GPU-h · 균등분배 몫)
+
+> Slurm 4계정 wall-time 을 맞추기 위한 배분이다(전 계정 ~23 wall-h). **⚠ 게이트 = 코드 C-b**(YH 담당).
+
+```
+cd $REPO && mkdir -p runs/track_c/c1/_logs
+sbatch --array=16-21%8  runs/track_c/c1/sbatch_c1_axis.sh    # cifar10 seed1 중 6셀
+```
+- 셀 = (a) 2¹⁰ 재학습 오라클 + (b) 2¹⁰ + 9방법 φ. 실측 **cifar10 9.1h/셀**. `--time=24:00:00` 내장 — **줄이지 말 것**(중도 컷 = 그 셀 전손).
+- 인덱스 규약: `SEED=IDX/16` · 그 안에서 `0-7`=cifar10, `8-15`=mnist · 파티션 `iid,dir1` × 4위협.
+
+## 3c. 완주 후
+
+- **JW·JB 의 `sbatch_c1_axis.sh` 잔여를 work-steal**(남은 `--array` 범위만; 같은 rundir 이름 = last-writer-wins 라 중복 = GPU 낭비).
 
 ---
 
