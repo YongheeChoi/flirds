@@ -16,7 +16,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from ..fl.server import evaluate, fedavg
+from ..fl.server import evaluate, fedavg, subset_delta_transform
 from ..repro import seed_everything
 
 
@@ -49,7 +49,8 @@ def _val_loss(model, state, loader, device):
 
 
 def subset_utility_valloss(model_fn, client_loaders, val_loader, subset, rounds,
-                           local_epochs, lr, device="cuda", seed=0, empty_value=None):
+                           local_epochs, lr, device="cuda", seed=0, empty_value=None,
+                           delta_transform=None):
     """U_(a)(S) = -val-loss of the FedAvg-on-S final model (Track C1 PRIMARY (a)
     utility; good -> high).  Same game as the (b) oracle / estimator -- the task-6
     lesson: (a) validates the Shapley computation only when it plays the utility the
@@ -58,6 +59,11 @@ def subset_utility_valloss(model_fn, client_loaders, val_loader, subset, rounds,
     (eval_every > rounds skips fedavg's per-round test eval -- the 2^N sweep cost).
     Empty S -> the seed-deterministic init model's score (the trajectory's w_0),
     or `empty_value` if given.
+
+    `delta_transform` (Track C1 corruption axis, 2026-07-25) is the GLOBAL-id
+    update-level threat seam; it is re-indexed onto the coalition here, so an
+    update-level attacker keeps attacking inside every S it belongs to.  None (the
+    default) leaves the call bit-identical to the pre-seam version.
     """
     if len(subset) == 0:
         if empty_value is not None:
@@ -68,7 +74,8 @@ def subset_utility_valloss(model_fn, client_loaders, val_loader, subset, rounds,
     loaders = [client_loaders[c] for c in subset]
     final, _ = fedavg(model_fn, loaders, None, rounds, local_epochs, lr,
                       sample_frac=1.0, device=device, seed=seed,
-                      eval_every=rounds + 1)
+                      eval_every=rounds + 1,
+                      delta_transform=subset_delta_transform(delta_transform, subset))
     return -_val_loss(model_fn(), final, val_loader, device)
 
 

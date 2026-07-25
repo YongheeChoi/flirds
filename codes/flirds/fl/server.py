@@ -68,6 +68,25 @@ def _fedavg_core(init_state, local_train_fn, sample_nums, rounds, sample_frac,
     return global_state, history
 
 
+def subset_delta_transform(transform, subset):
+    """Re-index a `delta_transform` onto a COALITION (Track C1 (a)-oracle / removal
+    retrains, 2026-07-25).  `_fedavg_core` hands the seam the client's POSITION in the
+    loader list it was given, so a run over `[loaders[c] for c in subset]` would apply
+    client `subset[i]`'s threat to position `i`.  A threat is a property of the client
+    -- a free-rider free-rides in every coalition it joins -- so map the position back
+    to the global id.  `transform=None` passes through (no threat).  Lives here rather
+    than in `fl.intervene` (where the transforms are built) to stay import-cycle-free:
+    `oracle.exact_sv` needs it, and intervene imports the baselines."""
+    if transform is None:
+        return None
+    ids = tuple(subset)
+
+    def sub(i, r, delta):
+        return transform(ids[i], r, delta)
+
+    return sub
+
+
 @torch.no_grad()
 def evaluate(model, state, loader, device):
     model.load_state_dict(state)
