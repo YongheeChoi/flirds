@@ -1,0 +1,12 @@
+{
+  "phases": {
+    "oracle-a": {
+      "s": 31933.91,
+      "peak_gib": 26.304
+    }
+  },
+  "total_s": 31933.91,
+  "gpu_hours": 8.87053,
+  "n_gpus": 1,
+  "peak_gib": 26.304
+}

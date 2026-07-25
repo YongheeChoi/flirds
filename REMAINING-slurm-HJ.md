@@ -66,3 +66,47 @@ PYTHONPATH=. $PY runs/phase2_matrix/merge_silo5_a.py     # canonical ⋈ *_aonly
 - **가동 순서 제안**: 셋업(§0) 직후 **silo5-a 9 leg**(~4 wall-h, 즉시·독립) → 빈 슬롯에 **L11 seed0 21런** 착수(독립) → **L11 seed1 21런**(seed2는 YH).
 - **work-stealing**: L11·silo5-a는 arm-level 독립·idempotent → HJ 큐가 비면 JW/JB/YH의 독립 물량을 가져와도 무방(착지 root만 계정별 분리 후 make_analysis에서 병합). **역으로 L11이 최대 물량이라, JW/JB/YH가 먼저 비면 HJ L11 tail을 흡수**해 균형.
 - **완료 판정**: silo5-a=`SILO5 (a)-LEG DONE` / L11=`TRACK G DONE`+rundir mtime. 완료분 커밋(push는 Yonghee).
+
+## 4. 실측 런타임 · sbatch `--time` 배당 (2026-07-25 HJ 실행 · A6000 48GB)
+
+> 아래는 **HJ 계정에서 실제 완주/진행 중인 런의 측정값**(rundir `timing.json` + slurm 경과). §1·§2의 사전 추정치는 **모두 과소평가**로 확인 — 아래 값으로 대체할 것.
+
+### 4.1 silo5-a (a)-leg — ✅ 9/9 완주 (실측 확정)
+
+| threat | 실측 범위 | 평균 | peak GPU-mem |
+|---|---|---|---|
+| clean | 8.56 – 8.87 h | 8.72 h | 26.3 GiB |
+| noisy | 8.35 – 8.94 h | 8.65 h | 26.3 GiB |
+| frzero | 5.73 – 6.13 h | 5.91 h | 26.3 GiB |
+
+- **총 69.9 GPU-h** (9 leg). §1의 "≈2.9 GPU-h/leg → 계 ~26 GPU-h"는 **약 2.7배 과소평가** — 실제 **7.8 GPU-h/leg**.
+- **`--time` 권장 = `12:00:00` 유지**(현 sbatch 기본값). 최장 8.94 h라 12 h는 적정 마진. 8 h로 낮추면 clean/noisy가 timeout 위험.
+- **메모리 peak 26.3 GiB** — 48 GB에서 여유. §0 배너의 "24 GB OOM → 48 GB 필수" 판단은 **실측으로 재확인**(26.3 > 24).
+- 8슬롯 기준 wall-clock ≈ **9 h**(§1의 "~4 wall-h"가 아님).
+
+### 4.2 L11 online — 🔄 진행 중 (7 소스 중 3종 실측)
+
+**200 라운드 학습부 기준**(다운스트림 평가 별도, `VAL_CHUNK=3`):
+
+| source | 실측 200R | 비고 |
+|---|---|---|
+| flirds1st | ~2.5 h | 3셀 일치 |
+| fedif | ~2.5 h | |
+| lossheur | ~3.2 h | |
+| gtg / fedsv / comfedsv / shapleyfl | **미측정** | 재학습 기반 = 더 비쌀 것으로 예상 |
+
+- **`--time` 권장 = `24:00:00`**. 측정된 3종은 8 h로도 충분하지만, **미측정 재학습 4종의 상한이 불명**이라 여유 필요. (원 sbatch 기본값 `08:00:00`은 재학습 소스에서 timeout 위험.)
+- **완료 ETA**: 측정 3종(18런)은 확정적이나, 재학습 4종(24런) 미지 → **07-26 후반 ~ 07-27**(재학습 소스가 측정분의 2배면 07-26 밤, 4배면 07-27 낮). 재학습 소스 첫 런이 시작되면 이 표를 갱신할 것.
+
+### 4.3 ⚠ 필수 knob: `VAL_CHUNK=3` (L11 OOM 회피)
+
+- **증상**: 기본 `VAL_CHUNK=10`으로 L11(flirds1st)을 돌리면 **~82 라운드에서 CUDA OOM**(48 GB 소진; `flirds_values → _chunked → grad`).
+- **원인**: 이 경로는 B200(180 GB) 기준 설계 — 라운드마다 누적되는 궤적 + val-grad 피크(chunk 10 × maxlen 384, 1B fp32)가 48 GB를 초과. **A6000 48 GB 고유 제약**.
+- **조치**: `VAL_CHUNK=3` 지정 시 정상(동일 셀이 168 라운드 통과 확인). **φ 불변** — `_chunked`는 청크별 grad의 가중합이 전체 val-grad와 **정확히 동일**(근사 아님, docstring 명시)이므로 논문 수치에 영향 없음. `VAL_MAXLEN`은 φ를 바꾸므로 **건드리지 말 것**.
+- 제출 예: `sbatch --export=ALL,VAL_CHUNK=3,... --time=24:00:00 --array=0-41%8 runs/track_h/sbatch_l11_online.sh`
+
+### 4.4 §0 셋업 실제 결과 (신규 계정에서 재현 시 참고)
+
+- **공유 `lora4cl` 사용 불가**: `/home/chyoyhr`가 `drwx------`(700) → env 읽기 불가(chmod로 해결되는 층위 아님). §0-2 폴백대로 **동일 스펙 재생성**: `torch 2.11.0+cu128 / transformers 5.5.4 / trl 1.2.0 / peft 0.19.1`(= `requirements-llm.txt`의 torch-2.11 소수 스택과 일치). 빌드 스크립트 `runs/_probe/build_env.sh`.
+- **공유 HF 캐시 직접 사용 불가**: `/scratch/chyoyhr/hf_home/token`이 600 → 오프라인에서도 HF가 이 파일을 읽어 `PermissionError`. **모델·데이터 blob 자체는 읽힘**. → §1 안내대로 **자체 `HF_HOME` 구성**: `/scratch/rlaguswls186790/hf_home`(hub 하위는 공유 캐시로 **심링크**=재다운로드 0, `datasets/`만 복사=`.shuffle()` 캐시 쓰기용, token 파일 없음).
+- **동시 상한**: `QOSMaxGRESPerUser` = 8 GPU/user 확인(대기 사유로 표시됨). 파티션 `suma_a6000,gigabyte_a6000` + `--qos=base_qos` 정상 동작.
