@@ -1,0 +1,19 @@
+{
+  "name": "cifar10_iid_clean_lossheur_seed2",
+  "git_sha": "ca5934e90df91171951ce708ccd8e6cebb9d81a9",
+  "git_dirty": true,
+  "git_diff_stat": "codes/experiments/track_c1.py   | 125 +++++++++++++++++++++++++++++++++-------\n codes/experiments/track_c2.py   |   4 +-\n codes/flirds/fl/server.py       |  19 ++++++\n codes/flirds/oracle/exact_sv.py |  13 ++++-\n 4 files changed, 135 insertions(+), 26 deletions(-)",
+  "env_hash": "be4b11eda33078df",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "5.5.4",
+    "peft": "0.19.1",
+    "trl": "1.2.0",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.4",
+    "numpy": "2.4.4",
+    "python": "3.11.15",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  }
+}
