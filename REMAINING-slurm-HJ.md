@@ -55,7 +55,8 @@
 - **조치**: `VAL_CHUNK=3` 이면 정상(168 라운드 통과 확인). **φ 불변** — `_chunked` 는 청크별 grad 의 가중합이 전체 val-grad 와 **정확히 동일**(근사 아님). **`VAL_MAXLEN` 은 φ를 바꾸므로 건드리지 말 것.**
 - **개선(07-25)**: 이 제약은 **grad 경로에만** 필요한데 7개 소스 전부에 걸려 있었다. 이제 sbatch 가 소스별로 준다 — **flirds1st·fedif = 3**(functorch val-grad), **lossheur·renorm-4 = 10**(forward-only @no_grad, 메모리 여유). 청크 합산이 exact 라 **어느 값이든 φ 동일 = 무위험**.
   속도 이득은 **미측정**이다: `make_llm_loss` docstring 은 (b) 오라클에서 청크를 키웠을 때 **~1.0×**(FLOP-bound)로 프로파일됐다고 적고 있고, 위 재측정상 same-game 셀은 학습이 지배한다. renorm 셀(스코어링 ~92%)에서만 여지가 있다.
-- 제출은 `sbatch --array=0-41%8 runs/track_h/sbatch_l11_online.sh` 로 충분(`--export` 불요).
+- ~~제출은 `sbatch --array=0-41%8 runs/track_h/sbatch_l11_online.sh` 로 충분(`--export` 불요).~~
+  **⛔ 거짓 — HJ 계정에서 `--export` 는 필수다**(07-26 19:52 실패로 확인). 스크립트가 `REPO`·`PY`·`HF_HOME` 셋 다 chyoyhr 기본값을 쓴다. 특히 `:52` `HF_HOME=${HF_HOME:-/scratch/chyoyhr/hf_home}` → 위의 **token 600 `PermissionError`** 를 그대로 밟는다. 필수 override 3종 = §3e 제출 커맨드 참조.
 
 ## 1. 완료 — silo5 (a)-leg (9/9)
 
@@ -234,7 +235,11 @@ sbatch --qos=base_qos --output="$REPO/runs/track_h/_logs/%x_%A_%a.out" \
 
 G10 은 3090 인데도 대기 사유가 `QOSMaxGRESPerUser` 다 — A6000 잡 8장이 3090 잡을 막는다. 즉 **파티션을 늘려도 총 8슬롯은 그대로**이고, L11 잔여 + G12 + G10 이 **같은 8슬롯을 나눠 쓴다**(총 ~200 GPU-h → ~25 wall-h → 07-26 밤~07-27 아침). 제출 순서대로 G12 → G10 으로 흘러간다.
 
-## 3b. 담당 ② — G10: mnist downstream (216런 · ~135 GPU-h · 3090)
+## 3b. 담당 ② — G10: mnist downstream (216런 · ~135 GPU-h · 3090) — ✅ **완주 216/216, 실패 0** (07-26 20:40)
+
+> **착지**: `runs/track_h/rundirs_cnn/mnist_*` **216개**(seed0/1/2 = 72/72/72), 로그 `hmncomp_*.out` **216개 전부 `EXIT=0`**, EXIT 라인 없는 로그 0. 커밋 `6d9c5f9`(마지막 dir1 seed2 2셀).
+> **집계 반영 완료**: `make_analysis.py` 재생성 → `cnn_competition.csv` 4701→**5019행**, `observer_zero_semantics.csv` 594→**650행**. `llm_competition.csv` 는 **312행 무변**(L11 진행 중이라 LLM 축은 미포함 — 완주 후 재생성 필요). 커밋 `f15a0da`.
+> **실측 단가**: median 25.2 / mean 33.3 분/셀 → **~120 GPU-h**(계획 135 대비 정합). 초기 "72 GPU-h" 추정은 최저가 셀 1개 표본에서 나온 오류였다.
 
 - **⚠ 착수 게이트 = 코드 C-a**(`track_c2.py:157` MODEL_FN 에 `"mnist": LeNet5` 1줄; YH 담당).
 ```
@@ -349,7 +354,17 @@ sbatch --qos=base_qos --output="$REPO/runs/track_c/c1/_logs/%x_%A_%a.out" \
 2. **스택 캐비엇**: A6000(torch 2.11) vs canonical(B200 torch 2.12) — fidelity·recovery 는 stack-robust(mean|Δ|≤0.006)라 recovery 정규화로 병치. **`timing.json` 은 §5.5 cost 표에 쓰지 않는다.**
 3. **완료 판정**: 로그 `TRACK G DONE` + rundir mtime.
 
-## 3e. 담당 ④ — L11 flirds1st seed1·2 (B200 이관, 07-26 19:45) — 🟢 제출 `1885698`
+## 3e. 담당 ④ — L11 flirds1st seed1·2 (B200 이관, 07-26 19:45) — 🟢 실행 중 `1885728`
+
+> ### ⚠ **첫 제출 `1885698` 은 6셀 전부 8–10초 만에 사망했다** (07-26 19:51) — B200 은 이 job ID 를 무시할 것
+>
+> - **증상**: `ExitCode=0:0` 로 보였다 — 배치 스크립트 말미의 `echo` 가 python 종료코드를 덮어써서다. **`EXIT=0` 을 성공 증거로 쓰면 안 된다**(이 스크립트 한정).
+> - **실제 오류**: `OSError: PermissionError at /scratch/chyoyhr/hf_home/token when downloading meta-llama/Llama-3.2-1B-Instruct` (`track_g.py:267 _load()`).
+> - **원인**: `sbatch_l11_online.sh:52` `export HF_HOME=${HF_HOME:-/scratch/chyoyhr/hf_home}`. 내 쉘에 `HF_HOME` 이 없어서 `--export=ALL` 이 아무것도 실어 나르지 않았고, 스크립트 기본값 = **§0 이 "사용 불가"라고 적어 둔 바로 그 공유 캐시**로 떨어졌다. 내 `sbatch_g12_lever_seeds.sh:39` 에는 같은 방어를 이미 넣어 뒀는데 L11 에 복제하지 못한 것이 전부다.
+> - **피해 0**: rundir 미생성, 다른 job 무영향.
+> - **재제출 `1885728`** = 아래 커맨드에 **`HF_HOME=/scratch/rlaguswls186790/hf_home` 추가**. 19:52 시점 idx21·22 가 `train_runtime` 기록 = `_load()` 통과 확인. 20:41 현재 idx21/22 = 114/115 라운드, idx23 = 26 라운드, idx42-44 = `Resources` 대기.
+> - **교훈**: "R 상태" 는 실행 증거가 아니다. Track G 배너도 `_load()` **앞에서** 찍히므로 증거가 못 된다. 실행 판정은 **`grep -c train_runtime` ≥ 1** 로 한다.
+
 
 > **B200 이 G1 단가 초과로 6셀을 넘겼다**(추정 19.6h → 21.1h 경과 미착지; 그쪽 19.6h 는 op-count×microbench **해석 추정치**로 검증된 적이 없었다 = 우리 G12 의 "계획 4h/셀" 과 같은 종류의 함정). G1 본체는 peak 100–111 GB 라 48GB 로 이관 불가 → **전례가 확실한 L11 만** 넘어왔다. B200 큐에서 주석 처리 완료 = 중복 실행 없음.
 
@@ -357,9 +372,10 @@ sbatch --qos=base_qos --output="$REPO/runs/track_c/c1/_logs/%x_%A_%a.out" \
 - **제출**(스크립트 무수정):
 ```
 sbatch --qos=base_qos \
-  --export=ALL,REPO=$REPO,PY=<HJ flirds python>,RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_hj \
+  --export=ALL,REPO=$REPO,PY=<HJ flirds python>,HF_HOME=/scratch/rlaguswls186790/hf_home,RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_hj \
   --array=21-23,42-44%8 runs/track_h/sbatch_l11_online.sh
 ```
+  **`HF_HOME` 누락이 첫 제출을 죽였다**(위 박스). override 3종 = `REPO`·`PY`·`HF_HOME`, 라우팅 1종 = `RUNDIR_ROOT`.
 - **착지 루트를 `rundirs_llm_hj` 로 통일했다** — `sbatch_l11_online.sh:28` 의 기본 라우팅은 `SEED==2 → rundirs_llm_yh` 인데 **덮어썼다**. 근거 ①남의 계정 네임스페이스에 쓰지 않는다 ②3-seed 가 한 루트·한 스택(torch 2.11)이 되어 정합적 ③`make_analysis.py:95` 가 `_hj`·`_yh` 둘 다 로드하므로 집계는 어느 쪽이든 된다. B200 에 통보 완료.
 - **`VAL_CHUNK` 는 손댈 필요 없었다** — `:20` `val_chunk_for()` 가 `flirds1st|fedif → 3` 으로 이미 소스별 배선. `ROUNDS` 도 스크립트가 안 넘긴다(레짐 기본 R=200).
 - **중복 0 확인**: 기존 `rundirs_llm` 의 flirds1st seed1·2 는 전부 **`t2_sign_flirds1st`**(다른 arm) → 이름 충돌 없음. `RUNDIR_REPLACE=1` 이 켜져 있으나 덮을 대상이 없다.
