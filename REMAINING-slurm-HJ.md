@@ -348,3 +348,21 @@ sbatch --qos=base_qos --output="$REPO/runs/track_c/c1/_logs/%x_%A_%a.out" \
 1. rundir 커밋(push는 Yonghee) → `runs/track_h/make_analysis.py`(LLM 로더가 `rundirs_llm_hj` 를 이미 읽는다) → `flirds-results-downstream` §5.3 R4 online 표 7행.
 2. **스택 캐비엇**: A6000(torch 2.11) vs canonical(B200 torch 2.12) — fidelity·recovery 는 stack-robust(mean|Δ|≤0.006)라 recovery 정규화로 병치. **`timing.json` 은 §5.5 cost 표에 쓰지 않는다.**
 3. **완료 판정**: 로그 `TRACK G DONE` + rundir mtime.
+
+## 3e. 담당 ④ — L11 flirds1st seed1·2 (B200 이관, 07-26 19:45) — 🟢 제출 `1885698`
+
+> **B200 이 G1 단가 초과로 6셀을 넘겼다**(추정 19.6h → 21.1h 경과 미착지; 그쪽 19.6h 는 op-count×microbench **해석 추정치**로 검증된 적이 없었다 = 우리 G12 의 "계획 4h/셀" 과 같은 종류의 함정). G1 본체는 peak 100–111 GB 라 48GB 로 이관 불가 → **전례가 확실한 L11 만** 넘어왔다. B200 큐에서 주석 처리 완료 = 중복 실행 없음.
+
+- **셀**: `--array=21-23,42-44` = flirds1st_gate_v2 × {clean, noisy(nr0.7), frzero} × seed{1,2}. seed0 3셀(§상단 ★)과 **SEED 만 다른 동일 셀 정의**.
+- **제출**(스크립트 무수정):
+```
+sbatch --qos=base_qos \
+  --export=ALL,REPO=$REPO,PY=<HJ flirds python>,RUNDIR_ROOT=$REPO/runs/track_h/rundirs_llm_hj \
+  --array=21-23,42-44%8 runs/track_h/sbatch_l11_online.sh
+```
+- **착지 루트를 `rundirs_llm_hj` 로 통일했다** — `sbatch_l11_online.sh:28` 의 기본 라우팅은 `SEED==2 → rundirs_llm_yh` 인데 **덮어썼다**. 근거 ①남의 계정 네임스페이스에 쓰지 않는다 ②3-seed 가 한 루트·한 스택(torch 2.11)이 되어 정합적 ③`make_analysis.py:95` 가 `_hj`·`_yh` 둘 다 로드하므로 집계는 어느 쪽이든 된다. B200 에 통보 완료.
+- **`VAL_CHUNK` 는 손댈 필요 없었다** — `:20` `val_chunk_for()` 가 `flirds1st|fedif → 3` 으로 이미 소스별 배선. `ROUNDS` 도 스크립트가 안 넘긴다(레짐 기본 R=200).
+- **중복 0 확인**: 기존 `rundirs_llm` 의 flirds1st seed1·2 는 전부 **`t2_sign_flirds1st`**(다른 arm) → 이름 충돌 없음. `RUNDIR_REPLACE=1` 이 켜져 있으나 덮을 대상이 없다.
+- **⚠ 문서 정정 — §0 의 "`--export` 불요" 는 HJ 계정에선 거짓이다.** `:13` `REPO=${REPO:-$HOME/projects/flirds}` 인데 HJ 홈엔 `projects/flirds` 가 없고(`~/flirds`), `PY` 기본값도 chyoyhr lora4cl(700, 판독 불가)이다. **REPO·PY override 필수.**
+- **비용·예상**: seed0 실측 7.53/8.00/7.90 GPU-h → 6셀 ≈ 47 GPU-h. idx21 이 19:45 착수(node27). 나머지는 `Resources` 대기 = **a6000 노드 경합**이지 QOS 캡이 아니다(러닝 5/8). 전 셀 병렬이면 **07-27 04:00**, 경합 지속 시 **08:00~12:00**.
+- **파티션이 갈려 서로 안 밀어낸다**: L11 = a6000 계열 / G10·C1 = 3090 계열. 공유 자원은 QOS 8-GPU 캡뿐.
