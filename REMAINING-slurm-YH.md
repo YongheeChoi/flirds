@@ -4,7 +4,8 @@
 > **역할 = (1) 선행 코드 변경 2건**(JW 를 막고 있음) **+ (2) CNN 점수원 경쟁 신설**(cifar10/iid · mnist).
 > **하드웨어 = RTX3090 24GB**(클러스터 여유 21장 · 8-GPU QOS). CNN 은 전량 3090 — LLM 1B 은 24GB 불가라 여기 오지 않는다.
 > **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 전 실험 3-seed(seed-major). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만. 기존 rundir read-only.
-> **현재 YH 큐는 비어 있다**(종전 CNN 주무대 전량 완주).
+> **진행 상황 (07-26 19:00)**: G3 ✅ **96/96 커밋 `4395028`** · c1축 🟢 8 실행/1 PD · G8 🟡 24 PD · G6 🟡 9 PD · **실패 0**.
+> **전량 완주 예상 = 07-27 ~14:00**(임계경로 = c1축 9번째 셀; §7).
 
 ## 0. 환경
 
@@ -105,16 +106,40 @@ codes/experiments/track_c2.py:157
 - **이식 소스는 이미 있다**: 오염 = `flirds/data/corruptors.py`(`CNN_CORRUPTORS`, track_c2 가 쓰는 것) · dir1 = `flirds/fl/partition.py`. 새 로직이 아니라 **C1 로 옮기는 작업**.
 - **여는 것**: **JW 의 G2+G9 = 505 GPU-h(CNN 최대 물량)** + §6 G6. **JW 는 이게 착지할 때까지 착수 불가.**
 
-## 3. G3 — cifar10/iid 점수원 경쟁 (본문) · 96런 · **코드 불요 → 즉시**
+## 3. ✅ G3 — cifar10/iid 점수원 경쟁 (본문) · **96/96 착지 완료 (`4395028`, 07-26)**
 
-> 본문 downstream "2-CNN P1 부호-게이트 — cifar10/iid". dir1 은 8점수원 3-seed 완비인데 iid 는 **flirds 만** 있다.
+> 본문 downstream "2-CNN P1 부호-게이트 — cifar10/iid". dir1 은 8점수원 3-seed 완비인데 iid 는 **flirds 만** 있었다 → **이 착지로 채워짐**.
 > **부록 P1w 는 추가 런 0** — 같은 rundir 이 P1(`gate_v2`)과 P1w(`gatew_v2`) arm 을 함께 낳는다(계획서 §7.2).
 > **관측자에 `C2_OBS_SRCS` 를 지정하지 않는다** → 기본값 = **8소스 전량 T2**. 기존 iid 관측자(`_obsf`)가 flirds 만 담아 retrain 열이 비었던 게 이 결손의 원인이다.
 
-- 4위협(clean·lf@0.70·free_rider·grad_noise) × (7 비-flirds + 관측자) × 3seed = **96**. flirds online arm 은 `track_g/rundirs_cnn` 의 cifar10 iid 그리드에 이미 있다.
-- **비용 추정 ~60–100 GPU-h**(소스런 ~0.4h · 관측자 ~2h; W-B obsf 실측 0.35h/런에서 유추).
+- 4위협(clean·lf@0.70·free_rider·grad_noise) × (7 비-flirds + 관측자) × 3seed = **96 · 실패 0**. flirds online arm 은 `track_g/rundirs_cnn` 의 cifar10 iid 그리드에 이미 있다.
+- **실측 ~89 GPU-h**(추정 60–100 적중). 셀당 로그 78셀 평균: flirds1st/fedif 18.0분 · lossheur 18.4 · fedsv 35.9 · comfedsv 36.2 · gtg 88.6 · shapleyfl 108.9 · 관측자 117.1.
+- 집계 재생성 = `python runs/track_h/make_analysis.py` (커밋에 포함). 결과 = `runs/track_h/analysis/cnn_competition.csv`.
+
+**결과(rundir-only 재생성값) — cifar10/iid 오염셀 평균 recovery, online**:
+
+| policy | 순위 |
+|---|---|
+| P1 `gate_v2` | lossheur .887 > **flirds .710** > fedif .556 > flirds1st .543 ≫ gtg −.049 > fedsv/comfedsv −.572 > shapleyfl −.581 |
+| P2 `gatew_v2` | fedif .889 ~ lossheur .879 > **flirds .764** > flirds1st .536 |
+
+clean parity `|dAcc|`(밴드 .006): fedif .0003 · flirds1st .0003 · lossheur .0021 **통과** / flirds .0060 **경계** / gtg .0101 · shapleyfl .0248 · fedsv·comfedsv .0290 **이탈** — MC 계열이 clean 에서 오발화한다.
+
+> ⚠ **FedSV ≡ ComFedSV — iid 한정, 버그 아님. 표 작성 시 필수 캐비엇.**
+> 이 무대의 두 열은 φ 가 raw/cum **비트동일**이다. per-round surrogate 의 유틸리티가
+> 서로 affine(`u_com(S) = base − u_fed(S)`)이고 Shapley 가 유틸리티에 선형이라, 각
+> provider 가 적용하는 부호 반전까지 합쳐 정확히 상쇄된다. 단 이는 서브셋 파라미터
+> 빌더가 일치할 때만인데 `_llm_subset_params`(크기가중 `n_c/Σn_c`) vs
+> `_uniform_subset_params`(균등 `1/|S|`) 는 **클라 크기가 같을 때만** 같다 —
+> iid = 5000×10 균등이라 성립. 예측대로 **dir1(3834·4910·… 불균등)에서는 갈라진다**
+> (기존 dir1 셀 실측 `max|Δcum|` 0.74~2.56).
+> ⟹ **iid 표에서 comfedsv 를 독립 baseline 으로 보고하지 말 것**(dir1 에서는 유효).
+> 리뷰어에게는 복붙 오류로 보이므로 표에 각주가 필요하다.
+
+provenance: 96셀 sha 스팬 `ca5934e`(07-25 18:58)~`5c9934d`(07-26 00:30). 그 구간 `codes/` 변경 중 cifar10 경로에 닿는 것 없음 — `track_c2.py` 는 mnist dict 키 1줄(C-a)뿐, `exact_sv.py` 는 `delta_transform=None` 기본값 비트동일, `track_c1`/`track_g`/`phase2_matrix` 는 다른 러너.
+
 ```
-mkdir -p runs/track_h/_logs
+# (기록) 제출 이력 — 재실행 불요
 sbatch --array=0-31%8   runs/track_h/sbatch_cnn_iid_comp.sh
 sbatch --array=32-95%8  runs/track_h/sbatch_cnn_iid_comp.sh
 ```
@@ -123,6 +148,9 @@ sbatch --array=32-95%8  runs/track_h/sbatch_cnn_iid_comp.sh
 
 - cifar10 본문 무대와 **동일 세팅, 데이터셋만 mnist**. fidelity(부록)와 φ-AUROC(부록)가 **같은 rundir**.
 - {mnist × [iid, dir1]} × 4위협 × 3seed = **24** · **~25 GPU-h**(1.05 GPU-h/셀 실측).
+- 🟡 **07-26 현재 24셀 전량 PD** — c1축이 8슬롯을 점유 중이라 그 뒤를 잇는다(§7).
+  ⚠ 1.05h/셀 은 레거시 클러스터 실측이다. c1축에서 확인된 **이 클러스터의 1.5× 계수**(§7)가
+  걸리면 셀당 ~1.6h / 계 ~38 GPU-h 로 커진다 — 임계경로 밖이라 종료 시각에는 영향 없음.
 ```
 mkdir -p runs/track_c/c2fid/_logs
 sbatch --array=0-7%8   runs/track_c/c2fid/sbatch_fid_mnist.sh
@@ -143,23 +171,54 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh
 - 현 removal 시나리오({feature-noise, label-flip 사다리, iid})가 확정 오염축과 불일치 → **frzero·grad-noise** 에서 worst-first 제거 → acc 분리(순위→성능 인과)를 다시 낸다.
 - frzero·grad-noise × 3seed = **6**(+ lf@0.70 재실행 시 3) · 추정 ~10–20 GPU-h.
 - 러너 = `runs/removal_dose/run_cnn_removal.sh` — **C-b 의 위협 토큰 확장을 공유**(별도 코드 없음).
+- 🟡 **07-26 현재 9셀 전량 PD**(`c1rmax` = `runs/removal_dose/sbatch_cnn_removal_axis.sh`, `C1_ORACLE_A=0 C1_REMOVAL=1`).
+  기존 `runs/removal_dose/rundirs_cnn/cifar10_iid_seed{0,1,2}`(07-20 clean 앵커)와 **이름 규약이 달라
+  덮어쓰기 없음**(`cifar10_iid_{위협}_seed*`) — read-only 규약 유지 확인.
 
 ## 7. 우선순위 · 예상 종료
 
 | P | 무엇 | 물량 | 상태 | 근거 |
 |---|---|---|---|---|
 | ✅ | **코드 C-a·C-b + push** | 6파일 | ✅ **완료 `d09e528`** | 4계정 게이트 전부 해소 |
-| **P1** | G3 `hiidcomp` | 96런 · ~80 | 🟢 10/96 완료 · 8 실행 · 86 남음 | 본문 downstream 의 빈 절반 |
-| **P2** | **c1축 `c1axis` `0-7,16`** | 9셀 · ~82 | 🟡 PD(셀 ~9.1h) | **본문 G2 의 P0 seed** — C-b 를 쓴 사람이 직접 |
-| **P3** | G8 `c2fidmn` | 24런 · ~25 | 🟡 PD | 부록 fidelity+탐지가 한 rundir |
-| **P4** | G6 `c1rmax` | 9런 · ~15 | 🟡 PD | 본문 ablation |
+| ✅ | G3 `hiidcomp` | 96런 · **89 실측** | ✅ **96/96 · 실패 0 · 커밋 `4395028`**(§3) | 본문 downstream 의 빈 절반 |
+| **P2** | **c1축 `c1axis` `0-7,16`** | 9셀 · **~145 실측** | 🟢 8 실행(경과 11–13h) · 1 PD | **본문 G2 의 P0 seed** — C-b 를 쓴 사람이 직접 |
+| **P3** | G8 `c2fidmn` | 24런 · ~25–38 | 🟡 PD 24 | 부록 fidelity+탐지가 한 rundir |
+| **P4** | G6 `c1rmax` | 9런 · ~15–27 | 🟡 PD 9 | 본문 ablation |
 | — | ~~G10 216런~~ | — | ✅ **HJ 로 이관 → 취소(전량 PD·mnist rundir 0)** | 개정 배분 §5 |
-| ✅ | **논문 부록 B.2 오염-집합 문단 재작성**(FedCorr 주장 철회 + 무대별 실현 수 표) | — | ✅ 초안 완료(**미커밋** — 타 세션 916줄과 겹침) | §2 |
+| ✅ | **논문 부록 B.2 오염-집합 문단 재작성**(FedCorr 주장 철회 + 무대별 실현 수 표) | — | ✅ 초안 완료 → **타 세션 이관**(paper 는 YH 가 더 손대지 않음) | §2 |
 
-- 실측 재집계: **128 태스크 ~172 GPU-h**(G3 일부 선행분 반영). 임계경로 = G3 배수 ~6.5h 후
-  c1축 8슬롯 2웨이브 ~18h → **07-26 밤~07-27 오전**. 마감 07-28 24:00 대비 여유.
-- G3 가 10/96 인 이유 = 지난 세션 편집 창 사고로 62셀 사망 → 재제출(`1878494`), 그 62셀은 큐에 존재.
-- **c1축은 P2 로 올라와 G8·G6 보다 앞선다**(본문 > 부록). YH 가 이미 취소·재제출로 정렬 완료(손실 0).
+**★ c1축 실단가 정정 — 9.1h 가 아니라 14.6~17.4h (승계 기준의 1.5×)**
+
+JB 가 착지시킨 seed2 8셀(`0875976`)이 YH 의 seed0 8셀과 **인덱스까지 1:1 대응**이라 추정
+대신 그 `timing.json` 을 쓴다:
+
+| 셀 | 실측 | 셀 | 실측 |
+|---|---|---|---|
+| iid clean | 16.94h | dir1 clean | **17.44h** |
+| iid label-flip@0.70 | 17.04h | dir1 label-flip@0.70 | 16.80h |
+| iid free-rider | 14.62h | dir1 free-rider | 14.56h |
+| iid grad-noise | 14.89h | dir1 grad-noise | 14.94h |
+
+JB 의 진단: (a) 2¹⁰ 재학습 **50,983s = 49.79s/retrain, 레거시 대비 1.54×**인데 traj 는
+1.12× 에 그침 → **느린 축은 GPU 가 아니라 fedavg 1024회 호출당 고정 오버헤드**다. 즉
+노드 경합이 아니라 클러스터 단가이며, `--time=24:00:00` 대비 최장 17.4h 라 컷 위험 없음
+(**이 값을 줄이지 말 것** — 종전 9.1h 를 근거로 `--time` 을 깎으면 전손).
+seed0 오염집합 `rates=[0,.7,0,0,.7,0,.7,.7,0,0]` → **[1,4,6,7]** 정본 일치 확인.
+
+**예상 종료 (07-26 19:00 기준 재계산)**
+
+| 시점 | 상태 |
+|---|---|
+| 07-26 21:00~00:15 | c1축 1차 웨이브 8셀 순차 착지(free-rider·grad-noise → clean·label-flip 순) |
+| 07-26 ~21:00 | 첫 빈 슬롯 → **9번째 c1축 셀**(seed1 iid clean, ~17h) 착수 |
+| 07-26 21:30~ | 남는 7슬롯이 G8 24 + G6 9 흡수 → 07-27 오전 완주 |
+| **07-27 ~14:00** | **9번째 c1축 셀 착지 = YH 전량 완주** |
+
+- 임계경로 = 그 **9번째 셀 하나**. 9셀/8슬롯이라 2차 웨이브가 불가피하고 QOS 8장
+  상한 때문에 당길 수단이 없다. G8·G6 는 전부 그 그늘에 들어가 makespan 무영향.
+- 마감 07-28 24:00 대비 **~34h 여유**.
+- G3 가 한때 10/96 이던 이유 = 지난 세션 편집 창 사고로 62셀 사망 → 재제출(`1878494`)로 **전량 회수, 최종 손실 0**.
+- **c1축은 P2 로 올라와 G8·G6 보다 앞선다**(본문 > 부록). Slurm 이 job age 순으로 뽑아 이 정렬이 자동 유지된다.
 
 ```
 sbatch --array=0-7,16%8  runs/track_c/c1/sbatch_c1_axis.sh    # cifar10 seed0 8셀 + seed1 1셀 (C-b 착지 후)
@@ -172,6 +231,10 @@ sbatch --array=0-7,16%8  runs/track_c/c1/sbatch_c1_axis.sh    # cifar10 seed0 8�
 
 ## 9. 완료 후 · 미해결 배선
 
+0. **G3 는 이 경로를 이미 통과했다**(rundir+analysis 커밋 `4395028`). 남은 3건(c1축·G8·G6)도
+   같은 순서로 처리한다. **push 는 Yonghee 직접** — YH 는 커밋까지만.
+   - downstream 표로 옮길 때 **§3 의 FedSV≡ComFedSV(iid) 캐비엇을 반드시 각주로 달 것.**
+     각주 없이 두면 두 열이 같은 값이라 복붙 오류로 읽힌다.
 1. rundir 커밋(push는 Yonghee) → `make_analysis.py` 재생성 → `flirds-results-{downstream,fidelity,detection}` → paper.
    - **G2/G9 (a)-fidelity 집계기는 새로 쓰지 않는다** — `runs/track_c/make_figures.py` l.99-152
      `load_c1()` 이 이미 c1 rundir ↔ (a) 페어링 + `phi_a` 음수화 + Spearman 을 한다(= G2 표).
