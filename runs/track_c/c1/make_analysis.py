@@ -86,9 +86,13 @@ def load_cells():
             for k in FID:
                 row[f"{k}_a"] = v.get(f"{k}_a")
                 row[f"{k}_b"] = v.get(f"{k}_b")
-            row.update(sign_stats(phi, corrupt))
+            # 부호 감사는 **기여 방향**(클수록 기여)에서 센다. 방법들의 phi 는
+            # val-loss 방향(작을수록 기여)이므로 부호를 뒤집어 넘긴다 -- track_c1
+            # V3 의 `cum = -phi` 와 같은 규약.
+            row.update(sign_stats(-phi, corrupt))
             methods.append(row)
         if phi_a is not None:                     # (a) 자신도 부호 감사 대상
+            # (a) 는 U = -val_loss (exact_sv.py:83) 라 이미 기여 방향 -- 반전 없음.
             methods.append(dict(**base, method="(a)oracle", runtime=oa.get("time"),
                                 auroc=None, **{f"{k}_{s}": None for k in FID for s in "ab"},
                                 **sign_stats(phi_a, corrupt)))
@@ -96,7 +100,12 @@ def load_cells():
 
 
 def sign_stats(phi, corrupt):
-    """계획서 §3.4 부호 감사(CNN 레그)에 필요한 셀-내 phi 요약."""
+    """계획서 §3.4 부호 감사(CNN 레그)에 필요한 셀-내 요약.
+
+    `phi` 는 반드시 **기여 방향**(클수록 기여)이어야 한다. (a) 는 U=-val_loss 라
+    그대로, 방법들의 phi 는 val-loss 방향이라 호출부에서 -phi 로 뒤집어 넘긴다.
+    이 정규화를 빼면 (a) 와 방법들의 부호가 반대로 집계돼 (i)/(iii) 표가 뒤집힌다.
+    """
     if phi.size == 0 or phi.size != corrupt.size:
         return {}
     mal = corrupt.astype(bool)
@@ -248,26 +257,28 @@ def main():
         cl = cl.unstack("method").reindex(
             columns=[m for m in ["(a)oracle"] + METHOD_ORDER if m in
                      acl.method.unique()])
-        md += ["**(i) clean 셀 -- 전 클라 phi 양수여야 한다**(Stage 0 전제: 오배제-0). "
-               "칸 = `음수 phi 클라 / 전 클라 슬롯`(seed 합); **0/N 이 정상**", ""]
+        md += ["**(i) clean 셀 -- 전 클라 기여가 양수여야 한다**(Stage 0 전제: 오배제-0). "
+               "칸 = `기여 음수 클라 / 전 클라 슬롯`(seed 합); **0/N 이 정상**", "",
+               "> 방향 규약: **기여 = -phi** (방법들; val-loss 방향), **= +phi_a** ((a); U=-val_loss). "
+               "아래 세 표는 모두 이 기여 방향으로 정규화한 뒤 센다.", ""]
         md += md_table(cl, index_names=("데이터셋", "파티션"))
         afr = a[a.threat == "free_rider"]
         fr = afr.groupby("method")[["n_exact_zero_corrupt", "n_neg_corrupt"]].sum()
         slots = int(cells[cells.threat == "free_rider"].n_corrupt.sum())
         md += ["", "**(ii) free-rider(frzero) 셀 -- 오염 클라 phi 가 exact-0 인가** "
                f"(방법당 {slots} 오염-클라 슬롯 = 셀 x 오염 클라 합계)", "",
-               "| 방법 | exact-0 | 음수 |", "|---|---|---|"]
+               "| 방법 | exact-0 | 기여 음수 |", "|---|---|---|"]
         for mth in [m for m in ["(a)oracle"] + METHOD_ORDER if m in fr.index]:
             md.append(f"| {mth} | {int(fr.loc[mth, 'n_exact_zero_corrupt'])}/{slots} | "
                       f"{int(fr.loc[mth, 'n_neg_corrupt'])}/{slots} |")
         gp = a[a.threat != "clean"].groupby(["dataset", "threat", "method"])[
             "phi_gap_norm"].mean().unstack("method")
         gp = gp.reindex(columns=[m for m in ["(a)oracle"] + METHOD_ORDER if m in gp.columns])
-        md += ["", "**(iii) 분리도** `[mean phi(정직) - mean phi(오염)] / (max phi - min phi)` "
+        md += ["", "**(iii) 분리도** `[mean 기여(정직) - mean 기여(오염)] / span` "
                "-- 양수 = 오염 클라를 낮게 매겼다(원하는 방향)", "",
                "> 셀-내 span 으로 나눈 **무차원** 값이다. 생 `phi_gap` 은 방법 간 스케일이 "
                "달라(min-max 정규화 계열 vs 생 phi) 비교할 수 없다 -- 원값은 `sign_audit.csv`.",
-               "> frzero 는 오염 phi 가 0 이므로 이 칸은 사실상 **정직 클라 phi 의 부호**를 본다.", ""]
+               "> frzero 는 오염 클라 기여가 0 이므로 이 칸은 사실상 **정직 클라 기여의 부호**를 본다.", ""]
         md += md_table(gp.round(3), index_names=("데이터셋", "위협"))
 
     md += ["", "## 런타임 (median, s)", "",
