@@ -1,0 +1,19 @@
+{
+  "name": "mnist_iid_label-flip_fr0.70_comfedsv_seed2",
+  "git_sha": "7195c26a6a6e105e2510bc5c98811bdee1f1bb42",
+  "git_dirty": true,
+  "git_diff_stat": "",
+  "env_hash": "0e32905577988a57",
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.5.4",
+    "peft": "0.19.1",
+    "trl": "1.2.0",
+    "accelerate": "1.14.0",
+    "datasets": "5.0.0",
+    "numpy": "2.4.6",
+    "python": "3.11.15",
+    "cuda": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  }
+}
