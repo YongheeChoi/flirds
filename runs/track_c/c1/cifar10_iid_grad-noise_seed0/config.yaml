@@ -1,0 +1,26 @@
+cfg:
+  n_clients: 10
+  n_per: null
+  rounds: 10
+  epochs: 5
+  lr: 0.01
+  batch: 64
+  n_val: 2000
+  n_test: 8000
+  ripple:
+    k: 20
+    m: 50
+    R: 20
+dataset: cifar10
+scenario: iid_grad_noise
+seed: 0
+mode: full
+oracle_a: true
+width: 1.0
+kfrac: 1.0
+removal: false
+partition: iid
+threat: grad_noise
+flip_rate: 0.7
+mal_frac: 0.4
+grad_noise_std: 0.1
