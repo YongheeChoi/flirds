@@ -18,6 +18,13 @@
 | **JW** | 🟢 c1축 8셀 실행 중 · torchvision·파티션 이슈 해결 | reset → 잔여 13셀 |
 | **JB** | ⏸ 워처 대기 → **즉시 착수 가능** | c1축 18셀 |
 
+> **[07-26 추가] G14 — mnist 기준 arm(앵커) 18런 · 3090.** G10(216런)이 mnist 점수원·관측자를 채웠으나 oracle_excl(천장)·
+andom_excl(통제)이 통째로 없다 — cifar10/fmnist는 	rack_g/rundirs_cnn/*_g_seed*가 낳는데 그 그리드에 mnist가 없고, G10 계획서가 부재를 알고 **flirds 소스만** 보정했다. ⇒ mnist는 현재 **recovery 산출 불가**.
+> 배분 = **YH --array=0-8%8(iid 9) · JB --array=9-17%8(dir1 9)** · 러너 
+uns/track_g/sbatch_cnn_mnist_anchor.sh · **코드 변경 0** · 추정 **3–5.5 GPU-h 총계**(계정당 ~2) · torch 2.11 고정.
+> 상세 = 
+esearch-wiki/survey/flirds-paper-experiment-plan.md §4.4 · 각 계정 파일 YH §6b · JB §1b.
+
 **0″. 오염-집합 규약이 무대별로 **셋**이다 — 확정 사항 + 논문에 **2문장 추가 필요**.
 
 전 러너 전수 확인(07-25). `Bernoulli(ρ=0.4)` 는 코드에 **딱 한 곳** 있다 — `track_c2.py:258` 의
