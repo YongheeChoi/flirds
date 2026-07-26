@@ -4,8 +4,8 @@
 > **역할 = (1) 선행 코드 변경 2건**(JW 를 막고 있음) **+ (2) CNN 점수원 경쟁 신설**(cifar10/iid · mnist).
 > **하드웨어 = RTX3090 24GB**(클러스터 여유 21장 · 8-GPU QOS). CNN 은 전량 3090 — LLM 1B 은 24GB 불가라 여기 오지 않는다.
 > **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 전 실험 3-seed(seed-major). push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만. 기존 rundir read-only.
-> **진행 상황 (07-26 21:35)**: G3 ✅ **96/96 `4395028`** · c1축 🟢 **5/9 커밋**(`be53009`+`1ea3856`) + 4 실행 · G8 🟢 **4/24 커밋 `b160c85`** + 20 대기 · G6 🟡 9 PD · **G14 🟡 18 PD 제출완료 `1886441`** · **실패 0 · 미커밋 산출물 0**.
-> **전량 완주 예상 = 07-27 ~10:34**(임계경로 = c1축 idx16 단독; §7). G14 추가·G8 단가 정정에도 makespan 불변.
+> **진행 상황 (07-27 02:30)**: G3 ✅ 96/96 · **G8 ✅ 24/24 `bac5cff`** · **G6 ✅ 9/9 `93dbedd`** · **G14 ✅ 18/18 `3111ca1`** · c1축 🟢 **8/9 `61bd93a`** — **잔여 = idx16 단 1셀**(07-27 ~10:34 착지 예정).
+> **실패 0 · 미커밋 산출물 0 · 계 156셀 착지.** 마감(07-28 24:00) 대비 ~37h 여유. `origin/main` 은 `057506a` 까지 push 됨(Yonghee), 이후 4커밋 미push.
 
 ## 0. 환경
 
@@ -148,8 +148,8 @@ sbatch --array=32-95%8  runs/track_h/sbatch_cnn_iid_comp.sh
 
 - cifar10 본문 무대와 **동일 세팅, 데이터셋만 mnist**. fidelity(부록)와 φ-AUROC(부록)가 **같은 rundir**.
 - {mnist × [iid, dir1]} × 4위협 × 3seed = **24** · **~9 GPU-h**(0.38h/셀 실측 — 아래 정정).
-- 🟢 **4/24 착지**(iid seed0 4위협 완비 · 커밋 `b160c85` · 전부 EXIT=0) · 20 대기.
-- **★ 단가 정정 — 1.05h/셀이 아니라 0.38h (총 ~25–38 → ~9 GPU-h)**
+- ✅ **24/24 완주**(커밋 `b160c85`+`bac5cff` · 전부 EXIT=0 · 결손 0) · **실측 9.32 GPU-h(셀당 0.39h)**.
+- **★ 단가 정정 — 1.05h/셀이 아니라 0.39h (총 ~25–38 → 실측 9.32 GPU-h)**
   종전 1.05h 는 **cifar10** 실측이었다. 같은 러너·같은 참여 스케줄에서
   cifar10 1.00–1.19h · fmnist 0.35–0.41h · **mnist 0.35–0.41h** — mnist 는 fmnist 와
   동일 대역(둘 다 LeNet5)이고 cifar10 의 ~1/2.8. phase 는 valuation 12–15분 ·
@@ -192,22 +192,43 @@ mkdir -p runs/track_g/_logs
 sbatch --array=0-17%8 runs/track_g/sbatch_cnn_mnist_anchor.sh
 ```
 
-🟡 **제출 완료 07-26 21:25 — job `1886441` · 18셀 전량 PD**(8-GPU QOS 포화라 대기; §7 꼬리).
+✅ **18/18 완주 (07-27 01:10 · 커밋 `3111ca1`)** — job `1886441` · EXIT=0 · arm 결손 0 · 셀당 ~17분.
 제출 전 확인 4건:
 - **덮어쓰기 0** — 목표 이름 18개(`mnist_{iid,dir1}_{label-flip_fr0.70,free-rider,grad-noise}_g_seed{0,1,2}`)를 인덱스 산술로 전개해 `runs/track_g/rundirs_cnn/` 과 대조 → **18/18 유니크·기존 0건**. (그 디렉토리의 mnist 매치 48개는 전부 `fmnist` 다.)
 - **머지 경로** — `make_analysis.py:179` 가 `track_g/rundirs_cnn` 을 CNN 소스로 스캔하고(`_load(RUNS/"track_g"/"rundirs_cnn") + _load(ROOT/"rundirs_cnn")`), lf 도즈는 이름의 `_fr0.70_` 토큰으로 키를 맞춘다(l.168-179) → G10 track_h 행과 붙는다. CNN 분모는 `arms.get("vanilla")` **단독**(l.190)으로 observer 폴백이 없음도 재확인 — vanilla 를 같이 도는 이유가 코드로 확정.
 - **env 계약** — `track_c2.py` 가 `C2_ARMS`(l.493) · `oracle_excl`/`random_excl`(l.371/376) · `C2_RUN_ROOT`(l.145) · `C2_RUN_NAME`(l.672) · `mnist`(l.73, C-a) 전부 지원.
 - **`--time=04:00:00` 여유** — valuation 0 · (a) 재학습 0 이라 c1축 같은 컷 위험 없음. 추정 10–18분 대비 13–24× 헤드룸이라 이 클러스터의 1.5× 계수를 먹어도 안전.
 
-- **착지 후**: `python runs/track_h/make_analysis.py` → `cnn_competition.csv` mnist 행에 `recovery`가 생기는지 확인.
-  **무료 검증 1건**: 같은 셀의 `vanilla` vs `observer` `final_acc` 차 — fmnist 선례는 36쌍 전부 **bit-identical(0.000000)**, cifar10은 grad_noise만 최대 0.024. mnist=LeNet5라 fmnist 거동이 기대값이고, **크게 벌어지면 보고할 것**(두 루트 병합 전제가 깨진다).
+**✅ 착지 후 확인 2건 전부 통과 (07-27 02:30 · 커밋 `3111ca1`)**
+
+1. 집계 재생성 → `cnn_competition.csv` mnist 행 **recovery 997/1330 채워짐(G14 전 0)**.
+   오염평균 recovery(online · n18):
+
+   | 무대 | 순위 |
+   |---|---|
+   | mnist/iid P1 | **flirds +0.948** > lossheur +0.896 > gtg +0.652 > fedif +0.618 > flirds1st +0.564 > shapleyfl +0.434 > comfedsv/fedsv +0.424 |
+   | mnist/dir1 P1 | lossheur +0.968 > **flirds +0.892** > flirds1st +0.728 > fedif +0.698 > gtg +0.131 > fedsv −0.408 > comfedsv −0.476 > shapleyfl −0.585 |
+   | mnist/iid P2 | fedif +0.937 > **flirds +0.887** > lossheur +0.885 > gtg +0.855 |
+   | mnist/dir1 P2 | fedif +1.007 > **flirds +0.967** > lossheur +0.914 > gtg +0.654 |
+
+2. **무료 검증 — `vanilla`(G14) vs `observer`(G10) 18/18 bit-identical(`|Δ|=0.000000`)**.
+   fmnist 선례(36쌍 전부 0)와 동일 거동이고 cifar10 의 grad_noise 0.024 는 나타나지 않았다
+   ⇒ **두 루트(track_g 분모 · track_h 분자) 병합 전제가 실측으로 확인**됐다.
+
+> **FedSV≡ComFedSV 캐비엇이 mnist 에서 독립 재현** — mnist/iid 에서 두 열이 P1 +0.424 /
+> P2 +0.692 로 동일하고 dir1 에서는 갈린다(P1 −0.408 vs −0.476). §3 의 등n 축퇴 진단이
+> cifar10 밖에서도 성립 = 각주 근거 보강. **iid 표에서는 두 열을 독립 baseline 으로 쓰지 말 것.**
+
+> ⚠ **free-rider 열은 recovery 분모가 좁다** — `oracle_excl − vanilla` 가 +0.006~0.007
+> (grad-noise 는 +0.053~0.075). 분모가 작아 잡음에 민감하니 해석·표기 시 유의.
 
 ## 6. G6 — Removal-curve CNN 오염축 정렬 · 6~9런 (C-b 이후)
 
 - 현 removal 시나리오({feature-noise, label-flip 사다리, iid})가 확정 오염축과 불일치 → **frzero·grad-noise** 에서 worst-first 제거 → acc 분리(순위→성능 인과)를 다시 낸다.
 - frzero·grad-noise × 3seed = **6**(+ lf@0.70 재실행 시 3) · 추정 ~10–20 GPU-h.
 - 러너 = `runs/removal_dose/run_cnn_removal.sh` — **C-b 의 위협 토큰 확장을 공유**(별도 코드 없음).
-- 🟡 **07-26 현재 9셀 전량 PD**(`c1rmax` = `runs/removal_dose/sbatch_cnn_removal_axis.sh`, `C1_ORACLE_A=0 C1_REMOVAL=1`).
+- ✅ **9/9 완주 (커밋 `93dbedd`)** · **실측 1.4 GPU-h(셀당 0.15~0.16h)** — 추정 10–20 은 (a) 2¹⁰ 을 가정한 값이었으나 `C1_ORACLE_A=0` 이라 재학습이 없다.
+  오염집합 3-seed 전수 정본 일치(seed0 `[1,4,6,7]`·seed1 `[0,4,6,7]`·seed2 `[3,4,6,9]`).
   기존 `runs/removal_dose/rundirs_cnn/cifar10_iid_seed{0,1,2}`(07-20 clean 앵커)와 **이름 규약이 달라
   덮어쓰기 없음**(`cifar10_iid_{위협}_seed*`) — read-only 규약 유지 확인.
 
@@ -217,10 +238,10 @@ sbatch --array=0-17%8 runs/track_g/sbatch_cnn_mnist_anchor.sh
 |---|---|---|---|---|
 | ✅ | **코드 C-a·C-b + push** | 6파일 | ✅ **완료 `d09e528`** | 4계정 게이트 전부 해소 |
 | ✅ | G3 `hiidcomp` | 96런 · **89 실측** | ✅ **96/96 · 실패 0 · 커밋 `4395028`**(§3) | 본문 downstream 의 빈 절반 |
-| **P2** | **c1축 `c1axis` `0-7,16`** | 9셀 · **~125 실측** | 🟢 **5/9 커밋**(`be53009`·`1ea3856`) · 4 실행 | **본문 G2 의 P0 seed** — C-b 를 쓴 사람이 직접 |
-| **P3** | G8 `c2fidmn` | 24런 · **~9 실측정정** | 🟢 **4/24 커밋 `b160c85`** · 20 대기 | 부록 fidelity+탐지가 한 rundir |
-| **P4** | G6 `c1rmax` | 9런 · ~15–27 | 🟡 PD 9 | 본문 ablation |
-| **P5** | **G14 `gmnanch`**(신규 07-26) | 18런 · ~3–5.5 | 🟡 **PD 18 제출 `1886441`** | mnist recovery **분모** — 없으면 mnist 정책축 자체가 안 나옴(§6b) |
+| **P2** | **c1축 `c1axis` `0-7,16`** | 9셀 · **~125 실측** | 🟢 **8/9 커밋**(`…`·`61bd93a`) · **idx16 1셀 실행중** | **본문 G2 의 P0 seed** — C-b 를 쓴 사람이 직접 |
+| **P3** | G8 `c2fidmn` | 24런 · **9.32 실측** | ✅ **24/24 `bac5cff`** | 부록 fidelity+탐지가 한 rundir |
+| **P4** | G6 `c1rmax` | 9런 · **1.4 실측** | ✅ **9/9 `93dbedd`** | 본문 ablation |
+| **P5** | **G14 `gmnanch`**(신규 07-26) | 18런 · **~5 실측** | ✅ **18/18 `3111ca1`** | mnist recovery **분모** — 없으면 mnist 정책축 자체가 안 나옴(§6b) |
 | — | ~~G10 216런~~ | — | ✅ **HJ 로 이관 → 취소(전량 PD·mnist rundir 0)** | 개정 배분 §5 |
 | ✅ | **논문 부록 B.2 오염-집합 문단 재작성**(FedCorr 주장 철회 + 무대별 실현 수 표) | — | ✅ 초안 완료 → **타 세션 이관**(paper 는 YH 가 더 손대지 않음) | §2 |
 
@@ -269,11 +290,20 @@ valuation 0.13h — 이 축의 비용은 사실상 2¹⁰ 단독이고, 그래�
 
 | 시점 | 상태 |
 |---|---|
-| ✅ 07-26 20:18~21:29 | c1축 4셀 추가 착지(**5/9** · 커밋 `1ea3856`) + G8 4셀 착지(`b160c85`) |
-| 07-26 21:41~22:28 | 1차 웨이브 잔여 3셀 착지(idx1 21:41 · idx5 22:09 · idx4 22:28) |
-| 07-26 22:30~ | **7슬롯 개방** → G8 20 + G6 9 + **G14 18** 흡수 |
-| 07-27 ~02:30 | G8·G6·G14 완주 예상 — 계 **~28 GPU-h**(G8 8 + G6 15 + G14 5) / 7슬롯 ≈ 4 wall-h. G8 단가 정정(38→8)으로 종전 06~07시에서 당겨짐 |
-| **07-27 ~10:34** | **idx16 착지 = YH 전량 완주**(임계경로) |
+| ✅ 07-26 22:18~23:01 | c1축 1차 웨이브 완주 — **seed0 8/8**(`61bd93a`) |
+| ✅ 07-26 21:45~07-27 01:10 | **G14 18/18** 완주(`3111ca1`) |
+| ✅ 07-27 ~01:30 | **G8 24/24**(`bac5cff`) · **G6 9/9**(`93dbedd`) 완주 |
+| **07-27 ~10:34** | **idx16 착지 = YH 전량 완주**(임계경로 · 유일한 잔여) |
+
+**실측 대 추정 — 3건 전부 과대추정이었다**
+
+| 잡 | 추정 | 실측 | 원인 |
+|---|---|---|---|
+| G8 | ~25–38 | **9.32** | 1.05h/셀 이 cifar10 값이었음(mnist=fmnist 대역) |
+| G6 | ~15–27 | **1.4** | `C1_ORACLE_A=0` — 2¹⁰ 재학습 없음 |
+| G14 | ~3–5.5 | **~5** | 적중 |
+
+그래서 07-26 22:30 에 7슬롯이 열린 뒤 3잡 계 51셀이 ~3h 만에 소화됐다(예상 4h).
 
 > idx16 = **seed1 iid clean** 이라 방금 착지한 seed0 iid clean **15.14h** 가 그대로 예측치다
 > (19:26 착수 + 15.14h). Ripple 포함 셀이므로 fr/gn 13.x h 를 쓰면 과소추정이 된다.
