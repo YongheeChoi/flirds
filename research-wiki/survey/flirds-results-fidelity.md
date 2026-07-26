@@ -2,7 +2,7 @@
 type: survey
 title: "Flirds 결과 — Fidelity (기여도 측정 정확도)"
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-07-26
 tags: [flirds, results, fidelity]
 ---
 
@@ -228,6 +228,7 @@ tags: [flirds, results, fidelity]
 ### 1B-CNN · 소형 교차-사일로 시나리오별 vs (a) `[본문·보조]`
 
 > **세팅**: LeNet5(mnist)/FedSVCNN(cifar10) · N=10 · full · R=10 · (a) 2¹⁰ retrain + (b) 2¹⁰ · seed{0,1,2}. 오염은 클라-index 사다리(`_pair_ladder`)라 dataset·seed 무관 동일 → cifar10↔mnist 차이는 과제 난이도. `label_skew`는 (a)-게임 축퇴로 제외. **iid(오염0)은 신호-부재 대조**(평균 희석 주의). ⚠ **ShapleyFL 열 = β0.5 잔존**(canonical β0.3는 소폭↑; 예: cifar10/qskew Sp 0.81→0.84 — merge 재생성 대기).
+> 🔻 **이 표는 재편성 전 시나리오 집합이라 확정 오염축(§0.1)과 한 칸도 겹치지 않는다.** 오염축 정렬판은 **바로 아래 「1B-CNN · 오염축 정렬 축 그리드」**(2026-07-26 착지 17/48)이고, 논문 자리는 그쪽이 가져간다. 이 표는 3-seed라는 이유로만 당분간 남긴다.
 
 **cifar10 — Spearman vs (a)** (● 3-seed)
 
@@ -270,6 +271,68 @@ tags: [flirds, results, fidelity]
 | **평균(4시나리오)** | 0.60 | <u>0.68</u> | 0.65 | 0.49 | 0.33 | 0.31 | **0.68** | 0.54 |
 
 > **읽기**: 신호-강 칸(feature-noise·label-flip·quantity-skew)서 same-game 3종이 renorm과 수렴/우세. **iid(오염0)이 평균을 희석**(파티션만 있어 (a) 재학습-게임이 순위 재현 못 함) → 평균 행에서 ComFedSV/ShapleyFL이 앞서 보이는 건 iid·qskew 칸의 renorm-유리 때문(부록 C 각주). iid 제외 6칸 서열은 same-game 우세(상세는 구 카탈로그 §3.1.2 = git 이력). mnist가 cifar10보다 분리적(쉬운 과제)이라 오염 신호가 (a)에도 뚜렷. **출처**: `runs/track_c/fidelity.csv`(3-seed 평균).
+
+#### 1B-CNN · 오염축 정렬 축 그리드 vs (a) `[본문(cifar10)/부록(mnist)]` ◐ 17/48셀
+
+> **왜 별도 표인가**: 위 표는 재편성 **전** 시나리오 집합({feature-noise, label-flip 사다리, quantity-skew, label-skew, iid})이라 확정 오염축 3종과 **한 칸도 겹치지 않는다**(§0.1). 이 그리드는 같은 러너를 **{clean, frzero, grad-noise, lf@0.70} × {dir1, iid}** 로 정렬해 다시 돌린 것이고, 논문 본문의 1B-CNN 자리는 이쪽이 차지한다(cifar10=G2 본문 · mnist=G9 부록).
+> **세팅**: LeNet5(mnist)/FedSVCNN(cifar10) · N=10 · **full 참여** · R=10 · **(a) 2¹⁰=1024 재학습 + (b) 2¹⁰ in-run**을 한 rundir 안에서 산출 · 오염 4/10 클라. **ShapleyFL β=0.3 canonical**(레거시 표의 β0.5 잔존 캐비엇은 이 그리드에 해당 없음). Banzhaf·Ripple 열은 러너가 계속 만들지만 §0.2에 따라 표에서 뺐다.
+> ⚠ **◐ 착지 17/48**(2026-07-26): cifar10 **seed2** 8셀 + cifar10/iid free-rider **seed0** 1셀 + mnist **seed1** 8셀. 표기 없는 칸은 **단일 seed**, `(n2)`만 2-seed다. **3-seed 전 인용 금지** — 아래 값은 방향 확인용이다.
+> ⚠ **비교불가성**: (a)는 2^N 재학습이라 N=100에서 원리적으로 불가 → 1A-CNN(N=100·10/100 부분참여)과 **N·참여율은 맞출 수 없다**. 맞춘 것은 **오염축과 파티션뿐**이다.
+
+**듀얼오라클 일치도 — (b) in-run ↔ (a) retrain** (◐ 1~2 seed)
+
+| 데이터셋 | 파티션 | clean | frzero | grad-noise | lf@0.70 |
+|---|---|---|---|---|---|
+| cifar10 | dir1 | +0.612 | +0.719 | +0.964 | +0.867 |
+| cifar10 | iid | −0.564 | +0.583 (n2) | +0.624 | +0.673 |
+| mnist | dir1 | +0.855 | +0.957 | +0.867 | +1.000 |
+| mnist | iid | +0.491 | +0.822 | +0.648 | +0.745 |
+
+> **LLM silo5의 +1.000과 대비되는 칸**: CNN N=10·R=10 무대에서 두 오라클은 **완전일치하지 않는다**(+0.49~+1.00, cifar10/iid clean은 **−0.564**로 역전). 즉 "(b)=(a)"는 무대 성질이지 보편 사실이 아니다 — LLM silo5(비IID·(b) 타깃 xseed +0.87~+0.93)에서만 1.000이고, 여기서는 **비IID(dir1) 칸이 IID 칸보다 일관되게 높다**(cifar10 dir1 .61~.96 vs iid −.56~.67 / mnist dir1 .86~1.00 vs iid .49~.82) — §1C의 "신호가 있어야 두 정답이 만난다"와 같은 방향. **frzero 칸의 불일치는 게임 정의 차이**다: Δ=0이라 고정가중 (b)에서 φ는 exact-0이지만, (a) 재학습은 그 클라를 평균의 분모에 남겨 step을 희석시키므로 φ가 0으로 떨어지지 않는다(측정된 (a) 부호는 양수 = 희석이 val-loss를 낮춤). 순위는 두 오라클 모두 free-rider를 최하위에 놓는다(AUROC 1.000, [[flirds-results-detection]]).
+
+**Spearman vs (a) 재학습 오라클** (◐ 1~2 seed · (b)oracle 열 = 위 듀얼오라클 일치도)
+
+| 데이터셋 | 파티션 | 위협 | (b)oracle | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| cifar10 | dir1 | clean | +0.612 | +0.600 | +0.358 | +0.576 | **+0.976** | <u>+0.903</u> | +0.624 | +0.842 | +0.091 |
+| cifar10 | dir1 | frzero | +0.719 | <u>+0.719</u> | +0.582 | +0.682 | **+0.842** | +0.321 | +0.697 | −0.169 | +0.569 |
+| cifar10 | dir1 | grad-noise | +0.964 | <u>+0.939</u> | −0.321 | **+0.952** | +0.818 | +0.842 | +0.164 | +0.867 | +0.685 |
+| cifar10 | dir1 | lf@0.70 | +0.867 | +0.867 | +0.770 | +0.855 | **+0.952** | **+0.952** | +0.903 | <u>+0.915</u> | +0.503 |
+| cifar10 | iid | clean | −0.564 | −0.479 | −0.236 | −0.248 | −0.333 | −0.685 | **+0.248** | −0.467 | <u>−0.103</u> |
+| cifar10 | iid | frzero | +0.583 (n2) | +0.533 (n2) | **+0.746** (n2) | +0.690 (n2) | +0.687 (n2) | +0.204 (n2) | +0.401 (n2) | −0.615 (n2) | <u>+0.696</u> (n2) |
+| cifar10 | iid | grad-noise | +0.624 | +0.600 | −0.164 | <u>+0.697</u> | **+0.733** | <u>+0.697</u> | +0.309 | +0.673 | +0.648 |
+| cifar10 | iid | lf@0.70 | +0.673 | +0.673 | +0.685 | +0.612 | +0.709 | +0.624 | **+0.842** | +0.600 | <u>+0.721</u> |
+| mnist | dir1 | clean | +0.855 | +0.806 | <u>+0.830</u> | **+0.855** | +0.770 | +0.697 | +0.794 | +0.309 | +0.079 |
+| mnist | dir1 | frzero | +0.957 | <u>+0.957</u> | +0.932 | <u>+0.957</u> | **+0.976** | +0.939 | +0.867 | −0.456 | +0.807 |
+| mnist | dir1 | grad-noise | +0.867 | +0.879 | +0.697 | <u>+0.891</u> | +0.806 | **+0.988** | +0.733 | +0.806 | +0.697 |
+| mnist | dir1 | lf@0.70 | +1.000 | **+1.000** | **+1.000** | **+1.000** | <u>+0.976</u> | +0.927 | +0.830 | +0.697 | +0.467 |
+| mnist | iid | clean | +0.491 | +0.273 | +0.370 | +0.418 | +0.164 | −0.479 | −0.248 | **+0.842** | <u>+0.782</u> |
+| mnist | iid | frzero | +0.822 | +0.734 | +0.734 | +0.734 | <u>+0.742</u> | +0.559 | +0.565 | +0.412 | **+0.884** |
+| mnist | iid | grad-noise | +0.648 | +0.709 | +0.442 | <u>+0.782</u> | +0.697 | +0.709 | +0.527 | +0.770 | **+0.806** |
+| mnist | iid | lf@0.70 | +0.745 | +0.745 | +0.673 | +0.673 | +0.661 | +0.624 | +0.709 | **+0.842** | <u>+0.818</u> |
+
+**Spearman vs (b) in-run 오라클** (◐ 1~2 seed · 같은 rundir · 논문 나머지 표와 같은 기준선)
+
+| 데이터셋 | 파티션 | 위협 | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
+|---|---|---|---|---|---|---|---|---|---|---|
+| cifar10 | dir1 | clean | **+0.988** | <u>+0.891</u> | **+0.988** | +0.612 | +0.430 | +0.345 | +0.430 | +0.745 |
+| cifar10 | dir1 | frzero | **+1.000** | <u>+0.961</u> | <u>+0.961</u> | +0.494 | +0.050 | +0.481 | −0.587 | +0.948 |
+| cifar10 | dir1 | grad-noise | <u>+0.939</u> | −0.406 | **+0.988** | +0.879 | +0.903 | +0.236 | +0.855 | +0.648 |
+| cifar10 | dir1 | lf@0.70 | **+1.000** | +0.952 | <u>+0.988</u> | +0.939 | +0.939 | +0.721 | +0.867 | +0.588 |
+| cifar10 | iid | clean | **+0.964** | +0.745 | <u>+0.830</u> | +0.467 | +0.673 | +0.176 | +0.479 | +0.600 |
+| cifar10 | iid | frzero | **+0.987** (n2) | +0.890 (n2) | <u>+0.942</u> (n2) | +0.825 (n2) | +0.385 (n2) | +0.535 (n2) | −0.774 (n2) | +0.884 (n2) |
+| cifar10 | iid | grad-noise | <u>+0.952</u> | +0.152 | <u>+0.952</u> | +0.588 | +0.721 | −0.115 | +0.927 | **+0.964** |
+| cifar10 | iid | lf@0.70 | **+1.000** | <u>+0.988</u> | <u>+0.988</u> | +0.794 | +0.721 | +0.564 | +0.903 | +0.927 |
+| mnist | dir1 | clean | **+0.988** | +0.964 | <u>+0.976</u> | +0.952 | +0.527 | +0.697 | +0.297 | +0.212 |
+| mnist | dir1 | frzero | **+1.000** | <u>+0.987</u> | **+1.000** | +0.944 | +0.957 | +0.944 | −0.458 | +0.819 |
+| mnist | dir1 | grad-noise | **+0.988** | +0.673 | **+0.988** | +0.818 | <u>+0.830</u> | +0.697 | +0.758 | +0.661 |
+| mnist | dir1 | lf@0.70 | **+1.000** | **+1.000** | **+1.000** | <u>+0.976</u> | +0.927 | +0.830 | +0.697 | +0.467 |
+| mnist | iid | clean | +0.636 | <u>+0.697</u> | **+0.770** | +0.661 | −0.394 | −0.224 | +0.382 | +0.685 |
+| mnist | iid | frzero | **+0.910** | **+0.910** | **+0.910** | +0.657 | +0.744 | <u>+0.769</u> | +0.563 | **+0.910** |
+| mnist | iid | grad-noise | <u>+0.842</u> | +0.406 | <u>+0.842</u> | +0.624 | **+0.927** | +0.782 | +0.697 | +0.733 |
+| mnist | iid | lf@0.70 | **+1.000** | <u>+0.952</u> | <u>+0.952</u> | +0.770 | +0.721 | +0.745 | +0.903 | +0.915 |
+
+> **읽기(방향 확인용)**: ① **vs (b)에서는 same-game 계열이 지배**한다 — 16칸 최고(동점 포함) 횟수가 **Flirds 12 · loss-heur 7 · Flirds-1st 2 · FedIF 2 · FedSV 1**이고, Flirds가 ρ<0.94인 칸은 4개뿐이다(cifar10/dir1 grad-noise .939 · mnist/iid clean .636·frzero .910·grad-noise .842). **Flirds-1st만 grad-noise에서 붕괴**(cifar10/dir1 **−0.406** · cifar10/iid +0.152 · mnist +0.406~+0.673) = 부분참여 무대(§1A-CNN)의 2차항 논지가 **N=10 전원참여에서도 재현**된다. renorm 계열은 frzero에서 음수까지 간다(ShapleyFL cifar10/dir1 −0.587 · iid −0.774). ② **vs (a)에서는 서열이 흩어진다** — (a) 게임 자체가 (b)와 부분적으로만 일치하는 무대(위 듀얼오라클 −0.56~+1.00)라, 16칸 최고가 **GTG 5 · loss-heur 3 · FedSV 2 · ComFedSV 2 · ShapleyFL 2 · FedIF 2 · Flirds-1st 2 · Flirds 1**로 갈린다. **cifar10/iid clean은 (b)조차 −0.564**라 전 방법이 음수인 신호-부재 칸이다. ③ 따라서 이 무대에서 지금 말할 수 있는 건 "**vs (b)에서 Flirds가 grad-noise를 유일하게 지킨다**"까지이고, **vs (a) 서열은 3-seed(잔여 31셀) 착지 후에 다시 본다**. **출처**: `runs/track_c/c1/analysis/{fidelity_vs_a_spearman,fidelity_vs_b_spearman,dual_oracle_b_vs_a}.csv`(`python runs/track_c/c1/make_analysis.py`, rundir-only).
 
 ### 1B-LLM
 
@@ -373,9 +436,11 @@ tags: [flirds, results, fidelity]
 ## 출처·재생성
 
 - CNN in-run: `python runs/track_c/c2fid/make_analysis.py` → `analysis/fidelity.csv` → seed 평균(ddof0).
-- CNN vs (a): `runs/track_c/fidelity.csv`(ShapleyFL β0.3 재생성 = merge 대기).
+- CNN vs (a) — **레거시 5-시나리오**: `runs/track_c/fidelity.csv`(ShapleyFL β0.3 재생성 = merge 대기).
+- CNN vs (a) — **오염축 정렬 축 그리드(신규)**: `python runs/track_c/c1/make_analysis.py` → `runs/track_c/c1/analysis/*.csv` + `README.md`. rundir = `runs/track_c/c1/{ds}_{part}_{threat}_seed{N}`(각 셀 안에 (a) 2¹⁰ + (b) 2¹⁰ + 9방법 φ).
 - LLM: `runs/track_d/rundirs/1B_anchor5_seed{0,1,2}/phi.parquet`(vs (a) 직접 계산) · `runs/phase2_matrix/rundirs/1B_silo5_*/phi.parquet`(vs (b)) · `runs/track_d/fidelity.csv`(std20).
 - LLM silo5 (a)-leg: `python runs/phase2_matrix/merge_silo5_a.py` → `silo5_a_fidelity_1B.csv`(rundir `1B_silo5_{threat}_aonly_s{0,1,2}` × canonical `1B_silo5_{threat}`).
 - 안정성: `runs/track_c/RESULTS.txt` · `runs/track_d/target_stability.csv`.
 - **⬚ 미실행**: R4-L2(gsm50k5 (b)) — 착지 시 위 표 빈 칸을 mean±std로 교체.
+- **◐ 진행 중**: 1B-CNN 오염축 정렬 축 그리드 **17/48셀**(cifar10 seed2 8 + cifar10/iid free-rider seed0 + mnist seed1 8). 잔여 31셀 = cifar10 seed{0,1} 15 + mnist seed{0,2} 16. 3-seed 완주 전 인용 금지.
 - 축 지도: [[flirds-experiment-axis-map]] (전량 카탈로그는 git 이력)

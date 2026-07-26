@@ -2,7 +2,7 @@
 type: survey
 title: "Flirds 결과 — Detection (오염 클라 탐지)"
 created: 2026-07-25
-updated: 2026-07-25
+updated: 2026-07-26
 tags: [flirds, results, detection]
 ---
 
@@ -184,6 +184,29 @@ tags: [flirds, results, detection]
 
 > **읽기**: cifar10 label-flip은 (b)·Flirds·Flirds-1st가 AUROC 1.000·dose-ρ 0.96~0.97로 완결. **cifar10 feature-noise가 판별 칸** — same-game 3종(0.81~0.83) > FedIF 0.79 > renorm 0.58~0.71, dose-ρ에선 격차가 더 벌어짐(Flirds 0.796 vs ShapleyFL 0.000). **mnist feature-noise는 (b) 자체가 0.375로 실패**(오염이 mnist 성능에 안 남음) → 방법 비교 무의미한 칸이고, 여기서 FedSV가 0.667로 "이기는" 건 신호 없는 곳의 잡음. dose-ρ가 AUROC보다 이 무대를 잘 가른다. **출처**: `runs/track_c/c1/*/metrics.json`(methods.*.auroc·spearman_vs_rate).
 
+### 소형 전원참여 φ-AUROC — 오염축 정렬 축 그리드 (C1, N=10) `[본문(cifar10)/부록(mnist)]` ◐ 17/48셀
+
+> **세팅**: LeNet5(mnist)/FedSVCNN(cifar10) · N=10 · **full** · R=10 · 오염 **4/10 클라(이진 마스크)** · **§1B-CNN 오염축 정렬 그리드와 같은 rundir**. 위 「소형 교차-사일로 φ-AUROC」와 달리 dose 사다리가 아니라 **확정 오염축 3종**(frzero·grad-noise·lf@0.70)이라 `spearman_vs_rate`는 정의되지 않는다. clean 셀은 오염이 없어 제외.
+> ⚠ **◐ 착지 17/48**(cifar10 seed2 + cifar10/iid frzero seed0 + mnist seed1) — 표기 없는 칸은 **단일 seed**, `(n2)`만 2-seed. **3-seed 전 인용 금지**.
+> **강조 생략**: 대부분의 칸이 1.000이라 볼드/밑줄이 정보를 주지 않는다 — **1.000 미만인 칸만 읽으면 된다**.
+
+| 데이터셋 | 파티션 | 위협 | (b)oracle | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| cifar10 | dir1 | frzero | 1.000 | 1.000 | 1.000 | 1.000 | 0.667 | 0.292 | 0.583 | **0.000** | 1.000 |
+| cifar10 | dir1 | grad-noise | 1.000 | 1.000 | **0.083** | 1.000 | 1.000 | 1.000 | 0.708 | 1.000 | 1.000 |
+| cifar10 | dir1 | lf@0.70 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.875 | 1.000 | 1.000 |
+| cifar10 | iid | frzero (n2) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.729 | 0.729 | **0.000** | 1.000 |
+| cifar10 | iid | grad-noise | 1.000 | 1.000 | **0.375** | 1.000 | 1.000 | 1.000 | 0.708 | 1.000 | 1.000 |
+| cifar10 | iid | lf@0.70 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| mnist | dir1 | frzero | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | **0.167** | 1.000 |
+| mnist | dir1 | grad-noise | 1.000 | 1.000 | 0.750 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| mnist | dir1 | lf@0.70 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| mnist | iid | frzero | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | **0.667** | 1.000 |
+| mnist | iid | grad-noise | 1.000 | 1.000 | 0.750 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| mnist | iid | lf@0.70 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+
+> **읽기**: **N=10·오염 4/10은 coarse 무대**(AUROC 격자 1/24)라 12칸 중 8칸이 전 방법 1.000이다 — 변별은 두 곳에서만 난다. ① **grad-noise에서 Flirds-1st만 실명**(cifar10 0.083/0.375 · mnist 0.750; Flirds·loss-heur·(b) 모두 1.000) = 부분참여 c2fid의 0.46~0.55 실명과 **같은 방향, 더 극단**. cifar10/dir1의 0.083은 **오염 클라를 clean보다 높게 매긴 반전**이다. ② **frzero에서 ShapleyFL 완전 반전**(cifar10 0.000·mnist 0.167~0.667)과 **cifar10에서 FedSV·ComFedSV 부분 붕괴**(0.292~0.729) — exact-0 공리를 못 지키는 renorm의 전형이고 c2fid(0.00~0.29)와 일치한다. mnist에서는 renorm도 1.000인데, mnist가 쉬워 free-rider 신호가 크기 때문이다. **Flirds는 12칸 전부 (b)와 동값 1.000**(H-13 오라클-동행 Δ=0.000). **출처**: `runs/track_c/c1/analysis/detection_auroc.csv`(`make_analysis.py`, rundir-only).
+
 ---
 
 ## 3-LLM
@@ -339,9 +362,11 @@ tags: [flirds, results, detection]
 ## 출처·재생성
 
 - CNN 부분참여: `python runs/track_c/c2fid/make_analysis.py` → `analysis/fidelity.csv`(auroc 열) → seed 평균.
-- CNN C1: `runs/track_c/c1/*/metrics.json` → `methods.<m>.{auroc, spearman_vs_rate}`.
+- CNN C1 **레거시 5-시나리오**(dose 사다리): `runs/track_c/c1/*/metrics.json` → `methods.<m>.{auroc, spearman_vs_rate}`.
+- CNN C1 **오염축 정렬 축 그리드**(신규): `python runs/track_c/c1/make_analysis.py` → `analysis/detection_auroc.csv`.
 - LLM: `runs/phase2_matrix/rundirs/{1B_silo5_*, 1B_iid5_*, 1B_device100-a*, 3B_silo5_*}/metrics.json` → `<threat>_seed<N>.auroc`.
   ⚠ **iid5·clean 셀은 `make_analysis.py`가 설계상 건너뛴다**(taxonomy가 이 셀보다 먼저 생성 — 소스 §load_cells) → iid5 표는 rundir 직접 산출.
 - LLM foundational: `runs/phase1/rundirs`. frdelta: `runs/phase2_matrix/rundirs_2026-07/1B_silo5_frdelta`.
-- **⬚ 미실행**: R4(gsm50k5 L2) — 착지 시 위 빈 표를 mean±std로 교체. device100 비-앵커 α의 GTG·FedSV·ShapleyFL 열.
+- **⬚ 미실행**: R4(gsm50k5 L2) — 착지 시 위 빈 표를 mean±std로 교체. device100 비-앵커 α의 GTG·FedSV·ShapleyFL 열. **CNN 부분참여 mnist 무대(c2fid)** — track_h downstream용 mnist는 착지했으나 c2fid(φ-AUROC·fidelity)는 여전히 {cifar10, fmnist}뿐이라 §3-CNN 파티션 표엔 mnist 행이 없다.
+- **◐ 진행 중**: C1 오염축 정렬 축 그리드 17/48셀.
 - 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §3.3 = git 이력)
