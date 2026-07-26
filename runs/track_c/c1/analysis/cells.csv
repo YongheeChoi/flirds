@@ -1,5 +1,6 @@
 cell,dataset,partition,threat,seed,mode,final_acc,traj_time,t_a,n_retrains,n_clients,n_corrupt,corrupt_ids,ripple_skipped,has_phi_a
 cifar10_dir1_clean_seed0,cifar10,dir1,clean,0,full,0.635875,106.18043716903776,47873.15389090404,1024,10,0,[],False,True
+cifar10_dir1_clean_seed1,cifar10,dir1,clean,1,full,0.639375,101.59583357186057,45301.855456988094,1024,10,0,[],False,True
 cifar10_dir1_clean_seed2,cifar10,dir1,clean,2,full,0.63825,118.62590512796305,51861.80312823411,1024,10,0,[],False,True
 cifar10_dir1_free-rider_seed0,cifar10,dir1,free_rider,0,full,0.55775,102.40872901165858,46109.83915200899,1024,10,4,"[np.int64(1), np.int64(4), np.int64(6), np.int64(7)]",True,True
 cifar10_dir1_free-rider_seed1,cifar10,dir1,free_rider,1,full,0.52675,101.4169013290084,45050.488217804,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",True,True
@@ -7,6 +8,7 @@ cifar10_dir1_free-rider_seed2,cifar10,dir1,free_rider,2,full,0.54975,117.1831894
 cifar10_dir1_grad-noise_seed0,cifar10,dir1,grad_noise,0,full,0.43675,106.91381295770407,47732.94332555588,1024,10,4,"[np.int64(1), np.int64(4), np.int64(6), np.int64(7)]",True,True
 cifar10_dir1_grad-noise_seed2,cifar10,dir1,grad_noise,2,full,0.466,120.26410149014555,52926.50125524402,1024,10,4,"[np.int64(3), np.int64(4), np.int64(6), np.int64(9)]",True,True
 cifar10_dir1_label-flip_fr0.70_seed0,cifar10,dir1,label_flip,0,full,0.5905,104.13977940334007,47020.797173900064,1024,10,4,"[np.int64(1), np.int64(4), np.int64(6), np.int64(7)]",False,True
+cifar10_dir1_label-flip_fr0.70_seed1,cifar10,dir1,label_flip,1,full,0.57825,104.34065671218559,45287.965899626026,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",False,True
 cifar10_dir1_label-flip_fr0.70_seed2,cifar10,dir1,label_flip,2,full,0.579375,115.83750941907056,50982.89779099007,1024,10,4,"[np.int64(3), np.int64(4), np.int64(6), np.int64(9)]",False,True
 cifar10_iid_clean_seed0,cifar10,iid,clean,0,full,0.653875,104.3719128560042,47135.76963259402,1024,10,0,[],False,True
 cifar10_iid_clean_seed2,cifar10,iid,clean,2,full,0.651125,119.64024219987914,52831.64643826522,1024,10,0,[],False,True
