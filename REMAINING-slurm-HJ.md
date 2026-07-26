@@ -252,6 +252,25 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh   # seeds 1-2
 - **torchvision 미설치 가능성**: JW 계정은 없어서 `0.26.0+cu128` 을 별도 설치했다(torch 2.11.0+cu128
   불변). HJ 도 CNN 첫 제출 전 `python -c "import torchvision"` 로 확인할 것.
 
+## 3d. 담당 ③ — G9 seed0 잔여 (JB 이관): mnist dir1 (a)-오라클 2셀
+
+> **JB 가 seed0 pending 2셀을 이관**(2026-07-26). JB 는 3090 큐에서 `scancel 1878820` 후 seed1·2(16셀)만 유지. HJ 가 G10 완주 뒤 이 2셀을 흡수한다.
+
+- **셀**: `--array=14-15` on `runs/track_c/c1/sbatch_c1_axis.sh` = **mnist dir1 seed0 {free_rider(14) · grad_noise(15)}**. N=10 전원참여 **(a) 2¹⁰ 재학습 오라클 + (b) 2¹⁰ + 9방법 φ**.
+- **단가 ~12–18 h/셀**(mnist (a) 2¹⁰ 지배; JB 실측 `oracle_a.time` = 63,327 s = 17.6 h @노드경합, 구 `c1_oracle` mnist = 41,168 s = 11.4 h @무경합). 2셀 병렬 = ~1셀 wall. **G10 완주(~07-26 21:00) 후 착수 → ~07-27 15:00 완료**, 마감 07-29 00:00 여유.
+- **게이트 없음** — 축 분리 env(C-b)가 `d09e528` 착지. **셋업도 이미 됨**(§3b: torchvision 0.26.0+cu128 · `~/data` mnist 선다운로드) → 추가 설치 0.
+- **제출**(스크립트 무수정 · override 3종 = §3b G10 과 동일 패턴; `sbatch_c1_axis.sh` 도 `--output` 이 chyoyhr 하드코딩):
+```
+cd $REPO && mkdir -p runs/track_c/c1/_logs
+sbatch --qos=base_qos --output="$REPO/runs/track_c/c1/_logs/%x_%A_%a.out" \
+       --export=ALL,REPO=/home/rlaguswls186790/flirds,PY=<HJ torch2.11 python> \
+       --array=14-15%8 runs/track_c/c1/sbatch_c1_axis.sh
+```
+- 인덱스 규약: `SEED=IDX/16`=0 · `8-15`=mnist · `PART=dir1` · `T=2 free_rider(14) / 3 grad_noise(15)`. **corrupt(seed0) = 고정 `[1,4,6,7]`**(전위협 공통·seed-only, `default_rng(1000+seed)` 첫 소비). `C1_ORACLE_A=1`(스크립트 기본) = 2¹⁰ 재학습.
+- **⚠ 중복 금지**: seed1·2(`24-31,40-47`)는 JB 몫. HJ 는 **seed0 `14-15` 만**. 같은 rundir 명 = last-writer-wins.
+- **채우는 것**: 계획서 §2.1/§3.1 (a) 무대 · §3.4 φ 부호 감사 CNN 레그의 **seed0 leg**(frzero·grad-noise).
+- **완료 후**: rundir 커밋(push=Yonghee) → `runs/track_c/make_figures.py load_c1()` 집계. **phi_a = `metrics.json['oracle_a']['phi']`**(rundir 내장; JB 확인, 별도 `c1_oracle/*_aonly_*` 신규축 없음). 완료마커 = `metrics.json`(run 끝에 `phi.parquet` 와 동시 기록).
+
 ## 3c. 완주 후
 
 - **JW·JB 의 `sbatch_c1_axis.sh` 잔여를 work-steal**(남은 `--array` 범위만; 같은 rundir 이름 = last-writer-wins 라 중복 = GPU 낭비).
