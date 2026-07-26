@@ -20,26 +20,9 @@
 §5.3 LLM 개입 표의 비교 대상을 **이미 계산이 끝난 것**으로 한정한다 — vanilla(observer) · oracle_excl · random_excl · **flirds류**. 디스크 확인 결과 noisy·frzero 는 이 셋 + `t2_sign` ×4(flirds·flirds1st·loss-heur·FedIF)까지 **3-seed 완결**이라, 남은 신규 실행은 **online Flirds-1st 9셀(HJ)** 과 **clean seed1·2 4셀(B200)** 뿐이다.
 → **renorm-4 는 LLM downstream 표에서 빠진다.** 그 붕괴는 CNN §5.3(8점수원 양 표 3-seed)과 LLM §5.2 fidelity(G1 이 9방법 φ 전량 산출)가 담당한다.
 
-## 1b. **G14 — mnist 기준 arm(앵커) · dir1 9런** (2026-07-26 신규 배분 · §2 뒤)
+## 1b. ~~G14 — mnist 기준 arm(앵커) dir1 9런~~ → **YH 전량 이관 (2026-07-26)**
 
-> **왜 생겼나**: G10(HJ, 216런)이 mnist 점수원·관측자를 다 채웠는데 **`oracle_excl`(천장)·`random_excl`(통제)만 없다**. cifar10/fmnist에선 `track_g/rundirs_cnn/*_g_seed*` 그리드가 낳는데 거기 mnist가 없고, G10 계획서가 그 부재를 알고 **flirds 소스만** 보정했다. ⇒ 현재 mnist는 **recovery를 원리적으로 못 낸다**.
-> 근거·판정: `research-wiki/survey/flirds-paper-experiment-plan.md` §4.4.
-
-- **셀(JB 몫) = `--array=9-17%8` = mnist/dir1 × {lf@0.70, free-rider, grad-noise} × seed{0,1,2} = 9**.
-  iid 9셀(`0-8`)은 **YH** 몫 — range 분리 = 중복 0. 파티션 분할 이유 = 한쪽이 늦어도 **한 파티션은 3-seed로 완성**된다.
-- **arm = `vanilla,oracle_excl,random_excl`** · **valuation 없음**(순수 학습 런 3개). clean은 오염 클라 0이라 두 arm이 정의되지 않아 3위협뿐이다.
-- **단가 추정 ~10–18분/셀 → 9셀 ≈ 1.5–2.7 GPU-h** (근거 = cifar10/iid G3 최저가 셀 18.0분, 거긴 valuation 포함). **§2(16셀 × ~17.6h)에 비하면 무시할 수준**이라 §2 뒤에 붙이면 된다.
-- **셋업 추가 0** — §3의 torch 2.11 + torchvision mnist 가 이미 있다. **스택을 바꾸지 말 것**(분모와 분자가 같은 스택이어야 recovery 성립).
-- **⚠ `--output`·`REPO`·`PY` override 필수** — 스크립트 기본값이 YH 경로다(§3 4번과 같은 패턴):
-
-```
-mkdir -p $REPO/runs/track_g/_logs
-sbatch --output="$REPO/runs/track_g/_logs/%x_%A_%a.out" \
-       --export=ALL,REPO=<JB repo>,PY=<JB torch2.11 python> \
-       --array=9-17%8 runs/track_g/sbatch_cnn_mnist_anchor.sh
-```
-
-- **착지 후**: `python runs/track_h/make_analysis.py` 재산출 + 같은 셀의 `vanilla` vs `observer` `final_acc` 차 보고(fmnist 선례 = bit-identical 0.000000; 크게 벌어지면 두 루트 병합 전제가 깨진다).
+> 한때 JB에 dir1 9셀(`--array=9-17%8`)을 배분했으나 **같은 날 YH 전량(18셀)으로 재배분**됐다 — 총 3–5.5 GPU-h라 쪼갤 실익이 없고, JB는 §2(16셀 × ~17.6 h, ETA 07-27 09:40)로 차 있다. **JB가 할 일 없음.** 상세 = `research-wiki/survey/flirds-paper-experiment-plan.md` §4.4 · `REMAINING-slurm-YH.md` §6b.
 
 ## 2. G2·G9 seed2 — (a) 재학습 오라클 (16셀 · ~168 GPU-h)
 

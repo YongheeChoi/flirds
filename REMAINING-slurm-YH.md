@@ -166,23 +166,23 @@ sbatch --array=0-71%8    runs/track_h/sbatch_cnn_mnist_comp.sh
 sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh
 ```
 
-## 6b. **G14 — mnist 기준 arm(앵커) · iid 9런** (2026-07-26 신규 배분)
+## 6b. **G14 — mnist 기준 arm(앵커) · 18런 전량** (2026-07-26 신규 배분)
 
 > **왜 생겼나**: G10(HJ, 216런)이 mnist 점수원·관측자를 다 채웠는데 **`oracle_excl`(천장)·`random_excl`(통제)만 없다**. cifar10/fmnist에선 이 둘을 `track_g/rundirs_cnn/*_g_seed*` 그리드가 낳는데 거기 mnist가 없다. G10 계획서(§5 L162)가 그 부재를 알고 **flirds 소스만** track_h로 옮겨 보정했고, 같은 그리드가 낳는 두 기준 arm은 옮기지 않았다. ⇒ **현재 mnist는 recovery·정책축·parity를 원리적으로 못 낸다**(절대 acc 대조까지만).
 > 근거·판정: `research-wiki/survey/flirds-paper-experiment-plan.md` §4.4.
 
-- **셀(YH 몫) = `--array=0-8%8` = mnist/iid × {lf@0.70, free-rider, grad-noise} × seed{0,1,2} = 9**.
-  dir1 9셀(`9-17`)은 **JB** 몫이다 — range가 분리돼 중복 0. 파티션으로 쪼갠 이유 = 한쪽이 늦어도 **완성된 파티션 하나는 3-seed로 쓸 수 있다**(seed 분할은 둘 다 끝나야 함).
+- **셀 = `--array=0-17%8` = mnist × {iid, dir1} × {lf@0.70, free-rider, grad-noise} × seed{0,1,2} = 18 전량.**
+  ⓘ 07-26 배분 변경 — 처음엔 JB와 9셀씩 나눴으나 **총 3–5.5 GPU-h라 쪼갤 실익이 없고** JB는 G2·G9 seed2 16셀 × ~17.6 h로 07-27 09:40까지 차 있다. 인덱스는 **파티션-바깥**(`0-8`=iid · `9-17`=dir1, 각 range 안 seed-major)이라 중간에 끊겨도 **완성된 파티션 하나는 3-seed**로 쓸 수 있고, 쪼갤 일이 생기면 그 경계로 자르면 된다.
 - **arm = `vanilla,oracle_excl,random_excl`** · **valuation(φ) 없음** = 세 arm 전부 순수 학습 런.
   clean은 오염 클라가 0이라 두 arm이 **정의되지 않아** 4위협이 아니라 3이다(cifar10도 `_g_seed` 96셀 중 84셀만 `oracle_excl` 보유 = 4파티션 × 7오염 × 3seed).
 - **`vanilla`를 같이 도는 이유**: `runs/track_h/make_analysis.py::analyze_cnn`이 분모를 **`arms["vanilla"]` 이름으로만** 찾고 `observer`로 폴백하지 않는다. vanilla가 없으면 mnist 전 행 `delta_acc`/`recovery`가 None이고 `skipped=equals_vanilla` 칸의 `final_acc`도 안 채워진다.
-- **단가 추정 ~10–18분/셀 → 9셀 ≈ 1.5–2.7 GPU-h**. 근거 = §3 G3 최저가 셀(flirds1st/fedif) 18.0분인데 거긴 valuation 포함이고 mnist는 cifar10보다 싸다. **첫 셀 로그로 실측 교체할 것.**
+- **단가 추정 ~10–18분/셀 → 18셀 ≈ 3–5.5 GPU-h**. 근거 = §3 G3 최저가 셀(flirds1st/fedif) 18.0분인데 거긴 valuation 포함이고 mnist는 cifar10보다 싸다. **첫 셀 로그로 실측 교체할 것.**
 - **스택 = torch 2.11 그대로**(§0 스택 고정). 분모(이 잡)와 분자(G10 소스 arm, HJ 3090 torch 2.11)가 같은 스택에 있어야 recovery가 성립한다.
-- **우선순위**: 총 ~2 GPU-h로 §4 G8(25)·§6 G6(10–20)보다 훨씬 싸다. **G8·G6 뒤 아무데나 붙여도 종료시각(07-27 ~10:50)에 영향 없음.**
+- **우선순위**: 총 ~3–5.5 GPU-h로 §4 G8(25)·§6 G6(10–20)보다 싸다. **G8·G6 뒤 아무데나 붙여도 종료시각(07-27 ~10:50)에 영향 없음.**
 
 ```
 mkdir -p runs/track_g/_logs
-sbatch --array=0-8%8 runs/track_g/sbatch_cnn_mnist_anchor.sh
+sbatch --array=0-17%8 runs/track_g/sbatch_cnn_mnist_anchor.sh
 ```
 
 - **착지 후**: `python runs/track_h/make_analysis.py` → `cnn_competition.csv` mnist 행에 `recovery`가 생기는지 확인.

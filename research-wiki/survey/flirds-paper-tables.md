@@ -365,7 +365,7 @@ tags: [flirds, paper, tables, mirror]
 | **A3** | Fidelity | 1A-LLM 대규모 교차-디바이스 앵커 | ● | 3위협 전부 **+1.000** — 변별력 0, 본론은 비용(T10) | 〃 |
 | **A4** | Fidelity | 1B-CNN mnist 축 그리드 vs (a) | ◐ **8/24** | vs (b) 평균(오염3) Flirds dir1 **+0.996** / iid **+0.917** | 〃 §1B-CNN 축 그리드(mnist 행) |
 | **A5** | Fidelity | 1C 재현성·안정성 | ⟐ | (b) 타깃 xseed: **비IID silo5 +0.87~+0.93 ≫ IID-clean −0.37~+0.16** | 〃 §1C |
-| **A6** | Downstream | 2-CNN mnist {dir1, iid} 점수원 경쟁 | ◐ **214/216 · 기준 arm 결손** | grad-noise online: Flirds .9773~.9781 vs 1차계열 .9091~.9144 | [[flirds-results-downstream]] §mnist |
+| **A6** | Downstream | 2-CNN mnist {dir1, iid} 점수원 경쟁 | ● 216/216 완주 · **기준 arm ⬚**(G14) | grad-noise online: Flirds .9773~.9781 vs 1차계열 .9091~.9144 · **recovery는 G14 착지 후** | [[flirds-results-downstream]] §mnist |
 | **A7** | Downstream | 2-CNN P1w (부호+크기가중) | cifar10 ● / mnist ◐ | **FedIF가 P1w에서 grad-noise 실명 탈출**(.6321 vs P1 .2619) | 〃 §cifar10/iid P1w |
 | **A8** | Downstream | 2-LLM 표준 개입 무해성 (clean do-no-harm) | ● | 전 스케일 \|ΔMMLU\|≤0.0013 · \|ΔROUGE\|≤0.0015 = seed 분산 이하 | 〃 §무해성 |
 | **A9** | Cost | 5-LLM runtime silo5·anchor5·std20 · 5-CNN runtime | ● | (a) 재학습이 Flirds의 **292×**(silo5) / **28,177×**(CNN N=10) | [[flirds-results-cost]] |

@@ -18,12 +18,11 @@
 | **JW** | 🟢 c1축 8셀 실행 중 · torchvision·파티션 이슈 해결 | reset → 잔여 13셀 |
 | **JB** | ⏸ 워처 대기 → **즉시 착수 가능** | c1축 18셀 |
 
-> **[07-26 추가] G14 — mnist 기준 arm(앵커) 18런 · 3090.** G10(216런)이 mnist 점수원·관측자를 채웠으나 oracle_excl(천장)·
-andom_excl(통제)이 통째로 없다 — cifar10/fmnist는 	rack_g/rundirs_cnn/*_g_seed*가 낳는데 그 그리드에 mnist가 없고, G10 계획서가 부재를 알고 **flirds 소스만** 보정했다. ⇒ mnist는 현재 **recovery 산출 불가**.
-> 배분 = **YH --array=0-8%8(iid 9) · JB --array=9-17%8(dir1 9)** · 러너 
-uns/track_g/sbatch_cnn_mnist_anchor.sh · **코드 변경 0** · 추정 **3–5.5 GPU-h 총계**(계정당 ~2) · torch 2.11 고정.
-> 상세 = 
-esearch-wiki/survey/flirds-paper-experiment-plan.md §4.4 · 각 계정 파일 YH §6b · JB §1b.
+> **[07-26 추가] G14 — mnist 기준 arm 18런 · 3090 · YH 전량.** G10(216런)이 mnist 점수원·관측자를 다 채웠으나 `oracle_excl`(천장)·`random_excl`(통제)이 통째로 없다 — cifar10/fmnist는 `track_g/rundirs_cnn/*_g_seed*`가 낳는데 그 그리드에 mnist가 없고, G10 계획서가 그 부재를 알고 **flirds 소스만** 보정했다. ⇒ mnist는 현재 **recovery 산출 불가**.
+> 배분 = **YH 전량 `--array=0-17%8`(18셀)** — 07-26 재배분(총 3–5.5 GPU-h라 쪼갤 실익 없음 · JB는 §2 G2·G9 seed2로 07-27 09:40까지 포화). 러너 `runs/track_g/sbatch_cnn_mnist_anchor.sh` · **코드 변경 0** · torch 2.11 고정.
+> 상세 = `research-wiki/survey/flirds-paper-experiment-plan.md` §4.4 · `REMAINING-slurm-YH.md` §6b (JB §1b은 이관 표기).
+
+> **[07-26] G10 완주** — mnist downstream **216/216**(실패 0). 잔여 0.
 
 **0″. 오염-집합 규약이 무대별로 **셋**이다 — 확정 사항 + 논문에 **2문장 추가 필요**.
 

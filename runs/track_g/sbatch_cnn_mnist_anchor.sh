@@ -29,12 +29,13 @@
 #   ⚠ 스택을 섞지 말 것 -- recovery 의 분모(이 잡)와 분자(G10 소스 arm)가 같은 스택에 있어야 한다
 #     (REMAINING-slurm-YH.md §0 스택 고정 조항).
 #
-# Submit (배분 = 파티션으로 반 나눔; 두 range 는 서로 겹치지 않는다):
+# Submit — **YH 전량**(2026-07-26 Yonghee: 총 3-5.5 GPU-h 라 쪼갤 실익이 없다):
 #   mkdir -p runs/track_g/_logs
-#   # YH:  sbatch --array=0-8%8   runs/track_g/sbatch_cnn_mnist_anchor.sh   # mnist/iid  9셀
-#   # JB:  sbatch --array=9-17%8  runs/track_g/sbatch_cnn_mnist_anchor.sh   # mnist/dir1 9셀
-#   # JB(경로 다름): sbatch --output="$REPO/runs/track_g/_logs/%x_%A_%a.out" \
-#   #                       --export=ALL,REPO=<JB repo>,PY=<JB torch2.11 python> --array=9-17%8 ...
+#   sbatch --array=0-17%8 runs/track_g/sbatch_cnn_mnist_anchor.sh
+#
+#   인덱스는 **파티션-바깥** 순서(`0-8`=iid · `9-17`=dir1, 각 range 안에서 seed-major)라
+#   중간에 끊겨도 완성된 파티션 하나는 3-seed 로 쓸 수 있다. 나중에 계정을 쪼갤 일이 생기면
+#   그 경계로 자르면 된다(타 계정은 `--output`·`REPO`·`PY` override 필요 -- 기본값이 YH 경로).
 # After: python runs/track_h/make_analysis.py   (분모가 생기면서 mnist recovery 열이 채워진다)
 #
 #SBATCH --job-name=gmnanch

@@ -97,7 +97,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 |---|---|---|---|---|
 | **점수원 경쟁 — 개입 정확도** | 같은 개입 정책에서 **8점수원 중 어느 φ 정의가 학습을 잘 만드나**. {온라인 배포게이팅, 재학습 부호게이트}×위협, cifar10/dir1, 절대 acc. vanilla(바닥)·oracle_excl(천장)·random_excl 앵커 | ● 3-seed | `[본문·주무대]` (§5.3) | `runs/track_h/rundirs_cnn` |
 | **점수원 경쟁 — cifar10/iid (저-이질성 짝)** | 위 경쟁을 파티션만 iid로. **P1·P1w 8점수원 3-seed 완주**(2026-07-26, 96 rundir 착지 = G3 종료). 앵커 3종 보유 | ● 3-seed | `[본문·주무대]` (§5.3 짝) | `runs/track_h/rundirs_cnn`(cifar10_iid) |
-| **점수원 경쟁 — mnist {dir1, iid}** | 위 경쟁을 데이터셋만 mnist로(G10). **`oracle_excl`(천장)·`random_excl`(통제) arm 미실행 → recovery 산출 불가**, 절대 acc 대조까지만 | ◐ **214/216 rundir · 기준 arm 결손** | `[부록]` (3-seed·앵커 전 인용 금지) | `runs/track_h/rundirs_cnn`(mnist) |
+| **점수원 경쟁 — mnist {dir1, iid}** | 위 경쟁을 데이터셋만 mnist로(G10). **`oracle_excl`(천장)·`random_excl`(통제) arm 미실행 → recovery 산출 불가**, 절대 acc 대조까지만 | ● **216/216 완주** · **기준 arm 결손** | `[부록]` (3-seed·앵커 전 인용 금지) | `runs/track_h/rundirs_cnn`(mnist) |
 | **확장 파티션·데이터셋 개입** | 위 경쟁을 cifar10{iid,qskew,shard}·fmnist{dir1,iid}로. flirds 단독 점수원 × P1~P4 online + retrain(P1·P1w)이 3-seed 실측. 비-flirds 7종은 미실행(**cifar10/iid만 위 행으로 승격**) | ● 3-seed(flirds 단독) | `[후보]` | `runs/track_h`(p1w_cnn) |
 | **fmnist·iid 8점수원 경쟁** | 주무대 경쟁을 fmnist/iid로 확장(데이터셋·파티션 강건성). grad-noise 1차-계열 실명·frzero renorm 붕괴가 dir1과 동일 재현. **비-flirds 7종은 seed0 단독** | ◐ seed0(flirds만 ●) | `[후보]` (3-seed 전 인용 금지) | `runs/track_h`(fmnist/iid) |
 | **개입 정책 축 (P1~P5)** | 같은 무대서 7정책(sign/sign-weight/soft-mult/z-gate/신뢰 hard·soft) × 8점수원 종합 경쟁점수 + clean parity | ● 3-seed | `[본문·주무대 보조]` | `runs/track_h`(competition_score) |
@@ -222,7 +222,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | **Ablation** | 2차항·lever·removal (CNN 레그) ● · φ 부호 감사 CNN 레그 ◐ | 2차항·lever·removal (LLM 레그) ● |
 | **비용·규모** | op-count·microbench·runtime ● | 지수-스케일링 ●/◐ · 위상분리 ● |
 
-> **선택 관점 힌트**(2026-07-26 갱신): LLM 쪽 fidelity·detection 주무대(R4-L2)가 **여전히 미실행 ⬚**라 본문 LLM in-run fidelity는 비어 있다 — 최우선 착지 후보 그대로. **CNN downstream은 본문 두 파티션(dir1·iid)이 다 찼다**(07-26 G3 종료) — 본문 §5.3의 빈 절반이 메워진 것. 남은 CNN 구멍은 두 종류다: ① **1B-CNN 오염축 정렬 그리드가 17/48**(1-seed 위주 ◐)이라 vs (a) 서열을 못 세운다 ② **mnist는 downstream만 214/216 착지했고 fidelity/detection(c2fid)은 아직 셀이 0이며, downstream 쪽도 `oracle_excl`·`random_excl` 기준 arm이 없어 recovery를 못 낸다**. 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".
+> **선택 관점 힌트**(2026-07-26 갱신): LLM 쪽 fidelity·detection 주무대(R4-L2)가 **여전히 미실행 ⬚**라 본문 LLM in-run fidelity는 비어 있다 — 최우선 착지 후보 그대로. **CNN downstream은 본문 두 파티션(dir1·iid)이 다 찼다**(07-26 G3 종료) — 본문 §5.3의 빈 절반이 메워진 것. 남은 CNN 구멍은 두 종류다: ① **1B-CNN 오염축 정렬 그리드가 17/48**(1-seed 위주 ◐)이라 vs (a) 서열을 못 세운다 ② **mnist는 downstream만 216/216 완주했고 fidelity/detection(c2fid)은 아직 셀이 0이며, downstream 쪽도 `oracle_excl`·`random_excl` 기준 arm이 없어 recovery를 못 낸다**(G14 = YH 18런 배분 완료). 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".
 
 ## 상호 링크
 - **수록 확정·결손 정본**: [[flirds-paper-experiment-plan]] (본문/부록 목록 + 실험 설계 세션 입력)
