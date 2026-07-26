@@ -1,0 +1,19 @@
+{
+  "name": "cifar10_iid_free-rider_seed0",
+  "git_sha": "43950282e3fef096ac35e1500308c821fd94dfcf",
+  "git_dirty": true,
+  "git_diff_stat": "REMAINING-slurm-YH.md | 40 +++++++++++++++++++++++++++++++++++-----\n 1 file changed, 35 insertions(+), 5 deletions(-)",
+  "env_hash": "be4b11eda33078df",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "5.5.4",
+    "peft": "0.19.1",
+    "trl": "1.2.0",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.4",
+    "numpy": "2.4.4",
+    "python": "3.11.15",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  }
+}

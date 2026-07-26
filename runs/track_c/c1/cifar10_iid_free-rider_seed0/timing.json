@@ -1,0 +1,20 @@
+{
+  "phases": {
+    "oracle-a-retrain": {
+      "s": 46209.225,
+      "peak_gib": 0.0
+    },
+    "client-training": {
+      "s": 102.06,
+      "peak_gib": 0.0
+    },
+    "valuation": {
+      "s": 454.094,
+      "peak_gib": 3.365
+    }
+  },
+  "total_s": 46765.379,
+  "gpu_hours": 12.990383,
+  "n_gpus": 1,
+  "peak_gib": 3.365
+}
