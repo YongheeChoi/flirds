@@ -271,6 +271,19 @@ sbatch --qos=base_qos --output="$REPO/runs/track_c/c1/_logs/%x_%A_%a.out" \
 - **채우는 것**: 계획서 §2.1/§3.1 (a) 무대 · §3.4 φ 부호 감사 CNN 레그의 **seed0 leg**(frzero·grad-noise).
 - **완료 후**: rundir 커밋(push=Yonghee) → `runs/track_c/make_figures.py load_c1()` 집계. **phi_a = `metrics.json['oracle_a']['phi']`**(rundir 내장; JB 확인, 별도 `c1_oracle/*_aonly_*` 신규축 없음). 완료마커 = `metrics.json`(run 끝에 `phi.parquet` 와 동시 기록).
 
+### ✅ 제출 완료 — job `1883603` (07-26 17:00) · **G10 뒤에서 대기**
+
+```
+sbatch --qos=base_qos --output="$REPO/runs/track_c/c1/_logs/%x_%A_%a.out" \
+       --export=ALL,REPO=/home/rlaguswls186790/flirds,PY=<HJ flirds python> \
+       --array=14-15%8 runs/track_c/c1/sbatch_c1_axis.sh
+```
+
+- **G10 을 앞지르지 않는다**(Yonghee 지시 07-26 17:04). 한때 `ArrayTaskThrottle` 을 8→6 으로 낮춰 2슬롯을 먼저 내주려 했으나 **8 로 원복**했다 → `1883603` 은 `QOSMaxGRESPerUser` 로 대기하다가 G10 이 스케줄할 게 없어질 때 자동 착수한다. G10 지연 0.
+- **제출 전 확인 4건 통과**: ①중복 rundir 없음(`mnist_dir1_{free-rider,grad-noise}_seed0` 미존재; 기존 `mnist_*_seed0` 5개는 **구 시나리오 축**이라 이름이 안 겹친다) ②`torchvision 0.26.0+cu128 / torch 2.11.0+cu128` ③`~/data` mnist 선다운로드 완료 ④착지 경로가 repo-relative(`track_c1.py:119` `RUN_ROOT = C1_RUN_ROOT or <_REPO>/runs/track_c/c1`, `_REPO` 는 `__file__` 기준) → `--export` 로 준 REPO 안에 떨어진다. **`C1_RUN_ROOT` override 불요.**
+- **인덱스 재확인**: 14 → `SEED=0·J=14·DS_I=1(mnist)·K=6·PART_I=1(dir1)·T=2(free_rider)`, 15 → `T=3(grad_noise)`. 문서 §3d 와 일치.
+- **예상**: G10 종료(~07-26 19:39) 직후 착수 → 2셀 병렬 = ~1셀 wall → **07-27 07:40 ~ 13:40 완료**(JB 실측 11.4–17.6 h/셀). `--time=24:00:00` 이라 최악값에도 여유. 마감 07-28 24:00 대비 **34 h 여유**(최악 기준).
+
 ## 3c. 완주 후
 
 - **JW·JB 의 `sbatch_c1_axis.sh` 잔여를 work-steal**(남은 `--array` 범위만; 같은 rundir 이름 = last-writer-wins 라 중복 = GPU 낭비).
