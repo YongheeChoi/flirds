@@ -1,4 +1,4 @@
-\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+ \documentclass[letterpaper]{article} % DO NOT CHANGE THIS
 \usepackage[submission]{aaai2027}  % DO NOT CHANGE THIS
 % The serif, sans-serif, and monospaced fonts are loaded automatically by
 % aaai2027.sty (newtxtext, helvet, courier). DO NOT add \usepackage{times},
@@ -43,6 +43,12 @@
 
 % Notation macros (keep in sync with paper-ko.md).
 \newcommand{\lval}{\ell_{\mathrm{val}}} % mean loss on the server-held validation set
+\usepackage{kotex}
+\usepackage[dvipsnames]{xcolor}
+\newcommand{\yhha}[1]
+{{\leavevmode\color{SkyBlue}[yhha:#1]}}
+\newcommand{\jwjung}[1]
+{{\leavevmode\color{Green}[jwjung:#1]}}
 
 %
 % Keep the \pdfinfo as shown here. There's no need
@@ -98,8 +104,8 @@
 % Your title must be in mixed case, not sentence case (AAAI 규정).
 % [작업 제목] paper-ko.md 제목의 영문판. "Exact-Oracle Fidelity"는 dual-oracle 표현 정리(retrain
 % 특성화 강등, §6.2) 이후 개명 검토가 보류 중 — 확정되면 여기와 paper-ko.md를 함께 갱신할 것.
-\title{Flirds: Same-Game Shapley Attribution from a Single Federated Learning Run}
-\author{
+\title{Flirds: Efficient Client-Level Contribution Evaluation in Federated Learning via In-Run Data Shapley}
+\author{ 
     % 익명 제출 지침: 저자는 "Anonymous Submission" 단독, 소속은 비워 둔다.
     Anonymous Submission
 }
@@ -109,12 +115,6 @@
 \begin{document}
 
 \maketitle
-
-%% ==================================================================
-%% 이관 상태: 초록 + §1--§4 = paper-ko.md 2026-07-22 스냅샷과 1:1 대응.
-%% §5 이후 상호참조(Section 5.3 등)는 해당 섹션 이관 시 \label/\ref로 전환.
-%% Appendix A 참조는 technical appendix 이관 시 \ref로 전환.
-%% ==================================================================
 
 \begin{abstract}
 Client contribution valuation in federated learning (FL) measures how each
@@ -126,7 +126,6 @@ repeatedly evaluate coalition models. Cheaper surrogates and influence scores
 may instead target different utilities or weighting schemes rather than the
 exact Shapley value of an explicit game. Efficient client valuation must
 therefore state clearly what it approximates and how to interpret its error.
-
 We propose \textbf{Flirds} (Federated Learning In-Run Data Shapley), a
 client-level contribution estimator. Flirds treats the updates actually
 received by the server as players and holds the round's server aggregation
@@ -135,11 +134,11 @@ reproduces the update performed by the server. We use the exact in-run Shapley
 value obtained by exhaustive enumeration as the reference and extend the
 Taylor calculation of In-Run Data Shapley (IRDS) from samples to client
 updates, computing the Shapley value of a second-order surrogate game in
-closed form. This replaces exponentially many coalition evaluations with one
+closed form. \jwjung{We use the exact in-run Shapley value obtained by exhaustive coalition enumeration as our reference and develop an efficient client-level estimator by adapting the second-order Taylor Shapley calculation of In-Run Data Shapley (IRDS) from sample attribution to weighted client updates.} This replaces exponentially many coalition evaluations with one
 server-side Hessian-vector product per round and one inner product per
 participant. Because the reference and estimator target the same game, their
 difference isolates Taylor truncation rather than game-definition mismatch or
-Shapley sampling error.
+Shapley sampling error. \jwjung{reference가 구체적으로 뭘 말하는지 언급하는 게 나을 것 같습니다. ex) Flirds differs from the exact in-run Shapley only by replacing the round utility with its second-order Taylor approximation. It introduces neither coalition-sampling error nor changes to the players or aggregation weights.}
 \end{abstract}
 
 % Uncomment the following to link to your code, datasets, an extended version or similar.
