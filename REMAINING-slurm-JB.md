@@ -22,6 +22,13 @@
 
 ## 2. G2·G9 seed2 — (a) 재학습 오라클 (16셀 · ~168 GPU-h)
 
+### 진행 상황 (2026-07-26 19:15) — 8/16 완료
+
+- **seed1 8/8 완료**(iid·dir1 × clean·label-flip·free-rider·grad-noise) · **seed2 0/8 실행 중**(`1878819_40-47`, 3–4 h 경과). 실패 0.
+- **셀당 실측 ~17.6 h**(`oracle_a.time`=63,327 s = (a) 2¹⁰ 재학습 지배; 종전 11.4 h 추정은 무경합 구셀 값). **전량 ETA ~07-27 09:40**(마감 07-29 00:00 대비 ~38 h 여유). 셀당 wall 24 h ≫ 17.6 h → timeout 위험 없음.
+- **검증 PASS(textbook)**: iid_free-rider `oracle_a.phi` = 프리라이더(0,4,6,7) ≈ −0.008 / 정직 ≈ +0.37. **phi_a = `metrics.json['oracle_a']['phi']`**(rundir 내장; 별도 _aonly 신규축 없음). corrupt(seed1)=`[0,4,6,7]`.
+- **완료 rundir 8개 커밋**(seed1; **push=Yonghee**). ⚠ **공유 repo** — 타계정 커밋이 워킹트리에 섞여 mtime/glob 카운트가 오염된다(예: git-checkout된 `cifar10_*_seed2`). 완료판정·집계는 반드시 셀명 정규식 `mnist_(iid|dir1)_(clean|label-flip_fr0.70|free-rider|grad-noise)_seed[12]` 로 필터.
+
 > **무엇**: N=10 전원참여에서 **(a) 2¹⁰ 재학습 오라클 + (b) 2¹⁰ + 9방법 φ**. (a)는 방법-중립 참값이라 **전 방법을 채점하는 유일한 무대**인데, 현 C1 시나리오가 확정 오염축과 한 칸도 안 겹쳐서 다시 정렬하는 것이다.
 > **비교불가성은 남는다**: (a)는 2^N 재학습이라 **N=100 에서 원리적으로 불가** → 1A-CNN(N=100 부분참여)과 N·참여율은 못 맞춘다. 맞출 수 있는 건 **오염축과 파티션뿐**이고 이 잡이 그걸 한다. 논문에도 명시.
 
