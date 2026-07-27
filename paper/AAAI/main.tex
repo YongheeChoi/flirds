@@ -45,7 +45,6 @@
 
 % Notation macros (keep in sync with paper-ko.md).
 \newcommand{\lval}{\ell_{\mathrm{val}}} % mean loss on the server-held validation set
-\usepackage{kotex}
 \usepackage[dvipsnames]{xcolor}
 \newcommand{\yhha}[1]
 {{\leavevmode\color{SkyBlue}[yhha:#1]}}
@@ -633,9 +632,8 @@ five-domain dataset we constructed, and the CNN track evaluates FedSVCNN and
 LeNet5 \citep{lecun1998gradient} on CIFAR-10 \citep{krizhevsky2009learning},
 MNIST, and Fashion-MNIST \citep{xiao2017fashion}. The clients of the CNN
 track are partitioned in two ways, a uniform IID split and a non-IID
-Dirichlet($\alpha{=}1$) split \citep{hsu2019measuring}, under which FedAvg is
-known to degrade \citep{zhao2018federated}; the latter is abbreviated Dir(1)
-in the figures and tables. The corruption axis has five
+Dirichlet($\alpha{=}1$) split, the latter abbreviated Dir(1) in the figures
+and tables. The corruption axis has five
 entries: \emph{clean} (the uncorrupted control anchor), \emph{answer-swap}
 (data that is well formed but whose question--response correspondence is
 broken by a permutation; LLM), \emph{zero-update free-rider} (submitting a
