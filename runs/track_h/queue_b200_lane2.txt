@@ -74,9 +74,9 @@ track_d.py|1B_anchor5_sflb03_seed1|REGIME=anchor5 SEED=1 LORA_R=16 ORACLE_A=0 AR
 #   ⛔ **위쪽 PHASE 2 주석 블록의 G5·G12 줄과 셀이 겹친다** — 그쪽은 07-26 취소분
 #     (ARMS=1 · MMLU_LIMIT=40 · 구 레인배분)이라 **절대 주석 해제하지 말 것**.  이 블록이 정본이고,
 #     둘 다 풀면 같은 rundir 를 다른 config 로 두 번 덮어쓴다.
-track_d.py|1B_anchor5_lr2e-3_st20_seed2|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 SEED=2 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr3e-3_st20_seed2|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 SEED=2 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_lr1e-3_st20_seed2|REGIME=anchor5 LR=1e-3 MAX_STEPS=20 SEED=2 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_anchor5_r32_seed1|REGIME=anchor5 LORA_R=32 SEED=1 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-track_d.py|1B_std50k5_r32_seed1|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=32 SEED=1 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
-probe_val_noise.py|noise_1B_r64_seed1|SEED=1 LORA_R=64
+#track_d.py|1B_anchor5_lr2e-3_st20_seed2|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 SEED=2 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-27] G12 전량 제외 (Yonghee) — std50k5 실측 11.07h/셀로 용량 초과
+#track_d.py|1B_anchor5_lr3e-3_st20_seed2|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 SEED=2 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-27] G12 전량 제외 (Yonghee) — std50k5 실측 11.07h/셀로 용량 초과
+#track_d.py|1B_anchor5_lr1e-3_st20_seed2|REGIME=anchor5 LR=1e-3 MAX_STEPS=20 SEED=2 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-27] G12 전량 제외 (Yonghee) — std50k5 실측 11.07h/셀로 용량 초과
+#track_d.py|1B_anchor5_r32_seed1|REGIME=anchor5 LORA_R=32 SEED=1 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-27] G12 전량 제외 (Yonghee) — std50k5 실측 11.07h/셀로 용량 초과
+#track_d.py|1B_std50k5_r32_seed1|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=32 SEED=1 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-27] G12 전량 제외 (Yonghee) — std50k5 실측 11.07h/셀로 용량 초과
+#probe_val_noise.py|noise_1B_r64_seed1|SEED=1 LORA_R=64   # [07-27] G12 전량 제외 (Yonghee) — noise 레그도 동반 하차
