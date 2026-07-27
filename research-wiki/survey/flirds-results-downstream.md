@@ -488,29 +488,30 @@ tags: [flirds, results, downstream]
 > **세팅**: Llama-3.2-1B-Instruct LoRA r16/α32 · N=50 · 5/50 · R=200 · GSM8K test 1,119 EM · seed{0,1,2}(noisy·frzero) / **clean은 arm마다 다르다**(Flirds-1st ● 3-seed · observer·retrain ◐ 2-seed · Flirds ◐ seed0).
 > **수록 범위 = 5 arm 고정**(2026-07-25 Yonghee 결정): 앵커 3종(observer·oracle_excl·random_excl) + 점수원 **Flirds·Flirds-1st**. **loss-heur·FedIF·renorm 4종(GTG·FedSV·ComFedSV·ShapleyFL)은 이 표에서 제외** — 이 무대가 답하는 질문은 "순위정보가 학습을 얼마나 되살리나(vs 무작위)"와 "2차항이 필요한가(vs 1차)"뿐이다. 제외한 방법들의 rundir·집계는 존속하며, **LLM 스케일에서의 이들 비교는 fidelity 축(R4-L2, 9방법 φ)이 담당**한다. frrand·strmain 열=신규 ⬚.
 
-**retrain (T2 부호-게이트, 절대 EM)** (● noisy·frzero 3-seed)
+**retrain (T2 부호-게이트, 절대 EM)** (● **clean·noisy·frzero 3-seed**)
 
-| arm | clean ⟨n2⟩ | noisy(swap@.7) | frzero | frrand | strmain |
+| arm | clean | noisy(swap@.7) | frzero | frrand | strmain |
 |---|---|---|---|---|---|
-| observer (바닥) | 0.3615±0.0112 | 0.3274±0.0057 | 0.3560±0.0129 |  |  |
+| observer (바닥) | 0.3652±0.0105 | 0.3274±0.0057 | 0.3560±0.0129 |  |  |
 | oracle_excl (천장) | – | 0.3625±0.0099 | 0.3625±0.0099 |  |  |
 | random_excl (무작위) | – | 0.3280±0.0048 | 0.3476±0.0146 |  |  |
-| Flirds | 0.3615±0.0112 | **0.3479±0.0030** | **0.3625±0.0099** |  |  |
-| Flirds-1st | 0.3615±0.0112 | <u>0.3458±0.0015</u> | **0.3625±0.0099** |  |  |
+| Flirds | 0.3652±0.0105 | **0.3479±0.0030** | **0.3625±0.0099** |  |  |
+| Flirds-1st | 0.3652±0.0105 | <u>0.3458±0.0015</u> | **0.3625±0.0099** |  |  |
 
-> retrain clean 3칸이 모두 같은 값인 이유 = **kept=전원(무발화)이라 재학습이 vanilla와 동일**(`skipped=equals_vanilla`). 2026-07-27 seed1 관측자 착지(`e3ab1d6`)로 ⟨n2⟩가 됐고 seed2가 남았다.
+> retrain clean 3칸이 모두 같은 값인 이유 = **kept=전원(무발화)이라 재학습이 vanilla와 동일**(`skipped=equals_vanilla`, seed{0,1,2} 4 arm 전부). 2026-07-27 관측자 seed2 착지(`30edbad`)로 **clean 열이 3-seed 완결** — 즉 **retrain 레그의 do-no-harm parity는 정의상 완벽**(Δ=0)하고, 판정이 실제로 갈리는 곳은 아래 online 레그다.
 
-**online (배포 게이팅 gate_v2, 절대 EM)** (● noisy·frzero 3-seed — **Flirds-1st 포함**)
+**online (배포 게이팅 gate_v2, 절대 EM)** (● **9칸 전부 3-seed 완주** — G4 종료)
 
 | arm | clean | noisy(swap@.7) | frzero |
 |---|---|---|---|
-| observer (바닥) | 0.3615±0.0112 ⟨n2⟩ | 0.3274±0.0057 | 0.3560±0.0129 |
+| observer (바닥) | 0.3652±0.0105 | 0.3274±0.0057 | 0.3560±0.0129 |
 | oracle_excl (천장) | – | 0.3625±0.0099 | 0.3625±0.0099 |
 | random_excl (무작위) | – | 0.3280±0.0048 | 0.3476±0.0146 |
-| Flirds (gate v2) | 0.3664 ⟨s0⟩ | **0.3479±0.0044** | 0.3566±0.0088 |
+| Flirds (gate v2) | 0.3625±0.0131 | **0.3479±0.0044** | 0.3566±0.0088 |
 | Flirds-1st (gate v2) | 0.3610±0.0124 | <u>0.3426±0.0029</u> | **0.3572±0.0087** |
 
-> **online Flirds-1st 레그 6/6 완주**(2026-07-26 seed0 3셀 + 2026-07-27 seed1·2 6셀 = `ae4f212`·`17315c3`·`381a5fd`·`5bb1195`; `rundirs_llm_hj`) → **noisy·frzero는 3-seed로 직접 비교 가능**하다. clean도 Flirds-1st만 3-seed이고 **Flirds clean은 seed0 하나뿐**이라 clean 열은 여전히 arm 간 대면 금지(G4 잔여 = observer seed2 + Flirds clean seed1·2 ≈ 3런).
+> ✅ **G4 종료 — clean 열 3런 착지로 online 레그 9칸 전부 3-seed**(2026-07-27 `bfa9189` Flirds clean seed1 · `51d3337` seed2 · `30edbad` observer seed2). 이제 **clean 열도 arm 간 대면이 가능**하다.
+> **clean parity 판정(신규)**: 두 게이트 모두 관측자 대비 **소폭 손해**지만 노이즈 바닥 안이다 — Flirds **−0.27pt**(0.3625 vs 0.3652), Flirds-1st **−0.42pt**. 결정적으로 **seed별 부호가 갈린다**(Flirds −0.63 / −0.54 / +0.36pt · Flirds-1st −0.71 / −0.63 / +0.09pt) → **clean에서 게이트가 해를 끼친다고 말할 근거는 없다**(seed 방향 불일치 · |Δ| < ±0.5pt EM 노이즈 바닥). CNN 레그의 clean 평균이 −0.51pt(cifar10/iid)·−0.74pt(dir1)로 **같은 크기의 손해를 보였던 것과 대비**되는데, LLM 무대에선 그 손해가 seed 노이즈와 구분되지 않는다.
 > **2차항 이득은 online에서도 미분리**다: noisy Flirds−Flirds-1st = **+0.53pt**(seed별 +1.43 / +0.27 / −0.09pt로 **부호가 갈린다**), frzero **−0.06pt**(seed별 −0.09 / −0.18 / +0.09pt). 두 위협 모두 EM 노이즈 바닥(±0.5pt) 안이라 retrain 레그의 판정(noisy +0.21pt·frzero 동값)과 **같은 결론**이다. 게이트 지표로 봐도 frzero는 두 arm이 사실상 동일(recall 0.939~0.952 · precision 0.946~0.963)하고, noisy는 **둘 다 recall 0.042~0.058 = 게이트 작동영역 밖**이다.
 
 > **읽기**: noisy — 두 estimator가 observer .3274 대비 회수(Flirds **+.0206** · Flirds-1st +.0185) vs **random_excl +.0006**(천장 oracle_excl +.0352). 같은 수를 배제해도 "누구를 배제하나"가 회수의 전부다 = **순위정보의 가치 vs-무작위 +2pt**. frzero — 두 estimator 전부 **.3625 = oracle_excl 동값**(free-rider 만장일치 배제 → kept=oracle 집합; random_excl은 −.0083으로 오히려 악화). **online vs retrain**(Flirds): noisy 동급(둘 다 .3479), frzero online .3566<retrain .3625(배포 게이팅 burn-in 지연), **clean online −0.49pt**(seed0 .3664 vs 그 seed의 observer .3727 = probation 오배제) vs retrain 무해(kept=전원). ⚠ **2차항 이득은 이 무대에서 미분리** — Flirds↔Flirds-1st 차는 retrain noisy +0.21pt · online noisy +0.53pt로 둘 다 EM 노이즈 바닥(±0.5pt) 언저리이고 **seed별 부호가 갈린다**(retrain: seed0만 Flirds +0.80pt, seed1·2는 1st가 각 +0.09pt / online: +1.43, +0.27, −0.09pt), frzero는 retrain 완전 동값·online −0.06pt다. 안전한 주장은 **vs-무작위**까지다. **출처**: `runs/track_h/analysis/llm_competition.csv`(regime=gsm50k5).
@@ -642,10 +643,10 @@ tags: [flirds, results, downstream]
 | R4 GSM8K · silo5/iid5/std50k5 게이팅 | `analysis/llm_competition.csv` |
 | 무해성(MMLU·ROUGE) | `runs/track_d/rundirs/*/metrics.json` → `arms` 블록 |
 
-- **⬚ 미실행**: 확장 파티션 중 cifar10{qskew,shard}·fmnist/dir1의 **비-flirds 점수원 7종** · **R4 clean 열 잔여**(observer seed2 + Flirds seed1·2 ≈ 3런) · R4 frrand·strmain 열.
+- **⬚ 미실행**: 확장 파티션 중 cifar10{qskew,shard}·fmnist/dir1의 **비-flirds 점수원 7종** · R4 frrand·strmain 열.
 - **✅ 2026-07-26 착지**: **cifar10/iid 8점수원 경쟁 96/96**(G3 종료 — P1·P1w 동반 3-seed) · **mnist {dir1,iid} 216/216 완주**(G10 종료) · R4 online Flirds-1st seed0 3셀 · **mnist 기준 arm 18/18**(G14, 07-27).
 - ✅ **R4 online Flirds-1st 6/6 완주**(2026-07-27, `5bb1195`) → noisy·frzero 3-seed. **07-27 오전 문서 갱신 시점에 이미 집계돼 있었으나 표에 반영되지 않아 seed0 값이 남아 있었고, 이 갱신에서 정정했다.**
-- ✅ **R4 clean observer seed1 착지**(`e3ab1d6`) → retrain clean 3칸·online observer clean이 ⟨n2⟩로 승급.
+- ✅ **G4 종료 — R4 clean 열 3-seed 완결**(2026-07-27 `e3ab1d6` observer s1 → `bfa9189` Flirds gate s1 → `51d3337` s2 → `30edbad` observer s2): retrain clean 3칸(0.3652±0.0105, `equals_vanilla`)·online clean 3 arm 전부 3-seed. **online clean parity 판정이 이 갱신에서 처음 가능해졌다**(Flirds −0.27pt·Flirds-1st −0.42pt, seed 부호 불일치 → 유의미한 손해 아님).
 - **스코프 아웃(수록 안 함)**: R4 개입 표의 renorm 4종(L4)·online 비-Flirds 계열(L11 중 loss-heur·FedIF·renorm 4종) — 07-25 arm 축소 결정. LLM 스케일의 이들 비교는 fidelity 축(R4-L2)이 담당한다.
 - ✅ **mnist {dir1,iid} 8점수원 = 정본 승격**(2026-07-27): 점수원·관측자 216/216 + 기준 arm 18/18(G14) → **cifar10 주무대와 같은 4-arm 절대 acc 표**. `vanilla`↔`observer` 18쌍 bit-identical. (recovery는 계산되지만 **비수록**.)
 - **◐ 정본 아님**: **fmnist/iid 8점수원(비-flirds seed0 단독)** · std50k5 mixed(arm별 seed 1~3 불균형) · fmnist/iid lf-strmain(rundir 존재, 집계기 위협 파싱 밖).

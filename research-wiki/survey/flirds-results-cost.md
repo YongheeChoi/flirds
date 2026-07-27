@@ -181,25 +181,25 @@ tags: [flirds, results, cost]
 > ⚠ **N=10 vs N=100 무대는 서로 비교 금지**(게임이 다름 — 전원참여 vs 10/100 부분참여, R=10 vs 120). 각 표 안에서만 방법을 비교한다.
 > ⚠ **provenance**: 위 N=10 표는 **재편성 전 오염축**(label-flip dose 사다리) 셀에서 측정한 값이다. 오염축을 {lf@0.70, frzero, grad-noise}로 정렬해 재실행하면(설계 세션 G2) 재측정 대상이지만, **runtime은 위협에 무관**하므로 값 자체는 유지될 것으로 예상한다.
 
-**참고 — 오염축 정렬 축 그리드의 자체 측정치** `[비-canonical]` ● cifar10 24/24 · ◐ mnist 19/24
+**참고 — 오염축 정렬 축 그리드의 자체 측정치** `[비-canonical]` ● **48/48 완주**(cifar10 24/24 · mnist 24/24)
 
 > ⚠ **위 표를 대체하지 않는다.** C1 축 그리드(`runs/track_c/c1`, 2026-07-27 재산출)는 **3090 · 동시 8셀** 환경에서 돌아 위 표(canonical 측정)와 하드웨어가 다르다. 논문 §5.5 cost 표에는 쓰지 않고, **방법 간 배율 구조가 하드웨어를 바꿔도 유지되는지**만 본다. (b)oracle 열은 이 집계기가 산출하지 않는다.
-> median 표본 = cifar10 **24셀**(완주) · mnist **19셀**(2026-07-27 dir1 seed0 2셀 추가). 07-26 스냅샷(cifar10 9셀·mnist 8셀) 대비 값이 움직였다 — **동시 8셀 경합의 표본 편차**이지 코드 변화가 아니고, **방법 간 서열은 그대로**다.
+> median 표본 = **각 24셀 전수**(2026-07-27 `d0b8f16`로 mnist 5셀 착지 → 48/48 완주). 07-26 스냅샷(cifar10 9셀·mnist 8셀) 대비 값이 움직였다 — **동시 8셀 경합의 표본 편차**이지 코드 변화가 아니고, **방법 간 서열은 그대로**다.
 
 | 방법 | mnist (median s) | cifar10 (median s) |
 |---|---|---|
 | **Flirds-1st** | **0.098** | **0.384** |
 | loss-heur | <u>0.171</u> | 0.816 |
-| FedIF | 0.190 | <u>0.509</u> |
-| **Flirds** | 1.025 | 1.405 |
-| ComFedSV | 5.757 | 22.262 |
-| FedSV | 6.877 | 27.097 |
-| GTG | 20.368 | 94.770 |
-| ShapleyFL | 34.310 | 134.641 |
-| _(참조) 학습 궤적 자체_ | _133.6_ | _111.3_ |
-| _(참조) **(a)oracle 2¹⁰ 재학습**_ | _63,000 (17.5 h)_ | _49,814 (13.8 h)_ |
+| FedIF | 0.193 | <u>0.509</u> |
+| **Flirds** | 0.997 | 1.405 |
+| ComFedSV | 5.722 | 22.262 |
+| FedSV | 6.879 | 27.097 |
+| GTG | 20.302 | 94.770 |
+| ShapleyFL | 34.380 | 134.641 |
+| _(참조) 학습 궤적 자체_ | _133.4_ | _111.3_ |
+| _(참조) **(a)oracle 2¹⁰ 재학습**_ | _62,844 (17.5 h)_ | _49,814 (13.8 h)_ |
 
-> **배율 구조는 그대로다**: Flirds vs ShapleyFL = **33×**(mnist 1.025 vs 34.310) / **96×**(cifar10 1.405 vs 134.641) — canonical 표의 98×(1.168 vs 114.5)와 같은 자릿수. (a) 재학습은 Flirds의 **61,500×**(mnist 63,000/1.025) / **35,500×**(cifar10 49,814/1.405) — canonical의 64,730×/28,177×와 자릿수 동일. 절대 초는 하드웨어 탓에 어긋나지만(**GTG·(a)가 특히**: 3090 cifar10 94.8 s vs canonical 87.7 s, (a) 49,814 s vs 32,912 s) **"valuation ≪ 학습 ≪ (a) 재학습"의 3단 구조**는 두 환경에서 같다. **출처**: `runs/track_c/c1/analysis/runtime_median.csv` · `cells.csv`(`traj_time`·`t_a`).
+> **배율 구조는 그대로다**: Flirds vs ShapleyFL = **34×**(mnist 0.997 vs 34.380) / **96×**(cifar10 1.405 vs 134.641) — canonical 표의 98×(1.168 vs 114.5)와 같은 자릿수. (a) 재학습은 Flirds의 **63,000×**(mnist 62,844/0.997) / **35,500×**(cifar10 49,814/1.405) — canonical의 64,730×/28,177×와 자릿수 동일. 절대 초는 하드웨어 탓에 어긋나지만(**GTG·(a)가 특히**: 3090 cifar10 94.8 s vs canonical 87.7 s, (a) 49,814 s vs 32,912 s) **"valuation ≪ 학습 ≪ (a) 재학습"의 3단 구조**는 두 환경에서 같다. **출처**: `runs/track_c/c1/analysis/runtime_median.csv` · `cells.csv`(`traj_time`·`t_a`).
 
 ---
 
@@ -211,7 +211,7 @@ tags: [flirds, results, cost]
 - **runtime(CNN)**: N=100 = `runs/track_c/c2fid/analysis/fidelity.csv`의 **`runtime_s` 열**(`make_analysis.py` 재생성 → 오염 3종 × 3seed 평균) · N=10 = `runs/track_c/c1/{ds}_label-flip_seed{0,1,2}/metrics.json`의 `methods.<m>.runtime` 및 `traj_time` · (a) 재학습 = `runs/track_c/c1_oracle/{ds}_label-flip_aonly_seed{0,1,2}/metrics.json`의 `t_a`.
 - loss-heur C6 교정본: `runs/measured_2026-07/loss_heur_acct/`(silo5) · `runs/track_d/rundirs_e4_fedloo/`(anchor5·std20).
 - 위상분리: `runs/measured_2026-07/{timing_device100,e3_cost_smoke}/`.
-- C1 축 그리드(비-canonical 참고치): `python runs/track_c/c1/make_analysis.py` → `analysis/runtime_median.csv`(방법별 median) · `cells.csv`의 `traj_time`·`t_a`. **43/48셀 기준**(cifar10 24 완주 · mnist 19).
+- C1 축 그리드(비-canonical 참고치): `python runs/track_c/c1/make_analysis.py` → `analysis/runtime_median.csv`(방법별 median) · `cells.csv`의 `traj_time`·`t_a`. **48/48셀 전수 기준**(cifar10 24 · mnist 24).
 - **⬚ 미실행**: anchor5 3B/7B의 (a) 재학습 오라클 · loss-heur 3B/7B 재측정 · CNN rundir의 학습↔가치평가 위상분리 계측(`timing.json` 미배선 — 수록 안 함, [[flirds-paper-experiment-plan]] Q4) · **C1 축 그리드의 canonical(B200) 재측정** — 현재는 3090 참고치뿐.
 - ⚠ 런타임은 fp32·CPU·재구현 caveat 있는 단일/소수 측정 → **op-count가 하드웨어-독립 정본**. 상세 방법론 [[cost-comparison-methodology-2026-07/cost-comparison-methodology]].
 - 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §3.4 = git 이력)
