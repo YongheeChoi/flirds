@@ -1854,6 +1854,60 @@ vanilla observer (per-round raw, the project's first per-round phi record):
 | fmnist | iid | label_flip | main | 0.3500 | 2 | 47 | vanilla | 0.8370 | +0.0000 | 0.0179 |  |  |  |  |
 | fmnist | iid | label_flip | main | 0.7000 | 2 | 47 | vanilla | 0.8093 | +0.0000 | 0.0456 | +0.0000 |  |  |  |
 | fmnist | iid | label_flip | main |  | 2 | 47 | vanilla | 0.8155 | +0.0000 | 0.0394 | +0.0000 |  |  |  |
+| mnist | dir1 | free_rider | main |  | 0 | 40 | oracle_excl | 0.9799 | +0.0069 | 0.0069 |  |  |  |  |
+| mnist | dir1 | free_rider | main |  | 0 | 40 | random_excl | 0.9716 | -0.0014 | 0.0069 |  |  |  |  |
+| mnist | dir1 | free_rider | main |  | 0 | 40 | vanilla | 0.9730 | +0.0000 | 0.0069 |  |  |  |  |
+| mnist | dir1 | free_rider | main |  | 1 | 40 | oracle_excl | 0.9772 | +0.0054 | 0.0054 |  |  |  |  |
+| mnist | dir1 | free_rider | main |  | 1 | 40 | random_excl | 0.9729 | +0.0010 | 0.0054 |  |  |  |  |
+| mnist | dir1 | free_rider | main |  | 1 | 40 | vanilla | 0.9719 | +0.0000 | 0.0054 |  |  |  |  |
+| mnist | dir1 | free_rider | main |  | 2 | 40 | oracle_excl | 0.9758 | +0.0068 | 0.0068 |  |  |  |  |
+| mnist | dir1 | free_rider | main |  | 2 | 40 | random_excl | 0.9688 | -0.0002 | 0.0068 |  |  |  |  |
+| mnist | dir1 | free_rider | main |  | 2 | 40 | vanilla | 0.9690 | +0.0000 | 0.0068 |  |  |  |  |
+| mnist | dir1 | grad_noise | main |  | 0 | 40 | oracle_excl | 0.9799 | +0.0750 | 0.0750 | +1.0000 |  |  |  |
+| mnist | dir1 | grad_noise | main |  | 0 | 40 | random_excl | 0.8902 | -0.0146 | 0.0750 | -0.1950 |  |  |  |
+| mnist | dir1 | grad_noise | main |  | 0 | 40 | vanilla | 0.9049 | +0.0000 | 0.0750 | +0.0000 |  |  |  |
+| mnist | dir1 | grad_noise | main |  | 1 | 40 | oracle_excl | 0.9772 | +0.0735 | 0.0735 | +1.0000 |  |  |  |
+| mnist | dir1 | grad_noise | main |  | 1 | 40 | random_excl | 0.9199 | +0.0161 | 0.0735 | +0.2194 |  |  |  |
+| mnist | dir1 | grad_noise | main |  | 1 | 40 | vanilla | 0.9038 | +0.0000 | 0.0735 | +0.0000 |  |  |  |
+| mnist | dir1 | grad_noise | main |  | 2 | 40 | oracle_excl | 0.9758 | +0.0951 | 0.0951 | +1.0000 |  |  |  |
+| mnist | dir1 | grad_noise | main |  | 2 | 40 | random_excl | 0.9024 | +0.0218 | 0.0951 | +0.2286 |  |  |  |
+| mnist | dir1 | grad_noise | main |  | 2 | 40 | vanilla | 0.8806 | +0.0000 | 0.0951 | +0.0000 |  |  |  |
+| mnist | dir1 | label_flip | main | 0.7000 | 0 | 39 | oracle_excl | 0.9812 | +0.0126 | 0.0126 |  |  |  |  |
+| mnist | dir1 | label_flip | main | 0.7000 | 0 | 39 | random_excl | 0.9769 | +0.0083 | 0.0126 |  |  |  |  |
+| mnist | dir1 | label_flip | main | 0.7000 | 0 | 39 | vanilla | 0.9686 | +0.0000 | 0.0126 |  |  |  |  |
+| mnist | dir1 | label_flip | main | 0.7000 | 1 | 48 | oracle_excl | 0.9794 | +0.0162 | 0.0162 |  |  |  |  |
+| mnist | dir1 | label_flip | main | 0.7000 | 1 | 48 | random_excl | 0.9606 | -0.0025 | 0.0162 |  |  |  |  |
+| mnist | dir1 | label_flip | main | 0.7000 | 1 | 48 | vanilla | 0.9631 | +0.0000 | 0.0162 |  |  |  |  |
+| mnist | dir1 | label_flip | main | 0.7000 | 2 | 47 | oracle_excl | 0.9754 | +0.0198 | 0.0198 |  |  |  |  |
+| mnist | dir1 | label_flip | main | 0.7000 | 2 | 47 | random_excl | 0.9587 | +0.0031 | 0.0198 |  |  |  |  |
+| mnist | dir1 | label_flip | main | 0.7000 | 2 | 47 | vanilla | 0.9556 | +0.0000 | 0.0198 |  |  |  |  |
+| mnist | iid | free_rider | main |  | 0 | 40 | oracle_excl | 0.9815 | +0.0061 | 0.0061 |  |  |  |  |
+| mnist | iid | free_rider | main |  | 0 | 40 | random_excl | 0.9778 | +0.0024 | 0.0061 |  |  |  |  |
+| mnist | iid | free_rider | main |  | 0 | 40 | vanilla | 0.9754 | +0.0000 | 0.0061 |  |  |  |  |
+| mnist | iid | free_rider | main |  | 1 | 40 | oracle_excl | 0.9809 | +0.0064 | 0.0064 |  |  |  |  |
+| mnist | iid | free_rider | main |  | 1 | 40 | random_excl | 0.9764 | +0.0019 | 0.0064 |  |  |  |  |
+| mnist | iid | free_rider | main |  | 1 | 40 | vanilla | 0.9745 | +0.0000 | 0.0064 |  |  |  |  |
+| mnist | iid | free_rider | main |  | 2 | 40 | oracle_excl | 0.9798 | +0.0074 | 0.0074 |  |  |  |  |
+| mnist | iid | free_rider | main |  | 2 | 40 | random_excl | 0.9694 | -0.0030 | 0.0074 |  |  |  |  |
+| mnist | iid | free_rider | main |  | 2 | 40 | vanilla | 0.9724 | +0.0000 | 0.0074 |  |  |  |  |
+| mnist | iid | grad_noise | main |  | 0 | 40 | oracle_excl | 0.9815 | +0.0533 | 0.0533 | +1.0000 |  |  |  |
+| mnist | iid | grad_noise | main |  | 0 | 40 | random_excl | 0.9286 | +0.0004 | 0.0533 | +0.0070 |  |  |  |
+| mnist | iid | grad_noise | main |  | 0 | 40 | vanilla | 0.9283 | +0.0000 | 0.0533 | +0.0000 |  |  |  |
+| mnist | iid | grad_noise | main |  | 1 | 40 | oracle_excl | 0.9809 | +0.0558 | 0.0558 | +1.0000 |  |  |  |
+| mnist | iid | grad_noise | main |  | 1 | 40 | random_excl | 0.9199 | -0.0052 | 0.0558 | -0.0942 |  |  |  |
+| mnist | iid | grad_noise | main |  | 1 | 40 | vanilla | 0.9251 | +0.0000 | 0.0558 | +0.0000 |  |  |  |
+| mnist | iid | grad_noise | main |  | 2 | 40 | oracle_excl | 0.9798 | +0.0667 | 0.0667 | +1.0000 |  |  |  |
+| mnist | iid | grad_noise | main |  | 2 | 40 | random_excl | 0.8985 | -0.0145 | 0.0667 | -0.2172 |  |  |  |
+| mnist | iid | grad_noise | main |  | 2 | 40 | vanilla | 0.9130 | +0.0000 | 0.0667 | +0.0000 |  |  |  |
+| mnist | iid | label_flip | main | 0.7000 | 0 | 39 | oracle_excl | 0.9821 | +0.0172 | 0.0172 |  |  |  |  |
+| mnist | iid | label_flip | main | 0.7000 | 0 | 39 | random_excl | 0.9769 | +0.0120 | 0.0172 |  |  |  |  |
+| mnist | iid | label_flip | main | 0.7000 | 0 | 39 | vanilla | 0.9649 | +0.0000 | 0.0172 |  |  |  |  |
+| mnist | iid | label_flip | main | 0.7000 | 1 | 48 | oracle_excl | 0.9816 | +0.0187 | 0.0187 |  |  |  |  |
+| mnist | iid | label_flip | main | 0.7000 | 1 | 48 | random_excl | 0.9661 | +0.0032 | 0.0187 |  |  |  |  |
+| mnist | iid | label_flip | main | 0.7000 | 1 | 48 | vanilla | 0.9629 | +0.0000 | 0.0187 |  |  |  |  |
+| mnist | iid | label_flip | main | 0.7000 | 2 | 47 | oracle_excl | 0.9789 | +0.0173 | 0.0173 |  |  |  |  |
+| mnist | iid | label_flip | main | 0.7000 | 2 | 47 | random_excl | 0.9606 | -0.0010 | 0.0173 |  |  |  |  |
+| mnist | iid | label_flip | main | 0.7000 | 2 | 47 | vanilla | 0.9616 | +0.0000 | 0.0173 |  |  |  |  |
 
 ## V2w promotion gate (spec §5-2): **DO NOT PROMOTE (report CNN-only -- an honest finding)**
 
@@ -2152,6 +2206,36 @@ gap(oracle_excl−vanilla): iid=0.0408, dir1=0.0458
 
 gap(oracle_excl−vanilla): iid=0.0397, dir1=0.0298
 
+**mnist / free_rider** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | dir1 |
+|---|---|---|
+| oracle_excl | 0.9807 | 0.9776 |
+| random_excl | 0.9745 | 0.9711 |
+| vanilla | 0.9741 | 0.9713 |
+
+gap(oracle_excl−vanilla): iid=0.0066, dir1=0.0063
+
+**mnist / grad_noise** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | dir1 |
+|---|---|---|
+| oracle_excl | 0.9807 (+1.00) | 0.9776 (+1.00) |
+| random_excl | 0.9157 (-0.10) | 0.9042 (+0.08) |
+| vanilla | 0.9221 (+0.00) | 0.8964 (+0.00) |
+
+gap(oracle_excl−vanilla): iid=0.0586, dir1=0.0812
+
+**mnist / label_flip@0.7** — 절대 acc (recovery; 분모<0.02 → 공란)
+
+| arm | iid | dir1 |
+|---|---|---|
+| oracle_excl | 0.9809 | 0.9787 |
+| random_excl | 0.9679 | 0.9654 |
+| vanilla | 0.9631 | 0.9625 |
+
+gap(oracle_excl−vanilla): iid=0.0178, dir1=0.0162
+
 ## 사전등록 예측 대조 (README 확장 ②; MISS 그대로 보고)
 
 - **H-K1** cifar10 free_rider V2 recovery iid=+0.85, shard=+0.10, qskew=+0.42, dir1=+0.40 -> **MISS**
@@ -2166,6 +2250,12 @@ gap(oracle_excl−vanilla): iid=0.0397, dir1=0.0298
 - **H-K4** fmnist free_rider recovery seed-sd iid=0.277 -> pending
 - **H-K4** fmnist grad_noise recovery seed-sd iid=0.140 -> pending
 - **H-K5** fmnist lf@0.15 gap iid=0.0076, dir1=0.0262 -> **MISS**
+- **H-K1** mnist free_rider V2 recovery  -> pending
+- **H-K2** mnist iid frrand V2 recovery= -> pending
+- **H-K3** mnist clean 오발화 pairs  | V2 dAcc  -> pending
+- **H-K4** mnist free_rider recovery seed-sd  -> pending
+- **H-K4** mnist grad_noise recovery seed-sd  -> pending
+- **H-K5** mnist lf@0.15 gap  -> pending
 - **H-K6** fmnist↔cifar10 recovery diff iid/free_rider=0.01, iid/frrand=0.20, iid/grad_noise=0.21, iid/label_flip=0.32, dir1/free_rider=0.50, dir1/frrand=0.39, dir1/grad_noise=0.28, dir1/label_flip=1.04, dir1/label_flip=0.63 -> **MISS**
 
 ## C2 소프트-arm 같은-셀 대조 (runs/track_c/c2, read-only)
