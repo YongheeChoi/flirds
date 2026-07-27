@@ -128,19 +128,50 @@ phase 2 는 `frzero_s0`·`frzero_s2` **2셀뿐**이라 4-GPU 컨테이너면 **2
 | **gsm5(`LLM-Small`) 6셀** | ⛔ **2026-07-24 Yonghee 보류 결정이 유효** — IID·near-additive·ρ≈0 **축퇴 무대**라 `Anchor` 0.933 과 정보 중복. 조치는 실행이 아니라 **논문에서 [F3]·세팅표 행 삭제**(→ 실험정리 세션) |
 | **LLM P1w T1 9런** | ⛔ 옵션(§6). 단가 미실측 + `A7` 은 CNN 레그만으로도 표가 선다 → 마감 앞 신규 리스크 불필요 |
 
-**R-clean 실행 명세**
+### 0′.9 R-clean 런북 — **이 절만 보고 띄울 수 있다**
+
+**무엇**: `silo5` removal-curve 의 **clean 대조** 3셀. T13(본문 ablation) LLM removal 표가
+answer-swap·zero-update free-rider 2행뿐이라 **"worst-first 제거는 원래 늘 이득 아니냐"에 답이
+없다** = 위협-특이성 미증명. CNN 짝은 clean rundir(`removal_dose/rundirs_cnn/cifar10_iid_seed{0,1,2}`)이
+이미 있어 표에 행만 넣으면 되는 상태라, LLM 만 비면 비대칭이 그대로 드러난다.
 
 | 항목 | 값 |
 |---|---|
-| 셀 | `1B_silo5_clean_removal_seed{0,1,2}` → `runs/removal_dose/rundirs/` |
-| 프로토콜 | `run_full_sweep.sh` §[1] 의 `matrix … REMOVAL=1` 과 **동일**(threat 만 clean). 코드 변경 0 |
-| 스택 | 기존 4위협 셀과 **동일**(둘 다 torch 2.12.0+cu130 canonical, meta.json 대조 확인) → **캐비엇 없음** |
-| **단가** | **2–3 h/셀 추정** = valuation 3,447 s + 재학습 **317.7 s × distinct-subset(≈8–20)** + silo5 학습. ※ 계획서 §4.3 의 "**<1 GPU-h**" 는 재학습 1회분만 센 **과소평가**다 |
-| 기동 | **phase 2 신규 컨테이너에서 주석 해제** — 현 컨테이너(만료 21:11)에선 레인2 가 18:41 에야 비어 셀이 잘린다. `phase2_matrix` 는 cell-end persist 라 중도 kill = 전손 |
-| 배치 | phase 2 는 **4레인 전부** 띄운다: 레인1 `frzero_s2` · 레인3 `frzero_s0` · 레인2 R-clean s0·s1 · 레인4 R-clean s2 → **07-28 ~01:00 종료**(G1 은 05:45 그대로) |
+| 셀 | `1B_silo5_clean_removal_seed{0,1,2}` (3셀) |
+| 착지 루트 | `runs/removal_dose/rundirs/` — canonical `phase2_matrix/rundirs` 와 **분리**(덮어쓰기 0) |
+| 프로토콜 | `runs/removal_dose/run_full_sweep.sh` §[1] 의 `matrix … REMOVAL=1` 과 **동일**, threat 만 `clean`. **코드 변경 0** |
+| 스택 | 기존 4위협 셀 `meta.json` = torch 2.12.0+cu130 canonical = **B200 런처와 동일** → 캐비엇·정규화 불요 |
+| 단가 | **2–3 h/셀** = valuation 3,447 s + 재학습 **317.7 s × distinct-subset(≈8–20)** + silo5 학습(N=5·R=10) |
+| 큐 위치 | `queue_b200_lane2.txt` 맨 아래 2줄(seed0·1) · `queue_b200_lane4.txt` 맨 아래 1줄(seed2) — **`#` 주석 상태** |
 
-> **하드룰**: 컨테이너 교체 시 phase 2 두 G1 셀은 **서로 다른 GPU** 에 둔다(§0′.5). 큐를 그대로 쓰면
-> 레인1 이 둘 다 져서 6 h 늦는다.
+> ⚠ **계획서 §4.3 의 "<1 GPU-h" 는 과소평가다** — 재학습 **1회분**(317.7 s)만 센 값이다.
+
+**기동 절차** (phase 2 신규 컨테이너에서)
+
+1. **지금은 풀지 않는다.** 현 컨테이너는 21:11 만료인데 레인2 는 18:41 에야 빈다 →
+   2–3 h 셀이 중간에 잘린다. `phase2_matrix` 는 **cell-end 1회 persist** 라 kill = 그 셀 전손이고,
+   드라이버는 이미 consumed 처리해 **재시도하지 않는다**.
+2. 교체 후, 두 큐 파일 맨 아래 `#phase2_matrix.py|1B_silo5_clean_removal_seed*` **3줄의 `#` 만 제거**한다
+   (줄 삭제·순서 변경 금지 — 드라이버가 consumed 인덱스로 추적).
+3. **4레인 전부** 띄운다(phase 2 자체는 2셀이라 종전 안내는 "2장이면 충분"이었다):
+
+   | 레인 | 셀 | 종료 |
+   |---|---|---|
+   | 1 | `G1_L2_frzero_s2` | ~05:45 |
+   | 3 | `G1_L2_frzero_s0`(재실행) | ~05:45 |
+   | 2 | R-clean seed0 → seed1 | ~01:00 |
+   | 4 | R-clean seed2 | ~22:45 |
+
+4. **완주 판정**: 로그 마지막에 `MATRIX DONE` + 아래가 3개 다 나오면 끝.
+   ```
+   ls runs/removal_dose/rundirs | grep silo5_clean_removal
+   ```
+5. **셀별 정상 판정**(로그 한 줄): `[removal] clean: <n> distinct retrains (~318s/retrain) over 11 methods x 2 dirs`.
+   `metrics.json` 의 `clean_seed<N>.removal_curve` 에 11방법 × `worst_first`/`best_first` 5점이 있으면 정상.
+6. 착지 후 rundir 커밋(**push 는 Yonghee**) → T13 LLM 표에 clean 행 추가.
+
+> **하드룰**: phase 2 의 G1 두 셀은 **서로 다른 GPU** 에 둔다(§0′.5). 큐를 그대로 쓰면
+> 레인1 이 둘 다 져서 6 h 늦는다. R-clean 은 레인2·4 라 이 충돌과 무관하다.
 
 ## 0. 구성 변경 (2026-07-25) — **4장을 한 서버에서 동시 제어**
 
