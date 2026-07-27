@@ -1,0 +1,19 @@
+{
+  "name": "mnist_dir1_clean_seed0",
+  "git_sha": "30edbadb19aa42d530f2498ae21f6cdbe70579cc",
+  "git_dirty": true,
+  "git_diff_stat": "",
+  "env_hash": "5c7c1130e74662a8",
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.13",
+    "cuda": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  }
+}

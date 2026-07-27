@@ -1,0 +1,19 @@
+{
+  "name": "mnist_iid_free-rider_seed0",
+  "git_sha": "bace3b83e865c4d2b64442ea1af7a2916fe60bdd",
+  "git_dirty": true,
+  "git_diff_stat": "",
+  "env_hash": "5c7c1130e74662a8",
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.13",
+    "cuda": "12.8",
+    "gpu": "NVIDIA GeForce RTX 3090"
+  }
+}
