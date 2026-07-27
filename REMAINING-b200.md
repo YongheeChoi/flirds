@@ -116,17 +116,23 @@
 `obs_s2` · `online_s1` · `online_s2`(3셀 모두 진행 중). 디스크에 `gsm50k5_clean_flirds_gate_v2`
 는 **seed0 뿐**, `clean_observer` 는 **seed0·1** 뿐인 것으로 재확인.
 
-### 0′.8 phase 2 슬랙 — **R-clean 3셀만 채운다** (Yonghee 결정 2026-07-27)
+### 0′.8 phase 2 슬랙 — **R-clean 3 + B 3 + G12 23 = 29셀을 채운다** (Yonghee 결정 2026-07-27)
 
-phase 2 는 `frzero_s0`·`frzero_s2` **2셀뿐**이라 4-GPU 컨테이너면 **2장이 07-27 19:45 ~ 07-28
-24:00 내내 논다(≈ 56 GPU-h 유휴)**. 그 슬랙에 **silo5 removal-curve clean 3셀만** 넣는다.
+phase 2 의 G1 잔여는 `frzero_s0`·`frzero_s2` **2셀뿐**이라 4-GPU 컨테이너면 **2장이 07-27 19:45 ~
+07-28 24:00 내내 논다(≈ 56 GPU-h 유휴)**. 여기에 아래 3블록(≈ **60 GPU-h**)을 얹는다.
 
 | 후보 | 판정 |
 |---|---|
-| **R-clean** — silo5 removal clean × 3seed | ✅ **넣는다.** T13 LLM removal 표가 noisy·frzero 2행뿐이라 **위협-특이성이 미증명**이다(clean 대조 부재). CNN 짝은 clean rundir 이 이미 있어 표에 행만 넣으면 되는 상태 → LLM 만 비면 비대칭. 큐 = `queue_b200_lane2.txt`(seed0·1) · `lane4.txt`(seed2), **주석 상태**로 대기 |
-| **device100 clean 3셀** | ⛔ **버린다** (07-27 Yonghee). ~23 GPU-h 로 슬랙엔 들어가지만, 이 무대는 near-additive 라 clean 도 +1.000 근처가 확실해 **얻는 게 §0.1 형식 준수뿐**이다. → 논문은 캡션 각주("이 무대는 탐지·비용 전용이라 clean 대조를 두지 않았다")로 처리 |
-| **gsm5(`LLM-Small`) 6셀** | ⛔ **2026-07-24 Yonghee 보류 결정이 유효** — IID·near-additive·ρ≈0 **축퇴 무대**라 `Anchor` 0.933 과 정보 중복. 조치는 실행이 아니라 **논문에서 [F3]·세팅표 행 삭제**(→ 실험정리 세션) |
+| **R-clean** — silo5 removal clean × 3seed | ✅ **넣는다** (≈ 7 GPU-h). T13 LLM removal 표가 noisy·frzero 2행뿐이라 **위협-특이성이 미증명**이다. CNN 짝은 clean rundir 이 이미 있어 표에 행만 넣으면 되는 상태 → LLM 만 비면 비대칭. 런북 = §0′.9 |
+| **B** — ShapleyFL β=0.3 재산출 × 3seed | ✅ **넣는다** (≈ 5 GPU-h). 본문 [F4] 의 ShapleyFL 행이 **β=0.5 로 굳어 있다**(rundir SHA `39a0a97` < β 변경 `e89af94`). (a) 재학습은 저장분 재사용 → ShapleyFL 만 재채점. 런북 = §0′.10 |
+| **G12** — A축 lever probe LLM 잔여 23셀 | ✅ **넣는다** (≈ 53 GPU-h). 07-26 A6000 취소분(`VAL_CHUNK` 2 강제 → 8h+/셀)을 B200 으로. 부록 C.5 의 LLM 레그를 3-seed 로 승격. **순서=우선순위, 꼬리는 droppable.** 런북 = §0′.10 |
+| **device100 clean 3셀** | ⛔ **버린다** (07-27 Yonghee). 확인 결과 **논문에 이 무대의 결과 표가 애초에 없다** — cross-device 는 §5.1 나열·B.1 하이퍼·B.7·E.2(비용)에만 나온다. 각주조차 필요 없다 |
+| **gsm5(`LLM-Small`) 6셀** | ⛔ **2026-07-24 Yonghee 보류 결정이 유효** — IID·near-additive·ρ≈0 **축퇴 무대**라 `Anchor` 0.933 과 정보 중복. 논문 쪽 [F3]·세팅표 행은 **삭제 완료** |
 | **LLM P1w T1 9런** | ⛔ 옵션(§6). 단가 미실측 + `A7` 은 CNN 레그만으로도 표가 선다 → 마감 앞 신규 리스크 불필요 |
+
+> **용량 점검**: 가용 ≈ (2장 × 19:45–05:45) + (4장 × 05:45–24:00) − R-clean = **약 86 GPU-h**
+> vs 필요 **60**. 마진 ~26 GPU-h. 단, 단가가 전부 **추정**이라 G12 꼬리부터 잘릴 수 있다 —
+> 그래서 큐 순서를 가치순으로 깔았고 드라이버가 순서대로 배정하므로 **자연 절단**된다.
 
 ### 0′.9 R-clean 런북 — **이 절만 보고 띄울 수 있다**
 
@@ -172,6 +178,43 @@ answer-swap·zero-update free-rider 2행뿐이라 **"worst-first 제거는 원�
 
 > **하드룰**: phase 2 의 G1 두 셀은 **서로 다른 GPU** 에 둔다(§0′.5). 큐를 그대로 쓰면
 > 레인1 이 둘 다 져서 6 h 늦는다. R-clean 은 레인2·4 라 이 충돌과 무관하다.
+
+### 0′.10 B(β=0.3 재산출) · G12 런북
+
+**B — 본문 표 [F4] 의 ShapleyFL 행이 β=0.5 다.** 출처 `runs/track_d/rundirs/1B_anchor5_seed{0,1,2}`
+의 `git_sha = 39a0a97`(2026-06-15)이 **β0.5→0.3 커밋 `e89af94`(06-25)의 조상**이다 — 재실험
+캠페인이 CNN·3B 는 덮었지만 1B anchor5 track_d 레그를 빠뜨렸다(코드 기본값은 이미
+`shapleyfl.py:40 BETA=0.3`).
+
+| 항목 | 값 |
+|---|---|
+| 셀 | `1B_anchor5_sflb03_seed{0,1,2}` → **신규 루트** `runs/track_d/rundirs_beta03/` (canonical read-only 유지) |
+| env | `REGIME=anchor5 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=ShapleyFL SFL_BETA=0.3 MMLU_LIMIT=0 LORA_R=16` |
+| 왜 `ORACLE_A=0` | (a) 재학습 $2^5{=}32$회(30,817 s)의 φ가 기존 `phi.parquet` 에 **`(a)oracle` 로 이미 저장돼 있다** → 다시 돌 이유가 없다. 궤적만 같은 seed 로 재현하고 ShapleyFL 만 재채점 |
+| 단가 | **~1.5 h/셀** ((b) 3,528 s + ShapleyFL + 학습) → 3셀 ≈ 5 GPU-h |
+| 큐 | 레인4 `seed0` · 레인2 `seed1` · 레인1 `seed2` (R-clean 다음) |
+
+> ★ **착지 후 필수 검증**: 새 rundir 의 **`(b)oracle` φ 가 기존 rundir 의 `(b)oracle` φ 와
+> 비트동일**한지 대조한다 — `(b)` 는 `METHODS` 필터를 타지 않아 항상 산출되므로 **궤적 동일성
+> 카나리아**로 쓸 수 있다. 어긋나면 저장된 `(a)` 와 조인할 수 없고 `ORACLE_A=1` 전체 재실행
+> (≈8.6 h/셀)으로 가야 한다. 통과하면 [F4] 의 ShapleyFL 행만 새 값으로 갈아끼우고 "β=.5 잠정"
+> 표기를 제거한다.
+
+**G12 — 부록 C.5 LLM 레그 3-seed 승격 (23셀).**
+
+| 항목 | 값 |
+|---|---|
+| 셀 | lr×steps **13** (`lr{1,2,3}e-3 × st{10,20,30}` 결손분) · anchor5 rank **4**(`r{32,64}` s1·s2) · std50k5 rank **4**(`r{32,64}` s1·s2) · noise **2**(`noise_1B_r64` s1·s2) |
+| 착지 루트 | `runs/probe_signal/rundirs/` (noise 만 `runs/probe_signal/noise_probe/`) |
+| env 규약 | **기존 seed1·2 와 동일**: `METHODS=Flirds,Flirds1st MMLU_LIMIT=0 ARMS=0 ORACLE_A=0 FIDELITY=1`. seed0 셀은 전방법·MMLU40 이었지만 **C.5 가 읽는 열(Flirds/Flirds-1st vs in-run)이 같아** 무해하고, 이 축소가 A6000 8h+ → ~2h 를 만든 지점이다 |
+| 단가(추정) | anchor5 계열 ~2 h · std50k5(R=200) ~4 h · noise ~1.5 h → **≈ 53 GPU-h** |
+| 순서 | **가치순**: lr{2,3}e-3×st{20,30}(핵심 질문 = "lr 로 커진 φ가 cross-seed 실재냐") → lr1e-3 기준선 → rank(anchor5) → rank(std50k5) → noise. 4레인 라운드로빈 |
+
+> ⛔ **중복 함정**: 각 레인의 **위쪽 PHASE 2 주석 블록에 07-26 취소분 G5·G12 줄이 그대로 남아
+> 있고 셀 이름이 겹친다**(그쪽은 `ARMS=1 MMLU_LIMIT=40`). **그 줄들은 절대 주석 해제하지 말 것** —
+> 둘 다 풀면 같은 rundir 를 다른 config 로 두 번 덮어쓴다. 큐 헤더에도 같은 경고를 박아 뒀다.
+> **정본은 `[07-27 추가] G12` 블록.**
+> 마감에 걸리면 꼬리(std50k5·noise)부터 안 돌아도 된다 — 부록·최저다.
 
 ## 0. 구성 변경 (2026-07-25) — **4장을 한 서버에서 동시 제어**
 

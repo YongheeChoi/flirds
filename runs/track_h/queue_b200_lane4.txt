@@ -50,3 +50,37 @@ phase2_matrix.py|G1_L2_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 MIN
 #   상세·근거 = queue_b200_lane2.txt 같은 블록.  seed0·1 은 레인2, seed2 만 여기.
 #   ★ phase 2 신규 컨테이너에서 주석 해제(현 컨테이너 만료 21:11 전에는 풀지 말 것).
 #phase2_matrix.py|1B_silo5_clean_removal_seed2|REGIME=silo5 THREAT=clean SEED=2 REMOVAL=1 RUNDIR_ROOT=__REPO__/runs/removal_dose/rundirs
+
+# ══ [07-27 추가] B — ShapleyFL β=0.3 재산출 (본문 표 [F4] 수정) ═════════════════
+#   문제: [F4] 출처 runs/track_d/rundirs/1B_anchor5_seed{0,1,2} 의 git_sha = 39a0a97(06-15)
+#         = β0.5→0.3 커밋 e89af94(06-25)의 **조상** → ShapleyFL 행만 β=0.5 로 굳어 있다.
+#         (재실험 캠페인이 CNN·3B 는 덮었으나 1B anchor5 track_d 레그를 빠뜨렸다.)
+#   조치: (a) 재학습 2^5=32회(30,817s)는 phi.parquet 에 `(a)oracle` 로 **이미 저장돼 있으므로**
+#         다시 돌지 않는다(ORACLE_A=0).  같은 seed·같은 코드로 궤적만 재현하고
+#         **ShapleyFL 한 방법만** 재채점한다(METHODS=ShapleyFL; (b)oracle 은 항상 산출).
+#   ★ 착지 후 필수 검증: 새 rundir 의 **(b)oracle φ 가 기존 rundir 의 (b)oracle φ 와
+#     비트동일**한지 대조한다(궤적 동일성 카나리아).  어긋나면 저장된 (a) 와 조인할 수 없고
+#     ORACLE_A=1 전체 재실행(≈8.6h/셀)으로 가야 한다.
+#   착지 루트는 신규(rundirs_beta03) — canonical rundirs/ 는 read-only 유지.
+#   단가 ≈ 1.5h/셀((b) 3,528s + ShapleyFL + 학습).  ARMS=0 = fidelity 전용.
+track_d.py|1B_anchor5_sflb03_seed0|REGIME=anchor5 SEED=0 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=ShapleyFL SFL_BETA=0.3 MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/track_d/rundirs_beta03
+
+# ══ [07-27 추가] G12 잔여 23셀 — A축 lever probe LLM 3-seed 승격 (부록 C.5) ═════
+#   07-26 A6000 에서 취소된 물량(48GB → VAL_CHUNK 2 강제 → 셀당 1.2h→8h+)을 B200 으로 올린다.
+#   ★ 기존 seed1·2 규약을 그대로 따른다: METHODS=Flirds,Flirds1st · MMLU_LIMIT=0 · ARMS=0.
+#     (C.5 는 Flirds/Flirds-1st vs in-run Shapley 만 읽는다.  seed0 셀은 전방법·MMLU40 이었지만
+#      읽는 열이 같으므로 무해하고, 이 축소가 8h+ → ~2h 를 만든 이유다.)
+#   단가 추정: anchor5 계열 ~2h · std50k5(R=200) ~4h · noise ~1.5h → 23셀 ≈ 53 GPU-h.
+#   ⚠ **순서 = 우선순위**다.  꼬리는 안 돌아도 된다(부록·최저).  드라이버는 순서대로 배정하므로
+#     마감에 걸리면 뒤에서부터 자연히 잘린다 — 재정렬·삭제 금지, 필요하면 # 주석만.
+#   우선순위 근거: 핵심 미확인 질문 = "lr 로 커진 φ 가 cross-seed 실재 신호인가"(예측 ρ≈0)
+#     → lr{2,3}e-3 × st{20,30} 먼저 → lr1e-3 기준선 → rank(anchor5) → rank(std50k5) → noise.
+#   ⛔ **위쪽 PHASE 2 주석 블록의 G5·G12 줄과 셀이 겹친다** — 그쪽은 07-26 취소분
+#     (ARMS=1 · MMLU_LIMIT=40 · 구 레인배분)이라 **절대 주석 해제하지 말 것**.  이 블록이 정본이고,
+#     둘 다 풀면 같은 rundir 를 다른 config 로 두 번 덮어쓴다.
+track_d.py|1B_anchor5_lr2e-3_st20_seed1|REGIME=anchor5 LR=2e-3 MAX_STEPS=20 SEED=1 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr3e-3_st20_seed1|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 SEED=1 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr1e-3_st20_seed1|REGIME=anchor5 LR=1e-3 MAX_STEPS=20 SEED=1 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_lr1e-3_st10_seed0|REGIME=anchor5 LR=1e-3 MAX_STEPS=10 SEED=0 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_anchor5_r64_seed2|REGIME=anchor5 LORA_R=64 SEED=2 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
+track_d.py|1B_std50k5_r64_seed2|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=64 SEED=2 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs
