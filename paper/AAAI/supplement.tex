@@ -1,0 +1,281 @@
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage[submission]{aaai2027}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\newcommand{\lval}{\ell_{\mathrm{val}}}
+
+\pdfinfo{
+/TemplateVersion (2027.1)
+}
+
+\setcounter{secnumdepth}{2}
+
+\title{Supplementary Material for\\Flirds: Efficient Client-Level Contribution Evaluation in Federated Learning via In-Run Data Shapley}
+\author{
+    Anonymous Submission
+}
+\affiliations{
+}
+
+\begin{document}
+
+\maketitle
+\appendix
+
+\section{Proofs and Formal Statements}
+\label{app:proofs}
+
+This appendix does not re-prove results that are already in IRDS: the
+per-round decomposition and the closed-form derivation are direct readings of
+IRDS's step-level results, so we give statements and correspondences only
+(Supplementary Sections~\ref{app:game} and~\ref{app:closed}); proofs are
+attached to what IRDS does not formalize --- the residual (Supplementary
+Section~\ref{app:residual}) and the FL-specific items (Supplementary
+Sections~\ref{app:bridge}--\ref{app:lora}). The closed form and the per-round
+decomposition are also verified numerically in code; the verified values and
+the reproduction sources are given in Supplementary
+Section~\ref{app:verify} and the submitted code package.
+
+% 전체 형식화의 출처는 내부 math-rigor dossier(2026-07-04, 반박 패널 36건 반영본).
+Notation: in this appendix, \emph{retraining reference} denotes the
+retraining-based Shapley and \emph{in-run reference} the in-run Shapley
+defined in the main paper's ``The Federated Round Game'' section.
+Correspondence with the main paper: the first and third properties in its
+``Approximation Error and Scope'' section are treated in Supplementary
+Section~\ref{app:game}, and the second in Supplementary
+Section~\ref{app:closed}; its residual bound is treated in Supplementary
+Section~\ref{app:residual}; the coefficient and unit decisions in ``The
+Federated Round Game'' and the fairness principle of Section~5.1 are treated
+in Supplementary Sections~\ref{app:bridge} and~\ref{app:choice}; the scope
+remark maps to Supplementary Sections~\ref{app:bridge}(ii)--(iv),
+\ref{app:choice}, and~\ref{app:lora}.
+
+\subsection{System Model and Assumptions}
+\label{app:model}
+
+We assume synchronous FedAvg: the participants $P_r$ of round $r$ start
+local training from the same initial state $w^r$ (submitting the model
+differences $\delta_k^r$), and the server aggregates with the stateless
+weighted sum $w^{r+1} = w^r + \sum_{k \in P_r} p_k^r \delta_k^r$,
+$p_k^r = n_k / \sum_{j \in P_r} n_j$ (the weight denominator runs over all of
+$P_r$ and is fixed so as not to depend on the coalition $S$). The local
+optimizer is plain SGD without momentum at a constant learning rate, created
+anew each round (stateless clients). This is the configuration of the
+experimental stage; which of these assumptions is actually load-bearing is
+separated out in Supplementary Section~\ref{app:state}. The frozen log is
+$[(w^r, \{(\delta_k^r, n_k)\}_{k \in P_r})]_{r<R}$. Notation:
+$g_r = \nabla\lval(w^r)$, $H_r = \nabla^2\lval(w^r)$ (the true Hessian, not
+GGN/Fisher), $a_k^r = p_k^r \delta_k^r$,
+$\Delta_S^r = \sum_{k \in S \cap P_r} a_k^r$, and
+$\Delta W_r = \Delta_{P_r}^r$. The sign convention matches the main text:
+$\phi$ attributes the \emph{decrease} of the validation loss (beneficial
+client $\Rightarrow \phi_k > 0$).
+
+\subsection{The Game and Two Consequences}
+\label{app:game}
+
+The round subgame is
+$u_r(S) := \lval(w^r) - \lval(w^r + \Delta_S^r)$, the total game is
+$U^{\mathrm{in}}(S) := \sum_r u_r(S)$, and the in-run reference is the
+Shapley value of this game computed without approximation. The round
+surrogate is
+$\hat u_r(S) := -\langle g_r, \Delta_S^r \rangle
+- \tfrac12 \langle \Delta_S^r, H_r \Delta_S^r \rangle$
+(the first-order-only version is $\hat u_r^{(1)}$). \emph{The game the
+estimator approximates is exactly $U^{\mathrm{in}}$.} What Flirds computes
+exactly is the Shapley value of $\hat U^{\mathrm{in}} := \sum_r \hat u_r$:
+same log, same $\lval$, same $S$-independent weights, same expansion point,
+and the only difference is the per-round second-order Taylor truncation. The
+retraining reference is the game retrained from scratch with $S$ only, in
+which the denominator is renormalized to $\sum_{j \in S} n_j$ and the entire
+trajectory depends on $S$ --- a \emph{different game} (the relation between
+the two references is an empirical question, not a theoretical one;
+Supplementary Section~\ref{app:choice}).
+
+Two properties follow immediately from this game, both round-level readings
+of IRDS's step-level arguments. \textbf{(i) Telescoping and efficiency}: if
+$S \supseteq P_r$ then $u_r(S) = \lval(w^r) - \lval(w^{r+1})$, so summing
+over rounds gives
+$U^{\mathrm{in}}([N]) = \lval(w^0) - \lval(w^R)$, and combined with Shapley
+efficiency the contributions of all clients sum, without approximation, to
+the validation-loss decrease of the whole run. What makes the grand-coalition
+perturbation coincide with the realized step in FL is server statelessness
+(Supplementary Section~\ref{app:state}), where the consequences of breaking
+it are also treated. \textbf{(ii) Per-round decomposition}: since $u_r$ is a
+function of $S \cap P_r$ only, the null-player argument (a standard result of
+cooperative game theory, which IRDS also invokes at step level) gives
+$\phi_k(U^{\mathrm{in}}) = \sum_{r:\,k \in P_r} \phi_k^{P_r}(u_r|_{P_r})$
+--- zero contribution in non-participating rounds is a consequence, not a
+definition.
+
+\subsection{Closed Form and the Zero-Update Zero}
+\label{app:closed}
+
+For $k \in P_r$ the estimator has the closed form stated in the main paper:
+\[
+\phi_k(\hat u_r)
+= -\,p_k^r \langle g_r, \delta_k^r \rangle
+- \tfrac12\, p_k^r \langle \delta_k^r,\, H_r \Delta W_r \rangle.
+\]
+The derivation is that of Theorem~4 of IRDS, with the single substitution of
+the weighted update $a_k^r = p_k^r \delta_k^r$ for the sample-gradient term
+$-\eta_t \nabla\ell_z$ (the structure in which each pairwise interaction
+$q_{ij} = \langle a_i^r, H_r a_j^r \rangle$ is split half-and-half between
+its two parties is also unchanged; Supplementary Section~\ref{app:bridge}
+reuses it). The common right-hand vector $H_r \Delta W_r$ is shared by all
+clients, so the round closes with \emph{one} HVP, and
+$\sum_k \phi_k(\hat u_r) = \hat u_r(P_r)$ (efficiency). \emph{The zero-update
+zero has different grounds on the two sides}: on the estimator side,
+$\delta_k^r = 0$ makes the value an inner product with a zero tensor and
+hence algebraically exactly zero (independent of numerical determinism),
+whereas on the in-run-reference game side the zero presupposes
+bit-determinism of the forward pass (established with cuDNN-deterministic
+settings for the CNN track; conditional for the LLM track) --- the
+zero-semantics claims of Sections~5.3 and~5.4 rest on the former.
+
+\subsection{Taylor Residual and Error Propagation}
+\label{app:residual}
+
+Under $\lval \in C^3$ and local constants $M_2^r, M_3^r$,
+$|u_r(S) - \hat u_r(S)| \le \tfrac{M_3^r}{6}\|\Delta_S^r\|^3$, and
+$\tfrac{M_2^r}{2}\|\Delta_S^r\|^2$ at first order. \textbf{Error
+propagation}: the difference between the Shapley values of two games is
+bounded by twice the game difference
+($|\phi_i(v) - \phi_i(v')| \le 2\|v - v'\|_\infty$). Combining,
+$|\phi_k(U^{\mathrm{in}}) - \hat\phi_k|
+\le \sum_r \tfrac{M_3^r}{3}\max_{S \subseteq P_r}\|\Delta_S^r\|^3$
+(for the first-order estimator the leading coefficient is $M_2^r$; the
+analogous $M_2^r/3$ would be an invalid bound). \textbf{Status}: this is an
+upper bound, its constants are hard to estimate tightly for large models,
+and it accumulates linearly in $R$ --- the role of this bound in this paper
+stops at establishing the order (scaling law) of the residual, the same
+theory-only status as the main paper's approximation-error discussion. We
+also make explicit that the per-round displacement is an accumulation of
+several local steps, hence a structurally weaker guarantee than IRDS's
+per-step one. Moreover the bound is conditional on the $C^3$ assumption: the
+LLM track in LoRA-factor coordinates satisfies it automatically
+(Supplementary Section~\ref{app:lora}), but the ReLU CNN track does not ---
+fidelity on CNN is claimed only as the empirical result of Section~5.2, never
+as a consequence of this bound (the scope remark in the main paper points
+here).
+
+\subsection{The Per-Sample-to-Per-Client Bridge}
+\label{app:bridge}
+
+\textbf{(i) The role of leaving the weights untouched in the additive closed
+form}: the renormalized displacement $\widetilde\Delta_S$ cannot be
+expressed as a sum over a coalition-independent family of vectors (equal-$n$
+two-client counterexample: the singletons force $b_k = \delta_k$ while the
+pair forces $\tfrac12(\delta_1 + \delta_2)$). Leaving the coefficients as-is
+is therefore not an assumption required of every FL valuation, but the
+structural condition for obtaining this paper's one-HVP closed form as a sum
+of coalition-independent displacements while preserving the realized grand
+coalition. \textbf{(ii) Merge-consistency}: in a 2-additive game, the
+Shapley value after merging a block of players equals exactly the sum of the
+within-block Shapley values (every pairwise interaction is always split
+half-and-half between its two parties). \textbf{(iii) Corollary}: in the
+one-step, full-batch, mean-CE limit, the per-client game is a block merge of
+the per-sample game, and a client's value equals the sum of its samples'
+values (exactly). \textbf{Scope}: this cancellation holds only when the
+reduction denominator of the local loss equals the FedAvg aggregation
+weight. Mean-CE CNN (number of images) satisfies this, but token-mean CE in
+LLMs does not (denominator = token count, weight = sequence count), so we do
+not ground LLM valuation on sums of per-sample values. \textbf{(iv)
+Third-order failure counterexample}: merging the three-player unanimity game
+into blocks $\{1,2\},\{3\}$ gives block sum $\tfrac23 \ne$ merged Shapley
+$\tfrac12$. Beyond the second-order surrogate the two units differ in
+principle (the size of the discrepancy is bounded by the third-order
+residual). For the same reason, the round game that bundles several local
+steps is a \emph{different game} from IRDS's per-step game --- a
+definitional choice arising because the server does not observe steps, not
+an approximation of the per-step game; its price appears as the residual of
+Supplementary Section~\ref{app:residual}.
+
+\subsection{Choice of Game and Path Dependence}
+\label{app:choice}
+
+In the equal-$n$, first-order limit, the game with weights left as-is and
+the renormalized game have identical per-round rankings (the renormalized
+Shapley is an affine map of $b_k$ with a common positive slope), but this
+reassurance is narrow: (1) in an unequal-$n$ counterexample
+($n_1{:}n_2 = 3{:}1$, $b = (1,2)$) the ranking flips even at first order;
+(2) under partial participation the round-sum lift breaks (three-client,
+two-round counterexample); (3) even in the equal-$n$, exactly additive game,
+the $c_S^2$ amplification of singleton curvature flips rankings. The
+near-additivity identity
+$\hat u_r(P_r) - \sum_k \hat u_r(\{k\}) = \sum_{i<j} q_{ij}$ says only that
+semivalues of the \emph{same} game collapse together, not that two
+\emph{different} games give the same answer. \textbf{Path dependence}: the
+algebra of summing rounds is exact (linearity), but path dependence in the
+sense that the expansion point $w^r$ is a function of the realized
+trajectory is inherent to the in-run-reference game. Even at $R = 1$ (no
+subsequent trajectory, so path dependence is exactly zero), counterexample
+(1) above flips the ranking between the retraining reference and the in-run
+reference, so their agreement does not follow from trajectory stability
+alone and additionally requires equal-$n$/near-additive conditions. The
+axiomatization of trajectory-specific utilities is an open problem stated by
+IRDS and inherited by this paper (axiom claims are confined to the game on
+the fixed trajectory).
+
+\subsection{Scoping of State}
+\label{app:state}
+
+Whether or not the local optimizer is stateful, the game whose players are
+the stored realized $\delta$ and its closed form remain well defined. The
+genuinely load-bearing condition is the \emph{stateless additivity of server
+aggregation}: with server momentum (FedAvgM) the grand-coalition
+perturbation no longer coincides with the realized step, telescoping
+(Supplementary Section~\ref{app:game}) breaks, and the game loses its
+semantics as an additive decomposition of the realized run. A local optimizer
+with cross-round state destroys not the score formula but the
+per-sample-to-per-client bridge of Supplementary
+Section~\ref{app:bridge} (Sections~5.1 and~6.2).
+
+\subsection{LoRA Coordinates}
+\label{app:lora}
+
+The game, the estimator, and the in-run reference are all defined and
+computed in the same LoRA-factor coordinates $\theta$, so the properties of
+Supplementary Sections~\ref{app:game}--\ref{app:state} and the residual bound
+hold verbatim under the substitution
+$\lval \to \tilde\ell_{\mathrm{val}}(\theta)$, and the subspace restriction
+introduces no additional error (the LoRA map is polynomial, so
+$\tilde\ell_{\mathrm{val}} \in C^3$ automatically). The game value itself is
+defined by model evaluations only and is therefore coordinate-free. The
+substantive reasons for withholding a full-weight reinterpretation are two:
+(1) aggregation is linear in the factors, so the additive structure
+$\Delta_S^r = \sum_k a_k^r$ is a fact of $\theta$-space --- by the
+bilinearity of $w = W_0 + BA$, the full-weight displacement of a coalition
+contains cross-client products
+$p_j^r p_k^r\, \Delta B_j \Delta A_k$ and is in general not expressible as a
+sum of coalition-independent per-client vectors (the same type of
+inexpressibility as Supplementary Section~\ref{app:bridge}(i)); (2) in the
+Hessian chain rule
+$\nabla_\theta^2 \tilde\ell_{\mathrm{val}}
+= J^\top \nabla_w^2 \lval\, J
++ \sum_i \partial_i \lval\, \nabla_\theta^2 w_i$
+(with $J = \partial w / \partial\theta$), the second (map-curvature) term is
+precisely what accounts for the cross products above, so the second-order
+surrogate is coordinate-dependent, and the $\theta$-Hessian must not be read
+as the pullback $J^\top \nabla_w^2 \lval\, J$ of the weight Hessian.
+
+\subsection{Algebraic Verification (GPT-2 Smoke Test)}
+\label{app:verify}
+
+On GPT-2 ($N{=}5$, $R{=}3$, fp32): closed form vs.\ estimator, maximum
+absolute difference $5.8 \times 10^{-12}$; exhaustive $2^5$ Shapley of the
+$\hat u^{(2)}$ game vs.\ closed form, $7.6 \times 10^{-12}$; per-round
+decomposition vs.\ exhaustive $2^N$ in-run reference,
+$3.9 \times 10^{-7}$ (the fp32 forward noise floor); telescoping residual
+$\le 9.5 \times 10^{-7}$; Hessian symmetry $\le 1.8 \times 10^{-11}$.
+
+\end{document}
