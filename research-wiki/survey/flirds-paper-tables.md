@@ -29,7 +29,7 @@ tags: [flirds, paper, tables, mirror]
 | **T10**    | 본문  | Cost       | 5-LLM 실측 runtime — device100 앵커                      |
 | **T11**    | 본문  | Ablation   | 2차항(HVP)의 기여 — CNN 레그                                |
 | **T12**    | 본문  | Ablation   | Removal-curve — CNN / LLM                            |
-| **A1–A16** | 부록  | 전 축        | §2 인덱스                                               |
+| **A1–A12** | 부록  | 전 축        | §2 인덱스                                               |
 
 ---
 
@@ -67,7 +67,6 @@ tags: [flirds, paper, tables, mirror]
 |---|---|---|---|---|
 | clean *(대조)* | **1.000±0.000** | **1.000±0.000** | 0.999±0.000 | 1.000±0.000 |
 | noisy (answer-swap@0.7) | **0.999±0.000** | **1.000±0.000** | 0.995±0.002 | 0.998±0.000 |
-| frzero *(n=1)* | 1.000 | 1.000 | 1.000 | 1.000 |
 
 ## T3 · 1A-LLM 표준 부분참여 충실도 (1B·3B·7B)
 
@@ -324,6 +323,7 @@ tags: [flirds, paper, tables, mirror]
 | lf@0.70 | 0.5967 / 0.6332 / 0.1702 | 0.5967 / 0.6332 / 0.1702 |
 
 **LLM — silo5 N=5 · seed{0,1,2}**
+지표 = `L(k=0) − L(k=4)`, 즉 4개 제거 후의 val-loss 감소량(양수 = loss 내려감).
 
 | 위협 | Flirds ρ(vs b) | worst-first Δval-loss | best-first Δval-loss |
 |---|---|---|---|
@@ -336,53 +336,24 @@ tags: [flirds, paper, tables, mirror]
 
 > 표 전문은 결과 페이지에 있다. 여기서는 제목·핵심 수치·위치만 싣는다.
 
-| # | 축 | 표 | 핵심 수치 | 위치 |
-|---|---|---|---|---|
-| **A1** | Fidelity | 1B-LLM 소형 앵커 anchor5 듀얼오라클 vs (a) | same-game 3종·GTG **0.933±0.047**(듀얼오라클 일치도) | [[flirds-results-fidelity]] §1B-LLM |
-| **A2** | Fidelity | 1A-LLM 교차-사일로 (b)-leg | 4위협 전부 Flirds·Flirds-1st **+1.000** | 〃 §1A-LLM |
-| **A3** | Fidelity | 1A-LLM 대규모 교차-디바이스 앵커 | 3위협 전부 **+1.000** | 〃 |
-| **A4** | Fidelity | 1B-CNN mnist 축 그리드 vs (a) | vs (b) 평균(오염3) loss-heur dir1 **+0.996** / Flirds iid **+0.956** | 〃 §1B-CNN(mnist 행) |
-| **A5** | Fidelity | 1C 재현성·안정성 | (b) 타깃 cross-seed: 비IID silo5 **+0.87~+0.93** · IID-clean **−0.37~+0.16** | 〃 §1C |
-| **A6** | Downstream | 2-CNN mnist {dir1, iid} 점수원 경쟁 | retrain 오염평균 절대 acc Flirds dir1 **.9777** / iid **.9807**(천장 .9780/.9808) · online frzero renorm .9275~.9516 vs vanilla .9713 | [[flirds-results-downstream]] §mnist |
-| **A7** | Downstream | 2-CNN P1w (부호+크기 가중) — cifar10/mnist | FedIF grad-noise **.6321**(P1 .2619) | 〃 §P1w |
-| **A8** | Downstream | 2-LLM 표준 개입 무해성 (clean do-no-harm) | 전 스케일 \|ΔMMLU\|≤0.0013 · \|ΔROUGE\|≤0.0015 | 〃 §무해성 |
-| **A9** | Cost | 5-LLM runtime silo5·anchor5·std20 · 5-CNN runtime | (a) 재학습 = Flirds의 **292×**(silo5) / **28,177×**(CNN N=10) | [[flirds-results-cost]] |
-| **A10** | Ablation | A축 용량 lever probe — CNN | 폭 0.5→4× 전 구간 cross-seed ρ −0.29~+0.52 | [[flirds-results-ablation]] §lever |
-| **A11** | Ablation | φ 부호 감사 (게이팅 전제) — LLM/CNN | frzero **exact-0 100%**(same-game) vs renorm 0% | 〃 §4-공통 |
-| **A12** | Detection | CNN 부분참여 φ-AUROC — cifar10 {dir1, iid} | 아래 표 | [[flirds-results-detection]] §3-CNN |
-| **A13** | Detection | LLM 교차-디바이스 α-sweep 탐지 | α=0.5 앵커 (b) **0.604** · Flirds **0.604** | 〃 §α-sweep |
-| **A14** | Detection | LLM 주무대 R4 탐지 | noisy φ-AUROC **1.000±0.000**((b)·Flirds·Flirds-1st) · ComFedSV 0.583 *(n=1)* | 〃 |
-| **A15** | Fidelity | CNN 부분참여 mnist {dir1, iid} vs (b) | Flirds ρ 평균 dir1 **0.976** / iid 0.969 · Flirds-1st grad-noise 0.264/0.362(Pearson dir1 **−0.027**) | [[flirds-results-fidelity]] §1A-CNN(mnist 행) |
-| **A16** | Detection | CNN 부분참여 mnist φ-AUROC | 오염3 평균 Flirds dir1 0.970 / iid **0.987**((b) 0.971/0.985) · ShapleyFL frzero **0.025/0.012** | [[flirds-results-detection]] §3-CNN(mnist 행) |
-
-## A12 · CNN 부분참여 φ-AUROC — cifar10 {dir1, iid}
-
-> T1과 같은 무대. 오염 40% 마스크 대비 φ-AUROC. clean은 오염 클라가 없어 정의되지 않는다.
-
-| 파티션 | 방법 | frzero | grad-noise | lf@0.70 | 평균 |
-|---|---|---|---|---|---|
-| dir1 | **(b)oracle** | 0.683±0.014 | 1.000±0.000 | 0.997±0.005 | 0.893 |
-| dir1 | Flirds | 0.683±0.014 | 0.998±0.001 | 0.996±0.005 | 0.893 |
-| dir1 | Flirds-1st | <u>0.978±0.021</u> | **0.494±0.033** | 1.000±0.000 | 0.824 |
-| dir1 | loss-heur | 0.800±0.014 | 0.994±0.005 | 0.997±0.005 | <u>0.930</u> |
-| dir1 | GTG | 0.022±0.012 | 1.000±0.000 | 0.867±0.008 | 0.629 |
-| dir1 | FedSV | 0.008±0.003 | 1.000±0.000 | 0.872±0.021 | 0.627 |
-| dir1 | ComFedSV | 0.219±0.029 | 0.738±0.032 | 0.570±0.056 | 0.509 |
-| dir1 | ShapleyFL | 0.000±0.000 | 1.000±0.000 | 0.894±0.018 | 0.631 |
-| dir1 | FedIF | **0.955±0.006** | 1.000±0.000 | 1.000±0.000 | **0.985** |
-| iid | **(b)oracle** | 0.900±0.036 | 1.000±0.000 | 1.000±0.000 | 0.967 |
-| iid | Flirds | 0.906±0.034 | 1.000±0.000 | 1.000±0.000 | 0.969 |
-| iid | Flirds-1st | **1.000±0.000** | **0.498±0.028** | 1.000±0.000 | 0.833 |
-| iid | loss-heur | 0.950±0.024 | 1.000±0.000 | 1.000±0.000 | <u>0.983</u> |
-| iid | GTG | 0.289±0.030 | 1.000±0.000 | 1.000±0.000 | 0.763 |
-| iid | FedSV | 0.005±0.002 | 1.000±0.000 | 1.000±0.000 | 0.668 |
-| iid | ComFedSV | 0.283±0.020 | 0.741±0.010 | 0.790±0.060 | 0.605 |
-| iid | ShapleyFL | 0.000±0.000 | 1.000±0.000 | 1.000±0.000 | 0.667 |
-| iid | FedIF | <u>0.977±0.017</u> | 1.000±0.000 | 1.000±0.000 | **0.993** |
+| #       | 축          | 표                                                 | 핵심 수치                                                                                                                         | 위치                                   |
+| ------- | ---------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| **A1**  | Fidelity   | 1B-LLM 소형 앵커 anchor5 듀얼오라클 vs (a)                 | same-game 3종·GTG **0.933±0.047**(듀얼오라클 일치도)                                                                                   | [[flirds-results-fidelity]] §1B-LLM  |
+| **A2**  | Fidelity   | 1A-LLM 교차-사일로 (b)-leg                             | 4위협 전부 Flirds·Flirds-1st **+1.000**                                                                                           | 〃 §1A-LLM                            |
+| **A3**  | Fidelity   | 1A-LLM 대규모 교차-디바이스 앵커                             | 3위협 전부 **+1.000**                                                                                                             | 〃                                    |
+| **A4**  | Fidelity   | 1B-CNN mnist 축 그리드 vs (a)                         | vs (b) 평균(오염3) loss-heur dir1 **+0.996** / Flirds iid **+0.956**                                                              | 〃 §1B-CNN(mnist 행)                   |
+| **A5**  | Fidelity   | 1A-CNN 부분참여 mnist {dir1, iid} vs (b)              | Flirds ρ 평균 dir1 **0.976** / iid 0.969 · Flirds-1st grad-noise 0.264/0.362(Pearson dir1 **−0.027**)                           | 〃 §1A-CNN(mnist 행)                   |
+| **A6**  | Fidelity   | 1C 재현성·안정성                                        | (b) 타깃 cross-seed: 비IID silo5 **+0.87~+0.93** · IID-clean **−0.37~+0.16**                                                     | 〃 §1C                                |
+| **A7**  | Downstream | 2-CNN mnist {dir1, iid} 점수원 경쟁                    | retrain 오염평균 절대 acc Flirds dir1 **.9777** / iid **.9807**(천장 .9780/.9808) · online frzero renorm .9275~.9516 vs vanilla .9713 | [[flirds-results-downstream]] §mnist |
+| **A8**  | Downstream | 2-CNN P1w (부호+크기 가중) — cifar10/mnist              | FedIF grad-noise **.6321**(P1 .2619)                                                                                          | 〃 §P1w                               |
+| **A9**  | Downstream | 2-LLM 표준 개입 무해성 (clean do-no-harm)                | 전 스케일 \|ΔMMLU\|≤0.0013 · \|ΔROUGE\|≤0.0015                                                                                    | 〃 §무해성                               |
+| **A10** | Cost       | 5-LLM runtime silo5·anchor5·std20 · 5-CNN runtime | (a) 재학습 = Flirds의 **292×**(silo5) / **28,177×**(CNN N=10)                                                                     | [[flirds-results-cost]]              |
+| **A11** | Ablation   | A축 용량 lever probe — CNN                           | 폭 0.5→4× 전 구간 cross-seed ρ −0.29~+0.52                                                                                        | [[flirds-results-ablation]] §lever   |
+| **A12** | Ablation   | φ 부호 감사 (게이팅 전제) — LLM/CNN                        | frzero **exact-0 100%**(same-game) vs renorm 0%                                                                               | 〃 §4-공통                              |
 
 ---
 
 ## 상호 링크
 
 - 수록 확정·결손 정본: [[flirds-paper-experiment-plan]]
-- 수치 정본: [[flirds-results-fidelity]] · [[flirds-results-downstream]] · [[flirds-results-detection]] · [[flirds-results-ablation]] · [[flirds-results-cost]]
+- 수치 정본: [[flirds-results-fidelity]] · [[flirds-results-downstream]] · [[flirds-results-ablation]] · [[flirds-results-cost]]

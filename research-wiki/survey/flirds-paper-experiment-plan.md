@@ -11,7 +11,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 > **무엇**: 논문 본문/부록에 **무엇을 어느 표로 싣는지**를 [[flirds-experiment-axis-map]]의 분류·이름 체계로 확정하고, 각 항목이 **지금 실측으로 채워져 있는지**를 rundir 대조로 판정한 문서.
 > **왜 두 용도인가**: ① 논문 집필 세션은 "무엇을 어느 표로 싣나"를 여기서 읽는다 ② **실험 설계 세션은 §4(결손 목록)를 입력으로 받아** 부족한 실험을 설계한다. 그래서 "완료"만이 아니라 **무엇이 비었고 몇 런이 필요하며 코드 변경이 필요한지**까지 적는다.
 > **수치를 한 곳에서 보려면** → [[flirds-paper-tables]] (수록 확정분만 모은 미러).
-> **수치는 여기 없다** — 실제 값은 축별 결과 페이지가 담당한다: [[flirds-results-fidelity]] · [[flirds-results-downstream]] · [[flirds-results-detection]] · [[flirds-results-ablation]] · [[flirds-results-cost]]
+> **수치는 여기 없다** — 실제 값은 축별 결과 페이지가 담당한다: [[flirds-results-fidelity]] · [[flirds-results-downstream]] · [[flirds-results-ablation]] · [[flirds-results-cost]]
 > **판정 근거**: **2026-07-28 기준 `runs/` rundir 전수 대조** — c2fid 168 · track_c/c1 48(축 그리드) · track_g/rundirs_cnn 162 · track_h(CNN·LLM) · phase2_matrix · removal_dose · track_d 18 · probe_signal. 마커는 실측이며 추정이 아니다.
 
 ---
@@ -39,7 +39,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **제외** | **전용 탐지기 4종**(FLDetector · FLTrust · STD-DAGMM · FedDQC) · **Fed-LOO** · **Banzhaf** · **Ripple** |
 
 > 러너는 계속 이 열들을 산출한다 — **집계·표 단계에서만 뺀다**(rundir·CSV는 존속).
-> ⚠ 파급: 전용 탐지기가 빠지면서 "φ-as-detector의 noisy 약세를 전용 탐지기가 이긴다"는 서술의 근거도 함께 빠진다 — **각주로도 살리지 않는다**. 논문 본문엔 해당 서술이 애초에 없다(§6).
+> 탐지 축 자체가 논문에서 빠지므로(§1) 전용 탐지기 대조도 각주로 살리지 않는다. 논문 본문엔 해당 서술이 애초에 없다(§6).
 
 ### 0.3 seed — 예외 없이 3-seed
 
@@ -80,9 +80,9 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **부록** | Cost | 5-CNN runtime 상세(방법별) | ● 완료 (실행 0 · 기존 rundir 파생) |
 | **부록** | Ablation | A축 용량 lever probe — CNN | ● 완료 |
 | **부록** | Ablation | φ 부호 감사 — 게이팅의 작동 전제 | ● 완료 (LLM·CNN 양 레그) |
-| **부록** | Detection | 본문/부록 무대에서 발췌 | 무대 상태에 종속(§3.5) |
 
-> **결손은 한 곳뿐이다**: **LLM 주무대 (b) 오라클(R4-L2) frzero 2셀**. 본문 fidelity와 부록 detection이 동시에 이 셀에 걸려 있다. 그 외 모든 수록 실험은 3-seed 실측으로 차 있고, **남은 일은 표 정리·문서 재작성뿐**이다.
+> **결손은 한 곳뿐이다**: **LLM 주무대 (b) 오라클(R4-L2) frzero 2셀**(본문 fidelity). 그 외 모든 수록 실험은 3-seed 실측으로 차 있고, **남은 일은 표 정리·문서 재작성뿐**이다.
+> **탐지(detection) 축은 논문에서 전량 빠진다**(2026-07-28 Yonghee) — 본문·부록 어디에도 φ-AUROC 표를 넣지 않는다. rundir·러너 산출과 [[flirds-results-detection]]은 존속한다(§5).
 
 ---
 
@@ -172,19 +172,6 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **A축 용량 lever probe — CNN** | **● 완료** (폭 {0.5,1,2,4}× × 참여 {0.2,0.5,1.0}, 22 프리픽스 3-seed + c2 8 프리픽스 3-seed) | 기준칸 w=1·k=1.0은 C1 rundir 재사용 — provenance 각주 |
 | **φ 부호 감사 — 게이팅의 작동 전제** | **● 완료** (LLM 레그 파생 · CNN 레그 = C1 축 그리드 48/48 파생) | 없음 — [[flirds-results-ablation]] §4-공통 표 A·B + 표 A/B/C-CNN((a)oracle 행 포함) |
 
-### 3.5 Detection `[부록 — 발췌]`
-
-> 규칙: **본문/부록에 이미 들어가는 무대의 rundir에서만** 뽑는다(새 무대 금지). 전용 탐지기 4종이 빠지므로 표는 **(b)oracle + 8 추정량** 9행.
-
-| 후보 | 출처 무대 | 왜 뽑나 | 상태 |
-|---|---|---|---|
-| **CNN 부분참여 φ-AUROC — cifar10 {dir1, iid}** | 1A-CNN과 **같은 rundir** | ① frzero서 renorm 완전 붕괴(0.00~0.29) ② grad-noise서 Flirds-1st 실명(0.49) = 2차항 논지의 탐지축 재현 ③ Flirds의 (b)-동행(Δ≤0.05) | **● 완료** |
-| **CNN 부분참여 φ-AUROC — mnist {dir1, iid}** | 1A-CNN mnist | 데이터셋 강건성 · **Flirds 오라클-동행 재현**(iid Δ=+0.002) | **● 24/24** |
-| **CNN 소형 전원참여 φ-AUROC — 오염축 정렬** | 1B-CNN 축 그리드와 **같은 rundir** | frzero서 ShapleyFL 반전(0.111~0.778)·grad-noise서 Flirds-1st 실명(0.208~0.694) = 부분참여 무대 결론의 전원참여 재현 | **● 48/48** |
-| **LLM 주무대 탐지 (R4)** | 1A-LLM R4-L2와 **같은 rundir** | §2 약속 이행 + LLM 규모의 (b)-동행 판정 | **◐ 7/9**(G1 동반; noisy φ-AUROC 1.000 3-seed) |
-| **LLM 교차-디바이스 α-sweep 탐지** | 부록 fidelity device100 | frzero는 전 α 1.000(배경 무관) / noisy는 α 비단조 0.57~0.77 — **(b)도 0.604** = "기여도≠탐지"의 정직한 근거 | **● 완료** |
-| *(제외 권고)* LLM 교차-사일로 탐지 | silo5 | φ 9종 전부 1.000(N=5 coarse 천장) → 탐지기가 빠지면 **변별력 0인 표만 남는다** | ● 완료지만 무정보 |
-
 ---
 
 ## 4. 결손 목록 — 실험 설계 세션 입력
@@ -193,7 +180,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 
 | ID | 작업 | 무대·러너 | 필요 런(잔여) | 코드 변경 | 산출 축 | 우선도 |
 |---|---|---|---|---|---|---|
-| **G1** | **R4-L2: 주무대 (b) 오라클 부착** — 현재 **7/9** | `phase2_matrix.py` `REGIME=gsm50k5` (1B · N=50 · 5/50 · R=200) | **2** (= frzero s0 · s2) | **불필요**(regime 구현 완료; `MIN_METHODS`로 seed1·2는 (b)+Flirds+1st만 = 3.2× 절감, 실측 9.37~9.88 h/셀) | 본문 fidelity **+** 부록 detection | **P0 · 유일 잔여 실험** |
+| **G1** | **R4-L2: 주무대 (b) 오라클 부착** — 현재 **7/9** | `phase2_matrix.py` `REGIME=gsm50k5` (1B · N=50 · 5/50 · R=200) | **2** (= frzero s0 · s2) | **불필요**(regime 구현 완료; `MIN_METHODS`로 seed1·2는 (b)+Flirds+1st만 = 3.2× 절감, 실측 9.37~9.88 h/셀) | 본문 fidelity(T2 frzero 열) | **P0 · 유일 잔여 실험** |
 | **G7** | op-count를 N·R·K 파라메트릭으로 재작성 | `runs/measured_2026-07/op_counts.py` | **0**(실행 없음) | 출력 포맷만 | 본문 cost | **P0(문서)** |
 | **G13** | *(선택)* loss-heur C6 교정 3B/7B 재측정 | `runs/track_d/rundirs`의 3B·7B 12셀 | **12** | 불필요 | 부록 cost 각주 | **P3** |
 
@@ -218,7 +205,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 
 | 무대 (수록 위치) | 남는 오염 열 | clean 열 | 필요 런 | 비용 | 판정 |
 |---|---|---|---|---|---|
-| **1A-LLM 대규모 교차-디바이스 앵커** `[부록 fidelity]` — 본문 cost(device100 runtime)·부록 detection이 **공유하는 무대** | noisy · frzero | **전무** — α 전 구간(0.0/0.01/0.1/0.5/5.0) 어디에도 clean 셀이 없다 | **3** (clean × 3seed · α=0.5 앵커 + `ORACLE_B`) | (b) per-round valuation만 셀당 24,975 s ≈ 6.9 h → **~21 GPU-h**(학습시간 별도·미계측) | **결정 필요** — 이 무대의 부록 fidelity 표가 오염 2행만 남는다 |
+| **1A-LLM 대규모 교차-디바이스 앵커** `[부록 fidelity]` — 본문 cost(device100 runtime)와 **무대를 공유** | noisy · frzero | **전무** — α 전 구간(0.0/0.01/0.1/0.5/5.0) 어디에도 clean 셀이 없다 | **3** (clean × 3seed · α=0.5 앵커 + `ORACLE_B`) | (b) per-round valuation만 셀당 24,975 s ≈ 6.9 h → **~21 GPU-h**(학습시간 별도·미계측) | **결정 필요** — 이 무대의 부록 fidelity 표가 오염 2행만 남는다 |
 | **Removal-curve — LLM** `[본문 ablation]` | noisy · frzero | **전무**(silo5 removal은 noisy·frzero·frrand·poison만) | **3** (silo5 clean × 3seed) | removal 재학습 **317.7 s/런** + silo5 학습·valuation → **1 GPU-h 미만** | **채우기 권고** — 거의 공짜인데 CNN 짝과의 비대칭이 사라진다 |
 | **Removal-curve — CNN** `[본문 ablation]` | lf@0.70 · frzero · gn (오염축 정렬 완료) | **rundir는 있다** — `cifar10_iid_seed{0,1,2}`(`rates` 전부 0.0 = 완전 무오염) | **0** | — | **표에 행만 추가**(파생) |
 
@@ -242,7 +229,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | Downstream | fmnist·iid 8점수원 경쟁(seed0 파일럿) · 확장 파티션 flirds 단독 표 | 3-seed 미달 |
 | Downstream | silo5/iid5 φ-게이팅 회수 표 | R4로 흡수 |
 | Downstream | 무해성에서 **ShapleyFL 가중·FedIF 가중** 행 | 비교군 컷(§0.2) |
-| Detection | 전용 탐지기 4종 **전량** · silo5 탐지 · iid5 탐지 · frdelta 한계 · 3B 탐지 · 첫 clean-run 탐지 | 비교군 컷 / 무정보 |
+| Detection | **탐지 축 전량** — CNN 부분참여·전원참여 φ-AUROC · mnist φ-AUROC · LLM 주무대(R4) 탐지 · α-sweep 탐지 · silo5 탐지 · 전용 탐지기 4종 | **축 자체를 논문에서 제외**(2026-07-28) |
 | Cost | 지수-비용 스케일링 표 · 학습↔가치평가 위상분리 계측 | 스코프 |
 | Cost | Fed-LOO · Banzhaf · Ripple 행 | 비교군 컷(§0.2) |
 | Ablation | **2차항(HVP) LLM 레그**(std50k5 rank sweep) · **A축 용량 lever probe LLM 레그** | **3-seed 미달 → 미수록**. 2차항 논지는 **CNN 레그만으로 간다** |
