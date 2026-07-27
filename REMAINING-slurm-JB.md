@@ -1,4 +1,4 @@
-# REMAINING (Slurm · JB) — **LLM → CNN 전환**: (a) 재학습 오라클 seed2
+# REMAINING (Slurm · JB) — ✅ **본 몫 완주(16/16, 2026-07-27)**; 이후 work-steal 대기
 
 > 배분 정본 = **`REMAINING-00-INDEX.md`** · 수록목록 정본 = `research-wiki/survey/flirds-paper-experiment-plan.md`.
 > **역할 = RTX3090 에서 (a) 재학습 오라클 seed2**(G2·G9 의 16셀) **+ work-steal.**
@@ -26,12 +26,21 @@
 
 ## 2. G2·G9 seed2 — (a) 재학습 오라클 (16셀 · ~168 GPU-h)
 
-### 진행 상황 (2026-07-26 19:15) — 8/16 완료
+### ✅ 완주 (2026-07-27 11:10) — 16/16, 실패 0
 
-- **seed1 8/8 완료**(iid·dir1 × clean·label-flip·free-rider·grad-noise) · **seed2 0/8 실행 중**(`1878819_40-47`, 3–4 h 경과). 실패 0.
-- **셀당 실측 ~17.6 h**(`oracle_a.time`=63,327 s = (a) 2¹⁰ 재학습 지배; 종전 11.4 h 추정은 무경합 구셀 값). **전량 ETA ~07-27 09:40**(마감 07-29 00:00 대비 ~38 h 여유). 셀당 wall 24 h ≫ 17.6 h → timeout 위험 없음.
-- **검증 PASS(textbook)**: iid_free-rider `oracle_a.phi` = 프리라이더(0,4,6,7) ≈ −0.008 / 정직 ≈ +0.37. **phi_a = `metrics.json['oracle_a']['phi']`**(rundir 내장; 별도 _aonly 신규축 없음). corrupt(seed1)=`[0,4,6,7]`.
-- **완료 rundir 8개 커밋**(seed1; **push=Yonghee**). ⚠ **공유 repo** — 타계정 커밋이 워킹트리에 섞여 mtime/glob 카운트가 오염된다(예: git-checkout된 `cifar10_*_seed2`). 완료판정·집계는 반드시 셀명 정규식 `mnist_(iid|dir1)_(clean|label-flip_fr0.70|free-rider|grad-noise)_seed[12]` 로 필터.
+**JB 몫은 끝났다.** mnist {iid,dir1} × 4위협 × seed{1,2} = 16셀 전량 착지(`1878818_24-31`·`1878819_40-47`). seed0 잔여 2셀은 HJ 이관(아래 셀 항목).
+
+- **비용 실측**: (a) 2¹⁰ 재학습 = 셀당 **17.0–17.6 h**(평균 17.4 h) · **합 279.1 GPU-h**. 종전 11.4 h 추정은 무경합 구셀 값이라 틀렸다(경합 3090에서 ~1.55×). 셀 wall 24 h ≫ 17.6 h → timeout 0.
+- **무결성 PASS**: 16셀 모두 `oracle_a.n_retrains=1024` · `corrupt` 마스크가 seed 정본과 일치(seed1 `[0,4,6,7]` · seed2 `[3,4,6,9]`, 4위협 공통 = 정상) · 로그 traceback/OOM/공리위반 0.
+- **부호 검증(textbook)**: free-rider 셀 `oracle_a.phi` = 프리라이더 ≈ −0.013 ~ −0.033 / 정직 ≈ +0.37 (iid·dir1 · seed1·2 모두).
+- **phi_a 위치 = `metrics.json['oracle_a']['phi']`** (rundir 내장 · `{phi[10], time, n_retrains}`; 별도 `_aonly` 신규축 디렉토리 **없음** — 그건 구축 전용).
+- **rundir 16개 커밋 완료**(seed1 `9e69c4a` = 이미 origin 반영 · seed2 = 이 커밋). **push는 Yonghee.**
+
+**참고 — ρ(방법, (a)) 16셀 평균**(rundir `methods[*].spearman_a` 직독; **canonical 아님**, 정본은 아래 §5-2 집계 재생성 값):
+GTG 0.767 · loss-heur 0.763 · **(b)oracle 0.751** · Banzhaf 0.750 · **Flirds 0.714** · FedIF 0.709 · FedSV 0.691 · ComFedSV 0.628 · **Flirds1st 0.614** · ShapleyFL 0.583.
+→ (b)조차 (a) 대비 0.751이라 **상한이 1이 아니다**(게임 정의 차이). 서술 시 Flirds 를 (a) 절대값이 아니라 **(b) 대비/동급군 내에서** 읽을 것.
+
+⚠ **공유 repo** — 타계정 커밋이 워킹트리에 섞여 mtime/glob 카운트가 오염된다(예: git-checkout된 `cifar10_*_seed2`, 구축 `mnist_iid_seed2`). 완료판정·집계는 반드시 셀명 정규식 `mnist_(iid|dir1)_(clean|label-flip_fr0.70|free-rider|grad-noise)_seed[12]` 로 필터할 것.
 
 > **무엇**: N=10 전원참여에서 **(a) 2¹⁰ 재학습 오라클 + (b) 2¹⁰ + 9방법 φ**. (a)는 방법-중립 참값이라 **전 방법을 채점하는 유일한 무대**인데, 현 C1 시나리오가 확정 오염축과 한 칸도 안 겹쳐서 다시 정렬하는 것이다.
 > **비교불가성은 남는다**: (a)는 2^N 재학습이라 **N=100 에서 원리적으로 불가** → 1A-CNN(N=100 부분참여)과 N·참여율은 못 맞춘다. 맞출 수 있는 건 **오염축과 파티션뿐**이고 이 잡이 그걸 한다. 논문에도 명시.
@@ -79,13 +88,15 @@ sbatch --array=40-47%8    runs/track_c/c1/sbatch_c1_axis.sh   # mnist seed2
 3. **파티션**: `--partition=base_suma_rtx3090`(sbatch 내장) · 8-GPU/user.
 4. sbatch 상단 `REPO`/`PY` 기본값이 YH 경로다 → 다르면 `REPO=… PY=… sbatch …`.
 
-## 4. 완주 후 — work-steal (~07-27 오전)
+## 4. 완주 후 — work-steal (**JB 큐 비었음, 2026-07-27 11:10**)
 
-- 4계정을 **~23 wall-h 로 균등 배분**했으니 큰 편차는 없다. 그래도 먼저 비면 다른 계정의 `sbatch_c1_axis.sh` 잔여 → HJ 의 G10 순으로 흡수한다.
-- 남은 `--array` 범위만 지정할 것(같은 rundir 이름 = last-writer-wins 라 중복 실행은 GPU 낭비).
+- JB 3090 슬롯 8장 **전부 유휴**. 마감(실험 07-28 24:00)까지 ~37 h → **셀당 17.4 h 라 1 wave(8셀)는 확실히, 2 wave 는 불가**.
+- 흡수 순서: 다른 계정의 `sbatch_c1_axis.sh` 잔여 `--array` → HJ 의 G10. **남은 범위만** 지정할 것(같은 rundir 이름 = last-writer-wins 라 중복 실행은 GPU 낭비).
+- 제출 시 JB override 3종 필수: `--output="$REPO/runs/track_c/c1/_logs/%x_%A_%a.out"` · `--export=ALL,REPO=/home/wvnvwn/flirds,PY=<JB torch2.11 python>` · `--qos=base_qos`(스크립트 기본값은 chyoyhr/YH 경로라 wvnvwn 이 못 쓴다). `--time=24:00:00` 은 **줄이지 말 것**(중도 컷 = 셀 전손).
 
 ## 5. 완료 후
 
-1. rundir 커밋(push는 Yonghee).
-2. C1 집계 재생성 → `flirds-results-fidelity`(vs (a) 절)·`flirds-results-ablation`(부호 감사 CNN 레그) → paper §5.2 sub·부록 C.
+1. ✅ rundir 커밋(seed1 `9e69c4a` · seed2 = 본 커밋). **push는 Yonghee.**
+2. ⏭ **C1 집계 재생성 = 미착수(승계 항목)** → `flirds-results-fidelity`(vs (a) 절)·`flirds-results-ablation`(부호 감사 CNN 레그) → paper §5.2 sub·부록 C.
+   - 도구는 `runs/track_c/make_figures.py` 의 **`load_c1()`**(≠ `make_analysis.py`). 신규축을 읽히려면 **`SCENARIOS` 상수(L36)를 {iid,dir1}×{clean,label-flip_fr0.70,free-rider,grad-noise} 그리드로 교체 + 이름 패턴 `{ds}_{part}_{ttag}_seed{seed}`**, phi_a 는 `metrics.json['oracle_a']['phi']` 에서 읽을 것. 공유 코드 수정이라 JB 가 임의로 손대지 않고 남긴다.
 3. **스택 캐비엇 없음** — (a)는 재학습 오라클이라 하드웨어 독립이고 기존 C1 과 같은 torch 2.11. 다만 **`timing.json` 은 §5.5 cost 표에 쓰지 않는다**(canonical = B200 실측만).
