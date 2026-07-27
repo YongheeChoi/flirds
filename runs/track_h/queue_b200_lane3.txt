@@ -1,0 +1,45 @@
+# ════════════════════════════════════════════════════════════════════════════
+# B200 레인 3 — 노드 yong-3 · GPU 1장  (2026-07-25 분할)
+#
+#   실제 구성은 **4노드 × GPU 1장**이다(단일 4-GPU 서버 아님 — 실측 확인).
+#   그래서 queue_b200.txt(정본, 단일 서버 가정) 26셀을 레인 4개로 나눴다.
+#   셀 줄은 정본에서 **원문 그대로** 옮겼다.
+#
+#   기동:  LANE=3 bash <repo>/runs/track_h/run_b200_lane.sh
+#          (또는 4대 한 번에:  bash <repo>/runs/track_h/b200_fleet.sh up)
+#
+# ⚠ 컨테이너 48h 동기 만료 — 07-27 21:11
+#   러너 중 어느 것도 셀 중간 재개를 못 한다(phase2_matrix=cell-end 1회 persist,
+#   track_g 단일-arm 셀=사실상 cell-end, track_d 만 fidelity 후 체크포인트 1개).
+#   → 교체는 **셀 경계**에서만 무손실이다. 아래 PHASE 1 은 만료 전에 끝나도록 짰다.
+#   → 교체 후에는 **완료된 PHASE 1 줄을 '#' 주석**(삭제 금지)하고 재기동하면
+#      PHASE 2 부터 이어간다.
+#
+# ⚠ 하드룰(정본과 동일)
+#   · 줄 삭제 금지 — '#' 주석만(드라이버가 consumed 인덱스로 추적).
+#   · 가동 후 줄 순서 변경 금지.
+#   · 정지는 드레인. 중도 kill 금지(G1 은 셀당 19.6h 전손).
+#   · ROUNDS 를 어디에도 주지 않는다(레짐 기본 200).
+# ════════════════════════════════════════════════════════════════════════════
+
+# ─── PHASE 1 — 현 컨테이너 (만료 07-27 21:11 이전 종료) ──────────────────────
+# [+  0.0h →  19.6h · 19.6h]
+phase2_matrix.py|G1_L2_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=0 MIN_METHODS=1
+# [+ 19.6h →  39.2h · 19.6h]
+phase2_matrix.py|G1_L2_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=1 MIN_METHODS=1
+# [+ 39.2h →  43.0h ·  3.8h]
+track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+
+# ─── ▲ PHASE 1 종료 = 기동 후 43.0h ─────────────────────────────────
+# ─── 여기서 컨테이너 교체. 위 3줄을 '#' 주석 처리하고 재기동한다. ──
+# ─── PHASE 2 — 신규 컨테이너 ────────────────────────────────────────────────
+# [+  0.0h →   5.0h ·  5.0h]
+#track_d.py|1B_std50k5_r32_seed2|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=32 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-26] G5·G12 제외 (Yonghee). 되살리려면 주석만 풀 것
+# [+  5.0h →  10.0h ·  5.0h]
+#track_d.py|1B_std50k5_r64_seed2|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=64 ORACLE_A=0 SEED=2 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-26] G5·G12 제외 (Yonghee). 되살리려면 주석만 풀 것
+# [+ 10.0h →  14.2h ·  4.2h]
+#track_g.py|L11_f1st_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=frzero SEED=1 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm   # [07-26] → HJ/A6000 이관 (Yonghee 승인). B200 재기동 시 되살리지 말 것.
+# [+ 14.2h →  18.4h ·  4.2h]
+#track_g.py|L11_f1st_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm   # [07-26] → HJ/A6000 이관 (Yonghee 승인). B200 재기동 시 되살리지 말 것.
+
+# PHASE 2 소요 = 18.4h · 레인 총계 = 61.4 GPU-h
