@@ -43,3 +43,17 @@ track_g.py|L1_clean_online_s1|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=1 ARMS=
 #track_g.py|L11_f1st_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 ARMS=flirds1st_gate_v2 OBS_SOURCES=flirds1st T2=0 T2_LEGACY=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm   # [07-26] → HJ/A6000 이관 (Yonghee 승인). B200 재기동 시 되살리지 말 것.
 
 # PHASE 2 소요 = 18.4h · 레인 총계 = 61.4 GPU-h
+
+# ─── [07-27 추가] R-clean — silo5 removal-curve clean 대조 (Yonghee 결정) ───────
+#   왜: T13 LLM removal 표가 noisy(+0.0076)·frzero(+0.0067) 두 행뿐이다.  clean 행이 없으면
+#       "worst-first 제거는 원래 항상 이득 아니냐"에 답이 없다 = 위협-특이성 미증명.
+#       CNN 짝은 clean rundir(removal_dose/rundirs_cnn/cifar10_iid_seed{0,1,2})이 이미 있어
+#       표에 행만 넣으면 되는 상태라, LLM 만 비면 비대칭이 그대로 드러난다.
+#   프로토콜: run_full_sweep.sh §[1] 의 `matrix … REMOVAL=1` 과 **동일**(threat 만 clean).
+#       기존 4위협 셀과 스택 동일(torch 2.12.0+cu130 canonical) → 캐비엇 없음.
+#   단가(추정 2–3h/셀): valuation 3,447s + 재학습 317.7s × distinct-subset(≈8–20) + silo5 학습.
+#       ※ 계획서 §4.3 의 "<1 GPU-h" 는 재학습 1회분만 센 값이라 과소평가다.
+#   ★ 현 컨테이너(만료 21:11)에서는 풀지 말 것 — 레인2 는 18:41 에야 비어 셀이 잘린다.
+#     **phase 2 신규 컨테이너에서 주석 해제**(그때 4레인 전부 띄울 것; phase 2 자체는 2셀뿐).
+#phase2_matrix.py|1B_silo5_clean_removal_seed0|REGIME=silo5 THREAT=clean SEED=0 REMOVAL=1 RUNDIR_ROOT=__REPO__/runs/removal_dose/rundirs
+#phase2_matrix.py|1B_silo5_clean_removal_seed1|REGIME=silo5 THREAT=clean SEED=1 REMOVAL=1 RUNDIR_ROOT=__REPO__/runs/removal_dose/rundirs

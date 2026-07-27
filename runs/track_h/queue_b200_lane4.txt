@@ -45,3 +45,8 @@ phase2_matrix.py|G1_L2_clean_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 MIN
 #track_d.py|1B_anchor5_lr3e-3_st20_seed1|REGIME=anchor5 LR=3e-3 MAX_STEPS=20 ORACLE_A=0 FIDELITY=1 ARMS=1 MMLU_LIMIT=40 SEED=1 LORA_R=16 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-26] G5·G12 제외 (Yonghee). 되살리려면 주석만 풀 것
 
 # PHASE 2 소요 = 17.4h · 레인 총계 = 62.1 GPU-h
+
+# ─── [07-27 추가] R-clean seed2 — silo5 removal-curve clean 대조 (Yonghee 결정) ──
+#   상세·근거 = queue_b200_lane2.txt 같은 블록.  seed0·1 은 레인2, seed2 만 여기.
+#   ★ phase 2 신규 컨테이너에서 주석 해제(현 컨테이너 만료 21:11 전에는 풀지 말 것).
+#phase2_matrix.py|1B_silo5_clean_removal_seed2|REGIME=silo5 THREAT=clean SEED=2 REMOVAL=1 RUNDIR_ROOT=__REPO__/runs/removal_dose/rundirs
