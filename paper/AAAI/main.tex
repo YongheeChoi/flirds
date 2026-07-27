@@ -615,8 +615,7 @@ values of the Shapley value against which it is scored
 (Section~\ref{sec:fidelity})? The second is practical effectiveness: can the
 measured contributions actually improve training
 (Section~\ref{sec:intervention})? We then look at the computational cost of
-each method (Section~\ref{sec:cost}) and at an ablation
-(Section~\ref{sec:ablation}). Because of the space constraints of the body,
+each method (Section~\ref{sec:cost}). Because of the space constraints of the body,
 protocol details, the reproducibility analysis, and additional experimental
 results are left to the appendices.
 
@@ -630,7 +629,10 @@ corrupted clients mixed in. The LLM track evaluates Llama-family models
 \citep{cobbe2021training}, Alpaca-GPT4 \citep{peng2023instruction}, and a
 five-domain dataset we constructed, and the CNN track evaluates FedSVCNN and
 LeNet5 \citep{lecun1998gradient} on CIFAR-10 \citep{krizhevsky2009learning},
-MNIST, and Fashion-MNIST \citep{xiao2017fashion}. The corruption axis has five
+MNIST, and Fashion-MNIST \citep{xiao2017fashion}. The clients of the CNN
+track are partitioned in two ways, a uniform IID split and a non-IID
+Dirichlet($\alpha{=}1$) split, the latter abbreviated Dir(1) in the figures
+and tables. The corruption axis has five
 entries: \emph{clean} (the uncorrupted control anchor), \emph{answer-swap}
 (data that is well formed but whose question--response correspondence is
 broken by a permutation; LLM), \emph{zero-update free-rider} (submitting a
@@ -638,13 +640,10 @@ zero update without local training), \emph{gradient noise} (Gaussian noise
 injected into the update after normal training; CNN), and \emph{label-flip}
 (labels replaced at random; CNN).
 
-\textbf{Compared methods.} The comparison uses eight contribution methods.
+\textbf{Compared methods.} The comparison uses seven contribution methods.
 Flirds is the second-order closed-form estimator of Eq.~\eqref{eq:closed}
-proposed in this paper, Flirds-1st is the variant of the same expression that
-keeps only the first-order term, and \emph{singleton utility} is an additive
-approximation that computes the round game's singleton utility $u_r(\{k\})$
-itself directly by forward evaluation and sums it over rounds, using
-singleton values in place of Shapley values. Alongside these we place five
+proposed in this paper, and Flirds-1st is the variant of the same expression
+that keeps only the first-order term. Alongside these we place five
 methods representing the prior lineage of Section~\ref{sec:related}.
 GTG-Shapley and FedSV define the utility of a coalition reconstructed from
 stored updates with the weights renormalized within that coalition, ComFedSV
@@ -666,45 +665,217 @@ reference arm that excludes exactly the corrupted clients.
 \label{sec:fidelity}
 
 This section answers the first question: how faithfully do Flirds and
-Flirds-1st reproduce the Shapley value of the game they target, the in-run
-Shapley obtained by exhaustively enumerating the round game of
-Eq.~\eqref{eq:round-utility}? The scoring procedure is common to all methods.
-In each cell (setting $\times$ threat $\times$ seed) we freeze a single
-training trajectory and score every method and the in-run Shapley on the same
-log, so that the differences between methods are the methods' own and not
-trajectory variance. Rank reproduction is read with Spearman's $\rho$ and
-value reproduction with Pearson's $r$. What the scoring standard itself
-means, that is, when the in-run Shapley agrees with the retraining-based
-Shapley, is characterized separately in Appendix~C.0.
+Flirds-1st reproduce the in-run Shapley, obtained by exhaustively enumerating
+the round game of Eq.~\eqref{eq:round-utility}? In each cell (setting
+$\times$ threat $\times$ seed) we freeze a single training trajectory and
+score every method and the in-run Shapley on the same log, so the differences
+between methods are the methods' own and not trajectory variance. Rank
+reproduction is read with Spearman's $\rho$ and value reproduction with
+Pearson's $r$.
+
+Only the Flirds variants, which estimate that same game, are scored against
+the in-run Shapley. The other baselines take a different game as their
+estimation target from the outset, so scoring them here would not be a fair
+comparison. Seeing all of the compared methods in one place therefore
+requires changing the standard they are scored against, and the scoring
+against the retraining-based Shapley that follows is that place. That value
+is the Shapley value of the classical definition, obtained by retraining from
+scratch on a subset alone; it is the estimation target of no method, yet the
+same yardstick applies to all of them, which is what makes it a common
+external point of comparison.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/fig_fidelity_body}
+\caption{Reproduction of the in-run Shapley. (a)~CNN ($N{=}100$, 10/100
+participation, $R{=}120$, 40\% corrupted). (b)~LLM, two settings: the GSM8K
+threat axis and the alpaca model-scale axis.}
+\label{fig:fidelity}
+\end{figure*}
+
+\textbf{Reproduction on both tracks.} Figure~\ref{fig:fidelity} gives the
+results on the two tracks. On the CNN track (a), Flirds keeps
+$\rho \ge .847$ and $r \ge .937$ across all four threats of both partitions.
+On the LLM track (b), both variants hold $\rho \ge .994$ and $r \ge .997$ in
+all six cells of the GSM8K threat axis and of the model-scale axis that grows
+from 1B to 7B, with $\rho \ge .999$ for Flirds. The LLM track, however, is a
+stage on which the actual differences between clients are small, so the
+absolute correlation is not by itself discriminative. What this panel
+supports goes only as far as the claim that changing the scale and the
+setting does not make the estimator miss the value it targets.
+
+\textbf{Where the second-order curvature term decides the value.} The one
+cell in which the two variants diverge is gradient noise. There Flirds keeps
+$\rho$ at $.847$ (Dir(1)) and $.870$ (IID), whereas Flirds-1st falls to
+$.218$ and $.313$, and at the level of values $r$ drops to $-.051$, reversing
+even the sign. An update carrying noise is not distinguishable from a benign
+one by its alignment with the validation gradient alone, and the penalty for
+how it couples with the rest of the round rides on the second-order term
+only; the same direction reappears under intervention. The second-order term
+is thus not needed in every regime: it prevents the failure of the
+first-order approximation in the regime where curvature couples with
+corruption.
+
+\begin{table*}[t]
+\centering
+\small
+% [F2] paper-ko.md §5.2 표 [F2] 그대로. 첫 행 = 방법이 아니라 in-run SV 자신의 값(앵커).
+% 평균 열에 ± 가 있으므로 seed 별 4-위협 평균을 먼저 계산한 뒤 3-seed mean±std.
+\caption{Scored against the retraining-based Shapley (CIFAR-10,
+Dirichlet($\alpha{=}1$); $N{=}10$, full participation, $R{=}10$, 4/10
+corrupted; both Shapley values computed exhaustively over $2^{10}$ subsets).
+Every cell is the 3-seed mean$\pm$std of Spearman's $\rho$ against the
+retraining-based Shapley, and the first row is not a method but the value of
+the in-run Shapley itself. The mean column averages the four threats within
+each seed before the 3-seed statistics.}
+\label{tab:retrain-fidelity}
+\begin{tabular}{lccccc}
+\hline
+Method & clean \emph{(control)} & zero-update & gradient noise & label-flip & mean \\
+\hline
+in-run SV \emph{(anchor)} & $+0.515\pm0.409$ & $+0.848\pm0.116$ & $+0.947\pm0.019$ & $+0.879\pm0.032$ & $+0.797\pm0.082$ \\
+Flirds & $+0.515\pm0.401$ & $+0.848\pm0.116$ & $+0.883\pm0.120$ & $+0.871\pm0.043$ & $+0.779\pm0.053$ \\
+Flirds-1st & $+0.438\pm0.335$ & $+0.802\pm0.194$ & $-0.184\pm0.303$ & $+0.855\pm0.085$ & $+0.478\pm0.114$ \\
+GTG-Shapley & $+0.766\pm0.266$ & $+0.596\pm0.214$ & $+0.822\pm0.067$ & $+0.911\pm0.050$ & $+0.774\pm0.121$ \\
+FedSV & $+0.648\pm0.430$ & $+0.131\pm0.201$ & $+0.830\pm0.021$ & $+0.907\pm0.043$ & $+0.629\pm0.163$ \\
+ComFedSV & $+0.616\pm0.303$ & $+0.265\pm0.378$ & $+0.600\pm0.378$ & $+0.907\pm0.007$ & $+0.597\pm0.091$ \\
+ShapleyFL & $+0.596\pm0.337$ & $-0.211\pm0.044$ & $+0.838\pm0.031$ & $+0.883\pm0.046$ & $+0.527\pm0.114$ \\
+FedIF & $+0.531\pm0.410$ & $+0.565\pm0.094$ & $+0.640\pm0.043$ & $+0.701\pm0.172$ & $+0.609\pm0.130$ \\
+\hline
+\end{tabular}
+\end{table*}
+
+\textbf{Against the retraining-based Shapley.} What changes when the standard
+is changed is read in the $N{=}10$ setting, where both Shapley values can be
+computed exhaustively (Table~\ref{tab:retrain-fidelity}). The first thing to
+look at is not a method but the first row: the agreement between the two
+Shapley values itself varies from cell to cell. In the three cells with
+corruption it is $+.848$ to $+.947$, but in the clean cell it drops to
+$+0.515$ with the spread across seeds widening to $\pm0.409$. Flirds tracks
+that row almost exactly, its four-threat mean being $+0.779$ against
+$+0.797$ for the in-run Shapley itself. The margin by which Flirds departs
+from the retraining-based Shapley is therefore not distinguishable from the
+gap between the two games. Flirds-1st again collapses in gradient noise alone,
+to $-0.184$, so the verdict of the previous paragraph survives the change of
+standard. The methods that target other games part company under the
+zero-update free-rider (FedSV $+0.131$, ShapleyFL $-0.211$), because
+renormalizing within a coalition allocates a share even to a client that
+submitted a zero update. We do not, however, read this table as a verdict on
+which method is better. The retraining game itself renormalizes weights by
+subset size, so there are cells structurally close to the renormalizing
+family (GTG at $+0.766$ in the clean cell), and no method takes this value as
+its estimation target.
 
 \subsection{Contribution-Based Intervention}
 \label{sec:intervention}
 
-On the training-improvement axis of the effectiveness check, we ask whether
-performance improves when the measured contributions are used in an actual
-training decision. The policy is fixed to a single rule, sign-gating, which
-excludes the clients whose accumulated contribution satisfies
-$\hat\phi_k \le 0$. The algebraically exact zero of property~(ii) in
-Section~\ref{sec:theory}, together with the fact that the accumulated sign of
-a clean client is positive, makes the threshold $\tau = 0$ natural, so there
-is no hyperparameter to tune. Because the policy is held fixed and only the
-method that supplies the scores (the score source) is swapped, this section
-is also a direct test of whether the fidelity of
-Section~\ref{sec:fidelity} carries over into a downstream ordering. The body
-reports the selection-retrain view, in which the set of clients to keep is
-decided by the final accumulated signs of an observer run that is
-bit-identical to the trajectory without intervention, and training is then
-repeated from the initial weights; the online view, which gates immediately
-in every round, is in Appendix~G.0. The controls are vanilla (the observer),
-oracle-exclusion, which excludes exactly the corrupted clients, and
-selection-random, which keeps a random set of the same size.
+To validate practical effectiveness, we ask whether performance improves when
+the measured contributions intervene in an actual training decision.
+Following the sign-gating rule, which excludes from training the clients
+whose contribution satisfies $\hat\phi_k \le 0$, we directly test whether the
+fidelity measured in the same experimental setting as
+Section~\ref{sec:fidelity} carries over into a downstream ordering. In the
+body we report the selection-retrain experiment: contributions are computed
+during one initial training run, the set of clients to keep is then decided
+by the sign of the accumulated contribution, and training is repeated from
+the same initial weights. The online variant, which selects the clients that
+will take part in training in every round, is in Appendix~F.1. Each method is
+compared together with vanilla (the observer), oracle-exclusion, which
+excludes exactly the corrupted clients, and selection-random, which keeps a
+random set of the same size.
+
+\begin{table*}[t]
+\centering
+\small
+% [I2] paper-ko.md §5.3 표 [I2] 그대로. 평균 열은 ± 없음 = 표시된 열 평균값들의 단순 평균.
+\caption{CNN track (CIFAR-10, Dirichlet($\alpha{=}1$); $N{=}100$, 10/100
+participation, $R{=}120$, 40\% corrupted). Test accuracy (\%) under
+sign-gating with selection-retrain, 3-seed mean$\pm$std; the mean column is
+the plain average of the column values shown.}
+\label{tab:cnn-intervention}
+\begin{tabular}{lccccc}
+\hline
+ & clean & zero-update & gradient noise & label-flip & mean \\
+\hline
+vanilla (observer) & $63.89\pm0.52$ & $58.79\pm0.29$ & $24.36\pm2.22$ & $52.47\pm2.89$ & $49.88$ \\
+oracle-exclusion & --- & $62.03\pm0.28$ & $62.03\pm0.28$ & $62.36\pm0.31$ & --- \\
+selection-random & --- & $58.38\pm1.65$ & $25.90\pm1.70$ & $50.18\pm4.97$ & --- \\
+Flirds & $62.77\pm0.96$ & $60.63\pm0.72$ & $60.65\pm0.33$ & $61.92\pm0.80$ & $61.49$ \\
+Flirds-1st & $63.86\pm0.53$ & $62.52\pm0.24$ & $24.36\pm2.22$ & $62.36\pm0.31$ & $53.28$ \\
+FedIF & $64.17\pm0.31$ & $62.52\pm0.24$ & $24.36\pm2.22$ & $62.17\pm0.58$ & $53.31$ \\
+GTG & $62.65\pm0.86$ & $51.58\pm0.47$ & $62.03\pm0.28$ & $59.91\pm1.47$ & $59.04$ \\
+FedSV & $61.66\pm0.96$ & $51.40\pm0.81$ & $62.03\pm0.28$ & $59.04\pm1.01$ & $58.53$ \\
+ComFedSV & $62.32\pm1.22$ & $52.00\pm1.53$ & $62.03\pm0.28$ & $59.21\pm1.02$ & $58.89$ \\
+ShapleyFL & $62.23\pm1.18$ & $51.13\pm1.64$ & $62.03\pm0.28$ & $60.28\pm0.68$ & $58.92$ \\
+\hline
+\end{tabular}
+\end{table*}
+
+Table~\ref{tab:cnn-intervention} is the result of contribution-based
+intervention training in the same setting as the CIFAR-10 Dirichlet($\alpha{=}1$)
+part of the CNN track above. Flirds keeps at least $60.6\%$ under all three
+corruption threats, coming closest to oracle-exclusion ($62.0$ to $62.4\%$),
+which knows the corrupted clients exactly. The threats bring out different
+properties. Under the zero-update free-rider, what decides the outcome is
+whether a method gives exactly zero. The family for which $\hat\phi_k = 0$ is
+algebraically guaranteed (Flirds, Flirds-1st, FedIF) reaches $60.6$ to
+$62.5\%$, whereas the four methods that renormalize weights within a
+coalition fall to $51.1$ to $52.0\%$, below even vanilla ($58.8\%$):
+renormalization allocates a share to the zero-update client as well, so the
+gate keeps the corrupted clients and sends the sound ones away. Gradient
+noise is the cell that discriminates the second-order curvature term. Among
+the low-cost methods that use derivatives, only Flirds recovers, to
+$60.65\%$, while Flirds-1st and FedIF, which use first-order information
+only, fail to fire the gate at all and stay at vanilla's $24.36\%$. Under
+label-flip every method clusters at $59.0$ to $62.4\%$, so the differences
+are small. In the clean cell Flirds excludes some sound clients and ends
+below vanilla ($62.77\%$ vs.\ $63.89\%$). In short, the strength of Flirds is
+not that it takes sole first place in every cell, but that it separates from
+comparable-cost methods in the cells where second-order curvature is needed.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+% [I1] paper-ko.md §5.3 표 [I1] 그대로(3-seed ●).
+\caption{LLM main setting (GSM8K, Llama-3.2-1B-Instruct; $N{=}50$, 5/50
+participation, $R{=}200$, 40\% corrupted). EM (\%) on the 1{,}119 test
+questions under sign-gating with selection-retrain, 3-seed mean$\pm$std; the
+mean column is the plain average of the column values shown.}
+\label{tab:llm-intervention}
+\begin{tabular}{lcccc}
+\hline
+ & clean \emph{(control)} & answer-swap & zero-update & mean \\
+\hline
+vanilla (observer) & $36.52\pm1.29$ & $32.74\pm0.69$ & $35.60\pm1.57$ & $34.95$ \\
+oracle-exclusion & --- & $36.25\pm1.21$ & $36.25\pm1.21$ & --- \\
+selection-random & --- & $32.80\pm0.59$ & $34.76\pm1.79$ & --- \\
+Flirds & $36.52\pm1.29$ & $34.79\pm0.37$ & $36.25\pm1.21$ & $35.85$ \\
+Flirds-1st & $36.52\pm1.29$ & $34.58\pm0.18$ & $36.25\pm1.21$ & $35.78$ \\
+\hline
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:llm-intervention} is the result of the same intervention in
+the same setting as the GSM8K part of the LLM track. Under answer-swap,
+sign-gating raises EM to $34.79\%$ from vanilla's $32.74\%$, a gain of
+2.1~points, and separates clearly from selection-random ($32.80\%$), which
+keeps the same number of clients at random. The gain is therefore an effect
+of the set that the sign of the contribution picked out, not of excluding
+that many clients as such. It falls short of oracle-exclusion ($36.25\%$),
+so the gate does not filter out every corrupted client. Under the zero-update
+free-rider, both methods keep exactly the 30 sound clients, which makes the
+retraining identical to oracle-exclusion, and the EM is identical too: this
+is the cell in which the algebraically exact zero of property~(ii) in
+Section~\ref{sec:theory} translates directly into a policy decision. Under
+clean, all three seeds keep all 50 clients, so the gate never misfires and
+the value equals vanilla's.
 
 \subsection{Cost}
 \label{sec:cost}
 
-Where the previous two sections addressed accuracy and practical
-effectiveness, this section measures their price. What is measured is the
-computation the server additionally spends on contribution evaluation, and
+This section discusses the computational cost of contribution evaluation.
+What is measured is the computation the server additionally spends on it, and
 the local training time of the clients is kept separate and used only as a
 baseline for the comparison. There are two axes. One is a
 hardware-independent operation-count model that pins down, for each method,
@@ -716,21 +887,52 @@ not show the actual burden. What this section sets out to establish is not
 that some method is always cheaper, but that the ratios between the methods
 are predicted as a function of the number of participants in a round.
 
-\subsection{Ablation: The Second-Order Curvature Term}
-\label{sec:ablation}
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+% [C1] paper-ko.md §5.4 표 [C1] 그대로.
+\caption{Dominant operations per round and the time they actually took. The
+counts are analytic ($K$ = participants in a round, $N$ = total clients,
+$c$ = truncation constant, $M = \max(10, \lceil N \ln N\rceil)$); the
+wall-clock setting is $N{=}100$, 10/100 participation, $R{=}30$,
+Llama-3.2-1B.}
+\label{tab:cost}
+\begin{tabular}{lcc}
+\hline
+Method & Dominant operations per round & Wall-clock (s) \\
+\hline
+Flirds & 1 HVP $+\,K$ inner products & $157.3\pm5.4$ \\
+Flirds-1st & 1 gradient & $53.8\pm2.3$ \\
+FedIF & 1 gradient & $53.7\pm2.3$ \\
+ComFedSV & $\le 1 + \min(2^K,\; MK)$ forward & $357.9\pm18.2$ \\
+FedSV & $\le \min(2^K,\; cK)$ forward & $4{,}969\pm200$ \\
+GTG-Shapley & $\le \min(2^K,\; cK)$ forward & $18{,}149\pm1{,}592$ \\
+ShapleyFL & $2^K$ forward & $24{,}935\pm1{,}123$ \\
+in-run SV & $2^K$ forward & $24{,}975\pm1{,}115$ \\
+\hline
+\end{tabular}
+\end{table}
 
-Finally we isolate what the second-order curvature term of
-Eq.~\eqref{eq:closed} does. The control is Flirds-1st, the same expression
-with that one term removed, so the difference between the two values is
-attributable to the curvature term alone. The previous two sections and
-Appendix~F have already reported the two variants side by side in the same
-settings, so rather than adding a new experiment we read across the three
-axes of fidelity, intervention, and detection (Appendix~F) to see when the
-first-order approximation breaks down. The claim this section establishes is
-therefore not that the second-order term is needed in every regime, but the
-conditional one that it guards against the failure of the first-order
-approximation in regimes where curvature effects are large and in regimes
-where participation is sparse.
+\textbf{Operation counts and measurements.} Once the vector
+$v_r = g_r + \tfrac12 H_r \Delta W_r$ that the closed form shares across all
+clients has been built once, the per-client computation is only an inner
+product (Section~\ref{sec:estimator}), so the heavy operation of Flirds is
+one HVP per round, independent of the number of participants $K$. The in-run
+Shapley, which has to reconstruct a model for every coalition and evaluate it
+on the validation set, requires $2^K$ forward passes per round. The
+difference in order shows up when $K$ is large, so Table~\ref{tab:cost} puts
+the measurements from a setting with 10 participants per round next to the
+counts.
+
+Flirds costs $1/159$ of the in-run Shapley, which agrees with the prediction
+of the operation-count model ($2^{10}/6.5 \approx 158$). ShapleyFL,
+GTG-Shapley, and FedSV pay costs of the same order of magnitude because they
+too reconstruct coalition models in every round, and truncation that reduces
+the number of samples only lowers the constant without changing the order of
+the dependence on $K$. The price of the second-order curvature term is read
+off the difference between Flirds and Flirds-1st (157~s vs.\ 54~s, a factor
+of 2.9).
 
 \section{Limitations}
 \label{sec:limitations}
@@ -763,12 +965,23 @@ the sum is exposed, the per-client inner products cannot be computed.
 \section{Conclusion}
 \label{sec:conclusion}
 
-Flirds turns the validation-loss game of an observed FedAvg round, with the
-actual aggregation weights held fixed, into a second-order Taylor surrogate
-and computes its Shapley value in closed form with one HVP per round and one
-inner product per client. It is a construction that removes the re-evaluation
-of coalitions while keeping the game that is computed, the in-run Shapley,
-and the approximation residual separately auditable.
+Flirds approximates the validation-loss game of an observed FedAvg round to
+second order in a Taylor expansion and computes the in-run Shapley with
+nothing more than one HVP per round and one inner product per client. Client
+contribution evaluation thereby becomes possible without any re-evaluation of
+coalitions, and with both the estimand and the approximation error explicit.
+
+In the experiments, Flirds reproduced the ranking and the values of the
+exhaustively enumerated in-run Shapley in every cell of both the CNN and the
+LLM track, and the second-order curvature term held the gradient-noise regime
+in which the first-order approximation breaks down. A sign-gating
+intervention driven by the same contributions came closest to
+oracle-exclusion across every corruption threat, and its cost, being
+independent of the number of participants in a round, came to $1/159$ of
+exhaustive enumeration in the measurement with 10 participants per round.
+Shapley attribution for the observed round thus gives up neither accuracy nor
+practical effectiveness in exchange for dispensing with exponential coalition
+evaluation.
 
 % (부록 A--G: 별도 제출본 supplement.tex — paper-ko.md 부록 참조)
 
