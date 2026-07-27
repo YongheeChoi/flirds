@@ -5,10 +5,22 @@
        (본문에 붙일 때는 paper-ko.md 의 "### 부록 C. Fidelity 전표" 이하를 이 파일로 교체)
 환경:  RUNS 환경변수로 runs/ 위치 지정 가능(기본 = 이 파일 기준 ../runs).
 """
-import pandas as pd, numpy as np, json, os, glob, io
+import pandas as pd, numpy as np, json, os, glob, io, re
 R = os.environ.get("RUNS") or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "runs")
 o = io.StringIO()
 def W(s=""): o.write(s + "\n")
+
+_SEP = re.compile(r"^\|[\s:|-]+\|$")
+def blockify(md):
+    """표 헤더와 HTML 주석 앞에 빈 줄을 보장한다 — Obsidian은 앞의 빈 줄로 표 블록을 경계 짓기
+    때문에, 캡션이나 주석에 바로 붙은 표는 문단에 딸려 들어가 raw 텍스트로 보인다."""
+    L = md.split("\n"); out = []
+    for i, ln in enumerate(L):
+        head = ln.startswith("|") and i + 1 < len(L) and bool(_SEP.match(L[i + 1].strip()))
+        if (head or ln.startswith("<!--")) and out and out[-1].strip() != "":
+            out.append("")
+        out.append(ln)
+    return "\n".join(out)
 
 # ---------------- 공통 ----------------
 def ms(v, nd=3, sign=False, comma=False, pct=False):
@@ -668,5 +680,6 @@ for a, l in ARMS[1:]:
 table(["arm", "1B", "3B", "7B"], rows)
 
 p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "appendix_cdef.md")
-open(p, "w", encoding="utf-8").write(o.getvalue())
-print("wrote", p, len(o.getvalue()))
+txt = blockify(o.getvalue())
+open(p, "w", encoding="utf-8").write(txt)
+print("wrote", p, len(txt))

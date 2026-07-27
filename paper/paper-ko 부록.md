@@ -191,9 +191,11 @@ free-rider 칸에서 음수로 내려가고(ShapleyFL $-.060$~$-.658$), 이는 �
 같은 사실의 두 표현이다.
 
 표 [F4] — CNN 주 세팅의 in-run Shapley 대비 Spearman $\rho$ ●
+
 <!-- 출처: runs/track_c/c2fid/analysis/fidelity.csv (`python runs/track_c/c2fid/make_analysis.py`
      재생성), label-flip 은 flip_rate=0.70, 값 = spearman_b. 오염-평균은 seed별로 세 오염
      위협을 먼저 평균한 뒤 seed 간 mean±std. -->
+
 | 세팅 | 위협 | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | cifar10/dir1 | clean | 0.984±0.005 | 0.413±0.044 | 0.616±0.063 | 0.615±0.072 | 0.264±0.175 | 0.510±0.039 | 0.466±0.047 |
@@ -218,7 +220,9 @@ free-rider 칸에서 음수로 내려가고(ShapleyFL $-.060$~$-.658$), 이는 �
 | mnist/iid | **오염-평균** | 0.959±0.014 | 0.770±0.009 | 0.851±0.008 | 0.747±0.026 | 0.274±0.068 | 0.273±0.016 | 0.773±0.013 |
 
 표 [F5] — 같은 무대의 Pearson $r$ ●
+
 <!-- 같은 CSV, 값 = pearson_b. -->
+
 | 세팅 | 위협 | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | cifar10/dir1 | clean | 0.990±0.001 | 0.294±0.112 | 0.701±0.091 | 0.688±0.135 | 0.263±0.190 | 0.513±0.055 | 0.444±0.034 |
@@ -243,7 +247,9 @@ free-rider 칸에서 음수로 내려가고(ShapleyFL $-.060$~$-.658$), 이는 �
 | mnist/iid | **오염-평균** | 0.981±0.005 | 0.713±0.028 | 0.926±0.007 | 0.884±0.002 | 0.341±0.085 | 0.470±0.020 | 0.787±0.016 |
 
 표 [F6] — 같은 무대의 Kendall $\tau$ ●
+
 <!-- 같은 CSV, 값 = kendall_b. -->
+
 | 세팅 | 위협 | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | cifar10/dir1 | clean | 0.910±0.013 | 0.304±0.029 | 0.450±0.045 | 0.447±0.062 | 0.184±0.119 | 0.358±0.028 | 0.321±0.034 |
@@ -269,7 +275,9 @@ free-rider 칸에서 음수로 내려가고(ShapleyFL $-.060$~$-.658$), 이는 �
 
 표 [F7] — 같은 무대의 거리 3종(오염 3위협 평균). 두 기여도 벡터를 각각 최대 절대값으로
 정규화한 뒤 잰 값이라 작을수록 가깝다 ●
+
 <!-- 같은 CSV, 값 = cos_b · euc_b · maxdiff_b. -->
+
 | 세팅 | 방법 | cosine | euclid | max |
 |---|---|---|---|---|
 | cifar10/dir1 | Flirds | 0.0691±0.0072 | 3.65±0.18 | 1.11±0.12 |
@@ -313,10 +321,12 @@ CIFAR-10 IID가 +0.661로 가장 낮으며, CIFAR-10 IID의 clean 칸은 $-0.273
 내려가는 것은 부분참여 무대(표 [F4])의 판정이 전원참여에서도 재현된다는 뜻이다.
 
 표 [F8] — $N{=}10$ 격자의 retraining-based Shapley 대비 Spearman $\rho$ ●
+
 <!-- 출처: runs/track_c/c1/analysis/methods_long.csv (`python runs/track_c/c1/make_analysis.py`
      재생성), 값 = spearman_a. 첫 열 = method=='(b)oracle' 행(= 두 Shapley 값의 일치도).
      ShapleyFL 은 β=0.3 확정본. 본문 표 [F2] = 이 표의 cifar10/dir1 행(본문 평균 열만
      오염-평균이 아니라 clean 포함 전 위협 평균). -->
+
 | 세팅 | 위협 | in-run SV *(앵커)* | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|---|
 | cifar10/dir1 | clean | +0.515±0.409 | +0.515±0.401 | +0.438±0.335 | +0.766±0.266 | +0.648±0.430 | +0.616±0.303 | +0.596±0.337 | +0.531±0.410 |
@@ -341,7 +351,9 @@ CIFAR-10 IID가 +0.661로 가장 낮으며, CIFAR-10 IID의 clean 칸은 $-0.273
 | mnist/iid | **오염-평균** | +0.744±0.009 | +0.725±0.014 | +0.586±0.123 | +0.717±0.049 | +0.696±0.058 | +0.634±0.032 | +0.710±0.054 | +0.808±0.070 |
 
 표 [F9] — 같은 격자의 in-run Shapley 대비 Spearman $\rho$ ●
+
 <!-- 같은 CSV, 값 = spearman_b. -->
+
 | 세팅 | 위협 | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | cifar10/dir1 | clean | +0.992±0.007 | +0.931±0.037 | +0.749±0.134 | +0.713±0.250 | +0.515±0.370 | +0.661±0.200 | +0.754±0.158 |
@@ -366,7 +378,9 @@ CIFAR-10 IID가 +0.661로 가장 낮으며, CIFAR-10 IID의 clean 칸은 $-0.273
 | mnist/iid | **오염-평균** | +0.956±0.037 | +0.779±0.138 | +0.694±0.042 | +0.710±0.077 | +0.748±0.081 | +0.762±0.077 | +0.875±0.055 |
 
 표 [F10] — 같은 격자의 Kendall $\tau$(오염 3위협 평균)와 거리 3종(in-run Shapley 대비) ●
+
 <!-- 같은 CSV, 값 = kendall_a · kendall_b · cos_b · euc_b · maxdiff_b. -->
+
 | 세팅 | 방법 | τ vs retrain SV | τ vs in-run SV | cosine | euclid | max |
 |---|---|---|---|---|---|---|
 | cifar10/dir1 | in-run SV | +0.770±0.050 | – | – | – | – |
@@ -412,10 +426,12 @@ Taylor 변형이 모두 천장에 붙어 있어 그 둘 사이의 변별력은 �
 않는 이유는 부록 D에 있다.
 
 표 [F11] — LLM 세팅별 in-run Shapley 대비 Spearman $\rho$ (아래줄 = Pearson $r$) ●/◐
+
 <!-- 출처: runs/phase2_matrix/rundirs/1B_{gsm50k5,silo5}_*/metrics.json 및
      runs/phase2_matrix/analysis/04_device100_anchor/csv/{spearman,pearson}_vs_bperround.csv,
      runs/track_d/fidelity.csv(alpaca 규모 레그). 주 세팅 free-rider 열은 seed1 한 셀만
      착지해 ◐이고, 그 세팅의 재정규화 5종은 seed0 파일럿에서만 산출돼 ◐로 표기했다. -->
+
 | 세팅 | 위협 | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | 주 세팅(N=50·5/50·R=200) | clean | 1.000±0.000 | 0.999±0.000 | 0.988◐ | 0.917◐ | -0.101◐ | -0.018◐ | -0.055◐ |
@@ -450,10 +466,12 @@ Taylor 변형이 모두 천장에 붙어 있어 그 둘 사이의 변별력은 �
 표 [F12] — 5-도메인 비IID 세팅의 retraining-based Shapley 대비($2^5$ 전수 재학습). 첫 행은
 두 Shapley 값의 일치도이고, 이 무대에서는 세 위협 모두 순위가 완전히 일치해 각 방법의 retrain SV
 대비 값이 in-run Shapley 대비 값과 같다 ●
+
 <!-- 출처: runs/phase2_matrix/silo5_a_fidelity_1B.csv (`python runs/phase2_matrix/merge_silo5_a.py`
      재생성; rundir 1B_silo5_{threat}_aonly_s{0,1,2} × canonical 1B_silo5_{threat}).
      ComFedSV clean 열은 그 rundir가 ComFedSV 추가 이전 산출이라 ⬚. N=5 Spearman 은 0.1 격자라
      0.933 = 인접 두 client 의 순서가 seed 둘에서 한 번씩 바뀐 것에 해당한다. -->
+
 | 위협 | in-run SV *(앵커)* | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | clean | +1.000±0.000 | +1.000±0.000 | +1.000±0.000 | +1.000±0.000 | +0.933±0.058 | – | +1.000±0.000 | +0.867±0.115 |
@@ -476,8 +494,10 @@ Shapley를 seed 쌍끼리 직접 비교한 값이고, 여기서 낮게 나오는
 
 표 [D1] — in-run Shapley 자신의 cross-seed Spearman(seed 쌍 3개 평균, $n_{\mathrm{seed}}{=}3$).
 높을수록 그 무대의 순위가 재현된다 ●
+
 <!-- 출처: runs/track_d/target_stability.csv · runs/phase2_matrix/target_stability.csv
      (파생 산출; make_target_stability.py). 제외 위협축(poison·frrand) 행은 뺐다. -->
+
 | 무대 | seed 쌍 평균 $\rho$ | 최소 $\rho$ |
 |---|---|---|
 | LLM 소형 앵커(IID-clean) 1B | -0.367 | -0.900 |
@@ -502,8 +522,10 @@ client 사이의 실제 차이(이질성 또는 오염)가 만들고, 둘 다 �
 
 표 [D2] — 이질성축과 오염축의 분해. 같은 $N{=}5$ 무대를 IID 5분할과 5-도메인 비IID로만
 바꿔 in-run Shapley의 cross-seed 재현성을 잰 값이다 ●
+
 <!-- 출처: runs/phase2_matrix/target_stability.csv (rundir 1B_{iid5,silo5}_* 파생).
      오염축 밖 위협(frrand·poison) 행은 뺐다. -->
+
 | 위협 | IID 5분할 | 5-도메인 비IID | 차 |
 |---|---|---|---|
 | clean (오염 0) | +0.133 | +0.867 | +0.733 |
@@ -525,7 +547,9 @@ Shapley 값의 일치도부터 $-0.273$이고(표 [F8]), 같은 파티션의 rem
 표 [C2] — 세팅별 라운드당 지배 연산의 인스턴스화(전체 = 라운드 수 $R$배). fp32·B200
 microbench는 forward 1.60 s · HVP 10.36 s이고 비율은 6.47이다. fp32에서 bf16으로 옮기면
 forward 5.33배·HVP 4.09배 빨라진다
+
 <!-- 출처: runs/measured_2026-07/op_counts.py · runs/measured_2026-07/microbench/summary.json. -->
+
 | 세팅 | $K$ | $R$ | Flirds | Flirds-1st | in-run SV |
 |---|---|---|---|---|---|
 | 5-도메인 비IID | 5 | 10 | 10 HVP | 10 grad | 320 fwd |
@@ -533,7 +557,9 @@ forward 5.33배·HVP 4.09배 빨라진다
 | cross-device | 10 | 30 | 30 HVP | 30 grad | 30,720 fwd |
 
 표 [C3] — LLM 세팅별 valuation wall-clock(초) ●
+
 <!-- 출처: runs/track_d/rundirs/*/metrics.json 의 runtime dict(3-seed). -->
+
 | 방법 | alpaca 1B | alpaca 3B | alpaca 7B | 앵커 1B | 앵커 3B | 앵커 7B |
 |---|---|---|---|---|---|---|
 | Flirds | 4,696.7±136.8 | 11,163.0±291.6 | 20,180.4±306.5 | 707.4±19.3 | 1,679.1±45.1 | 3,027.3±43.7 |
@@ -546,8 +572,10 @@ forward 5.33배·HVP 4.09배 빨라진다
 | in-run SV | 2,917.3±87.9 | 6,922.9±188.1 | 12,309.7±201.5 | 3,527.7±101.2 | 8,350.1±234.7 | 14,838.5±240.5 |
 
 표 [C4] — LLM 5-도메인 비IID·cross-device 세팅의 valuation wall-clock(초) ●
+
 <!-- 출처: runs/phase2_matrix/analysis/{01_silo5,04_device100_anchor}/csv/runtime_table.csv.
      비-앵커 α 셀(0.0/0.01/0.1/5.0)에서도 Flirds 155~158 s 로 α 무관. -->
+
 | 방법 | 비IID · answer-swap | 비IID · free-rider | cross-device · answer-swap | cross-device · free-rider |
 |---|---|---|---|---|
 | Flirds | 106.6±2.0 | 107.7±2.0 | 157.3±5.4 | 157.2±7.1 |
@@ -561,9 +589,11 @@ forward 5.33배·HVP 4.09배 빨라진다
 | _retrain SV ($2^5$ 전수 재학습)_ | _31,137.4±1,053.7_ | _21,292.2±739.3_ | _–_ | _–_ |
 
 표 [C5] — CNN valuation wall-clock(초). 왼쪽 넷은 주 세팅(오염 3위협 × 3seed = 9측정), 오른쪽 둘은 $N{=}10$ 격자 ●
+
 <!-- 출처: runs/track_c/c2fid/rundirs/*/metrics.json 의 methods.<m>.runtime (주 세팅) ·
      runs/track_c/c1/{ds}_label-flip_seed*/metrics.json 및 c1_oracle/*_aonly_seed*/metrics.json
      의 t_a (N=10). 두 무대는 게임이 달라 서로 비교하지 않는다. -->
+
 | 방법 | 주 CIFAR-10/dir1 | 주 CIFAR-10/iid | 주 MNIST/dir1 | 주 MNIST/iid | $N{=}10$ CIFAR-10 | $N{=}10$ MNIST |
 |---|---|---|---|---|---|---|
 | Flirds | 10.64±0.39 | 10.58±0.40 | 3.25±0.15 | 3.22±0.09 | 1.168±0.070 | 0.636±0.144 |
@@ -580,7 +610,9 @@ forward 5.33배·HVP 4.09배 빨라진다
 표 [C6] — 배율 사다리. 라운드 참여자 수 $K$가 커질수록 in-run Shapley 대비 이득이 커지고,
 $K{=}2$에서는 $2^2$ forward가 HVP 1회(약 6.5 forward)보다 싸 부호가 뒤집힌다. 예측 열은
 LLM 트랙의 per-op 실측($2^K/6.47$)이라 CNN 행에는 적용하지 않는다
+
 <!-- 출처: 표 [C3]·[C4]·[C5] 과 같은 rundir. 예측 = 2^K / 6.47. -->
+
 | 무대 | $K$ | Flirds(초) | in-run SV(초) | 실측 배율 | 연산수 모델 예측 |
 |---|---|---|---|---|---|
 | alpaca IID-clean 1B | 2 | 4,696.7 | 2,917.3 | 0.62 (역전) | 0.62 |
@@ -618,9 +650,11 @@ CIFAR-10에서는 두 실행이 서로 다른 난수 흐름을 타 소수점 셋
 vanilla 아래로 내려가는 구도(39.15~40.20% vs vanilla 58.79%)는 두 시점에서 같다.
 
 표 [I3] — CNN 주 세팅 CIFAR-10, online 게이팅, test 정확도(%), 3-seed mean±std ●
+
 <!-- 출처: runs/track_h/analysis/cnn_competition.csv (`python runs/track_h/make_analysis.py`),
      arm = <src>_gate_v2 · 바닥 arm = track_g rundirs 의 vanilla. label-flip 은 flip_rate=0.7. -->
 *CIFAR-10 / Dirichlet($\alpha{=}1$)*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 63.89±0.52 | 58.79±0.29 | 24.36±2.22 | 52.47±2.89 | 45.21±1.63 |
@@ -635,6 +669,7 @@ vanilla 아래로 내려가는 구도(39.15~40.20% vs vanilla 58.79%)는 두 시
 | FedIF | 63.86±0.10 | 61.43±1.17 | 24.79±1.32 | 57.28±0.87 | 47.83±0.30 |
 
 *CIFAR-10 / IID*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 64.88±0.05 | 60.83±0.46 | 25.64±0.40 | 51.71±1.84 | 46.06±0.81 |
@@ -649,7 +684,9 @@ vanilla 아래로 내려가는 구도(39.15~40.20% vs vanilla 58.79%)는 두 시
 | FedIF | 64.84±0.21 | 63.42±0.08 | 26.19±0.73 | 59.76±0.19 | 49.79±0.29 |
 
 표 [I4] — 같은 무대의 selection-retrain, IID 파티션, test 정확도(%)(Dirichlet 칸은 본문 표 [I2]) ●
+
 <!-- 같은 CSV, arm = t2_sign_<src>. -->
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 64.88±0.05 | 60.83±0.46 | 25.64±0.40 | 51.71±1.84 | 46.06±0.81 |
@@ -669,8 +706,10 @@ gradient noise에서 1차 계열이 vanilla 수준에 머물고, zero-update fre
 계열이 vanilla 아래로 내려간다.
 
 표 [I5] — CNN 주 세팅 MNIST, online / selection-retrain, test 정확도(%) ●
+
 <!-- 같은 CSV, dataset=='mnist'. -->
 *MNIST / Dirichlet · online*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 97.92±0.21 | 97.13±0.21 | 89.64±1.37 | 96.25±0.65 | 94.34±0.73 |
@@ -685,6 +724,7 @@ gradient noise에서 1차 계열이 vanilla 수준에 머물고, zero-update fre
 | FedIF | 97.92±0.31 | 97.84±0.14 | 90.95±0.21 | 97.61±0.19 | 95.46±0.07 |
 
 *MNIST / Dirichlet · selection-retrain*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 97.92±0.21 | 97.13±0.21 | 89.64±1.37 | 96.25±0.65 | 94.34±0.73 |
@@ -699,6 +739,7 @@ gradient noise에서 1차 계열이 vanilla 수준에 머물고, zero-update fre
 | FedIF | 97.93±0.15 | 97.83±0.18 | 89.64±1.37 | 97.87±0.30 | 95.11±0.59 |
 
 *MNIST / IID · online*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 98.16±0.22 | 97.41±0.15 | 92.21±0.81 | 96.31±0.16 | 95.31±0.37 |
@@ -713,6 +754,7 @@ gradient noise에서 1차 계열이 vanilla 수준에 머물고, zero-update fre
 | FedIF | 98.12±0.20 | 98.02±0.09 | 91.44±1.22 | 98.06±0.18 | 95.84±0.39 |
 
 *MNIST / IID · selection-retrain*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 98.16±0.22 | 97.41±0.15 | 92.21±0.81 | 96.31±0.16 | 95.31±0.37 |
@@ -733,8 +775,10 @@ gradient noise에서 게이트가 발화하지 못하던 FedIF가 여기서는 �
 한계는 문턱의 문제가 아니라 신호 자체의 문제다.
 
 표 [I6] — 크기 가중 변형, CNN 주 세팅 CIFAR-10, test 정확도(%) ●
+
 <!-- 같은 CSV, arm = <src>_gatew_v2(online) · t2_signw_<src>(retrain). -->
 *CIFAR-10 / Dirichlet · online*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 63.89±0.52 | 58.79±0.29 | 24.36±2.22 | 52.47±2.89 | 45.21±1.63 |
@@ -749,6 +793,7 @@ gradient noise에서 게이트가 발화하지 못하던 FedIF가 여기서는 �
 | FedIF | 63.75±0.40 | 61.78±0.40 | 60.43±0.93 | 58.11±1.19 | 60.11±0.13 |
 
 *CIFAR-10 / Dirichlet · selection-retrain*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 63.89±0.52 | 58.79±0.29 | 24.36±2.22 | 52.47±2.89 | 45.21±1.63 |
@@ -763,6 +808,7 @@ gradient noise에서 게이트가 발화하지 못하던 FedIF가 여기서는 �
 | FedIF | 63.38±0.34 | 61.57±0.58 | 61.14±0.78 | 62.06±0.35 | 61.59±0.18 |
 
 *CIFAR-10 / IID · online*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 64.88±0.05 | 60.83±0.46 | 25.64±0.40 | 51.71±1.84 | 46.06±0.81 |
@@ -777,6 +823,7 @@ gradient noise에서 게이트가 발화하지 못하던 FedIF가 여기서는 �
 | FedIF | 64.69±0.04 | 63.42±0.22 | 63.21±0.40 | 60.00±1.01 | 62.21±0.36 |
 
 *CIFAR-10 / IID · selection-retrain*
+
 |  | clean | zero-update free-rider | gradient noise | label-flip | 오염-평균 |
 |---|---|---|---|---|---|
 | vanilla (observer) | 64.88±0.05 | 60.83±0.46 | 25.64±0.40 | 51.71±1.84 | 46.06±0.81 |
@@ -798,9 +845,11 @@ selection-random(+0.1pt)과 뚜렷이 갈리지만, 세 값이 서로 0.4pt 안�
 이긴다는 데까지이고, 2차 곡률항의 이득은 여기서 분리되지 않는다.
 
 표 [I7] — LLM 주 세팅(GSM8K·$N{=}50$·5/50·$R{=}200$), test 1,119문항 EM(%) ●
+
 <!-- 출처: runs/track_h/analysis/llm_competition.csv (regime=gsm50k5). online = <src>_gate_v2,
      selection-retrain = t2_sign_<src>. 재정규화 4종은 이 무대에서 미실행이라 표에 없다
      (계열 간 대조는 표 [I2]·[F11]이 맡는다). -->
+
 |  | 시점 | clean | answer-swap | zero-update free-rider |
 |---|---|---|---|---|
 | vanilla (observer) | – | 36.52±1.29 | 32.74±0.69 | 35.60±1.57 |
@@ -816,7 +865,9 @@ selection-random(+0.1pt)과 뚜렷이 갈리지만, 세 값이 서로 0.4pt 안�
 대상 집합을 거의 그대로 집어내는 반면 answer-swap 칸은 재현율 5% 안팎이다. 후자는 추정 실패가
 아니라 게임의 답이다. 부록 F.6이 보이듯 in-run Shapley로 채점해도 answer-swap client의 누적
 기여도는 양수이므로, 문턱 0의 부호 게이트에는 이 위협의 작동 영역이 없다 ●
+
 <!-- 같은 CSV, gate_precision · gate_recall 열. -->
+
 |  | 위협 | precision | recall |
 |---|---|---|---|
 | Flirds | clean | 0.00±0.00 | – |
@@ -834,8 +885,10 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 부록 D의 신호 부재 판정과 같은 사실이다.
 
 표 [I9] — removal-curve의 곡선 평균 간격(%p; CIFAR-10/IID·$N{=}10$ 전원참여·$R{=}10$·오염 4/10) ●
+
 <!-- 출처: runs/removal_dose/rundirs_cnn/cifar10_iid{,-free-rider,-grad-noise,-label-flip}_seed*
      의 metrics.json::removal_curve_acc. 값 = mean(worst-first acc − best-first acc), 10점 전 구간 평균. -->
+
 | 위협 | in-run SV *(앵커)* | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|
 | clean | -0.27±0.97 | -0.33±0.69 | +0.03±0.35 | +0.10±0.82 | +0.14±0.24 | +1.66±0.40 | -0.20±0.93 | -0.41±0.30 |
@@ -846,7 +899,9 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 
 표 [I10] — 같은 심판을 LLM 5-도메인 비IID 세팅에서 반복한 값. 지표는 4명을 제거했을 때의
 검증손실 감소이고, 양수면 그 순서대로 제거하는 것이 손실을 낮춘다는 뜻이다 ●
+
 <!-- 출처: runs/removal_dose/rundirs/1B_silo5_{noisy,frzero}_removal_seed* 의 removal_curve. -->
+
 | 위협 | 낮은 순위부터 제거 | 높은 순위부터 제거 |
 |---|---|---|
 | answer-swap | +0.0076±0.0003 | -0.0084±0.0016 |
@@ -862,8 +917,10 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 
 표 [I11] — CNN $N{=}10$ 격자의 부호 감사. 기여도는 유익한 client가 양수가 되도록 부호를
 통일해 읽는다 ●
+
 <!-- 출처: runs/track_c/c1/analysis/sign_audit.csv (`python runs/track_c/c1/make_analysis.py`). -->
 *(a) clean 셀에서 기여도가 음수인 client 수 / 전체 슬롯*
+
 | 세팅 | retrain SV | in-run SV | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|---|
 | cifar10/dir1 | 3/30 | 2/30 | 1/30 | 1/30 | 8/30 | 7/30 | 11/30 | 0/30 | 0/30 |
@@ -872,6 +929,7 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 | mnist/iid | 0/30 | 0/30 | 0/30 | 0/30 | 0/30 | 0/30 | 0/30 | 0/30 | 0/30 |
 
 *(b) zero-update free-rider 오염 client의 exact-0 비율과 음수 비율(분모 48 = 12셀 × 4명)*
+
 | 방법 | exact-0 | 기여도 음수 |
 |---|---|---|
 | retrain SV | 0/48 | 27/48 |
@@ -885,6 +943,7 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 | FedIF | 24/48 | 0/48 |
 
 *(c) 분리도 = (정상 평균 기여도 − 오염 평균 기여도) / span. 양수면 오염을 낮게 매긴 것이다*
+
 | 데이터셋 | 위협 | retrain SV | in-run SV | Flirds | Flirds-1st | GTG-Shapley | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|---|---|
 | cifar10 | free-rider | +0.647±0.147 | +0.717±0.246 | +0.718±0.243 | +0.714±0.237 | +0.419±0.341 | +0.101±0.285 | +0.080±0.232 | -0.586±0.152 | +0.635±0.257 |
@@ -896,11 +955,13 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 
 표 [I12] — LLM 두 세팅의 부호 감사. 값은 client-라운드 누적 기여도가 0 이하인 client의
 비율(%)이고, 괄호는 그중 대수적으로 정확한 0의 비율이다 ●
+
 <!-- 출처: runs/track_g/audit/sign_table.csv, variant=='canon' & scale=='1B' 필터 후
      (regime, threat, method, corrupt)별 contribution 부호 집계. cross-device 는 in-run Shapley
      가 붙은 α=0.5 앵커 셀로 한정해 전 방법의 분모를 맞췄다. ComFedSV 는 5-도메인 세팅에
      미산출이라 ⬚. -->
 *(a) 정상 client — 오배제 위험 (낮을수록 좋다)*
+
 | 방법 | 비IID · clean | 비IID · swap | 비IID · free-rider | cross-device · swap | cross-device · free-rider |
 |---|---|---|---|---|---|
 | in-run SV | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
@@ -914,6 +975,7 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 | *(client 수 n)* | 15 | 12 | 12 | 275 | 275 |
 
 *(b) 오염 client — 게이트 발화 (높을수록 좋다; 괄호 = exact-0)*
+
 | 방법 | 비IID · clean | 비IID · swap | 비IID · free-rider | cross-device · swap | cross-device · free-rider |
 |---|---|---|---|---|---|
 | in-run SV | ⬚ | 0.0 (0.0) | 100.0 (100.0) | 0.0 (0.0) | 100.0 (100.0) |
@@ -935,8 +997,10 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 값이므로, 표에 도달 seed 수를 함께 적고 이 관찰을 예비적인 것으로 둔다.
 
 표 [I13] — alpaca IID-clean 세팅($N{=}20$·2/20·$R{=}200$)의 무해성 ●
+
 <!-- 출처: runs/track_d/rundirs/*_std20_seed*/metrics.json 의 arms 블록. -->
 *MMLU (full-test 0-shot, %)*
+
 | arm | 1B | 3B | 7B |
 |---|---|---|---|
 | base (학습 전) | 48.22±0.00 | 62.30±0.00 | 41.75±0.00 |
@@ -947,6 +1011,7 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 | FedIF 가중 | 47.41±0.04 | 61.43±0.09 | 40.30±0.28 |
 
 *Alpaca-test ROUGE-L (%)*
+
 | arm | 1B | 3B | 7B |
 |---|---|---|---|
 | base (학습 전) | 21.68±0.23 | 22.19±0.19 | 14.96±0.30 |
@@ -957,6 +1022,7 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 | FedIF 가중 | 28.47±0.57 | 30.25±0.29 | 27.63±0.41 |
 
 *최종 검증손실*
+
 | arm | 1B | 3B | 7B |
 |---|---|---|---|
 | base (학습 전) | – | – | – |
@@ -967,6 +1033,7 @@ Flirds-1st만 부호가 뒤집혀 $-1.89$%p가 된다. 재정규화 계열은 fr
 | FedIF 가중 | 1.26524±0.02636 | 1.14785±0.03318 | 1.03478±0.03015 |
 
 *목표 검증손실 도달 라운드(괄호 = $R{=}200$ 안에 도달한 seed 수 / 3; 미도달 seed는 평균에서 뺐다)*
+
 | arm | 1B | 3B | 7B |
 |---|---|---|---|
 | vanilla (개입 없음) | 200.0±0.0 (3/3) | 198.3±2.9 (3/3) | 184.7±22.4 (3/3) |
