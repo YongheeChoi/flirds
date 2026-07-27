@@ -26,11 +26,18 @@ set -u
 REPO=${REPO:-/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds}
 BATCH_DIR=${BATCH_DIR:-/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds_batch}
 # 레인 n → NODES[n]. 노드 이름이 바뀌면 FLEET_NODES 로 덮어쓴다(순서 = 레인 1,2,3,4).
-read -ra NODE_ARR <<< "${FLEET_NODES:-yong-1 yong-2 yong-3 yong-4}"
+#   2026-07-27 22:00 컨테이너 교체: yong-1..4(4대) → **yonghee-1..3(3대)** 로 줄었다.
+#   레인↔큐 매핑은 절대 건드리지 않고(큐 내용이 레인에 묶여 있다) **레인→노드만** 다시 붙인다.
+#   현재 배정 = 우선순위순(G1 frzero 2셀이 유일한 필수분, 그 다음 R-clean):
+#     레인2 → yonghee-1 (G1_L2_frzero_s2) · 레인4 → yonghee-2 (G1_L2_frzero_s0)
+#     레인3 → yonghee-3 (R-clean ×3)      · 레인1 → 노드 없음(B/sflb03 = 카나리아 실패로 보류)
+#   노드가 늘면 FLEET_NODES 로 레인1 자리에 실제 노드를 넣으면 된다.
+read -ra NODE_ARR <<< "${FLEET_NODES:-_none_ yonghee-1 yonghee-3 yonghee-2}"
 SSH="ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new"
 LANES_ALL="1 2 3 4"
 DONE_RE="MATRIX DONE|TRACK G DONE|TRACK D DONE|\[persist\]"
-EXPIRE_EPOCH=${EXPIRE_EPOCH:-$(date -d "2026-07-27 21:11:06" +%s)}   # 컨테이너 48h 동기 만료
+EXPIRE_EPOCH=${EXPIRE_EPOCH:-$(date -d "2026-07-29 22:00:00" +%s)}   # 컨테이너 48h 동기 만료
+#   ↑ 07-27 22:00 교체분의 **추정** 만료(생성 ~22:00 + 48h). 실제 값 확인되면 갈아끼울 것.
 
 node_of() { echo "${NODE_ARR[$(( $1 - 1 ))]}"; }
 out_of()  { echo "$BATCH_DIR/runlogs/_b200_lane$1.out"; }

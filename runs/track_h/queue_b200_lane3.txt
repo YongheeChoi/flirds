@@ -28,7 +28,7 @@
 # [+ 19.6h →  39.2h · 19.6h]
 #phase2_matrix.py|G1_L2_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=1 MIN_METHODS=1
 # [+ 39.2h →  43.0h ·  3.8h]
-track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+#track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
 
 # ─── ▲ PHASE 1 종료 = 기동 후 43.0h ─────────────────────────────────
 # ─── 여기서 컨테이너 교체. 위 3줄을 '#' 주석 처리하고 재기동한다. ──
@@ -71,3 +71,9 @@ phase2_matrix.py|1B_silo5_clean_removal_seed1|REGIME=silo5 THREAT=clean SEED=1 R
 
 # [07-27 19:00] R-clean — 레인3 집결 (주석 해제 상태)
 phase2_matrix.py|1B_silo5_clean_removal_seed2|REGIME=silo5 THREAT=clean SEED=2 REMOVAL=1 RUNDIR_ROOT=__REPO__/runs/removal_dose/rundirs
+
+# [07-27 22:20] B — 카나리아 실패 후 Yonghee 결정 ⓒ(신규 런 자체 (b) 로 채점).
+#   레인1 은 컨테이너 교체(yong-1..4 → yonghee-1..3)로 노드가 없다 → R-clean 뒤에 이어붙인다.
+#   레인1 큐의 같은 두 줄은 중복 실행 방지를 위해 주석 처리했다(정본은 여기).
+track_d.py|1B_anchor5_sflb03_seed1|REGIME=anchor5 SEED=1 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=ShapleyFL SFL_BETA=0.3 MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/track_d/rundirs_beta03
+track_d.py|1B_anchor5_sflb03_seed2|REGIME=anchor5 SEED=2 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=ShapleyFL SFL_BETA=0.3 MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/track_d/rundirs_beta03
