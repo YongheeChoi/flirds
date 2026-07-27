@@ -140,6 +140,13 @@ NOISY_RATE = float(os.environ.get("NOISY_RATE",            # Exp B: graded answe
                                   "0.7" if (GSM_LIKE or GSM5) else "1.0"))   # gsm50k5/gsm5 default = the R4 dose (nr0.7)
 DOSE_MULT = float(os.environ.get("DOSE_MULT", "1.0"))      # Exp B: free-rider-random amplitude multiplier
 ORACLE_A = os.environ.get("ORACLE_A", "1" if GSM5 else "0") == "1"   # L8/T5: (a) exact 2^N retrain oracle (gsm5 default on)
+# R4-L2 scope cut (Yonghee 2026-07-26): score ONLY the same-game pair against the (b) oracle.
+# The cross-game coalition family (GTG/FedSV/ShapleyFL/ComFedSV) costs ~71% of the valuation here
+# (4 x 2^|P_r| forwards/round vs 1 HVP + 1 grad) and, per the axis map, is scored against the (a)
+# oracle -- not (b) -- so its R4 column never reaches the paper table.  Its 3-seed fidelity is
+# already on disk at silo5 / device100 / std20.  FedIF, loss-heur and the 4 dedicated detectors
+# (the latter excluded from the paper outright, plan sec 0.2) ride along in the same cut.
+MIN_METHODS = os.environ.get("MIN_METHODS", "0") == "1"    # (b) + Flirds + Flirds-1st only
 REMOVAL = os.environ.get("REMOVAL", "0") == "1"            # Exp A2: removal/selection curve (extra retrains; silo only)
 REMOVAL_METHODS = [m for m in os.environ.get("REMOVAL_METHODS", "").split(",") if m]  # [] = all val methods
 
@@ -389,6 +396,8 @@ def compute_methods(logs, score_clients, model, tok, init, loss_fn, pkeys, lc, d
     (phi_1, _), t_1 = _timed(lambda: flirds_values(logs, loss_fn, pkeys, device, second_order=False,
                                                    n_clients=n, loss_chunks=lc), device)
     out.append(("Flirds1st", "val", np.asarray(phi_1), t_1))
+    if MIN_METHODS:                                  # R4-L2 scope cut -- see the flag's comment
+        return out
     phi_if, t_if = _timed(lambda: fedif_from_logs(logs, n, loss_fn, pkeys, device, loss_chunks=lc), device)
     out.append(("FedIF", "val", -np.asarray(phi_if, dtype=float), t_if))      # influence good->HIGH -> negate
 
