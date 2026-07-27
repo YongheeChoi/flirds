@@ -124,7 +124,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | 실험 | 무대 | 상태 | 남은 일 |
 |---|---|---|---|
 | **2차항(HVP)의 기여 — CNN 레그** | c2fid grad-noise 셀(Flirds ρ vs Flirds-1st ρ) + probe_signal k-sweep | **● 완료** | 표를 cifar10 {dir1, iid} 2행으로 축소 |
-| **Removal-curve — CNN** | cifar10/iid N=10 · worst-first vs best-first 제거 후 재학습 acc 분리 | **● 완료** — 오염축 3위협 × 3seed 9셀(`removal_dose/rundirs_cnn/cifar10_iid-*`) | **결과 페이지 전사** — [[flirds-results-ablation]] §Removal-curve CNN이 아직 레거시 2시나리오(label_flip·feature_noise) 표다 |
+| **Removal-curve — CNN** | cifar10/iid N=10 · worst-first vs best-first 제거 후 재학습 acc 분리 | **● 완료** — 오염축 3위협 × 3seed 9셀(`removal_dose/rundirs_cnn/cifar10_iid-*`) | 없음 — 레거시 2시나리오(label_flip·feature_noise) 행 삭제 완료 |
 | **Removal-curve — LLM** | silo5 N=5 · worst/best-first 제거 후 val-loss | **● 완료**(noisy·frzero 3-seed) | frrand·poison 행 삭제 |
 
 ---
