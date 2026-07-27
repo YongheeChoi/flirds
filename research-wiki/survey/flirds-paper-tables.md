@@ -15,21 +15,21 @@ tags: [flirds, paper, tables, mirror]
 
 ## 0. 표 인덱스
 
-| # | 배치 | 축 | 표 |
-|---|---|---|---|
-| **T1** | 본문 | Fidelity | 1A-CNN 대규모 교차-디바이스 부분참여 vs (b) — cifar10 {dir1, iid} |
-| **T2** | 본문 | Fidelity | 1A-LLM 주무대 정확도-무대 충실도 (R4) vs (b) |
-| **T3** | 본문 | Fidelity | 1A-LLM 표준 부분참여 충실도 — 1B·3B·7B |
-| **T4** | 본문 | Fidelity | 1B-CNN 축 그리드 vs (a) — cifar10 |
-| **T5** | 본문 | Fidelity | 1B-LLM 교차-사일로 (a)-leg 듀얼오라클 |
-| **T6** | 본문 | Downstream | 2-CNN 점수원 경쟁 — cifar10/dir1 |
-| **T7** | 본문 | Downstream | 2-CNN 점수원 경쟁 — cifar10/iid |
-| **T8** | 본문 | Downstream | 2-LLM 주무대 정확도 개입 (R4 GSM8K EM) |
-| **T9** | 본문 | Cost | 5-공통 연산수(op-count) 모델 |
-| **T10** | 본문 | Cost | 5-LLM 실측 runtime — device100 앵커 |
-| **T11** | 본문 | Ablation | 2차항(HVP)의 기여 — CNN 레그 |
-| **T12** | 본문 | Ablation | Removal-curve — CNN / LLM |
-| **A1–A16** | 부록 | 전 축 | §2 인덱스 |
+| #          | 배치  | 축          | 표                                                    |
+| ---------- | --- | ---------- | ---------------------------------------------------- |
+| **T1**     | 본문  | Fidelity   | 1A-CNN 대규모 교차-디바이스 부분참여 vs (b) — cifar10 {dir1, iid} |
+| **T2**     | 본문  | Fidelity   | 1A-LLM 주무대 정확도-무대 충실도 (R4) vs (b)                    |
+| **T3**     | 본문  | Fidelity   | 1A-LLM 표준 부분참여 충실도 — 1B·3B·7B                        |
+| **T4**     | 본문  | Fidelity   | 1B-CNN 축 그리드 vs (a) — cifar10                        |
+| **T5**     | 본문  | Fidelity   | 1B-LLM 교차-사일로 (a)-leg 듀얼오라클                          |
+| **T6**     | 본문  | Downstream | 2-CNN 점수원 경쟁 — cifar10/dir1                          |
+| **T7**     | 본문  | Downstream | 2-CNN 점수원 경쟁 — cifar10/iid                           |
+| **T8**     | 본문  | Downstream | 2-LLM 주무대 정확도 개입 (R4 GSM8K EM)                       |
+| **T9**     | 본문  | Cost       | 5-공통 연산수(op-count) 모델                                |
+| **T10**    | 본문  | Cost       | 5-LLM 실측 runtime — device100 앵커                      |
+| **T11**    | 본문  | Ablation   | 2차항(HVP)의 기여 — CNN 레그                                |
+| **T12**    | 본문  | Ablation   | Removal-curve — CNN / LLM                            |
+| **A1–A16** | 부록  | 전 축        | §2 인덱스                                               |
 
 ---
 
@@ -182,6 +182,7 @@ tags: [flirds, paper, tables, mirror]
 
 > T6과 동일 무대·동일 정책, 파티션만 iid · seed{0,1,2}.
 > FedSV와 ComFedSV는 이 파티션 12셀 전부 값이 동일하다(별개 rundir · 게이팅 결정이 매 라운드 일치).
+> ⚠ retrain의 **Flirds-1st·FedIF grad-noise 칸(0.2564±0.0033)**은 전원 유지(=vanilla)라 vanilla 값을 대입한 것인데, 그 vanilla 원본이 **observer 행(0.2627±0.0150)과 다른 실행**이다(이 파티션에서만 두 원본이 갈린다 — dir1은 4위협 전부 비트동일). 두 칸을 observer 행과 직접 빼서 읽으면 안 된다.
 
 **online (배포 게이팅)**
 
@@ -268,6 +269,7 @@ tags: [flirds, paper, tables, mirror]
 ## T10 · 5-LLM 실측 runtime — device100 앵커
 
 > valuation-only wall-clock(초) · N=100 · 10/100 · α=0.5 · 1B · noisy 셀 · seed{0,1,2}. 낮을수록 좋음.
+> ⚠ **± 는 이 표만 ddof=1**(상류 산출 규약이 그렇다). ddof=0 환산 시 순서대로 1.91 · 1.91 · 4.38 · 14.84 · 17.90 · 163.00 · 1300.02 · 917.15 · 910.33. 평균값은 규약과 무관하다.
 
 | 방법 | runtime(s) | (b) 대비 |
 |---|---|---|
