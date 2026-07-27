@@ -153,7 +153,7 @@ client-side computation.
 \label{sec:intro}
 
 In federated learning (FL), clients jointly train a single model without
-sharing their raw data \citep{mcmahan2016federated}. In each round, the
+sharing their raw data \citep{mcmahan2016federated,kairouz2021advances}. In each round, the
 server collects the updates sent by the participating clients and improves
 the model, but the aggregate alone does not directly reveal how much each
 client contributed to that improvement. Such contribution estimates can serve
@@ -242,7 +242,8 @@ Our contributions are as follows.
 The common bottleneck of this line of work is the exponential number of
 coalition evaluations that the Shapley value demands. FedSV
 \citep{wang2020principled} reduces the number of coalitions to be evaluated
-through permutation sampling and group testing, as does GTG-Shapley
+through permutation sampling and group testing
+\citep{castro2009polynomial,jia2019towards}, as does GTG-Shapley
 \citep{liu2022gtg}, which reconstructs submodels from stored updates, through
 guided Monte Carlo sampling and truncation; ComFedSV
 \citep{fan2022improving} and SPACE \citep{chen2023space} instead replace or
@@ -279,7 +280,8 @@ the per-player displacements combine additively.
 FedDQC \citep{du2025feddqc} assesses the quality of a client's internal data
 through instruction--response alignment and schedules training accordingly,
 and FedHDS \citep{qin2025federated} selects coresets for federated
-instruction tuning using redundancy in representation space. iPFL jointly
+instruction tuning using redundancy in representation space. iPFL
+\citep{zhang2025incentivizing} jointly
 designs collaboration and payment rules in a personalized-model market. These
 studies show that quality control, selection, or incentive mechanisms are
 feasible at the scale of federated large language and foundation models.
@@ -290,7 +292,7 @@ feasible at the scale of federated large language and foundation models.
 \subsection{Federated Learning Setup and Notation}
 \label{sec:fedavg}
 
-In FedAvg \citep{mcmahan2016federated}, clients $k \in [N] := \{1,\dots,N\}$
+In FedAvg, clients $k \in [N] := \{1,\dots,N\}$
 hold local datasets of size $n_k$, and in round $r$ a participating set
 $P_r \subseteq [N]$ performs local training from the current model $w^r$.
 Client $k$ sends the resulting model difference $\Delta w_k^r$ to the server,
@@ -325,14 +327,14 @@ player $k$ is
 \bigl(U(S\cup\{k\})-U(S)\bigr).
 \end{equation}
 Within the specified game, this value satisfies efficiency, symmetry, the
-null-player property, and linearity \citep{shapley1953value}, but the Shapley
+null-player property, and linearity, but the Shapley
 formula itself does not determine which utility is the right one. Client
 contribution evaluation must therefore decide, before any computation, which
 counterfactual question it is to answer.
 
 Classical Data Shapley uses as utility the final performance of a model
-retrained from scratch using only the data in a coalition
-\citep{ghorbani2019data}. It asks, ``What model would have been obtained had
+retrained from scratch using only the data in a coalition. It asks,
+``What model would have been obtained had
 only these clients participated in training?'' Per-round contribution in an
 actual FL run asks a different question: ``Holding the current model and the
 updates actually received fixed, how much did a subset of these updates
@@ -345,7 +347,7 @@ and empirically.
 \subsection{In-Run Data Shapley}
 \label{sec:irds}
 
-In-Run Data Shapley (IRDS) \citep{wang2025data} fixes an actual training run
+In-Run Data Shapley (IRDS) fixes an actual training run
 rather than repeatedly performing hypothetical retraining, and views each
 gradient step as a small cooperative game. When step $t$ updates the model as
 $w^{t+1}=w^t-\eta_t\sum_{z\in B_t}\nabla\ell_z(w^t)$, where $\ell_z$ is the
@@ -631,8 +633,9 @@ five-domain dataset we constructed, and the CNN track evaluates FedSVCNN and
 LeNet5 \citep{lecun1998gradient} on CIFAR-10 \citep{krizhevsky2009learning},
 MNIST, and Fashion-MNIST \citep{xiao2017fashion}. The clients of the CNN
 track are partitioned in two ways, a uniform IID split and a non-IID
-Dirichlet($\alpha{=}1$) split, the latter abbreviated Dir(1) in the figures
-and tables. The corruption axis has five
+Dirichlet($\alpha{=}1$) split \citep{hsu2019measuring}, under which FedAvg is
+known to degrade \citep{zhao2018federated}; the latter is abbreviated Dir(1)
+in the figures and tables. The corruption axis has five
 entries: \emph{clean} (the uncorrupted control anchor), \emph{answer-swap}
 (data that is well formed but whose question--response correspondence is
 broken by a permutation; LLM), \emph{zero-update free-rider} (submitting a
