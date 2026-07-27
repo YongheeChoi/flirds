@@ -1,0 +1,19 @@
+{
+  "name": "1B_gsm50k5_clean_nr0.7_s2",
+  "git_sha": "bace3b83e865c4d2b64442ea1af7a2916fe60bdd",
+  "git_dirty": true,
+  "git_diff_stat": "REMAINING-b200.md                 | 67 +++++++++++++++++++++++++++++++--------\n runs/track_h/queue_b200_lane1.txt | 14 ++++----\n runs/track_h/queue_b200_lane2.txt | 12 +++----\n runs/track_h/queue_b200_lane3.txt | 10 +++---\n runs/track_h/queue_b200_lane4.txt | 15 +++++----\n 5 files changed, 81 insertions(+), 37 deletions(-)",
+  "env_hash": "812a656f211f80ca",
+  "versions": {
+    "torch": "2.12.0+cu130",
+    "transformers": "5.9.0",
+    "peft": "0.19.1",
+    "trl": "1.5.1",
+    "accelerate": "1.13.0",
+    "datasets": "4.8.5",
+    "numpy": "2.4.6",
+    "python": "3.12.3",
+    "cuda": "13.0",
+    "gpu": "NVIDIA B200"
+  }
+}
