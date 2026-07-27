@@ -24,9 +24,9 @@
 
 # ─── PHASE 1 — 현 컨테이너 (만료 07-27 21:11 이전 종료) ──────────────────────
 # [+  0.0h →  19.6h · 19.6h]
-phase2_matrix.py|G1_L2_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=0 MIN_METHODS=1
+#phase2_matrix.py|G1_L2_frzero_s0|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=0 MIN_METHODS=1   # [07-27 19:00] → 레인4 (지금 기동 · G1 최우선)
 # [+ 19.6h →  39.2h · 19.6h]
-phase2_matrix.py|G1_L2_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=1 MIN_METHODS=1
+#phase2_matrix.py|G1_L2_frzero_s1|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=1 MIN_METHODS=1
 # [+ 39.2h →  43.0h ·  3.8h]
 track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=flirds_gate_v2 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
 
@@ -62,3 +62,12 @@ track_g.py|L1_clean_online_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=
 #track_d.py|1B_anchor5_lr1e-3_st30_seed2|REGIME=anchor5 LR=1e-3 MAX_STEPS=30 SEED=2 LORA_R=16 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-27] G12 전량 제외 (Yonghee) — std50k5 실측 11.07h/셀로 용량 초과
 #track_d.py|1B_anchor5_r64_seed1|REGIME=anchor5 LORA_R=64 SEED=1 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-27] G12 전량 제외 (Yonghee) — std50k5 실측 11.07h/셀로 용량 초과
 #track_d.py|1B_std50k5_r64_seed1|REGIME=std20 N_CLIENTS=50 K_ABS=5 LORA_R=64 SEED=1 ORACLE_A=0 ARMS=0 FIDELITY=1 METHODS=Flirds,Flirds1st MMLU_LIMIT=0 RUNDIR_ROOT=__REPO__/runs/probe_signal/rundirs   # [07-27] G12 전량 제외 (Yonghee) — std50k5 실측 11.07h/셀로 용량 초과
+
+# [07-27 19:00] R-clean — 레인3 집결 (주석 해제 상태)
+phase2_matrix.py|1B_silo5_clean_removal_seed0|REGIME=silo5 THREAT=clean SEED=0 REMOVAL=1 RUNDIR_ROOT=__REPO__/runs/removal_dose/rundirs
+
+# [07-27 19:00] R-clean — 레인3 집결 (주석 해제 상태)
+phase2_matrix.py|1B_silo5_clean_removal_seed1|REGIME=silo5 THREAT=clean SEED=1 REMOVAL=1 RUNDIR_ROOT=__REPO__/runs/removal_dose/rundirs
+
+# [07-27 19:00] R-clean — 레인3 집결 (주석 해제 상태)
+phase2_matrix.py|1B_silo5_clean_removal_seed2|REGIME=silo5 THREAT=clean SEED=2 REMOVAL=1 RUNDIR_ROOT=__REPO__/runs/removal_dose/rundirs
