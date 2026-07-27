@@ -257,7 +257,30 @@ sbatch --array=72-215%8  runs/track_h/sbatch_cnn_mnist_comp.sh   # seeds 1-2
 - **torchvision 미설치 가능성**: JW 계정은 없어서 `0.26.0+cu128` 을 별도 설치했다(torch 2.11.0+cu128
   불변). HJ 도 CNN 첫 제출 전 `python -c "import torchvision"` 로 확인할 것.
 
-## 3d. 담당 ③ — G9 seed0 잔여 (JB 이관): mnist dir1 (a)-오라클 2셀
+## 3d. 담당 ③ — G9 seed0 잔여 (JB 이관): mnist dir1 (a)-오라클 2셀 — ✅ **완주 2/2, 실패 0** (07-27 12:38)
+
+> **착지**: `runs/track_c/c1/mnist_dir1_{free-rider,grad-noise}_seed0`, 둘 다 `EXIT=0`. 실측 **17.23 / 17.38 GPU-h**(JB seed1 실측 17.59 / 17.25 와 정합 — 예측이 실측을 맞힌 첫 사례). (a) 2¹⁰=1024 재학습 = 61,752 s / 62,291 s, `efficiency-gap` 4.44e-16 / 8.88e-16. `corrupt=[1,4,6,7]` 문서 예상대로. Ripple 은 두 위협 모두 update-level 이라 설계대로 스킵(`track_c1.py:382`). 커밋 `917f751`·`71f099e`.
+>
+> | method | free-rider ρ(b) / AUROC | grad-noise ρ(b) / AUROC |
+> |---|---|---|
+> | (b)oracle | — / 1.000 | — / 1.000 |
+> | **Flirds** | **+1.000** / 1.000 | **+0.976** / 1.000 |
+> | **Flirds1st** | **+1.000** / 1.000 | **+0.006** / **0.500** |
+> | Banzhaf | +1.000 / 1.000 | +1.000 / 1.000 |
+> | loss-heur | +1.000 / 1.000 | +1.000 / 1.000 |
+> | GTG | +0.969 / 1.000 | +0.806 / 1.000 |
+> | FedSV | +0.957 / 1.000 | +0.806 / 1.000 |
+> | ComFedSV | +0.869 / 1.000 | +0.673 / 1.000 |
+> | FedIF | +0.910 / 1.000 | +0.673 / 1.000 |
+> | ShapleyFL | **+0.394** / **0.500** | +0.794 / 1.000 |
+>
+> - **ρ(a) 천장은 0.957(fr) / 0.939(gn)** — `(b)oracle` 자신의 값이다. Flirds 가 정확히 거기 붙는다(0.957 / 0.903) = 잔차는 추정오차가 아니라 두 오라클의 게임 차이.
+> - **grad-noise 에서 Flirds-1st 만 붕괴**(ρ +0.006 · AUROC 0.500 = 무작위)하는데 **2차항을 넣은 Flirds 는 +0.976**. 같은 셀 다른 seed 에서도 방향이 같다(dir1 seed1 ρ +0.673/AUROC 0.75 · iid seed1 AUROC 0.75). **§5.6① "2차항이 필요하다" 주장의 CNN 측 직접 증거**이고, free-rider 에선 1st 로 충분(+1.000)하다는 대비까지 한 셀에서 나온다.
+> - ShapleyFL 은 free-rider 에서만 붕괴(+0.394 · AUROC 0.500)한다.
+>
+> **⚠ 집계 경로 정정** — `make_figures.py load_c1()` 은 **이 셀들을 안 읽는다**. `:99` 가 `c1/{ds}_{scen}_seed{n}` 의 **구 5-시나리오 그리드**(`mnist_iid_seed0` 등)만 훑어서 `{ds}_{part}_{threat}_seed{n}` 축 그리드는 스코프 밖이다(게다가 이 env 엔 matplotlib 이 없어 실행도 안 된다). 축 그리드 전용 집계기는 **아직 없다** — 필요하면 신규 작성 대상.
+>
+> **참고 — C1 축 그리드 잔여 5셀(전부 mnist seed0, HJ 몫 아님)**: `mnist_iid_{free-rider,grad-noise,label-flip_fr0.70}_seed0` · `mnist_dir1_{clean,label-flip_fr0.70}_seed0`. 축 그리드는 2ds×2part×4threat×3seed = 48 이고 현재 **43/48**.
 
 > **JB 가 seed0 pending 2셀을 이관**(2026-07-26). JB 는 3090 큐에서 `scancel 1878820` 후 seed1·2(16셀)만 유지. HJ 가 G10 완주 뒤 이 2셀을 흡수한다.
 
