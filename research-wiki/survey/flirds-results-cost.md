@@ -208,7 +208,7 @@ tags: [flirds, results, cost]
 - op-count: `python runs/measured_2026-07/op_counts.py`(해석적, seed-무관).
 - microbench: `runs/measured_2026-07/microbench/summary.json`.
 - runtime(LLM): `runs/phase2_matrix/analysis/{01_silo5,04_device100_anchor,02_device100_sweep,05_scale_3b}/csv/runtime_table.csv`(`make_analysis.py`) · `runs/track_d/rundirs*/*/metrics.json` → `runtime` dict.
-- **runtime(CNN)**: N=100 = `runs/track_c/c2fid/analysis/fidelity.csv`의 **`runtime_s` 열**(`make_analysis.py` 재생성 → 오염 3종 × 3seed 평균) · N=10 = `runs/track_c/c1/{ds}_label-flip_seed{0,1,2}/metrics.json`의 `methods.<m>.runtime` 및 `traj_time` · (a) 재학습 = `runs/track_c/c1_oracle/{ds}_label-flip_aonly_seed{0,1,2}/metrics.json`의 `t_a`.
+- **runtime(CNN)**: N=100 = `runs/track_c/c2fid/rundirs/*/metrics.json`의 **`methods.<m>.runtime`**(오염 3종 × 3seed 평균 — `analysis/fidelity.csv`엔 fidelity 지표만 있고 runtime 열은 없다) · N=10 = `runs/track_c/c1/{ds}_label-flip_seed{0,1,2}/metrics.json`의 `methods.<m>.runtime` 및 `traj_time` · (a) 재학습 = `runs/track_c/c1_oracle/{ds}_label-flip_aonly_seed{0,1,2}/metrics.json`의 `t_a`.
 - loss-heur C6 교정본: `runs/measured_2026-07/loss_heur_acct/`(silo5) · `runs/track_d/rundirs_e4_fedloo/`(anchor5·std20).
 - 위상분리: `runs/measured_2026-07/{timing_device100,e3_cost_smoke}/`.
 - C1 축 그리드(비-canonical 참고치): `python runs/track_c/c1/make_analysis.py` → `analysis/runtime_median.csv`(방법별 median) · `cells.csv`의 `traj_time`·`t_a`. **48/48셀 전수 기준**(cifar10 24 · mnist 24).

@@ -151,7 +151,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 |---|---|---|---|---|
 | **2차항(HVP)의 기여 — CNN 레그** | 부분참여 k-sweep(Flirds 0.891 vs 1차만 0.305)·grad-noise 개입서 1차계열 실명 vs Flirds만 회복. *↔ LLM 짝* | ● 3-seed | `[본문]` (§5.6①) | `probe_signal/cnn_c1` + `track_h`·`c2fid` GN |
 | **A축 용량 lever probe — CNN** | 폭×참여 스윕: lever가 cross-seed 신호를 못 만들고 fidelity는 전반 1.000(Taylor tradeoff 없음). *↔ LLM 짝* | ● 3-seed | `[본문]` (§5.6②) | `runs/probe_signal/cnn_c1`·`cnn_c2` |
-| **Removal-curve — CNN** | worst-first 제거가 acc 분리(+0.045=(b)동급)·저순위 방법 ≈0 = 순위→성능 인과. *↔ LLM 짝* | ● 3-seed | `[본문]` (§5.6③) | `runs/removal_dose/rundirs_cnn` |
+| **Removal-curve — CNN** | worst-first 제거가 acc 분리·저순위 방법 ≈0 = 순위→성능 인과. *↔ LLM 짝* | ● 3-seed — **오염축 정렬 9셀 완주**(cifar10/iid × lf@0.70·frzero·gn); 결과 페이지는 아직 레거시 시나리오(label_flip·feature_noise) 표 = **전사 대기** | `[본문]` (§5.6③) | `runs/removal_dose/rundirs_cnn/cifar10_iid-*` |
 | **정밀도(TF32) A/B** | cuDNN conv TF32 on/off가 CNN 결론(final_acc·φ 순위)을 안 바꿈 실측 | ● seed0 | `[검증-전용]` | `runs/measured_2026-07/tf32_ab` |
 
 ### 4-LLM
@@ -196,7 +196,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **CNN 실측 runtime — 무대별 전 방법** | N=100 부분참여(9방법 × cifar10 dir1/iid) + N=10 전원참여(9방법 × mnist/cifar10) + 참조 행(학습 궤적 · (a) 2¹⁰ 재학습). **추가 실험 0** — c2fid `runtime_s` 열과 C1 `metrics.json`에 3-seed 실측이 이미 있음 | ● 3-seed | `[부록]` | `runs/track_c/c2fid/analysis/fidelity.csv`(runtime_s) · `runs/track_c/{c1,c1_oracle}` |
+| **CNN 실측 runtime — 무대별 전 방법** | N=100 부분참여(9방법 × cifar10 dir1/iid) + N=10 전원참여(9방법 × mnist/cifar10) + 참조 행(학습 궤적 · (a) 2¹⁰ 재학습). **추가 실험 0** — c2fid·C1 `metrics.json`의 `methods.<m>.runtime`에 3-seed 실측이 이미 있음 | ● 3-seed | `[부록]` | `runs/track_c/c2fid/rundirs/*/metrics.json` · `runs/track_c/{c1,c1_oracle}` |
 | **자기-궤적 재실행 비용 (제외 baseline)** | 제외 비교군의 자기-궤적 재실행 비용을 별도 위상으로 분리 실측 | ● seed0 | `[검증-전용]` | `runs/measured_2026-07/e3_cost_smoke` |
 
 ---
@@ -217,12 +217,12 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | 축 | CNN | LLM |
 |---|---|---|
 | **Fidelity** | 부분참여 충실도(in-run) ● · (retrain)오염축 정렬 축 그리드 vs (a) **● 48/48 완주** | 정확도-무대 충실도(in-run) **◐ 7/9**(clean·noisy 3-seed) · (retrain)silo5 (a)-leg ● |
-| **Downstream** | 점수원 경쟁 dir1 ● · **iid ●**(07-26) · mnist ◐ | 정확도 개입(GSM8K) ●(online 레그 6/6 완주 07-27) · (근거)무해성 ● |
-| **Detection** | 부분참여 φ-AUROC ● (mnist 무대는 c2fid 미지원 ⬚) | 주무대 탐지 **◐ 7/9** |
-| **Ablation** | 2차항·lever·removal (CNN 레그) ● · φ 부호 감사 CNN 레그 ◐ | removal (LLM 레그) ● · **2차항·lever LLM 레그 ⛔ 미수록** |
+| **Downstream** | 점수원 경쟁 dir1 ● · **iid ●** · **mnist ●**(기준 arm 포함) | 정확도 개입(GSM8K) **●**(9칸 3-seed) · (근거)무해성 ● |
+| **Detection** | 부분참여 φ-AUROC ● (**mnist 무대 ● 24/24**) | 주무대 탐지 **◐ 7/9** |
+| **Ablation** | 2차항·lever·removal (CNN 레그) ● · **φ 부호 감사 CNN 레그 ●**(48/48) | removal (LLM 레그) ● · **2차항·lever LLM 레그 ⛔ 미수록** |
 | **비용·규모** | op-count·microbench·runtime ● | 지수-스케일링 ●/◐ · 위상분리 ● |
 
-> **선택 관점 힌트**(2026-07-27 야간 갱신): **CNN 쪽 구멍이 전부 닫혔다** — G3·G2·G14·G8에 이어 **G9 종료**로 1B-CNN 축 그리드가 **48/48 전수**가 됐고(부록 vs (a) mnist 행 인용 가능), **G10·G14 종료**로 mnist downstream도 정본이다. **G4도 종료**(R4 clean 열 3런 착지 → online 9칸 3-seed, clean parity 판정 최초 가능). 남은 것은 **① G1 frzero 2셀**(R4-L2 완주를 막는 유일한 P0 — clean·noisy는 이미 3-seed로 Flirds ρ 0.999~1.000·φ-AUROC 1.000 확보) **② G6 ~8런**(removal-curve CNN, P1). 즉 무게중심이 G1에서 **G6으로 넘어가는 중**이고, 부록(P2)은 잔여 0이다. 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".
+> **선택 관점 힌트**(2026-07-28 갱신): **CNN 쪽 구멍이 전부 닫혔다** — 축 그리드 48/48 전수 · mnist downstream(기준 arm 포함) 정본 · c2fid mnist 24/24 · **removal-curve CNN 오염축 정렬 9셀 완주**(G6 종료). LLM 쪽도 R4 개입이 9칸 3-seed다. **남은 실험은 G1 frzero 2셀 하나뿐**(R4-L2 완주를 막는 유일한 P0 — clean·noisy는 이미 3-seed로 Flirds ρ 0.999~1.000·φ-AUROC 1.000 확보). 그 외는 전부 표 정리·문서 재작성이다. 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".
 
 ## 상호 링크
 - **수록 확정·결손 정본**: [[flirds-paper-experiment-plan]] (본문/부록 목록 + 실험 설계 세션 입력)
