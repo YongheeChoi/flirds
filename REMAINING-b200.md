@@ -4,7 +4,99 @@
 > **역할 = HVP(flirds 2차 φ, 95–106 GiB) 전용 + canonical timing.** 48GB 로는 기본 knob 불가 → 여기 있는 건 **B200 아니면 못 한다**.
 > **마감: 실험 07-28 24:00 / 논문 07-29 21:00.** 3-seed. push는 Yonghee 직접. 수치 = rundir/analysis 재생성 값만.
 > **B200 이 이번 계획의 임계경로다** — 전체 종료 시각을 여기가 정한다.
-> ~~**현재 돌고 있는 실험 없음**(07-25 기준)~~ → **가동 중**. 현황은 **§0′.4–§0′.7**(07-27 갱신)만 읽는다.
+> ~~**현재 돌고 있는 실험 없음**(07-25 기준)~~ → **가동 중**. **새 세션은 §0″(콜드 스타트)만 읽으면 재개된다.**
+
+## 0″. ★ 콜드 스타트 — **새 세션은 이 절만 읽고 재개하면 된다** (07-27 19:20 기준)
+
+> 컨테이너가 만료되면 세션이 끊긴다. 이 절은 **아무 맥락 없이 들어와도 재개 가능**하도록 자립돼 있다.
+> 더 깊은 배경은 §0′(왜 이렇게 됐나) · `runs/track_h/B200_SWAP_RUNBOOK.md`(운용 상세).
+
+### 1) 지금 무슨 일을 하고 있나
+
+Llama-3.2-1B · GSM8K 무대(`gsm50k5`, N=50 · 5/50 · R=200)에서 **in-run (b) 오라클을 붙여
+Flirds/Flirds-1st 의 기여도 충실도를 재는 것**이 주작업(G1)이고, 거기에 clean 열 개입 실험(L1),
+ShapleyFL β 재산출(B), removal-curve clean 대조(R-clean)가 붙는다. **B200 아니면 못 한다**
+(2차항 HVP peak 95–110 GiB). 마감 = **실험 07-28 24:00**.
+
+### 2) 환경 (그대로 쓰면 된다)
+
+| 항목 | 값 |
+|---|---|
+| 구성 | **컨테이너 4대 `yong-1..4` × B200 1장** (단일 4-GPU 서버 아님) |
+| 레포 | `/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds` (lustre · 공유·영속) |
+| 배치 | `/NHNHOME/26msit001_A/BASE/edge_ai_lab/yonghee/flirds_batch` (venv·HF캐시·로그) |
+| python | `$BATCH/venv/bin/python` = torch 2.12.0+cu130 **canonical** |
+| 제어 | `bash runs/track_h/b200_fleet.sh {status,up,tail,drain,seal,kill}` — 4대 SSH 동시 제어 |
+| 런처 | `runs/track_h/run_b200_lane.sh` (`LANE=1..4`, `GPUS="0"`), 큐 = `queue_b200_lane{1..4}.txt` |
+
+홈(`/home/edgeai_lab`)은 노드-로컬이라 사라진다 — 런처가 `HOME=$BATCH/home` 으로 갈아끼우므로 무관.
+**lustre 에 rundir·로그·큐가 전부 남으므로 컨테이너가 죽어도 재기동만으로 이어진다.**
+
+### 3) 상태 확인
+
+```bash
+bash runs/track_h/b200_fleet.sh status      # 4레인 driver/GPU/현재셀/큐진행
+git -C <repo> status --short                # 새로 착지한 rundir(=미커밋)
+```
+
+### 4) 재개 절차 — **`seal` → `up` 두 번이면 끝**
+
+```bash
+bash runs/track_h/b200_fleet.sh status      # 4대 도달 확인
+bash runs/track_h/b200_fleet.sh seal        # 완주 셀을 레포 큐에 '#' 처리(삭제 아님)
+bash runs/track_h/b200_fleet.sh up          # 전 레인 기동 (특정 레인만: up 2)
+```
+
+`seal` 은 **전 레인 로그를 뒤진다** — 부하균형으로 셀이 다른 레인에서 돌았어도 정상 처리된다.
+GPU 를 4장 못 받으면 `up 2` `up 4` 처럼 **레인2·4 만** 띄운다(아래 우선순위).
+
+### 5) 잔여 작업 (07-27 19:20 기준)
+
+| 우선 | 셀 | 레인 | 단가 | 없으면 |
+|---|---|---|---|---|
+| **1** | `G1_L2_frzero_s0` · `G1_L2_frzero_s2` | **4 · 2** | 9.4h | **G1 frzero 가 1-seed → §5.2 fidelity·§5.4 탐지 표에서 frzero 행을 못 쓴다** |
+| 2 | `1B_anchor5_sflb03_seed{0,1,2}` (B) | 1 | 2.4h | 본문 [F4] ShapleyFL 행이 "β=.5 잠정" 으로 남음 |
+| 3 | `1B_silo5_clean_removal_seed{0,1,2}` (R-clean) | 3 | 2.5h | 부록 T13 removal 의 clean 대조 부재 = 위협-특이성 미증명 |
+| — | `L1_clean_obs_s2` | 3(진행 중) | 6.0h | clean observer 가 2-seed 로 남음 |
+
+**이미 끝난 것**: G1 7/9(`clean_s{0,1,2}` · `noisy_s{0,1,2}` · `frzero_s1`) · L1 clean online 3/3 ·
+observer 2/3 · L11 9셀(HJ). **`frzero_s0` 은 07-27 04:06 에 `std_dagmm` 크래시로 전손 → 재실행분이다.**
+
+**마감 역산**(07-28 24:00): 4장이면 **14:24**, 2장이면 **07:00**, G1 만 2장이면 **14:24**,
+G1 만 1장이면 **04:48** 까지 시작하면 된다. 1장으로 전량은 불가(33.9 GPU-h).
+
+### 6) 하드룰 (어기면 전손)
+
+- **`BATCH` 를 export 하지 말 것** — 세 러너가 batch-size 노브로 읽는다. 경로가 들어가면 전 셀이
+  15초 만에 `ValueError` 로 죽고 드라이버가 큐를 소진한다(07-25 실사례). 런처가 `export -n` 으로 막아 뒀다.
+- **`VAL_MAXLEN`·학습 batch·`ROUNDS` 를 어디에도 주지 말 것** — φ·궤적이 달라진다(레짐 기본 R=200).
+- **큐는 줄 삭제 금지, `#` 주석만** — 드라이버가 `consumed` 인덱스로 추적한다. **가동 중 순서 변경 금지**
+  (추가는 파일 끝 append 만 안전). 순서 변경은 **드라이버 정지 상태에서만**.
+- **중도 kill 금지** — `phase2_matrix` 는 cell-end 1회 persist 라 kill = 그 셀 전손이고 드라이버가
+  재시도하지 않는다. 정지는 `drain`. (역으로, **잘린 셀은 rundir 을 안 남기므로 부분 오염은 없다** —
+  재실행하면 그만이다.)
+- **기동 후 `git pull` 금지**(셀이 다른 sha 로 갈린다). push 는 **Yonghee 직접**.
+- **G1 은 `MIN_METHODS=1` 로만 돌린다** — 큐 줄에 이미 박혀 있다. 빼면 30.7h/셀이 된다(§0′.3).
+
+### 7) 알려진 함정
+
+1. **드라이버는 큐가 마르면 스스로 죽는다.** 레인이 놀고 있으면 `status` 의 `driver=idle` 을 확인하고
+   다시 `up <레인>`. (07-27 레인4 가 이렇게 2h 유휴했다.)
+2. **완주 판정에 exit code 를 쓰지 말 것** — 실행 증거는 `grep -c train_runtime <log> >= 1`,
+   완주는 `MATRIX DONE`/`TRACK G DONE` + rundir 존재.
+3. **rundir 이름에 `nr0.7` 이 무조건 붙는다** — `1B_gsm50k5_**clean_nr0.7**_s0`. `..._clean_s*` 로
+   글롭하면 놓친다. `track_g` 는 반대로 noisy/mixed 에만 붙는다.
+4. **frzero 는 `train_runtime` 이 1000 미만이 정상**(클라 0–19 = 20/50 이 무학습 → 618/1000).
+   절단 판정은 로그가 아니라 rundir·마커로 한다.
+5. **큐의 옛 취소분(G5·G12)을 되살릴 때 하나만 풀 것** — 07-26 취소분과 `[07-27 추가]` 블록이
+   셀 이름이 겹친다. 둘 다 풀면 같은 rundir 를 다른 config 로 두 번 덮어쓴다.
+
+### 8) 셀이 착지하면
+
+`git status --short` 에 `?? runs/.../rundirs/...` 로 뜬다 → **커밋한다(push 는 Yonghee)**.
+분석 재생성은 `runs/phase2_matrix/make_analysis.py` · `runs/track_h/make_analysis.py`.
+
+---
 
 ## 0′. ⚠ 07-26 재계획 — **아래 §0~§6 의 단가·배분은 폐기됐다**
 
