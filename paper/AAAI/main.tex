@@ -122,36 +122,27 @@ each participant's update contributed to improving the jointly trained model.
 Because an FL server does not hold the clients' raw data, it cannot by itself
 perform the subset retraining on which classical data valuation is based, and
 contributions must instead be evaluated from the updates received in actual
-rounds. The Shapley value is widely used for contribution evaluation because
-it provides a consistent attribution principle within a specified cooperative
-game, but computing it exactly requires a number of coalition evaluations
-exponential in the number of participating clients. Existing approximations
-reduce the number of evaluations through sampling and truncation but still
-require repeated evaluation of coalition models, and some cheaper alternative
-scores and influence scores do not directly approximate the Shapley value of
-a stated game, or compute values defined by a different utility or weighting.
-What is needed, therefore, is a client-level contribution evaluation method
-that is explicit not only about computational efficiency but also about what
-it approximates and how its error should be interpreted.
-To this end we propose \textbf{Flirds} (Federated Learning In-Run Data
-Shapley), a client-level contribution estimator. Flirds defines a cooperative
-game whose players are the client updates actually received by the server,
-with the round's server aggregation weights held fixed across all coalitions;
-the update of the grand coalition therefore coincides exactly with the
-aggregation the server actually performed. We take as our reference the
-per-round Shapley values obtained by exhaustively evaluating this game over
-all coalitions, and extend the Taylor calculation of In-Run Data Shapley (IRDS)
-to client updates, computing the Shapley value of a second-order surrogate
-game in closed form. This replaces the exponential coalition evaluations with
-one server-side Hessian-vector product per round and one inner product per
+rounds. The Shapley value provides a consistent attribution principle within
+a specified cooperative game, but computing it exactly requires exponentially
+many coalition evaluations in the number of participating clients, and
+existing approximations reduce this cost at the price of obscuring what is
+being approximated and how the error should be interpreted.
+We propose \textbf{Flirds} (Federated Learning In-Run Data Shapley), a
+client-level contribution estimator. Flirds defines a cooperative game whose
+players are the client updates actually received by the server, with the
+round's server aggregation weights held fixed across all coalitions, and
+extends the Taylor calculation of In-Run Data Shapley (IRDS) to client
+updates, computing the Shapley value of a second-order surrogate game in
+closed form. This replaces the exponential coalition evaluations with one
+server-side Hessian-vector product per round and one inner product per
 participant, with no additional communication or client-side computation.
-Moreover, because the reference and the estimate target the same game, their
-difference can be interpreted as the Taylor residual rather than a difference
-in game definition or sampling error. Experiments validate the accuracy of
-the estimates through ranking and value comparisons against the exhaustively
-enumerated Shapley values, and their practical effectiveness through actual
-training improvement under a shared intervention policy together with
-measured computational cost.
+Because the estimates are compared against the per-round Shapley values
+obtained by exhaustively enumerating the same game, their difference can be
+interpreted as the Taylor residual rather than a difference in game
+definition or sampling error. Experiments validate the accuracy of the
+estimates through ranking and value comparisons against this reference, and
+their practical effectiveness through actual training improvement under a
+shared intervention policy together with measured computational cost.
 \end{abstract}
 
 % Uncomment the following to link to your code, datasets, an extended version or similar.
@@ -322,10 +313,10 @@ feasible at the scale of federated large language and foundation models, but
 they do not compute how much each client's update improved the jointly
 trained model in a realized training run.
 
-\section{Problem Formulation and Background on In-Run Attribution}
+\section{Problem Setup and Background}
 \label{sec:background}
 
-\subsection{The Observed Federated Learning Run}
+\subsection{Federated Learning Setup and Notation}
 \label{sec:fedavg}
 
 In FedAvg \citep{mcmahan2016federated}, clients $k \in [N] := \{1,\dots,N\}$
@@ -349,7 +340,7 @@ sum of these updates. This paper therefore takes the updates submitted by the
 clients as the units of evaluation and evaluates each round's contributions
 from the observed update vectors and the server's validation loss.
 
-\subsection{Defining Contribution}
+\subsection{Contribution via the Shapley Value}
 \label{sec:datashapley}
 
 Given a player set and a coalition utility, the Shapley value averages each
@@ -380,7 +371,7 @@ trajectory; the two values are answers to different games. We take the latter
 as our direct target and analyze its relationship to the former separately
 and empirically.
 
-\subsection{The Computational Idea of In-Run Data Shapley}
+\subsection{In-Run Data Shapley}
 \label{sec:irds}
 
 In-Run Data Shapley (IRDS) \citep{wang2025data} fixes an actual training run
@@ -435,71 +426,92 @@ Shapley value the computed quantity targets. The next section first
 defines a game that preserves the actual FedAvg displacement and then
 explains how Flirds reduces the cost of computing that game.
 
-\section{Flirds: The Federated In-Run Game and Its Closed-Form Estimation}
+\section{Method}
 \label{sec:flirds}
 
-\subsection{The Federated Game and the Two Ground Truths}
+% Figure 1: generated from Figures/figure1_flirds_concept_prompt.md (07-27
+% naming: in-run Shapley / retraining-based Shapley). The caption replaces
+% the Section 4 intro paragraph (07-27 decision).
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/overview.png}
+\caption{(a) The observed round game (Eq.~\eqref{eq:round-utility}):
+coalition displacements composed with the actual aggregation weights and the
+validation-loss decrease they produce; the displacement of the grand
+coalition is exactly the aggregation the server performed. (b) The relation
+among the three values: the in-run Shapley and the retraining-based Shapley
+answer different games (their relation is characterized empirically,
+Section~5.2), and Flirds is the Shapley value of the second-order surrogate
+of the round game, so its only error is the Taylor truncation. Bottom: cost
+--- $2^N$ retrainings vs.\ $\sum_r 2^{|P_r|}$ forward passes vs.\ one HVP per
+round. Section~\ref{sec:game} defines the game in (a),
+Section~\ref{sec:estimator} the closed-form estimator, and
+Section~\ref{sec:theory} the error structure in (b) and the scope.}
+\label{fig:overview}
+\end{figure*}
+
+\subsection{The Federated Round Game}
 \label{sec:game}
 
-The classical ground truth of data valuation, the \emph{exact retrain
-Shapley}, retrains from scratch for $R$ rounds with only the client subset $S$
-participating and takes the validation-loss decrease of the resulting final
-model $w_S^R$ (with $w_\emptyset^R = w^0$),
-\begin{equation}\label{eq:retrain}
-U^{\mathrm{re}}(S) = \lval(w^0) - \lval\big(w_S^R\big),
-\end{equation}
-whose Shapley value $\phi_k^{\mathrm{re}} = \phi_k(U^{\mathrm{re}})$ is
-computed without approximation by retraining all $2^N$ subsets (a
-method-neutral ground truth; the question it asks is the counterfactual ``had
-only $S$ participated''). The round structure of FL, meanwhile, corresponds
-exactly to the step structure of IRDS: in the step game of
-Eq.~\eqref{eq:irds-utility}, substituting the round's weighted per-client
-update $p_k^r \Delta w_k^r$ for the sample gradient term
-$-\eta_t \nabla \ell_z$ transplants the game to the client level, and the
-ingredients are nothing but what the server receives anyway under the standard
-protocol. We freeze the realized trajectory
-$\{w^r, \{\Delta w_k^r\}_{k \in P_r}\}_{r=0}^{R-1}$ (the \emph{frozen
-trajectory}; every method below consumes this same training log) and define
-the per-round coalition utility, for $S \subseteq P_r$, as
+The round structure of FL corresponds formally to the step structure of IRDS:
+in the step game of Eq.~\eqref{eq:irds-utility}, substituting the round's
+weighted per-client update $p_k^r\,\Delta w_k^r$ for the sample-gradient term
+$-\eta_t \nabla\ell_z$ defines the same additive structure at the level of
+client updates. We fix the realized trajectory
+$\{w^r, \{\Delta w_k^r\}_{k \in P_r}\}_{r=0}^{R-1}$ and define the per-round
+coalition utility, for $S \subseteq P_r$, as
 \begin{equation}\label{eq:round-utility}
 u_r(S) = \lval(w^r)
 - \lval\Big(w^r + \textstyle\sum_{k \in S} p_k^r\, \Delta w_k^r\Big).
 \end{equation}
-The weights are the \emph{fixed weights} $p_k^r$ that the run itself used; we
-do not renormalize within $S$. Renormalizing within $S$, as some baselines do
-(GTG-Shapley, FedSV), is not an implementation detail but a \emph{different
-cooperative game}: a zero-update free-rider comes to receive a nonzero value;
-there are counterexamples in which rankings flip under unequal data sizes,
-partial participation, and second-order curvature (Appendix~A); and the
-sum-form structure that folds a round into a single HVP breaks, so the
-closed-form computation no longer holds. The \emph{exact in-run Shapley}
-$\phi^{\mathrm{in}}$ is the sum of each round game's Shapley value computed
-without approximation by exhaustively enumerating all $2^{|P_r|}$ subsets per
-round: $\phi_k^{\mathrm{in}} = \sum_{r:\, k \in P_r} \phi_k(u_r)$. The
-efficiency of IRDS carries over, combined with telescoping:
+The players are the clients' weighted updates, each submitted after multiple
+local steps, and the coefficients $p_k^r$ are the values the actual
+aggregation used, without renormalizing within a coalition. The displacement
+of the coalition containing all participants therefore coincides exactly with
+the aggregation the server actually performed. Because the unit is a round
+rather than a step, this game differs from the IRDS step game
+(Appendix~A.5), and the game with renormalized coefficients is likewise a
+different game (Appendix~A.6).
+
+We call the value obtained by computing this game's Shapley value through
+exhaustive enumeration of the $2^{|P_r|}$ subsets in each round and
+accumulating over rounds the \emph{in-run Shapley} $\phi^{\mathrm{in}}$:
+$\phi_k^{\mathrm{in}} = \sum_{r:\, k \in P_r} \phi_k(u_r)$. Although the
+player set changes from round to round, if a client that did not participate
+in a round is taken to leave the utility unchanged when added to a coalition
+($u_r(S) = u_r(S \cap P_r)$), every round game becomes a game on the full
+client set, and the sum above coincides exactly with the Shapley value of the
+whole-run game $U^{\mathrm{in}} := \sum_r u_r$ (the same argument as IRDS's
+summation over steps; Appendix~A.2). Combining per-round efficiency
+$\sum_k \phi_k(u_r) = u_r(P_r)$ with the fact that the grand coalition's
+displacement is the actual aggregation gives
+$u_r(P_r) = \lval(w^r) - \lval(w^{r+1})$, so the intermediate terms telescope
+when rounds are summed and the values of all clients add up to the
+validation-loss improvement of the entire run:
 $\sum_k \phi_k^{\mathrm{in}} = \sum_{r=0}^{R-1} u_r(P_r)
 = \lval(w^0) - \lval(w^R)$.
 
-\textbf{Terminology.} Throughout, ground truth (oracle) refers to exactly two
-objects: the \emph{exact retrain Shapley} above (exhaustive per-subset
-retraining) and the \emph{exact in-run Shapley} just defined (exhaustive
-per-round enumeration). We always use the full names and never an unqualified
-``exact.'' For both, larger is more beneficial (positive when the validation
-loss is reduced).
+For comparison we also carry the classical definition of data valuation
+transported to the client level: the Shapley value of the validation-loss
+decrease $U^{\mathrm{re}}(S) = \lval(w^0) - \lval(w_S^R)$ of the final model
+$w_S^R$ (with $w_\emptyset^R = w^0$) obtained by retraining $R$ rounds from
+scratch with only the client subset $S$ participating, computed by exhaustive
+retraining of all $2^N$ subsets. Following IRDS's terminology, we call this
+the \emph{retraining-based Shapley}. The relation between the two values is
+characterized empirically in Section~5.2.
 
 \subsection{The Closed-Form Estimator}
 \label{sec:estimator}
 
-The exact in-run Shapley involves no approximation, but it demands
-$2^{|P_r|}$ validation evaluations per round. Flirds starts from the fact that
-the Shapley value of $\hat u_r$, the approximate game obtained by
+Exhaustive enumeration of the in-run Shapley involves no approximation but
+requires $2^{|P_r|}$ validation evaluations per round. Flirds starts from the
+fact that the Shapley value of $\hat u_r$, the approximate game obtained by
 Taylor-expanding the round utility to second order around $w^r$, comes out in
-closed form (Proposition~\ref{prop:closed}). Writing
-$g_r := \nabla \lval(w^r)$, $H_r := \nabla^2 \lval(w^r)$ (the true Hessian,
-not a Gauss--Newton approximation), $\delta_k^r := \Delta w_k^r$, the
-aggregate displacement of a coalition
+closed form (Theorem~4 of IRDS; Appendix~A.3). Writing
+$g_r := \nabla \lval(w^r)$, $H_r := \nabla^2 \lval(w^r)$,
+$\delta_k^r := \Delta w_k^r$, the aggregate displacement of a coalition
 $\Delta_S^r := \sum_{k \in S} p_k^r\, \delta_k^r$, and
-$\Delta W_r := \Delta_{P_r}$:
+$\Delta W_r := \Delta_{P_r}^r$:
 \begin{equation}\label{eq:closed}
 \begin{split}
 \hat\phi_k^{(r)}
@@ -509,69 +521,115 @@ $\Delta W_r := \Delta_{P_r}$:
 \hat\phi_k &= \sum_{r\,:\,k\in P_r} \hat\phi_k^{(r)}.
 \end{split}
 \end{equation}
-The first term measures how well $k$'s update aligns with the descent
-direction of the validation loss; the second, the \emph{client-interaction
-term}, measures how $k$'s update composes, through curvature, with the other
-participants' aggregate update. (The sign of the first term differs from
-Eq.~\eqref{eq:irds-closed} because there the displacement
-$-\eta_t \nabla \ell_z$ carries an explicit minus sign, whereas here
-$\delta_k^r$ is itself the displacement.) All a round requires is \emph{one}
-Hessian-vector product (HVP) $H_r \Delta W_r$, computed with forward-mode
-automatic differentiation, plus one inner product per participant. No Hessian
-is ever materialized or inverted, and the cost is independent of the number of
-subsets $2^{|P_r|}$. The variant with the second-order term removed is called
-\emph{Flirds (first-order)} and serves as an ablation of the interaction term.
+The first term measures how well $k$'s update alone aligns with the descent
+direction of the validation loss. The second, the \emph{second-order
+curvature term}, distributes the share by which $k$'s update couples through
+curvature with the round's entire aggregate displacement, distinguishing
+updates that overlap in the same direction --- whose marginal gain shrinks ---
+from updates that complement one another. The sign of the first term differs
+from Eq.~\eqref{eq:irds-closed} because here $\delta_k^r$ is itself the
+displacement.
 
-\subsection{Theory: The Estimator and the Exact In-Run Shapley Compute the
-Same Game}
+The only heavy per-round computations are the validation gradient $g_r$ and
+the Hessian-vector product (HVP) $H_r \Delta W_r$, and both are obtained
+together from a single forward-over-reverse JVP call (primal output $= g_r$,
+tangent output $= H_r \Delta W_r$). The per-participant computation is one
+inner product with $v_r := g_r + \tfrac12 H_r \Delta W_r$
+(Algorithm~\ref{alg:flirds}; the side costs are $O(|P_r|\,d)$ inner products
+and storing the updates within a round). No Hessian is ever materialized or
+inverted, and the cost is independent of the number of subsets $2^{|P_r|}$.
+Because the server holds each client's $\delta_k^r$ individually, the
+machinery needed to handle per-sample gradients in the centralized setting is
+not used here. The variant with the second-order term removed is called
+\emph{Flirds-1st} and serves as an ablation of the curvature term.
+
+\begin{algorithm}[t]
+\caption{Flirds (server side; one round $r$). Lines 3--6 correspond
+one-to-one to the implementation's \texttt{jvp(grad(vloss), \ldots)} call and
+the folding of $v_r$.}
+\label{alg:flirds}
+\begin{algorithmic}[1]
+\REQUIRE model $w^r$, participants $P_r$, updates $\{\delta_k^r\}$, data
+sizes $\{n_k\}$, validation set $D_{\mathrm{val}}$
+\STATE $p_k^r \gets n_k / \sum_{j \in P_r} n_j$
+\COMMENT{actual aggregation weights (Eq.~\eqref{eq:fedavg})}
+\STATE $\Delta W_r \gets \sum_{k \in P_r} p_k^r\, \delta_k^r$
+\COMMENT{aggregate displacement the server computes anyway}
+\STATE $(g_r, h_r) \gets \mathrm{jvp}(\nabla \lval,\, w^r;\, \Delta W_r)$
+\COMMENT{one call: primal $= g_r$, tangent $= H_r \Delta W_r$}
+\STATE $v_r \gets g_r + \tfrac12 h_r$
+\FOR{$k \in P_r$}
+\STATE $\hat\phi_k \gets \hat\phi_k - p_k^r\, \langle \delta_k^r, v_r \rangle$
+\COMMENT{equivalent to Eq.~\eqref{eq:closed}; one inner product}
+\ENDFOR
+\STATE $w^{r+1} \gets w^r + \Delta W_r$
+\COMMENT{standard FedAvg aggregation (Eq.~\eqref{eq:fedavg})}
+\ENSURE accumulated contributions $\hat\phi$ (no extra client computation or
+communication; identical when recomputed post hoc from frozen logs)
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Approximation Error and Scope}
 \label{sec:theory}
 
-The point of this section is one sentence: Flirds computes not an arbitrary
-score but the Shapley value of precisely the game defined by
-Eq.~\eqref{eq:round-utility}, and its sole difference from the exact in-run
-Shapley is the Taylor truncation. Formal statements, proofs, assumptions,
-counterexamples, and numerical verification are in Appendix~A.
+Flirds does not compute the nonlinear game of Eq.~\eqref{eq:round-utility}
+itself exactly. What it computes exactly is the \emph{Shapley value of the
+second-order Taylor surrogate} that uses the same fixed trajectory, the same
+aggregation weights, and the same expansion point; its difference from the
+in-run Shapley is therefore neither a difference in game definition nor
+sampling error, but only the per-round Taylor truncation. The Shapley axioms
+hold exactly on the surrogate game, so unlike sampling-based estimators no
+additional axiom violations arise (Remark~3 of IRDS). Formal statements,
+assumptions, bounds, counterexamples, and numerical verification are in
+Appendix~A.
 
-\begin{proposition}[Per-round decomposition]\label{prop:decomp}
-On the frozen trajectory, the Shapley value of the total game $\sum_r u_r$
-(each $u_r$ extended to a game on $[N]$ by $u_r(S) := u_r(S \cap P_r)$ before
-summing) decomposes exactly into the sum of the Shapley values of the
-per-round $|P_r|$-player games. (That non-participating rounds contribute
-zero is a theorem, not a definition.)
-\end{proposition}
+Three properties follow from the surrogate game. First, a client receives
+value zero in rounds it does not participate in, so the server can simply
+assign values to that round's participants each round and add them up (the
+intermittent-participation setting of Section~1) --- online accumulation is a
+consequence of the game, not a convention. Second, a zero-update free-rider
+with $\delta_k^r = 0$ in every participating round receives
+$\hat\phi_k = 0$ \emph{algebraically exactly}. Because this zero is algebraic
+rather than rounded, the question of whether a contribution is zero can be
+asked without threshold tuning, which is the basis for the sign-gating of
+Section~5.3 using threshold zero (the conditions under which the zero holds
+on the game side are in Appendix~A.3). Third, the values sum to the total
+improvement of the surrogate game (efficiency) --- the gap to the realized
+improvement is precisely the residual below (Section~6.1).
 
-\begin{proposition}[Closed form; free-rider zero; efficiency]
-\label{prop:closed}
-For the second-order Taylor approximation game $\hat u_r$ of the round
-utility, the exact Shapley value equals Eq.~\eqref{eq:closed} exactly:
-$\hat\phi_k^{(r)} = \phi_k(\hat u_r)$ (proof in Appendix~A). Two corollaries:
-a zero-update free-rider with $\delta_k^r = 0$ in every participating round
-receives \emph{exactly} $\hat\phi_k = 0$ algebraically, and the values sum to
-the total utility of the approximate game (efficiency).
-\end{proposition}
+How large, then, is the truncation? IRDS mentions this error only as an
+order in the step size; a round's displacement is larger than a step's, so
+here we state the assumptions and constants and bound it. If the validation
+loss is $C^3$ and the local curvature constants $M_2^r, M_3^r$ are bounded in
+a neighborhood of the round displacement, the per-round utility error is
+bounded by $\frac{M_3^r}{6}\|\Delta_S^r\|^3$ for the second-order surrogate
+and by $\frac{M_2^r}{2}\|\Delta_S^r\|^2$ for the first-order one. This error
+propagates to the player values at the same order and sums over rounds,
+giving
+$|\phi_k(U^{\mathrm{in}}) - \hat\phi_k|
+\le \sum_r \tfrac{M_3^r}{3}\max_{S \subseteq P_r}\|\Delta_S^r\|^3$
+(the definitions of the constants and the propagation argument are in
+Appendix~A.4).
 
-\begin{proposition}[Taylor residual]\label{prop:residual}
-The price of the approximation is truncation error. The per-round utility
-error is bounded by $\frac{M_3^r}{6}\|\Delta_S^r\|^3$ at second order and by
-$\frac{M_2^r}{2}\|\Delta_S^r\|^2$ at first order, and accumulates linearly in
-the number of rounds (the per-round local curvature constants
-$M_2^r, M_3^r$ are defined formally in Appendix~A). These constants are not
-estimable quantities, so what the bound delivers is the \emph{order} of the
-residual (its scaling law).
-\end{proposition}
+These constants are hard to estimate tightly for large models, so what the
+bound delivers in practice is not a constant but a \emph{regime prediction}:
+since the residual scales cubically in the round-displacement norm
+(quadratically for the first-order estimator), the approximation improves in
+settings with small displacements, and the first-order approximation breaks
+down first under threats that amplify the interaction between curvature and
+updates --- the choice of discriminating cells in Section~5.2 and the
+ablation in Section~5.6 test exactly this prediction.
 
 \begin{remark}[Scope]
-The exact in-run Shapley is a function of the realized trajectory, and
-therefore inherits IRDS's unresolved axiomatization of trajectory-specific
-values (its relation to the exact retrain Shapley is an empirical question
-rather than a theoretical one, and Section~5.3 reports it as such). The game
-is defined at \emph{client} granularity, the unit the FL protocol exposes to
-the server; the formal per-sample-to-per-client bridge holds under mean losses
-and a single local step (Appendix~A) and does not transfer as-is to token-mean
-LLM losses. In the LLM track, $w$, $\delta_k^r$, $g_r$, and $H_r$ are all
-quantities in the LoRA-factor coordinates that the server actually exchanges
-and averages (the CNN track trains full parameters, so no distinction arises;
-the formal treatment of coordinate dependence is in Appendix~A.10).
+The in-run Shapley is a function of the realized trajectory and therefore
+inherits IRDS's unresolved axiomatization of trajectory-specific values, and
+its relation to the retraining-based Shapley is an empirical rather than a
+theoretical question (Section~5.2). The game is defined at the client
+granularity that the FL protocol exposes to the server; the conditional
+per-sample bridge (Appendix~A.5), the LoRA-factor coordinate dependence of
+the LLM track (Section~6.2, Appendix~A.8), and the scope of the $C^3$
+assumption behind the bound above (Appendix~A.4) are treated formally in
+those places.
 \end{remark}
 
 % \section{Experiments}
