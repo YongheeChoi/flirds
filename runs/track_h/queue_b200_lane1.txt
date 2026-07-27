@@ -1,0 +1,39 @@
+# ════════════════════════════════════════════════════════════════════════════
+# B200 레인 1 — 노드 yong-1 · GPU 1장  (2026-07-25 분할)
+#
+#   실제 구성은 **4노드 × GPU 1장**이다(단일 4-GPU 서버 아님 — 실측 확인).
+#   그래서 queue_b200.txt(정본, 단일 서버 가정) 26셀을 레인 4개로 나눴다.
+#   셀 줄은 정본에서 **원문 그대로** 옮겼다.
+#
+#   기동:  LANE=1 bash <repo>/runs/track_h/run_b200_lane.sh
+#          (또는 4대 한 번에:  bash <repo>/runs/track_h/b200_fleet.sh up)
+#
+# ⚠ 컨테이너 48h 동기 만료 — 07-27 21:11
+#   러너 중 어느 것도 셀 중간 재개를 못 한다(phase2_matrix=cell-end 1회 persist,
+#   track_g 단일-arm 셀=사실상 cell-end, track_d 만 fidelity 후 체크포인트 1개).
+#   → 교체는 **셀 경계**에서만 무손실이다. 아래 PHASE 1 은 만료 전에 끝나도록 짰다.
+#   → 교체 후에는 **완료된 PHASE 1 줄을 '#' 주석**(삭제 금지)하고 재기동하면
+#      PHASE 2 부터 이어간다.
+#
+# ⚠ 하드룰(정본과 동일)
+#   · 줄 삭제 금지 — '#' 주석만(드라이버가 consumed 인덱스로 추적).
+#   · 가동 후 줄 순서 변경 금지.
+#   · 정지는 드레인. 중도 kill 금지(G1 은 셀당 19.6h 전손).
+#   · ROUNDS 를 어디에도 주지 않는다(레짐 기본 200).
+# ════════════════════════════════════════════════════════════════════════════
+
+# ─── PHASE 1 — 현 컨테이너 (만료 07-27 21:11 이전 종료) ──────────────────────
+# [+  0.0h →  19.6h · 19.6h]
+phase2_matrix.py|G1_L2_noisy_s0|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=0 MIN_METHODS=1
+# [+ 19.6h →  39.2h · 19.6h]
+phase2_matrix.py|G1_L2_noisy_s1|RUN_NAME= REGIME=gsm50k5 THREAT=noisy SEED=1 MIN_METHODS=1
+# [+ 39.2h →  44.7h ·  5.5h]
+track_g.py|L1_clean_obs_s2|RUN_NAME= REGIME=gsm50k5 THREAT=clean SEED=2 ARMS=observer T2=1 T2_LEGACY=1 T2_CSIGN=0 T2_P5=0 RUNDIR_ROOT=__REPO__/runs/track_h/rundirs_llm
+
+# ─── ▲ PHASE 1 종료 = 기동 후 44.7h ─────────────────────────────────
+# ─── 여기서 컨테이너 교체. 위 3줄을 '#' 주석 처리하고 재기동한다. ──
+# ─── PHASE 2 — 신규 컨테이너 ────────────────────────────────────────────────
+# [+  0.0h →  19.6h · 19.6h]
+phase2_matrix.py|G1_L2_frzero_s2|RUN_NAME= REGIME=gsm50k5 THREAT=freerider_zero SEED=2 MIN_METHODS=1
+
+# PHASE 2 소요 = 19.6h · 레인 총계 = 64.3 GPU-h
