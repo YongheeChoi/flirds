@@ -459,18 +459,19 @@ tags: [flirds, results, downstream]
 ### clean 오발화 — 부호 게이트 발화율 `[근거]` ● 3-seed
 
 > **세팅**: 관찰자 런에서 각 점수원의 **clean 클라 오발화율**(게이트가 clean을 배제 판정한 비율)과 **오염 발화율**. cifar10/dir1. 낮은 clean 오발화 + 높은 오염 발화 = 좋음.
+> **표본**: 한 셀에 관찰자 런이 둘(`_obs`=P1–P4 · `_obsp5`=P5)이라 **3seed × 2런 = n=6**을 통합해 평균낸다(frrand만 `_obsp5`가 없어 n=3). 2026-07-27 재산출값 — 종전 표는 옛 스냅샷이라 lf@0.70·grad-noise·frrand 행이 Δ≤0.014 어긋나 있었고(특히 frrand `±0.000`은 seed0 파일럿 시절 잔존), 이번에 정정했다. 서열은 불변.
 
 | 위협 | 지표 | Flirds | Flirds-1st | loss-heur | FedIF | GTG | FedSV | ComFedSV | ShapleyFL |
 |---|---|---|---|---|---|---|---|---|---|
 | clean | clean 오발화↓ | 0.425±0.012 | <u>0.166±0.012</u> | 0.314±0.008 | **0.166±0.012** | 0.411±0.011 | 0.422±0.003 | 0.422±0.005 | 0.404±0.011 |
 | frzero | clean 오발화↓ | 0.393±0.005 | <u>0.187±0.011</u> | 0.349±0.019 | **0.187±0.011** | 0.708±0.011 | 0.645±0.005 | 0.635±0.008 | 0.692±0.009 |
 | frzero | 오염 발화↑ | **1.000** | <u>1.000</u> | 1.000 | 1.000 | 0.000 | 0.000 | 0.000 | 0.000 |
-| frrand | clean 오발화↓ | 0.394±0.004 | <u>0.190±0.011</u> | 0.353±0.022 | **0.190±0.011** | 0.706±0.013 | 0.642±0.006 | 0.633±0.010 | 0.691±0.009 |
-| frrand | 오염 발화↑ | **0.505±0.000** | 0.475±0.000 | <u>0.477±0.000</u> | 0.475±0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
+| frrand | clean 오발화↓ | 0.394±0.004 | <u>0.190±0.010</u> | 0.352±0.022 | **0.190±0.010** | 0.706±0.013 | 0.642±0.006 | 0.633±0.010 | 0.691±0.009 |
+| frrand | 오염 발화↑ | **0.504±0.013** | 0.475±0.016 | <u>0.477±0.009</u> | 0.475±0.016 | 0.000 | 0.000 | 0.000 | 0.000 |
 | grad-noise | clean 오발화↓ | 0.427±0.030 | <u>0.007±0.002</u> | 0.021±0.007 | 0.007±0.002 | 0.001±0.001 | 0.008±0.005 | 0.008±0.003 | **0.001±0.001** |
-| grad-noise | 오염 발화↑ | <u>0.960±0.010</u> | 0.145±0.005 | 0.648±0.014 | 0.145±0.005 | **0.989±0.002** | 0.885±0.010 | 0.884±0.008 | 0.988±0.001 |
-| lf@0.70 | clean 오발화↓ | 0.086±0.020 | <u>0.031±0.009</u> | 0.083±0.010 | 0.031±0.009 | 0.275±0.011 | 0.287±0.011 | 0.278±0.008 | 0.260±0.011 |
-| lf@0.70 | 오염 발화↑ | **0.949±0.019** | 0.805±0.008 | 0.882±0.010 | 0.805±0.008 | 0.724±0.011 | 0.675±0.011 | 0.684±0.011 | 0.738±0.011 |
+| grad-noise | 오염 발화↑ | <u>0.960±0.008</u> | 0.145±0.018 | 0.648±0.023 | 0.145±0.018 | **0.989±0.003** | 0.885±0.020 | 0.884±0.016 | 0.988±0.004 |
+| lf@0.70 | clean 오발화↓ | 0.089±0.021 | <u>0.032±0.010</u> | 0.084±0.010 | 0.032±0.010 | 0.280±0.007 | 0.292±0.008 | 0.282±0.006 | 0.266±0.006 |
+| lf@0.70 | 오염 발화↑ | **0.952±0.009** | 0.808±0.051 | 0.882±0.030 | 0.808±0.051 | 0.736±0.033 | 0.676±0.024 | 0.684±0.025 | 0.752±0.036 |
 
 > **앞의 clean parity 위반이 여기서 설명된다**: Flirds의 clean 오발화가 0.39~0.43으로 높다(Flirds-1st/FedIF 0.007~0.19). 다만 **frzero·grad-noise·lf에서 오염 발화 0.95~1.00으로 전 점수원 중 최고**라 순-이득이 남는 구조. renorm 4종은 **frzero 오염 발화 0.000 + clean 오발화 0.64~0.71** = 앞 표의 −2.5~−3.1 파국과 정확히 대응. **출처**: `runs/track_h/analysis/observer_zero_semantics.csv`.
 
@@ -484,32 +485,35 @@ tags: [flirds, results, downstream]
 
 ### 주무대 정확도 개입 (R4 GSM8K EM) `[본문·주무대]`
 
-> **세팅**: Llama-3.2-1B-Instruct LoRA r16/α32 · N=50 · 5/50 · R=200 · GSM8K test 1,119 EM · seed{0,1,2}(noisy·frzero) / clean ◐ seed0.
+> **세팅**: Llama-3.2-1B-Instruct LoRA r16/α32 · N=50 · 5/50 · R=200 · GSM8K test 1,119 EM · seed{0,1,2}(noisy·frzero) / **clean은 arm마다 다르다**(Flirds-1st ● 3-seed · observer·retrain ◐ 2-seed · Flirds ◐ seed0).
 > **수록 범위 = 5 arm 고정**(2026-07-25 Yonghee 결정): 앵커 3종(observer·oracle_excl·random_excl) + 점수원 **Flirds·Flirds-1st**. **loss-heur·FedIF·renorm 4종(GTG·FedSV·ComFedSV·ShapleyFL)은 이 표에서 제외** — 이 무대가 답하는 질문은 "순위정보가 학습을 얼마나 되살리나(vs 무작위)"와 "2차항이 필요한가(vs 1차)"뿐이다. 제외한 방법들의 rundir·집계는 존속하며, **LLM 스케일에서의 이들 비교는 fidelity 축(R4-L2, 9방법 φ)이 담당**한다. frrand·strmain 열=신규 ⬚.
 
 **retrain (T2 부호-게이트, 절대 EM)** (● noisy·frzero 3-seed)
 
-| arm | clean ◐ | noisy(swap@.7) | frzero | frrand | strmain |
+| arm | clean ⟨n2⟩ | noisy(swap@.7) | frzero | frrand | strmain |
 |---|---|---|---|---|---|
-| observer (바닥) | 0.3727±0.0000 | 0.3274±0.0057 | 0.3560±0.0129 |  |  |
+| observer (바닥) | 0.3615±0.0112 | 0.3274±0.0057 | 0.3560±0.0129 |  |  |
 | oracle_excl (천장) | – | 0.3625±0.0099 | 0.3625±0.0099 |  |  |
 | random_excl (무작위) | – | 0.3280±0.0048 | 0.3476±0.0146 |  |  |
-| Flirds | 0.3727±0.0000 | **0.3479±0.0030** | **0.3625±0.0099** |  |  |
-| Flirds-1st | 0.3727±0.0000 | <u>0.3458±0.0015</u> | **0.3625±0.0099** |  |  |
+| Flirds | 0.3615±0.0112 | **0.3479±0.0030** | **0.3625±0.0099** |  |  |
+| Flirds-1st | 0.3615±0.0112 | <u>0.3458±0.0015</u> | **0.3625±0.0099** |  |  |
 
-**online (배포 게이팅 gate_v2, 절대 EM)** (● Flirds noisy·frzero 3-seed · **Flirds-1st ◐ seed0**)
+> retrain clean 3칸이 모두 같은 값인 이유 = **kept=전원(무발화)이라 재학습이 vanilla와 동일**(`skipped=equals_vanilla`). 2026-07-27 seed1 관측자 착지(`e3ab1d6`)로 ⟨n2⟩가 됐고 seed2가 남았다.
 
-| arm | clean ◐ | noisy(swap@.7) | frzero |
+**online (배포 게이팅 gate_v2, 절대 EM)** (● noisy·frzero 3-seed — **Flirds-1st 포함**)
+
+| arm | clean | noisy(swap@.7) | frzero |
 |---|---|---|---|
-| observer (바닥) | 0.3727 ⟨s0⟩ | 0.3274±0.0057 | 0.3560±0.0129 |
+| observer (바닥) | 0.3615±0.0112 ⟨n2⟩ | 0.3274±0.0057 | 0.3560±0.0129 |
 | oracle_excl (천장) | – | 0.3625±0.0099 | 0.3625±0.0099 |
 | random_excl (무작위) | – | 0.3280±0.0048 | 0.3476±0.0146 |
 | Flirds (gate v2) | 0.3664 ⟨s0⟩ | **0.3479±0.0044** | 0.3566±0.0088 |
-| Flirds-1st (gate v2) | 0.3655 ⟨s0⟩ | 0.3387 ⟨s0⟩ | 0.3691 ⟨s0⟩ |
+| Flirds-1st (gate v2) | 0.3610±0.0124 | <u>0.3426±0.0029</u> | **0.3572±0.0087** |
 
-> **online Flirds-1st 레그 = seed0 3셀만 착지**(2026-07-26, `rundirs_llm_hj`). seed1·2 미실행이라 위 3-seed 열과 **직접 비교 금지** — 같은 seed0끼리 대면 noisy Flirds .3530 vs Flirds-1st .3387(**Flirds +1.43pt**), frzero Flirds .3682 vs Flirds-1st .3691(−0.09pt), clean Flirds .3664 vs Flirds-1st .3655. seed0 한 점에서는 **noisy만 2차항 쪽이 앞선다**. retrain 레그(3-seed)에서 두 estimator 차가 noisy 0.21pt로 EM 노이즈 아래였던 것과 어긋나므로, **seed1·2 착지 전에는 어느 쪽 결론도 못 세운다**(G4 잔여 4런).
+> **online Flirds-1st 레그 6/6 완주**(2026-07-26 seed0 3셀 + 2026-07-27 seed1·2 6셀 = `ae4f212`·`17315c3`·`381a5fd`·`5bb1195`; `rundirs_llm_hj`) → **noisy·frzero는 3-seed로 직접 비교 가능**하다. clean도 Flirds-1st만 3-seed이고 **Flirds clean은 seed0 하나뿐**이라 clean 열은 여전히 arm 간 대면 금지(G4 잔여 = observer seed2 + Flirds clean seed1·2 ≈ 3런).
+> **2차항 이득은 online에서도 미분리**다: noisy Flirds−Flirds-1st = **+0.53pt**(seed별 +1.43 / +0.27 / −0.09pt로 **부호가 갈린다**), frzero **−0.06pt**(seed별 −0.09 / −0.18 / +0.09pt). 두 위협 모두 EM 노이즈 바닥(±0.5pt) 안이라 retrain 레그의 판정(noisy +0.21pt·frzero 동값)과 **같은 결론**이다. 게이트 지표로 봐도 frzero는 두 arm이 사실상 동일(recall 0.939~0.952 · precision 0.946~0.963)하고, noisy는 **둘 다 recall 0.042~0.058 = 게이트 작동영역 밖**이다.
 
-> **읽기**: noisy — 두 estimator가 observer .3274 대비 회수(Flirds **+.0206** · Flirds-1st +.0185) vs **random_excl +.0006**(천장 oracle_excl +.0352). 같은 수를 배제해도 "누구를 배제하나"가 회수의 전부다 = **순위정보의 가치 vs-무작위 +2pt**. frzero — 두 estimator 전부 **.3625 = oracle_excl 동값**(free-rider 만장일치 배제 → kept=oracle 집합; random_excl은 −.0083으로 오히려 악화). **online vs retrain**(Flirds): noisy 동급(둘 다 .3479), frzero online .3566<retrain .3625(배포 게이팅 burn-in 지연), **clean online −0.63pt**(probation 오배제) vs retrain 무해(kept=전원). ⚠ **2차항 이득은 이 무대에서 미분리** — Flirds↔Flirds-1st 차는 noisy 0.21pt로 EM 노이즈 바닥(±0.5pt) 아래이고 seed별 부호도 갈린다(seed0만 Flirds +0.80pt 우세, seed1·2는 1st가 각 +0.09pt), frzero는 완전 동값. 안전한 주장은 **vs-무작위**까지다. **출처**: `runs/track_h/analysis/llm_competition.csv`(regime=gsm50k5).
+> **읽기**: noisy — 두 estimator가 observer .3274 대비 회수(Flirds **+.0206** · Flirds-1st +.0185) vs **random_excl +.0006**(천장 oracle_excl +.0352). 같은 수를 배제해도 "누구를 배제하나"가 회수의 전부다 = **순위정보의 가치 vs-무작위 +2pt**. frzero — 두 estimator 전부 **.3625 = oracle_excl 동값**(free-rider 만장일치 배제 → kept=oracle 집합; random_excl은 −.0083으로 오히려 악화). **online vs retrain**(Flirds): noisy 동급(둘 다 .3479), frzero online .3566<retrain .3625(배포 게이팅 burn-in 지연), **clean online −0.49pt**(seed0 .3664 vs 그 seed의 observer .3727 = probation 오배제) vs retrain 무해(kept=전원). ⚠ **2차항 이득은 이 무대에서 미분리** — Flirds↔Flirds-1st 차는 retrain noisy +0.21pt · online noisy +0.53pt로 둘 다 EM 노이즈 바닥(±0.5pt) 언저리이고 **seed별 부호가 갈린다**(retrain: seed0만 Flirds +0.80pt, seed1·2는 1st가 각 +0.09pt / online: +1.43, +0.27, −0.09pt), frzero는 retrain 완전 동값·online −0.06pt다. 안전한 주장은 **vs-무작위**까지다. **출처**: `runs/track_h/analysis/llm_competition.csv`(regime=gsm50k5).
 
 ### 표준 개입 무해성 (clean do-no-harm) `[본문·근거]` ● 3-seed
 
@@ -638,8 +642,10 @@ tags: [flirds, results, downstream]
 | R4 GSM8K · silo5/iid5/std50k5 게이팅 | `analysis/llm_competition.csv` |
 | 무해성(MMLU·ROUGE) | `runs/track_d/rundirs/*/metrics.json` → `arms` 블록 |
 
-- **⬚ 미실행**: 확장 파티션 중 cifar10{qskew,shard}·fmnist/dir1의 **비-flirds 점수원 7종** · R4 online Flirds-1st **seed1·2** · R4 clean 열 seed1·2 · R4 frrand·strmain 열 · **mnist 무대의 `oracle_excl`·`random_excl` 기준 arm 18런**(G14 — YH 배분 완료).
-- **✅ 2026-07-26 착지**: **cifar10/iid 8점수원 경쟁 96/96**(G3 종료 — P1·P1w 동반 3-seed) · **mnist {dir1,iid} 216/216 완주**(G10 종료) · R4 online Flirds-1st seed0 3셀.
+- **⬚ 미실행**: 확장 파티션 중 cifar10{qskew,shard}·fmnist/dir1의 **비-flirds 점수원 7종** · **R4 clean 열 잔여**(observer seed2 + Flirds seed1·2 ≈ 3런) · R4 frrand·strmain 열.
+- **✅ 2026-07-26 착지**: **cifar10/iid 8점수원 경쟁 96/96**(G3 종료 — P1·P1w 동반 3-seed) · **mnist {dir1,iid} 216/216 완주**(G10 종료) · R4 online Flirds-1st seed0 3셀 · **mnist 기준 arm 18/18**(G14, 07-27).
+- ✅ **R4 online Flirds-1st 6/6 완주**(2026-07-27, `5bb1195`) → noisy·frzero 3-seed. **07-27 오전 문서 갱신 시점에 이미 집계돼 있었으나 표에 반영되지 않아 seed0 값이 남아 있었고, 이 갱신에서 정정했다.**
+- ✅ **R4 clean observer seed1 착지**(`e3ab1d6`) → retrain clean 3칸·online observer clean이 ⟨n2⟩로 승급.
 - **스코프 아웃(수록 안 함)**: R4 개입 표의 renorm 4종(L4)·online 비-Flirds 계열(L11 중 loss-heur·FedIF·renorm 4종) — 07-25 arm 축소 결정. LLM 스케일의 이들 비교는 fidelity 축(R4-L2)이 담당한다.
 - ✅ **mnist {dir1,iid} 8점수원 = 정본 승격**(2026-07-27): 점수원·관측자 216/216 + 기준 arm 18/18(G14) → **cifar10 주무대와 같은 4-arm 절대 acc 표**. `vanilla`↔`observer` 18쌍 bit-identical. (recovery는 계산되지만 **비수록**.)
 - **◐ 정본 아님**: **fmnist/iid 8점수원(비-flirds seed0 단독)** · std50k5 mixed(arm별 seed 1~3 불균형) · fmnist/iid lf-strmain(rundir 존재, 집계기 위협 파싱 밖).

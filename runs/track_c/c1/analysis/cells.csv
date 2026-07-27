@@ -25,8 +25,10 @@ cifar10_iid_label-flip_fr0.70_seed1,cifar10,iid,label_flip,1,full,0.60175,115.60
 cifar10_iid_label-flip_fr0.70_seed2,cifar10,iid,label_flip,2,full,0.605,119.82269968511537,52691.29085471993,1024,10,4,"[3, 4, 6, 9]",False,True
 mnist_dir1_clean_seed1,mnist,dir1,clean,1,full,0.978625,130.8788668671623,61599.81424159906,1024,10,0,[],False,True
 mnist_dir1_clean_seed2,mnist,dir1,clean,2,full,0.97425,136.4635426980094,63219.413650017,1024,10,0,[],False,True
+mnist_dir1_free-rider_seed0,mnist,dir1,free_rider,0,full,0.961625,132.22611460415646,61751.91739070881,1024,10,4,"[1, 4, 6, 7]",True,True
 mnist_dir1_free-rider_seed1,mnist,dir1,free_rider,1,full,0.976375,131.13337982725352,63042.132759997854,1024,10,4,"[0, 4, 6, 7]",True,True
 mnist_dir1_free-rider_seed2,mnist,dir1,free_rider,2,full,0.963125,135.72755753668025,63533.758027406875,1024,10,4,"[3, 4, 6, 9]",True,True
+mnist_dir1_grad-noise_seed0,mnist,dir1,grad_noise,0,full,0.914875,132.46815376821905,62290.80331444414,1024,10,4,"[1, 4, 6, 7]",True,True
 mnist_dir1_grad-noise_seed1,mnist,dir1,grad_noise,1,full,0.954125,133.26234128326178,61834.7289725719,1024,10,4,"[0, 4, 6, 7]",True,True
 mnist_dir1_grad-noise_seed2,mnist,dir1,grad_noise,2,full,0.823125,138.88954533822834,63000.080754445866,1024,10,4,"[3, 4, 6, 9]",True,True
 mnist_dir1_label-flip_fr0.70_seed1,mnist,dir1,label_flip,1,full,0.973875,135.24607212794945,63181.242810355034,1024,10,4,"[0, 4, 6, 7]",False,True
