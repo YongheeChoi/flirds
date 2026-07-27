@@ -53,33 +53,33 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 
 ## 1. 한눈에 — 배치 × 축 × 상태
 
-| 배치 | 축 | 실험 (축-지도 이름) | 상태 |
-|---|---|---|---|
-| **본문** | Fidelity | 1A-CNN 대규모 교차-디바이스 부분참여 — cifar10 {dir1, iid} | ● 완료 |
-| **본문** | Fidelity | 1A-LLM 주무대 정확도-무대 충실도 (R4) | ◐ **7/9셀** — 잔여 frzero s0·s2 |
-| **본문** | Fidelity | 1A-LLM 표준 부분참여 충실도 (1B·3B·7B) | ● 완료 (clean-IID 전용 무대) |
-| **본문** | Fidelity | 1B-CNN vs (a) — cifar10 {dir1, iid} | ● 완료 (축 그리드 48/48의 cifar10 절반) |
-| **본문** | Fidelity | 1B-LLM 교차-사일로 (a)-leg 듀얼오라클 — silo5 3위협 | ● 완료 |
-| **본문** | Downstream | 2-CNN P1 부호-게이트 online/retrain — cifar10 {dir1, iid} | ● 완료 |
-| **본문** | Downstream | 2-LLM 주무대 정확도 개입 (R4 GSM8K EM) | ● 완료 (9칸 3-seed) |
-| **본문** | Cost | 5-공통 op-count 모델 — **N·R·K 파라메트릭** | ⟐ **재작성 대기**(실행 0) |
-| **본문** | Cost | 5-LLM 실측 runtime — device100 앵커 | ● 완료 |
-| **본문** | Ablation | 2차항(HVP)의 기여 — CNN 레그 | ● 완료 |
-| **본문** | Ablation | Removal-curve — CNN | ● 완료 (오염축 정렬 9셀) |
-| **본문** | Ablation | Removal-curve — LLM | ● 완료 |
-| **부록** | Fidelity | 1A-CNN mnist {dir1, iid} | ● 완료 |
-| **부록** | Fidelity | 1A-LLM 교차-사일로 (b)-leg | ● 완료 |
-| **부록** | Fidelity | 1A-LLM 대규모 교차-디바이스 앵커 | ● 완료 |
-| **부록** | Fidelity | 1B-CNN mnist {dir1, iid} vs (a) | ● 완료 |
-| **부록** | Fidelity | 1B-LLM 소형 앵커 듀얼오라클 vs (a) | ● 완료(1B) — 참조·폴백 |
-| **부록** | Fidelity | 1C 재현성·안정성 | ⟐ **재산출 대기**(G1 착지 후) |
-| **부록** | Downstream | 2-CNN mnist {dir1, iid} P1 online/retrain | ● 완료 (기준 arm 포함) |
-| **부록** | Downstream | 2-CNN P1w — cifar10/mnist {dir1, iid} | ● 완료 (롤업 CSV만 mnist 미포함) |
-| **부록** | Downstream | 2-LLM 표준 개입 무해성 | ● 완료 |
-| **부록** | Cost | 5-LLM runtime — silo5 · anchor5 · std20 | ● 완료 |
-| **부록** | Cost | 5-CNN runtime 상세(방법별) | ● 완료 (실행 0 · 기존 rundir 파생) |
-| **부록** | Ablation | A축 용량 lever probe — CNN | ● 완료 |
-| **부록** | Ablation | φ 부호 감사 — 게이팅의 작동 전제 | ● 완료 (LLM·CNN 양 레그) |
+| 배치     | 축          | 실험 (축-지도 이름)                                         | 상태                             |
+| ------ | ---------- | ---------------------------------------------------- | ------------------------------ |
+| **본문** | Fidelity   | 1A-CNN 대규모 교차-디바이스 부분참여 — cifar10 {dir1, iid}        | ● 완료                           |
+| **본문** | Fidelity   | 1A-LLM 주무대 정확도-무대 충실도 (R4)                           | ◐ **7/9셀** — 잔여 frzero s0·s2   |
+| **본문** | Fidelity   | 1A-LLM 표준 부분참여 충실도 (1B·3B·7B)                        | ● 완료 (clean-IID 전용 무대)         |
+| **본문** | Fidelity   | 1B-CNN vs (a) — cifar10 {dir1, iid}                  | ● 완료 (축 그리드 48/48의 cifar10 절반) |
+| **본문** | Fidelity   | 1B-LLM 교차-사일로 (a)-leg 듀얼오라클 — silo5 3위협              | ● 완료                           |
+| **본문** | Downstream | 2-CNN P1 부호-게이트 online/retrain — cifar10 {dir1, iid} | ● 완료                           |
+| **본문** | Downstream | 2-LLM 주무대 정확도 개입 (R4 GSM8K EM)                       | ● 완료 (9칸 3-seed)               |
+| **본문** | Cost       | 5-공통 op-count 모델 — **N·R·K 파라메트릭**                   | ⟐ **재작성 대기**(실행 0)             |
+| **본문** | Cost       | 5-LLM 실측 runtime — device100 앵커                      | ● 완료                           |
+| **본문** | Ablation   | 2차항(HVP)의 기여 — CNN 레그                                | ● 완료                           |
+| **본문** | Ablation   | Removal-curve — CNN                                  | ● 완료 (오염축 정렬 9셀)               |
+| **본문** | Ablation   | Removal-curve — LLM                                  | ● 완료                           |
+| **부록** | Fidelity   | 1A-CNN mnist {dir1, iid}                             | ● 완료                           |
+| **부록** | Fidelity   | 1A-LLM 교차-사일로 (b)-leg                                | ● 완료                           |
+| **부록** | Fidelity   | 1A-LLM 대규모 교차-디바이스 앵커                                | ● 완료                           |
+| **부록** | Fidelity   | 1B-CNN mnist {dir1, iid} vs (a)                      | ● 완료                           |
+| **부록** | Fidelity   | 1B-LLM 소형 앵커 듀얼오라클 vs (a)                            | ● 완료(1B) — 참조·폴백               |
+| **부록** | Fidelity   | 1C 재현성·안정성                                           | ⟐ **재산출 대기**(G1 착지 후)          |
+| **부록** | Downstream | 2-CNN mnist {dir1, iid} P1 online/retrain            | ● 완료 (기준 arm 포함)               |
+| **부록** | Downstream | 2-CNN P1w — cifar10/mnist {dir1, iid}                | ● 완료 (롤업 CSV만 mnist 미포함)       |
+| **부록** | Downstream | 2-LLM 표준 개입 무해성                                      | ● 완료                           |
+| **부록** | Cost       | 5-LLM runtime — silo5 · anchor5 · std20              | ● 완료                           |
+| **부록** | Cost       | 5-CNN runtime 상세(방법별)                                | ● 완료 (실행 0 · 기존 rundir 파생)     |
+| **부록** | Ablation   | A축 용량 lever probe — CNN                              | ● 완료                           |
+| **부록** | Ablation   | φ 부호 감사 — 게이팅의 작동 전제                                 | ● 완료 (LLM·CNN 양 레그)            |
 
 > **결손은 한 곳뿐이다**: **LLM 주무대 (b) 오라클(R4-L2) frzero 2셀**(본문 fidelity). 그 외 모든 수록 실험은 3-seed 실측으로 차 있고, **남은 일은 표 정리·문서 재작성뿐**이다.
 > **탐지(detection) 축은 논문에서 전량 빠진다**(2026-07-28 Yonghee) — 본문·부록 어디에도 φ-AUROC 표를 넣지 않는다. rundir·러너 산출과 [[flirds-results-detection]]은 존속한다(§5).

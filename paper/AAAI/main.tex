@@ -453,8 +453,8 @@ aggregation used, without renormalizing within a coalition. The displacement
 of the coalition containing all participants therefore coincides exactly with
 the aggregation the server actually performed. Because the unit is a round
 rather than a step, this game differs from the IRDS step game
-(Appendix~A.5), and the game with renormalized coefficients is likewise a
-different game (Appendix~A.6).
+(Appendix~A.2), and the game with renormalized coefficients is likewise a
+different game (Appendix~A.3).
 
 We call the value obtained by computing this game's Shapley value through
 exhaustive enumeration of the $2^{|P_r|}$ subsets in each round and
@@ -519,7 +519,7 @@ a sum of coalition-independent vectors $p_k^r\,\delta_k^r$, a structure that
 arises precisely because Section~\ref{sec:game} fixed the coefficients
 independently of the subset. Under renormalized coefficients the displacement
 is not expressible as such a sum for any assignment of vectors, so the
-derivation does not even start (Appendix~A.5).
+derivation does not even start (Appendix~A.3).
 
 \textbf{Cost.} The only heavy per-round computations are the validation
 gradient $g_r$ and the Hessian-vector product (HVP) $H_r \Delta W_r$, and both
@@ -629,8 +629,8 @@ corrupted clients mixed in. The LLM track evaluates Llama-family models
 \citep{grattafiori2024llama,touvron2023llama} on GSM8K
 \citep{cobbe2021training}, Alpaca-GPT4 \citep{peng2023instruction}, and a
 five-domain dataset we constructed, and the CNN track evaluates FedSVCNN and
-LeNet5 \citep{lecun1998gradient} on CIFAR-10 \citep{krizhevsky2009learning},
-MNIST, and Fashion-MNIST \citep{xiao2017fashion}. The clients of the CNN
+LeNet5 \citep{lecun1998gradient} on CIFAR-10 \citep{krizhevsky2009learning}
+and MNIST. The clients of the CNN
 track are partitioned in two ways, a uniform IID split and a non-IID
 Dirichlet($\alpha{=}1$) split, the latter abbreviated Dir(1) in the figures
 and tables. The corruption axis has five
@@ -780,7 +780,7 @@ body we report the selection-retrain experiment: contributions are computed
 during one initial training run, the set of clients to keep is then decided
 by the sign of the accumulated contribution, and training is repeated from
 the same initial weights. The online variant, which selects the clients that
-will take part in training in every round, is in Appendix~F.1. Each method is
+will take part in training in every round, is in Appendix~E.1. Each method is
 compared together with vanilla (the observer), oracle-exclusion, which
 excludes exactly the corrupted clients, and selection-random, which keeps a
 random set of the same size.
@@ -984,7 +984,7 @@ Shapley attribution for the observed round thus gives up neither accuracy nor
 practical effectiveness in exchange for dispensing with exponential coalition
 evaluation.
 
-% (부록 A--G: 별도 제출본 supplement.tex — paper-ko.md 부록 참조)
+% (부록 A--E: 별도 제출본 supplement.tex — "paper-ko 부록.md" 참조)
 
 % References (bib 파일: 같은 폴더 references.bib — Overleaf는 프로젝트 루트 밖(../)을
 % 읽지 못하므로 main.tex 옆에 둔다; \bibliographystyle은 aaai2027.sty가 내부 설정)
