@@ -122,29 +122,22 @@
 Client contribution evaluation in federated learning (FL) quantifies how much
 each participant's update contributed to improving the jointly trained model.
 Because an FL server does not hold the clients' raw data, it cannot by itself
-perform the subset retraining on which classical data valuation is based, and
-contributions must instead be evaluated from the updates received in actual
-rounds. The Shapley value provides a consistent attribution principle within
-a specified cooperative game, but computing it exactly requires exponentially
-many coalition evaluations in the number of participating clients, and
-existing approximations reduce this cost at the price of obscuring what is
-being approximated and how the error should be interpreted.
+carry out the classical data Shapley valuation that rests on subset
+retraining, and contributions must instead be evaluated from the updates
+received in actual rounds. Even with updates as the unit of evaluation,
+however, an exact computation requires enumerating participant subsets in
+every round and reconstructing and evaluating a model for each of them, so
+its cost grows exponentially with the number of participants.
 We propose \textbf{Flirds} (Federated Learning In-Run Data Shapley), a
 client-level contribution estimator. Flirds defines a cooperative game whose
-players are the client updates actually received by the server, with the
+players are the client updates actually received by the server, with that
 round's server aggregation weights held fixed across all coalitions, and
-extends the Taylor calculation of In-Run Data Shapley (IRDS) to client
-updates, computing the Shapley value of a second-order surrogate game in
-closed form. This replaces the exponential coalition evaluations with one
-server-side Hessian-vector product per round and one inner product per
-participant, with no additional communication or client-side computation.
-Because the estimates are compared against the per-round Shapley values
-obtained by exhaustively enumerating the same game, their difference can be
-interpreted as the Taylor residual rather than a difference in game
-definition or sampling error. Experiments validate the accuracy of the
-estimates through ranking and value comparisons against this reference, and
-their practical effectiveness through actual training improvement under a
-shared intervention policy together with measured computational cost.
+extends the Taylor calculation of In-Run Data Shapley (IRDS) to the level of
+client updates, computing the Shapley value of a second-order surrogate game
+in closed form. This computes what would require exponentially many coalition
+evaluations with one server-side Hessian-vector product per round and one
+inner product per participant, with no additional communication and no
+client-side computation.
 \end{abstract}
 
 % Uncomment the following to link to your code, datasets, an extended version or similar.
@@ -171,8 +164,8 @@ principle for consistently allocating a specified utility among the
 participants, and has therefore been widely used for evaluating data and
 client contributions \citep{shapley1953value,ghorbani2019data}.
 
-Classical Data Shapley retrains the model from scratch with each subset of
-clients and compares the resulting final performance. An FL server, however,
+Classical Data Shapley trains the model from scratch on each subset of the
+data and compares the resulting final performance. An FL server, however,
 does not hold the clients' raw data, so it cannot perform subset retraining
 on its own; retraining amounts to re-running the entire federation and
 repeatedly requesting the clients' cooperation. This definition is therefore
@@ -184,11 +177,7 @@ actual round as the units of evaluation, computed per-round contributions,
 and accumulated them over training. Even then, obtaining exact Shapley values
 requires enumerating participant subsets in every round, reconstructing a
 model for each coalition, and evaluating it on a validation set, so the cost
-grows exponentially with the number of participants. Sampling, truncation,
-interpolation, or separate alternative scores can reduce this cost, but they
-may add sampling variability or compute a utility different from the original
-target, which makes estimation error hard to distinguish from a change in the
-game definition.
+grows exponentially with the number of participants.
 
 The problem this paper addresses is therefore the following: using only the
 individual updates observed by the server and a validation set, can we
@@ -219,44 +208,31 @@ setting. The principal additional server computation Flirds requires per
 round is one Hessian-vector product (HVP) on the validation set, and the
 per-participant computation is a single inner product. It needs no additional
 communication or client-side computation, and the values of partially
-participating rounds can be accumulated online. Furthermore, because Flirds
-is a Taylor approximation of the per-round Shapley values, the difference
-between the two can be interpreted as Taylor approximation error, separated
-from differences in game definition or Shapley sampling error. We verify this
-relationship by comparing rankings and values against the per-round Shapley
-values computed by exhaustive enumeration, and we evaluate training
-improvement under a shared intervention policy together with computational
-cost. Defining a game that matches the actual FL run, computing it
-efficiently, comparing it against the reference obtained by exhaustively
-enumerating the same game, and measuring actual training effects to validate
-both accuracy and practical effectiveness: this is the structure of the
-paper.
+participating rounds can be accumulated online. Defining a game that matches
+the actual FL run, computing it efficiently, comparing it against the Shapley
+values obtained by exhaustively enumerating the same game, and measuring
+actual training effects to validate both accuracy and practical
+effectiveness: this is the structure of the paper.
 
 Our contributions are as follows.
 \begin{enumerate}
     \item \textbf{A Shapley game for the observed federated round.} We
     formalize a validation-loss game whose players are the client updates
     observed in a synchronous FedAvg round, with the actual aggregation
-    weights held fixed. Because the grand coalition exactly reproduces the
-    actual aggregation, the estimand is explicit, and in-run attribution is
-    separated from retraining-based data valuation
+    weights held fixed, making the estimand explicit
     (Sections~\ref{sec:datashapley} and~\ref{sec:game}).
     \item \textbf{A closed-form second-order estimator with interpretable
     error.} We carry the second-order Taylor derivation of IRDS over to the
     client and round level and obtain in closed form the surrogate Shapley
-    value of the observed round game. This replaces the exponentially many
-    coalition evaluations with one aggregate-direction server HVP per round
-    and one inner product per participant. The Shapley axioms hold exactly on
-    the surrogate game, and the difference from the Shapley value obtained by
+    value of the observed round game, avoiding the exponentially many
+    coalition evaluations. The difference from the Shapley value obtained by
     exhaustively enumerating the original round game reduces to the per-round
     Taylor residual (Sections~\ref{sec:estimator} and~\ref{sec:theory}).
     \item \textbf{Validation of accuracy and practical effectiveness.} We
-    evaluate the ranking and value accuracy of the estimates against the
-    per-round Shapley values obtained by exhaustive enumeration. We then
-    validate the practical effectiveness of the measured contributions
-    through actual training improvement under a shared intervention policy,
-    and report measured computational cost for all methods
-    (Section~\ref{sec:experiments}).
+    evaluate the accuracy of the estimates against the per-round Shapley
+    values obtained by exhaustive enumeration. We then validate actual
+    training improvement under a shared intervention policy and report the
+    computational cost of each method (Section~\ref{sec:experiments}).
 \end{enumerate}
 
 \section{Related Work}
@@ -264,20 +240,16 @@ Our contributions are as follows.
 
 \textbf{Shapley-based contribution evaluation in federated learning.}
 The common bottleneck of this line of work is the exponential number of
-coalition evaluations that the Shapley value demands, and
-subsequent research has developed in two directions: reducing the number of
-coalitions to evaluate, or replacing and complementing the coalition-utility
-computation. FedSV \citep{wang2020principled} introduced permutation sampling
-and group testing, and GTG-Shapley \citep{liu2022gtg} combined guided Monte
-Carlo sampling with truncation within and across rounds on top of submodel
-reconstruction from stored updates. ComFedSV \citep{fan2022improving}
-completes the utility matrix left partially empty by partial participation
-via low-rank matrix completion. SPACE \citep{chen2023space}, in contrast,
-introduces single-round knowledge amalgamation and a prototype-based utility,
-reducing the cost of multi-round reconstruction and of evaluation that scales
-with validation-set size. ShapleyFL and the FedIF and ShapFed families use
-Shapley-derived values or gradient similarity for robust aggregation and
-client selection
+coalition evaluations that the Shapley value demands. FedSV
+\citep{wang2020principled} reduces the number of coalitions to be evaluated
+through permutation sampling and group testing, as does GTG-Shapley
+\citep{liu2022gtg}, which reconstructs submodels from stored updates, through
+guided Monte Carlo sampling and truncation; ComFedSV
+\citep{fan2022improving} and SPACE \citep{chen2023space} instead replace or
+complement the computation of the coalition utilities themselves, with
+low-rank completion and a prototype-based utility respectively. ShapleyFL and
+the FedIF and ShapFed families use Shapley-derived values or gradient
+similarity for robust aggregation and client selection
 \citep{sun2023shapleyfl,tang2025lightweight,tastan2024redefining}. Ripple
 Shapley \citep{zeng2026ripple} decomposes sample-level contribution in a
 single federated training run into the direct effect in the current round and
@@ -298,11 +270,10 @@ LESS, MATES, and DsDm use such signals for targeted data selection
 \citep{wang2025data} is the method in this lineage that our paper takes as
 its starting point: instead of hypothetical retraining, it fixes a single
 actual training run and accumulates the per-step Shapley values of the
-validation loss, computed in closed form via Taylor expansion. What an FL server observes, however, is not samples but the
-updates submitted by clients, so these methods do not transfer as they are.
-What Flirds takes from IRDS is the computational structure in which, once the
-per-player model displacements combine additively, the Shapley value of the
-second-order surrogate game admits a closed form.
+validation loss, computed in closed form via Taylor expansion. Flirds brings
+to the federated setting the computational structure of IRDS, in which the
+Shapley value of the second-order surrogate game admits a closed form once
+the per-player displacements combine additively.
 
 \textbf{Quality evaluation, selection, and markets for federated LLMs.}
 FedDQC \citep{du2025feddqc} assesses the quality of a client's internal data
@@ -311,9 +282,7 @@ and FedHDS \citep{qin2025federated} selects coresets for federated
 instruction tuning using redundancy in representation space. iPFL jointly
 designs collaboration and payment rules in a personalized-model market. These
 studies show that quality control, selection, or incentive mechanisms are
-feasible at the scale of federated large language and foundation models, but
-they do not compute how much each client's update improved the jointly
-trained model in a realized training run.
+feasible at the scale of federated large language and foundation models.
 
 \section{Problem Setup and Background}
 \label{sec:background}
@@ -644,51 +613,43 @@ first layer is fidelity: does the estimate reproduce the ranking and the
 values of the Shapley value against which it is scored
 (Section~\ref{sec:fidelity})? The second is practical effectiveness: can the
 measured contributions actually improve training
-(Section~\ref{sec:intervention})? We then report the computational cost of
-each method (Section~\ref{sec:cost}) and ablate the second-order curvature
-term (Section~\ref{sec:ablation}). The body keeps only the tables on which
-these judgments rest, and the extended and repeated ledgers are in the
-appendices: protocol details and threat implementations in Appendix~B,
-extended fidelity tables in Appendix~C, the reproducibility analysis in
-Appendix~D, auxiliary cost and scale experiments in Appendix~E, the last axis
-of practical effectiveness, the detection of corrupted clients, in
-Appendix~F, and the intervention ledgers in Appendix~G.
+(Section~\ref{sec:intervention})? We then look at the computational cost of
+each method (Section~\ref{sec:cost}) and at an ablation
+(Section~\ref{sec:ablation}). Because of the space constraints of the body,
+protocol details, the reproducibility analysis, and additional experimental
+results are left to the appendices.
 
 \subsection{Experimental Setup}
 \label{sec:setup}
 
 \textbf{Settings.} The main settings are one LLM setting and one CNN setting,
 and both tracks share the same configuration: partial-participation FL with
-corrupted clients mixed in. The LLM track consists of a main setting that
-trains Llama-3.2-1B(-Instruct) \citep{grattafiori2024llama} with LoRA
-\citep{hu2022lora} on GSM8K \citep{cobbe2021training}, together with two
-auxiliary settings, a five-domain non-IID setting and an IID-clean Alpaca
-setting \citep{taori2023stanford}. The CNN track consists of a main setting
-that trains CIFAR-10 \citep{krizhevsky2009learning} with FedSVCNN and MNIST
-with LeNet5 \citep{lecun1998gradient} under two partitions, IID and
-Dirichlet($\alpha{=}1$), together with an auxiliary grid setting that trains
-the same
-datasets and models with full participation. The corruption axis has five
+corrupted clients mixed in. The LLM track evaluates Llama-family models
+\citep{grattafiori2024llama,touvron2023llama} on GSM8K
+\citep{cobbe2021training}, Alpaca-GPT4 \citep{peng2023instruction}, and a
+five-domain dataset we constructed, and the CNN track evaluates FedSVCNN and
+LeNet5 \citep{lecun1998gradient} on CIFAR-10 \citep{krizhevsky2009learning},
+MNIST, and Fashion-MNIST \citep{xiao2017fashion}. The corruption axis has five
 entries: \emph{clean} (the uncorrupted control anchor), \emph{answer-swap}
 (data that is well formed but whose question--response correspondence is
 broken by a permutation; LLM), \emph{zero-update free-rider} (submitting a
 zero update without local training), \emph{gradient noise} (Gaussian noise
 injected into the update after normal training; CNN), and \emph{label-flip}
-(labels replaced at random; CNN). The number of clients, the participation,
-and the number of rounds of each setting are stated in the caption of the
-corresponding results table, and the full list of models, hyperparameters,
-data partitioning, and threat implementations is in Appendix~B.
+(labels replaced at random; CNN).
 
-\textbf{Compared methods.} We divide the eight contribution methods by the
-game they target. Three of them target Eq.~\eqref{eq:round-utility}: Flirds
-(the second-order closed form), Flirds-1st (the first-order term only), and
-\emph{singleton utility}, an additive approximation that evaluates the round
-game's singleton utility $u_r(\{k\})$ directly by forward evaluation and sums
-it over rounds, using singleton values in place of Shapley values. The
-remaining five, GTG-Shapley, FedSV, ComFedSV, ShapleyFL, and FedIF, target
-different values exactly as in the lineage of Section~\ref{sec:related}: a
-renormalized game, an interpolated utility matrix, processed surrogate
-scores, or influence.
+\textbf{Compared methods.} The comparison uses eight contribution methods.
+Flirds is the second-order closed-form estimator of Eq.~\eqref{eq:closed}
+proposed in this paper, Flirds-1st is the variant of the same expression that
+keeps only the first-order term, and \emph{singleton utility} is an additive
+approximation that computes the round game's singleton utility $u_r(\{k\})$
+itself directly by forward evaluation and sums it over rounds, using
+singleton values in place of Shapley values. Alongside these we place five
+methods representing the prior lineage of Section~\ref{sec:related}.
+GTG-Shapley and FedSV define the utility of a coalition reconstructed from
+stored updates with the weights renormalized within that coalition, ComFedSV
+fills a partially populated utility matrix by low-rank completion, and
+ShapleyFL and FedIF use as the client score a Shapley-derived value and a
+gradient-similarity-based influence respectively.
 
 \textbf{Metrics.} We begin with the sign convention. Since $u_r$ in
 Eq.~\eqref{eq:round-utility} is the decrease in validation loss, lowering the
@@ -1328,8 +1289,8 @@ Secure Aggregation \citep{bonawitz2017practical}, where only the sum is
 exposed, the per-client inner products cannot be computed. On the LLM track,
 the mismatch between the token-mean loss and the FedAvg weights means that the
 client reading of a per-sample sum does not transfer (Appendix~A.5), and the
-game and the HVP are defined in the coordinates of the LoRA factors
-(Appendix~A.8). The threat model is static: corruption is fixed in advance, we
+game and the HVP are defined in the coordinates of the LoRA
+\citep{hu2022lora} factors (Appendix~A.8). The threat model is static: corruption is fixed in advance, we
 do not treat adaptive attacks that know the scoring scheme or
 clean-preserving poisoning, and the threat axes of the two tracks are not
 fully identical (Appendix~B.6). The experiments are at a scale of $N \le 100$
