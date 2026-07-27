@@ -84,7 +84,7 @@ bash <repo>/runs/track_h/run_b200_batch.sh
 ```
 
 - 런처가 env·sed·스모크 내장. `PY=$BATCH/venv/bin/python`(**torch 2.12.0+cu130 = canonical**), `HOME=$BATCH/home`, `HF_HOME=$BATCH/hf_home`, offline 플래그. 캐시 검증 = `$BATCH/PROVENANCE.md`.
-- **★ 제출 전 확인 1건 — track_d 용 HF 캐시**: `vicgalle/alpaca-gpt4` · `cais/mmlu` 가 없으면 **§5 G5·G12(track_d)가 오프라인에서 시작조차 못 한다**. HJ 계정에서 실제로 둘 다 없어 막혔다(공유 캐시에도 없었다). B200 은 과거 anchor5·probe_signal 을 돌렸으니 있을 가능성이 높지만 **확인하고 띄운다**. 없으면 `flirds/hf_pin.py`(REVISIONS 비어 있음 = 최신 커밋 OK, 둘 다 public, +238MB)로 받는다. G1·L1(§3·§4)은 gsm8k 계열만 쓰므로 이 확인과 무관하다.
+- ~~**★ 제출 전 확인 1건 — track_d 용 HF 캐시**~~ (**G5·G12 취소로 무의미** — 07-27): `vicgalle/alpaca-gpt4` · `cais/mmlu` 가 없으면 **§5 G5·G12(track_d)가 오프라인에서 시작조차 못 한다**. HJ 계정에서 실제로 둘 다 없어 막혔다(공유 캐시에도 없었다). B200 은 과거 anchor5·probe_signal 을 돌렸으니 있을 가능성이 높지만 **확인하고 띄운다**. 없으면 `flirds/hf_pin.py`(REVISIONS 비어 있음 = 최신 커밋 OK, 둘 다 public, +238MB)로 받는다. G1·L1(§3·§4)은 gsm8k 계열만 쓰므로 이 확인과 무관하다.
 - GPU 수를 바꾸려면 `GPUS="0 1"` 처럼 넘긴다(런처가 기본값 `0 1 2 3` 을 덮어쓴다).
 
 ### 드라이버 운용 (하드룰)
@@ -132,8 +132,8 @@ bash <repo>/runs/track_h/run_b200_batch.sh
 |---|---|---|
 | **L1 clean seed1·2** (4셀) | `clean_obs`·`clean_online` seed1·2 | 디스크 확인(07-25): **noisy·frzero 는 이미 3-seed 완결**(observer·oracle_excl·random_excl·flirds online + `t2_sign`×4). **clean 만 seed0** → 이 4셀이 §5.3 clean 열(무해성 parity·오발화 대조)을 닫는다. clean 은 kept=전원이라 T2 가 `equals_vanilla` 로 스킵되고 online 에선 `oracle_excl`/`random_excl` 가 자동으로 빠진다(`track_g` l.618) → 저비용. **noisy·frzero 는 절대 재실행하지 않는다.** |
 | **online Flirds-1st seed1·2** (6셀) | `flirds1st_gate_v2` | online 표가 flirds 단독이면 "vanilla·random 보다 낫다"까지만 말할 수 있다. Flirds-1st 를 넣으면 **§5.6①(2차항) 주장이 online 에서도 성립**한다(retrain 표엔 이미 flirds·flirds1st·loss-heur·FedIF 가 3-seed 로 있다). **seed0 3셀은 HJ 완주분**(`rundirs_llm_hj`, 같은 R=200 무대라 유효) — 실패했으면 큐 하단 폴백 3줄 해제. |
-| **G5** (4셀) | `1B_std50k5_r{32,64}_seed{1,2}` | 2차항(HVP) LLM 레그 — **본문 §5.6①** seed 미달분. r16 은 이미 3-seed. |
-| **G12** (3셀) | anchor5 lever probe `lr{2,3}e-3` | **부록·최저.** 나머지 15셀은 HJ(A6000)가 이미 돌리고 있다. 핵심 질문 = "lr 로 커진 φ가 cross-seed 실재 신호인가"(예측 ρ≈0) → `lr{2,3}e-3` 을 먼저 배치했다. |
+| ~~**G5** (4셀)~~ ⛔ **취소 (2026-07-27 Yonghee)** | ~~`1B_std50k5_r{32,64}_seed{1,2}`~~ | **돌리지 말 것.** 2차항 LLM 레그를 **논문에서 뺐다** → 2차항 논지는 CNN 레그만으로 간다. |
+| ~~**G12** (3셀)~~ ⛔ **취소 (2026-07-27 Yonghee; HJ 큐도 07-26 취소)** | ~~anchor5 lever probe `lr{2,3}e-3`~~ | **돌리지 말 것.** lever LLM 레그를 **논문에서 뺐다** → lever 논지는 CNN 레그만으로 간다. (구 메모: 부록·최저. 핵심 질문 = "lr 로 커진 φ가 cross-seed 실재 신호인가"(예측 ρ≈0) → `lr{2,3}e-3` 을 먼저 배치했다. |
 
 - G5·G12 는 **R4 무대가 아니다** → `ROUNDS` 를 주지 않는다(track_d 가 자기 레짐 값을 쓴다).
 

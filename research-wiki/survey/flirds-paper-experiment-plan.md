@@ -133,7 +133,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | 실험 | 무대 | 상태 | 남은 일 |
 |---|---|---|---|
 | **2차항(HVP)의 기여 — CNN 레그** | c2fid grad-noise 셀(Flirds ρ vs Flirds-1st ρ) + probe_signal k-sweep | **● 완료** | 표를 cifar10 {dir1, iid} 2행으로 축소 |
-| **2차항(HVP)의 기여 — LLM 레그** | std50k5(N=50·5/50) LoRA rank {16,32,64} × Spearman vs (b) | **◐** r16 ● / r32·r64 seed0 | **G5** — 4 셀 |
+| ~~**2차항(HVP)의 기여 — LLM 레그**~~ `[제외]` | std50k5(N=50·5/50) LoRA rank {16,32,64} × Spearman vs (b) | **◐** r16 ● / r32·r64 seed0 | **미수록**(2026-07-27 Yonghee) — **G5 실행 취소**. 2차항 논지는 **CNN 레그(T11)만으로 간다** |
 | **Removal-curve — CNN** | worst-first vs best-first 제거 후 재학습 acc 분리 | **◐** 현 시나리오 {feature-noise, label-flip, iid} = 축 밖 | **G6** — 6~9 셀 |
 | **Removal-curve — LLM** | silo5 N=5 · worst/best-first 제거 후 val-loss | **● 완료**(noisy·frzero 3-seed) | frrand 행 삭제 |
 
@@ -180,7 +180,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | 실험 | 상태 | 남은 일 |
 |---|---|---|
 | **A축 용량 lever probe — CNN** | **● 완료** (폭 {0.5,1,2,4}× × 참여 {0.2,0.5,1.0}, 22 프리픽스 3-seed + c2 8 프리픽스 3-seed) | 기준칸 w=1·k=1.0은 C1 rundir 재사용 — provenance 각주 |
-| **A축 용량 lever probe — LLM** | **◐** 핵심축만 3-seed | **G12** — 23 셀 |
+| ~~**A축 용량 lever probe — LLM**~~ `[제외]` | **◐** 핵심축만 3-seed | **미수록**(2026-07-27 Yonghee) — **G12 실행 취소** |
 | **φ 부호 감사 — 게이팅의 작동 전제** | LLM 레그 **● 완료**(실행 0 · 파생) / **CNN 레그 ◐**(07-26 신규) | LLM 레그는 없음 — [[flirds-results-ablation]] §4-공통 표 A·B. **CNN 레그는 C1 축 그리드 파생으로 신설**(표 A-CNN·B-CNN·C-CNN, (a)oracle 행 포함) — 종전 "CNN 미커버" 캐비엇은 **부분 해소**, 3-seed는 G2·G9 잔여 31셀에 종속 |
 
 ### 3.5 Detection `[부록 — 발췌]`
@@ -204,7 +204,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 > **2026-07-26 착지분의 결손 판정** (rundir 전수 재대조 · 분석기 재산출 후):
 > - **닫힘 1건**: **G3 종료** — cifar10/iid 점수원 84 + 관측자 12 = **96/96** 착지, P1·P1w 8점수원 3-seed 완주.
 > - **부분 진행 4건**: ~~**G2** 9/24~~ → **24/24 종료(07-27)** · **G9** 17/24(잔여 seed0 7) · **G10** **216/216 종료** · **G4** online Flirds-1st seed0 3셀 — **G4·G10 잔여는 전부 이미 큐에 있었고, 유일한 미배분이던 G14도 07-26 **YH 전량 18셀**로 배분 확정**(§4.4).
-> - **미변 6건**: **G1**(`phase2_matrix` gsm50k5 rundir **여전히 0개**) · **G5** · **G6** · **G7** · **G12** · **G13**. ~~**G8**~~ → **24/24 종료(07-27, `bac5cff`)**: c2fid rundir 144 → **168**(mnist dir1·iid × 4위협 × 3seed).
+> - **미변 4건**: **G1**(`phase2_matrix` gsm50k5 rundir **여전히 0개**) · **G6** · **G7** · **G13**. **G5·G12는 2026-07-27 Yonghee 지시로 실행 취소 → 해당 표 미수록**. ~~**G8**~~ → **24/24 종료(07-27, `bac5cff`)**: c2fid rundir 144 → **168**(mnist dir1·iid × 4위협 × 3seed).
 > - ~~**신규 결손 1건**: **G14**~~ → **18/18 종료(07-27, 실패 0)**. `vanilla`↔`observer` 18쌍 bit-identical로 두 루트 병합 전제도 확인됐다(§4.4).
 > - 코드 상태 정정 2건: `track_c1.py`에 `C1_PARTITION`·`C1_THREAT`(clean|label_flip|free_rider|grad_noise)·고정 dose가 **이미 들어가 있고**(레거시 `C1_SCENARIO` 경로는 비트동일 보존), `track_c2.py:157` `MODEL_FN`에 **`"mnist": LeNet5`도 이미 있다**. 즉 **G2·G8·G9·G10의 "코드 변경 필요"는 전부 해소**됐고 남은 건 셀 수뿐이다.
 
@@ -214,17 +214,17 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | ~~**G3**~~ | ~~cifar10/iid 비-flirds 점수원 7종~~ | ~~`track_c2.py`+track_h arm~~ | **0 — 2026-07-26 종료** (96/96 착지) | – | – | ✅ |
 | **G4** | R4 개입 — **arm 축소판(07-25)**: online Flirds-1st + clean 열(vanilla·Flirds·Flirds-1st) 3-seed화 | track_h `rundirs_llm`·`rundirs_llm_hj` (gsm50k5) | online 1st **4**(2위협 × seed{1,2}) + clean **~6** ≈ **~10** *(seed0 3셀 착지 완료; 구안 renorm 4종+online 7종 ~111런은 스코프 아웃)* | 불필요 | 본문 downstream | **P0** |
 | ~~**G2**~~ | ~~1B-CNN (a)-오라클 오염축 정렬 — cifar10~~ | ~~`track_c1.py`~~ | **0 — 2026-07-27 종료** (24/24 · 실패 0) | – | – | ✅ |
-| **G5** | 2차항 LLM 레그 seed 보강 | `probe_signal` std50k5 rank sweep | **4** (r32·r64 × seed{1,2}) | 불필요 | 본문 ablation | **P1** |
+| ~~**G5**~~ | ~~2차항 LLM 레그 seed 보강~~ | ~~`probe_signal` std50k5 rank sweep~~ | **0 — 실행 취소**(2026-07-27 Yonghee). 해당 본문 표(T12)는 **미수록** | – | – | ⛔ |
 | **G6** | Removal-curve CNN 오염축 정렬 | `removal_dose` CNN | **6**(frzero·gn × 3seed) **+3**(lf@0.70 재실행 시) | 불필요(G2 확장 공유·완료) | 본문 ablation | **P1** |
 | **G14** | **(신규) mnist downstream 기준 arm** — `oracle_excl`(천장)·`random_excl`(통제) | **`runs/track_g/sbatch_cnn_mnist_anchor.sh`**(신규 · `track_c2.py` 호출) | **18** (=2파티션 × **오염 3위협** × 3seed; clean은 오염 클라 0이라 두 arm이 정의되지 않는다) | 불필요 | 부록 downstream(**recovery 산출의 전제**) | **P2 · 배분 완료**(YH 전량 0-17, §4.4) |
 | ~~**G8**~~ | ~~1A-CNN mnist 무대 신설 (fidelity·detection)~~ | ~~`track_c2_fid.py`~~ | **0 — 2026-07-27 종료** (24/24 · 실측 9.32 GPU-h · `bac5cff`) | – | 부록 fidelity **+** 부록 detection | **P2** |
 | **G9** | 1B-CNN mnist vs (a) — **mnist 완주** | `track_c1.py` | **7** (=mnist 24셀 − 착지 17; 전부 **seed0**: dir1 {clean, lf@0.70, frzero, gn} + iid {lf@0.70, frzero, gn}) | **불필요** | 부록 fidelity | **P2** |
 | ~~**G10**~~ | ~~2-CNN mnist downstream~~ | ~~track_h CNN~~ | **0 — 2026-07-26 종료** (216/216 · 실패 0) — 남은 건 **G14 18**뿐 | – | – | ✅ |
-| **G12** | A축 lever probe LLM seed 보강 | `probe_signal/rundirs`·`noise_probe` | **23** | 불필요 | 부록 ablation | **P2** |
+| ~~**G12**~~ | ~~A축 lever probe LLM seed 보강~~ | ~~`probe_signal/rundirs`·`noise_probe`~~ | **0 — 실행 취소**(2026-07-27 Yonghee; HJ 큐에서도 07-26 취소됨). 부록 A10의 **LLM 레그 미수록** | – | – | ⛔ |
 | **G7** | op-count를 N·R·K 파라메트릭으로 재작성 | `runs/measured_2026-07/op_counts.py` | **0**(실행 없음) | 출력 포맷만 | 본문 cost | **P0(문서)** |
 | **G13** | *(선택)* loss-heur C6 교정 3B/7B 재측정 | `track_d` rundirs_e4 | **12** | 불필요 | 부록 cost 각주 | **P3** |
 
-### 4.1 G12 내역 (seed 부족 셀)
+### 4.1 ~~G12 내역 (seed 부족 셀)~~ ⛔ **실행 취소 (2026-07-27)** — 아래는 이력
 
 | 셀 프리픽스 | 현 seed | 부족 |
 |---|---|---|
@@ -244,11 +244,11 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | 그룹 | 잔여 런 수 (2026-07-26 기준) | 코드 변경 |
 |---|---|---|
 | **P0 (본문 필수)** | G1 6~9 · ~~G3 96 → **0(종료)**~~ · G4 0(큐에 있음) = **~8** | 없음 |
-| **P1 (본문 필수)** | ~~G2 15 → **0(종료)**~~ · G5 4 · G6 6~9 = **~13** | 없음(확장 완료) |
-| **P2 (부록)** | ~~G8 24 → **0(종료)**~~ · ~~G9 16 → **7**~~ · ~~G10 2 → **0(종료)**~~ · ~~**G14 18** → **0(종료)**~~ · G12 23 = **~30** | 없음(확장 완료) |
+| **P1 (본문 필수)** | ~~G2 15 → **0(종료)**~~ · ~~G5 4 → **0(취소)**~~ · G6 6~9 = **~8** | 없음(확장 완료) |
+| **P2 (부록)** | ~~G8 24 → **0(종료)**~~ · ~~G9 16 → **7**~~ · ~~G10 2 → **0(종료)**~~ · ~~**G14 18** → **0(종료)**~~ · ~~G12 23 → **0(취소)**~~ = **7** | 없음(확장 완료) |
 | **문서 전용** | G7 = **0** | 없음 |
 
-> **07-25 대비 잔여가 ~435 → ~51로 줄었다** — 줄어든 몫은 **G3 96런 종료**, **G10 216런 완주**, 그리고 07-27 착지 4건(**G2 15 · G8 24 · G14 18 · G9 9**)이다.
+> **07-25 대비 잔여가 ~435 → ~24로 줄었다** — 줄어든 몫은 **G3 96런 종료**, **G10 216런 완주**, 07-27 착지 4건(**G2 15 · G8 24 · G14 18 · G9 9**), 그리고 **07-27 실행 취소 2건(G5 4 · G12 23 = 27런; 해당 표는 미수록)**이다.
 > **남은 무게중심은 한 곳뿐이다**: **LLM 주무대 (b) 오라클(G1)** — 본문 LLM fidelity가 통째로 비어 있는 **유일한 본문 공백**이고, 부록 detection의 R4 칸도 같이 막고 있다. **CNN 쪽은 07-26~27로 전부 채워졌다**(G3·G2·G8·G14 종료; 잔여는 G9 mnist seed0 7셀뿐이고 이미 제출돼 있다). **코드 변경은 한 건도 남지 않았고 전부 셀 수 문제다.**
 
 ### 4.3 clean 대조가 없고, 채울 계획도 없는 무대

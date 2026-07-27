@@ -33,7 +33,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | **1. Fidelity** | 부분참여 충실도 ● | 정확도-무대 충실도 ⬚ |
 | **2. Downstream** | 점수원 경쟁 ● | 정확도 개입(GSM8K) ● |
 | **3. Detection** | 부분참여 φ-AUROC ●(=fidelity와 같은 rundir) | 주무대 탐지 ⬚ |
-| **4. Ablation** | 2차항·lever·removal (CNN 레그) ● | 〃 (LLM 레그) ● |
+| **4. Ablation** | 2차항·lever·removal (CNN 레그) ● | removal (LLM 레그) ● · **2차항·lever LLM 레그 ⛔ 미수록**(G5·G12 취소) |
 | **5. 비용·규모** | op-count·runtime ● | 지수-비용 스케일링 ● |
 
 > ⚠ LLM 주무대(정확도 fidelity·탐지)는 같은 캠페인(R4 GSM8K)의 **exact (b) 오라클 부착분(L2)이 아직 미실행**이라 ⬚. downstream(개입)만 착지. CNN은 fidelity·탐지가 **한 rundir(부분참여 캠페인)에서 동시 산출**.
@@ -97,7 +97,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 |---|---|---|---|---|
 | **점수원 경쟁 — 개입 정확도** | 같은 개입 정책에서 **8점수원 중 어느 φ 정의가 학습을 잘 만드나**. {온라인 배포게이팅, 재학습 부호게이트}×위협, cifar10/dir1, 절대 acc. vanilla(바닥)·oracle_excl(천장)·random_excl 앵커 | ● 3-seed | `[본문·주무대]` (§5.3) | `runs/track_h/rundirs_cnn` |
 | **점수원 경쟁 — cifar10/iid (저-이질성 짝)** | 위 경쟁을 파티션만 iid로. **P1·P1w 8점수원 3-seed 완주**(2026-07-26, 96 rundir 착지 = G3 종료). 앵커 3종 보유 | ● 3-seed | `[본문·주무대]` (§5.3 짝) | `runs/track_h/rundirs_cnn`(cifar10_iid) |
-| **점수원 경쟁 — mnist {dir1, iid}** | 위 경쟁을 데이터셋만 mnist로(G10) + 기준 arm(G14). 절대 acc **및 recovery** 둘 다 산출 | ● **216/216 + 기준 arm 18/18 완주** | `[부록]` | `runs/track_h/rundirs_cnn`(mnist) + `runs/track_g/rundirs_cnn`(mnist 앵커) |
+| **점수원 경쟁 — mnist {dir1, iid}** | 위 경쟁을 데이터셋만 mnist로(G10) + 기준 arm(G14). **절대 acc**(recovery는 계산되나 비수록) | ● **216/216 + 기준 arm 18/18 완주** | `[부록]` | `runs/track_h/rundirs_cnn`(mnist) + `runs/track_g/rundirs_cnn`(mnist 앵커) |
 | **확장 파티션·데이터셋 개입** | 위 경쟁을 cifar10{iid,qskew,shard}·fmnist{dir1,iid}로. flirds 단독 점수원 × P1~P4 online + retrain(P1·P1w)이 3-seed 실측. 비-flirds 7종은 미실행(**cifar10/iid만 위 행으로 승격**) | ● 3-seed(flirds 단독) | `[후보]` | `runs/track_h`(p1w_cnn) |
 | **fmnist·iid 8점수원 경쟁** | 주무대 경쟁을 fmnist/iid로 확장(데이터셋·파티션 강건성). grad-noise 1차-계열 실명·frzero renorm 붕괴가 dir1과 동일 재현. **비-flirds 7종은 seed0 단독** | ◐ seed0(flirds만 ●) | `[후보]` (3-seed 전 인용 금지) | `runs/track_h`(fmnist/iid) |
 | **개입 정책 축 (P1~P5)** | 같은 무대서 7정책(sign/sign-weight/soft-mult/z-gate/신뢰 hard·soft) × 8점수원 종합 경쟁점수 + clean parity | ● 3-seed | `[본문·주무대 보조]` | `runs/track_h`(competition_score) |
@@ -158,8 +158,8 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **2차항(HVP)의 기여 — LLM 레그** | std50k5 부분참여(5/50)서 Flirds +1.000 vs 1차계열(ComFedSV/ShapleyFL/FedIF) 음수 붕괴. *↔ CNN 짝* | ● 3-seed(경량) | `[본문]` (§5.6①) | `runs/probe_signal`(std50k5) |
-| **A축 용량 lever probe — LLM** | rank·lr·steps·참여·noise lever가 cross-seed 신호를 못 만듦(lr는 공통 shift만). fidelity lever 전반 1.000. *↔ CNN 짝* | ● 핵심축 3-seed(나머지 seed0) | `[본문]` (§5.6②) | `runs/probe_signal/rundirs`+`noise_probe` |
+| ~~**2차항(HVP)의 기여 — LLM 레그**~~ | std50k5 부분참여(5/50)서 Flirds +1.000 vs 1차계열(ComFedSV/ShapleyFL/FedIF) 음수 붕괴. *↔ CNN 짝* | ◐ r16만 3-seed | `[제외 — 미수록]` ⛔ (G5 취소 07-27) | `runs/probe_signal`(std50k5) |
+| ~~**A축 용량 lever probe — LLM**~~ `[제외 — 미수록]` ⛔ (G12 취소 07-27) | rank·lr·steps·참여·noise lever가 cross-seed 신호를 못 만듦(lr는 공통 shift만). fidelity lever 전반 1.000. *↔ CNN 짝* | ◐ 핵심축 3-seed(나머지 seed0) | `[본문]` (§5.6②) | `runs/probe_signal/rundirs`+`noise_probe` |
 | **Removal-curve — LLM** | silo5서 worst-first 제거가 val-loss↓·best-first↑ = 게임-무관 인과 검증. *↔ CNN 짝* | ● 3-seed | `[본문]` (§5.6③) | `runs/removal_dose/rundirs` |
 | **Dose-response** | φ 탐지 문턱 vs 오염강도(silo5 noisy nr·frrand dm 스윕) | ● 3-seed | `[제외]` (논문 미수록) | `runs/removal_dose/rundirs`(B) |
 | **AdamW 브리지 — external validity** | SGD→AdamW optimizer 갭서 fidelity(+0.77; (a)↔(b) 자체 괴리 caveat) | ● 3-seed | `[제외]` | `runs/removal_dose/rundirs_trackd`(A1/D) |
@@ -219,7 +219,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | **Fidelity** | 부분참여 충실도(in-run) ● · (retrain)오염축 정렬 축 그리드 vs (a) **● cifar10 24/24 · ◐ mnist 17/24** | 정확도-무대 충실도(in-run) ⬚ · (retrain)silo5 (a)-leg ● |
 | **Downstream** | 점수원 경쟁 dir1 ● · **iid ●**(07-26) · mnist ◐ | 정확도 개입(GSM8K) ● · (근거)무해성 ● |
 | **Detection** | 부분참여 φ-AUROC ● (mnist 무대는 c2fid 미지원 ⬚) | 주무대 탐지 ⬚ |
-| **Ablation** | 2차항·lever·removal (CNN 레그) ● · φ 부호 감사 CNN 레그 ◐ | 2차항·lever·removal (LLM 레그) ● |
+| **Ablation** | 2차항·lever·removal (CNN 레그) ● · φ 부호 감사 CNN 레그 ◐ | removal (LLM 레그) ● · **2차항·lever LLM 레그 ⛔ 미수록** |
 | **비용·규모** | op-count·microbench·runtime ● | 지수-스케일링 ●/◐ · 위상분리 ● |
 
 > **선택 관점 힌트**(2026-07-27 갱신): LLM 쪽 fidelity·detection 주무대(R4-L2)가 **여전히 미실행 ⬚**라 본문 LLM in-run fidelity는 비어 있다 — **이제 단일 최우선 후보**다. CNN 쪽은 07-26~27에 세 구멍이 닫혔다: **G3 종료**(본문 downstream 두 파티션) · **G2 종료**(1B-CNN 축 그리드 cifar10 24/24 = 본문 vs (a) 서열 확보) · **G14 종료**(mnist 기준 arm → downstream recovery 산출 가능). **G8 종료**(mnist c2fid 24/24 = 부록 fidelity·detection의 mnist 레그 확보)까지 더해 남은 CNN 구멍은 하나다: **mnist 축 그리드 17/24**(seed0 7셀 = G9)라 부록 vs (a) mnist 행이 2-seed다 — 이미 제출된 상태라 추가 배분도 없다. 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".

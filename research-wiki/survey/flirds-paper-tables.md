@@ -29,11 +29,11 @@ tags: [flirds, paper, tables, mirror]
 | **T9** | 본문 | Cost | op-count 모델 | ⟐ | G7(문서) |
 | **T10** | 본문 | Cost | device100 실측 runtime | ● | – |
 | **T11** | 본문 | Ablation | 2차항(HVP) — CNN 레그 | ● | – |
-| **T12** | 본문 | Ablation | 2차항(HVP) — LLM 레그 | ◐ | **G5**(4) |
+| ~~**T12**~~ | ~~본문~~ | Ablation | 2차항(HVP) — LLM 레그 | ⛔ **미수록**(G5 취소 07-27) | – |
 | **T13** | 본문 | Ablation | Removal-curve — CNN / LLM | CNN ◐ / LLM ● | **G6**(6~9) |
-| **A1–A16** | 부록 | 전 축 | §2 목록 참조 | 혼재 | **G9(7) · G12(23)** 만 잔여 |
+| **A1–A16** | 부록 | 전 축 | §2 목록 참조 | 혼재 | **G9(7)** 만 잔여 (G12 취소) |
 
-> **본문 13종 중 완성 9 · 부분 3 · 미실행 1**(07-27 T4 승급). 유일한 완전 공백은 **T2(R4 (b) 오라클)** 이고, 그게 부록 detection의 R4 칸도 함께 막는다.
+> **본문 12종 중 완성 9 · 부분 2 · 미실행 1**(07-27 T4 승급 · **T12 제외**). 유일한 완전 공백은 **T2(R4 (b) 오라클)** 이고, 그게 부록 detection의 R4 칸도 함께 막는다.
 
 ---
 
@@ -314,11 +314,12 @@ tags: [flirds, paper, tables, mirror]
 | cifar10/dir1 | **0.847±0.027** | <u>0.218±0.053</u> | Flirds 0.6065 vs 1차계열 0.2436 |
 | cifar10/iid | **0.870±0.024** | <u>0.313±0.062</u> | Flirds 0.6258 vs 1차계열 0.2564 |
 
-> **전원참여(N=10) 레그도 같은 방향**(◐ 1-seed, T4-c): grad-noise ρ vs (b) = Flirds +0.939 vs Flirds-1st **−0.406**(dir1) · +0.952 vs +0.152(iid) → "1차항 붕괴는 부분참여 탓"이 아니라 **grad-noise 자체의 성질**.
+> **전원참여(N=10) 레그도 같은 방향**(● **3-seed**, T4-c): grad-noise ρ vs (b) = Flirds **+0.915±0.052** vs Flirds-1st **−0.188±0.228**(dir1) · +0.968±0.015 vs +0.139±0.094(iid) → "1차항 붕괴는 부분참여 탓"이 아니라 **grad-noise 자체의 성질**. **T12(LLM 레그)가 미수록으로 빠졌으므로 2차항 논지는 이 표 + T4-c 두 CNN 무대가 진다.**
 
-## T12 · 2차항(HVP)의 기여 — LLM 레그 `[본문]` ◐ **seed 부족 — G5**
+## ~~T12~~ · 2차항(HVP)의 기여 — LLM 레그 `[제외 — 미수록]` ⛔
 
-> Llama-3.2-1B · **std50k5 부분참여(N=50, 5/50 = 클라당 참여 희박)** · (b) per-round 대비 Spearman · LoRA rank {16,32,64}. **r16만 3-seed, r32·r64는 seed0**(잔여 4런).
+> ⛔ **2026-07-27 Yonghee 지시로 G5(잔여 4런) 실행 취소 → 이 표는 논문에 싣지 않는다.** 2차항 논지는 **T11(CNN 레그, ● 3-seed)만으로** 간다. 아래는 이력으로 남긴다. **되살릴 여지**: `r=16` 열은 이미 3-seed(●)라, LLM 레그를 rank-sweep 없이 **r16 단일 열**로 축소하면 추가 실행 0으로 수록 가능하다 — 필요하면 말해 달라.
+> Llama-3.2-1B · **std50k5 부분참여(N=50, 5/50 = 클라당 참여 희박)** · (b) per-round 대비 Spearman · LoRA rank {16,32,64}. **r16만 3-seed, r32·r64는 seed0**.
 > 출처 `runs/probe_signal/figures/llm_probe_summary.csv`.
 
 | 방법 | r=16 ● | r=32 ◐ | r=64 ◐ |
@@ -365,11 +366,11 @@ tags: [flirds, paper, tables, mirror]
 | **A3** | Fidelity | 1A-LLM 대규모 교차-디바이스 앵커 | ● | 3위협 전부 **+1.000** — 변별력 0, 본론은 비용(T10) | 〃 |
 | **A4** | Fidelity | 1B-CNN mnist 축 그리드 vs (a) | ◐ **17/24**(잔여 seed0 7 = G9) | vs (b) 평균(오염3) loss-heur dir1 **+0.994** / Flirds iid **+0.938** | 〃 §1B-CNN 축 그리드(mnist 행) |
 | **A5** | Fidelity | 1C 재현성·안정성 | ⟐ | (b) 타깃 xseed: **비IID silo5 +0.87~+0.93 ≫ IID-clean −0.37~+0.16** | 〃 §1C |
-| **A6** | Downstream | 2-CNN mnist {dir1, iid} 점수원 경쟁 | ● 216/216 + 기준 arm 18/18 완주 | retrain recovery 평균(오염3): Flirds dir1 **+1.049** / iid **+0.985** (2위 loss-heur .960/.832) · online frzero renorm **−0.42~−7.00** | [[flirds-results-downstream]] §mnist |
+| **A6** | Downstream | 2-CNN mnist {dir1, iid} 점수원 경쟁 | ● 216/216 + 기준 arm 18/18 완주 | retrain 오염평균 **절대 acc**: Flirds dir1 **.9777** / iid **.9807**(천장 .9780/.9808) · online frzero renorm **.9275~.9516 < vanilla .9713** = clean 오배제 | [[flirds-results-downstream]] §mnist |
 | **A7** | Downstream | 2-CNN P1w (부호+크기가중) | cifar10 ● / mnist ◐ | **FedIF가 P1w에서 grad-noise 실명 탈출**(.6321 vs P1 .2619) | 〃 §cifar10/iid P1w |
 | **A8** | Downstream | 2-LLM 표준 개입 무해성 (clean do-no-harm) | ● | 전 스케일 \|ΔMMLU\|≤0.0013 · \|ΔROUGE\|≤0.0015 = seed 분산 이하 | 〃 §무해성 |
 | **A9** | Cost | 5-LLM runtime silo5·anchor5·std20 · 5-CNN runtime | ● | (a) 재학습이 Flirds의 **292×**(silo5) / **28,177×**(CNN N=10) | [[flirds-results-cost]] |
-| **A10** | Ablation | A축 용량 lever probe — CNN ● / LLM ◐ | CNN ● / LLM ◐ | lever는 φ 크기만 키우고 **cross-seed 실재 신호는 못 만든다** | [[flirds-results-ablation]] §lever |
+| **A10** | Ablation | A축 용량 lever probe — **CNN 레그만**(LLM 레그 ⛔ 미수록, G12 취소) | CNN ● | lever는 φ 크기만 키우고 **cross-seed 실재 신호는 못 만든다** | [[flirds-results-ablation]] §lever |
 | **A11** | Ablation | φ 부호 감사 (게이팅 전제) | LLM ● / CNN ◐ | frzero **exact-0 100%**(same-game) vs renorm 0% · answer-swap은 게이트 작동영역 밖 | 〃 §4-공통 |
 | **A12** | Detection | CNN 부분참여 φ-AUROC — cifar10 {dir1, iid} (T1과 같은 rundir) | ● | 아래 표 | [[flirds-results-detection]] §3-CNN |
 | **A13** | Detection | LLM 교차-디바이스 α-sweep | ● | 앵커 α=0.5서 **(b) 0.604 vs Flirds 0.604(Δ=0.000)** = 오라클-동행 | 〃 §α-sweep |

@@ -109,7 +109,7 @@ tags: [flirds, results, downstream]
 
 ### 개입 정책 축 — 7정책 × 8점수원 종합 `[본문·주무대 보조]` ● 3-seed
 
-> **세팅**: 위와 같은 cifar10/dir1 무대. 지표는 **오염 셀 평균 recovery** = mean over corrupt cells of (arm − vanilla)/(oracle_excl − vanilla) — **1.0=oracle 천장 · 0=개입 없음 · 음수=vanilla보다 악화**. 정책은 전 점수원 공통(셀별 튜닝 금지):
+> **세팅**: 위와 같은 cifar10/dir1 무대. 지표는 **오염 셀 평균 절대 test acc**(괄호 = Δ vs vanilla). ⚠ **2026-07-27 지표 교체** — 종전에는 `recovery`=(arm−vanilla)/(oracle_excl−vanilla)로 냈으나 **recovery는 수록 지표가 아니어서**(oracle 재학습을 분모로 쓴다) 절대 acc로 재기술했다. **서열이 바뀐다** — 아래 ⚠ 각주. 정책은 전 점수원 공통(셀별 튜닝 금지):
 >
 > | 코드 | 정책 | 쓰는 정보 |
 > |---|---|---|
@@ -121,37 +121,46 @@ tags: [flirds, results, downstream]
 > | P5h cgate | 신뢰기반 hard 게이트 | 값+신뢰 |
 > | P5s pweight | 신뢰기반 soft 가중 | 값+신뢰 |
 >
-> n_corrupt_cells = **online·retrain 모두 12**(2026-07-25 frrand 착지로 균일화) · P5만 9. 빈 칸 = 해당 (점수원,정책,시점) 미실행.
+> 오염 셀 = **online·retrain 모두 12**(= {frzero, frrand, grad-noise, lf@0.70} × 3seed; 2026-07-25 frrand 착지로 균일화) · P5만 9(frrand 제외). lf-strmain은 별도 무대라 뺐다. 빈 칸 = 해당 (점수원,정책,시점) 미실행. vanilla 기준선을 마지막 행에 함께 둔다 — **절대 acc는 위협 난이도가 섞인 평균**이라 세로 비교(정책 간)보다 **열 안의 점수원 간 비교**로 읽어야 한다.
 
-**online (배포 게이팅) — 오염 평균 recovery** (● 3-seed)
+**online (배포 게이팅) — 오염 셀 평균 절대 acc** (● 3-seed · 괄호 = Δ vs vanilla)
 
 | 점수원 | P1 | P1v1 | P2(P1w) | P3 | P4 | P5h | P5s |
 |---|---|---|---|---|---|---|---|
-| Flirds | 0.546 | **0.590** | 0.657 | 0.431 | 0.040 | **0.673** | **0.770** |
-| Flirds-1st | <u>0.580</u> |  | 0.525 | 0.512 | **0.124** | 0.448 | 0.385 |
-| loss-heur | **0.647** |  | <u>0.772</u> | <u>0.519</u> | -0.038 | <u>0.592</u> | <u>0.699</u> |
-| FedIF | 0.535 |  | **0.868** | **0.771** | <u>0.109</u> | 0.439 | 0.405 |
-| GTG | -2.873 |  | -2.644 | -0.100 | -0.063 | -0.115 | -0.163 |
-| FedSV | -2.840 |  | -3.123 | -0.090 | -0.140 | -0.290 | -0.087 |
-| ComFedSV | -2.895 |  | -3.149 | -0.062 | -0.125 | -0.189 | -0.067 |
-| ShapleyFL | -2.776 |  | -3.287 | -0.071 | -0.097 | -0.372 | -0.176 |
+| Flirds | <u>0.5856 (+0.0994)</u> |  | 0.5945 (+0.1084) | <u>0.5544 (+0.0683)</u> | **0.5114 (+0.0252)** | **0.5722 (+0.1199)** | **0.5838 (+0.1314)** |
+| Flirds-1st | 0.5134 (+0.0273) |  | 0.4959 (+0.0097) | 0.4990 (+0.0129) | 0.4953 (+0.0091) | 0.4739 (+0.0215) | 0.4742 (+0.0219) |
+| loss-heur | **0.5945 (+0.1083)** |  | <u>0.5983 (+0.1121)</u> | 0.5492 (+0.0631) | <u>0.5034 (+0.0172)</u> | 0.5311 (+0.0787) | <u>0.5757 (+0.1234)</u> |
+| FedIF | 0.5120 (+0.0258) |  | **0.6056 (+0.1194)** | **0.5832 (+0.0970)** | 0.4897 (+0.0035) | 0.4724 (+0.0201) | 0.4745 (+0.0222) |
+| GTG | 0.4817 (−0.0045) |  | 0.4914 (+0.0053) | 0.5543 (+0.0682) | 0.4921 (+0.0060) | <u>0.5393 (+0.0869)</u> | 0.5501 (+0.0978) |
+| FedSV | 0.4769 (−0.0093) |  | 0.4706 (−0.0156) | 0.5310 (+0.0449) | 0.4875 (+0.0014) | 0.5310 (+0.0787) | 0.5516 (+0.0993) |
+| ComFedSV | 0.4724 (−0.0137) |  | 0.4682 (−0.0179) | 0.5280 (+0.0419) | 0.4922 (+0.0061) | 0.5294 (+0.0770) | 0.5521 (+0.0997) |
+| ShapleyFL | 0.4840 (−0.0021) |  | 0.4682 (−0.0179) | 0.5530 (+0.0669) | 0.4869 (+0.0008) | 0.5355 (+0.0831) | 0.5504 (+0.0981) |
+| _vanilla 기준_ | 0.4862 (12셀) |  | 0.4862 | 0.4862 | 0.4862 | 0.4523 (9셀) | 0.4523 (9셀) |
 
-**retrain (관찰자 최종부호 → 재학습) — 오염 평균 recovery** (● 3-seed)
+**retrain (관찰자 최종부호 → 재학습) — 오염 셀 평균 절대 acc** (● 3-seed)
 
 | 점수원 | P1 | P2(P1w) | P5h | P5s |
 |---|---|---|---|---|
-| Flirds | 0.672 | 0.420 | **0.996** | **0.875** |
-| Flirds-1st | <u>0.685</u> | <u>0.560</u> | 0.570 | 0.625 |
-| loss-heur | 0.666 | 0.552 | <u>0.764</u> | <u>0.779</u> |
-| FedIF | **0.725** | **0.927** | 0.578 | 0.611 |
-| GTG | -0.728 | -1.859 | 0.136 | -0.196 |
-| FedSV | -0.763 | -2.209 | 0.123 | -0.157 |
-| ComFedSV | -0.643 | -1.906 | 0.023 | -0.099 |
-| ShapleyFL | -0.773 | -2.354 | 0.064 | -0.373 |
+| Flirds | **0.6061 (+0.1199)** | 0.5937 (+0.1075) | **0.6207 (+0.1684)** | **0.6095 (+0.1571)** |
+| Flirds-1st | 0.5244 (+0.0382) | 0.5051 (+0.0189) | 0.4880 (+0.0357) | 0.4928 (+0.0405) |
+| loss-heur | <u>0.5709 (+0.0848)</u> | <u>0.5971 (+0.1109)</u> | 0.5315 (+0.0792) | 0.5627 (+0.1103) |
+| FedIF | 0.5251 (+0.0389) | **0.6155 (+0.1293)** | 0.4888 (+0.0364) | 0.4887 (+0.0363) |
+| GTG | 0.5622 (+0.0761) | 0.5240 (+0.0378) | <u>0.5844 (+0.1320)</u> | 0.5724 (+0.1201) |
+| FedSV | 0.5596 (+0.0734) | 0.5147 (+0.0285) | 0.5634 (+0.1110) | 0.5720 (+0.1196) |
+| ComFedSV | 0.5632 (+0.0771) | 0.5236 (+0.0374) | 0.5467 (+0.0943) | <u>0.5736 (+0.1213)</u> |
+| ShapleyFL | 0.5613 (+0.0752) | 0.5121 (+0.0260) | 0.5825 (+0.1302) | 0.5646 (+0.1123) |
+| _vanilla 기준_ | 0.4862 (12셀) | 0.4862 | 0.4523 (9셀) | 0.4523 (9셀) |
 
-> ⚠ **retrain P1 1위는 Flirds가 아니라 FedIF**(0.725 vs 0.672)다 — frrand는 free-rider 계열이라 exact-0 계열끼리 촘촘히 붙는 칸이고 Flirds가 거기서 상대적으로 손해를 본다. 반면 **P5h/P5s(9셀, frrand 미포함)에선 Flirds가 1위**(retrain 0.996 = oracle 천장 · 0.875).
+> ⚠ **지표 교체로 서열이 뒤집힌 칸 — 반드시 확인**. 종전 recovery 표와 대조하면:
+> - **retrain P1**: recovery는 **FedIF 0.725 > Flirds 0.672**로 FedIF 1위였는데, 절대 acc는 **Flirds 0.6061 1위 · FedIF 0.5251로 8점수원 중 7위**다. 원인은 recovery의 **분모**다 — frzero·frrand 셀은 (oracle_excl − vanilla) 간격이 매우 좁아 그 두 칸이 recovery 평균을 지배하고, FedIF는 거기서만 강하다. acc로 보면 FedIF는 grad-noise 실명(0.2564)이 그대로 평균에 남는다.
+> - **online/retrain P1·P2의 renorm 4종**: recovery로는 **−0.6~−3.3 "파국"**이었지만 절대 acc로는 **−0.018~+0.077**로 vanilla 근방이다. 큰 음수는 좁은 분모가 만든 배율이지 acc 손실의 크기가 아니다. **clean 오배제로 vanilla보다 나빠지는 것은 사실**이나(online P1 GTG −0.0045 · FedSV −0.0093 · ComFedSV −0.0137 · P2 −0.0156~−0.0179), 폭은 1~2pt다.
+> - 바뀌지 않는 것: **P2(P1w)는 FedIF 최고**(online 0.6056 · retrain 0.6155) · **P5(신뢰)는 Flirds 최고**(retrain P5h 0.6207) · **P4(z-게이트)는 전 점수원 vanilla+0.00~0.03으로 사실상 무개입** · **Flirds-1st는 어느 정책에서도 하위권**.
 >
-> **읽기**: ① **renorm 4종(GTG·FedSV·ComFedSV·ShapleyFL)은 게이트 정책(P1/P2)서 online −2.6~−3.3 · retrain −0.6~−2.4 = 파국** — free-rider를 못 걸러 clean만 오배제. 게이트를 안 쓰는 P3/P4에선 ≈0으로 수렴(개입 효과 자체가 없음). ② **Flirds는 P5(신뢰) 정책에서 1위**(P5h retrain 0.996 = oracle 천장, P5s retrain 0.875·online 0.770). 반면 **P1/P2(순수 부호) retrain에선 FedIF·Flirds-1st에 밀린다**. ③ **P2(P1w)에선 FedIF가 최고**(online 0.868 / retrain 0.927) — 07-21 P1w 승격 심사에서 "타 소스 역전" 조항에 걸린 지점이고, frrand 추가 후에도 유지. ④ P4(z-게이트)는 전 점수원 ≈0 → 상대순위만으론 개입이 안 됨. **출처**: `runs/track_h/analysis/competition_score.csv`.
+> **읽기**: ① **Flirds가 7정책 중 4개(P1 retrain·P4·P5h·P5s)에서 1위**이고, 나머지 3개는 loss-heur(online P1)·FedIF(P2·P3)가 가져간다. ② **renorm 4종은 게이트 정책(P1/P2)에서만 vanilla 이하로 내려간다** — free-rider를 못 걸러 clean을 오배제하기 때문이고, 게이트를 안 쓰는 P3에선 +0.042~+0.068로 회복한다. ③ **P5(신뢰 기반)가 Flirds에 가장 유리한 정책**(retrain 0.6207 = 이 표 전체 최고값). ④ 절대 acc 기준 최고값은 **retrain P5h Flirds 0.6207**이다. **출처**: `runs/track_h/analysis/cnn_competition.csv`(`final_acc`; 오염 12셀 평균). recovery 판은 같은 CSV의 `recovery` 열 · `competition_score.csv`에 남아 있으나 **수록하지 않는다**.
+
+<!-- 종전 recovery 표(2026-07-27 강등, 비수록): online P1 Flirds .546/loss-heur .647/FedIF .535/renorm −2.8~−2.9 · retrain P1 FedIF .725/Flirds-1st .685/Flirds .672 · retrain P5h Flirds .996. git 이력 + competition_score.csv 에 보존. -->
+
+> _(구) recovery 읽기 — 비수록_: ① **renorm 4종(GTG·FedSV·ComFedSV·ShapleyFL)은 게이트 정책(P1/P2)서 online −2.6~−3.3 · retrain −0.6~−2.4 = 파국** — free-rider를 못 걸러 clean만 오배제. 게이트를 안 쓰는 P3/P4에선 ≈0으로 수렴(개입 효과 자체가 없음). ② **Flirds는 P5(신뢰) 정책에서 1위**(P5h retrain 0.996 = oracle 천장, P5s retrain 0.875·online 0.770). 반면 **P1/P2(순수 부호) retrain에선 FedIF·Flirds-1st에 밀린다**. ③ **P2(P1w)에선 FedIF가 최고**(online 0.868 / retrain 0.927) — 07-21 P1w 승격 심사에서 "타 소스 역전" 조항에 걸린 지점이고, frrand 추가 후에도 유지. ④ P4(z-게이트)는 전 점수원 ≈0 → 상대순위만으론 개입이 안 됨. **출처**: `runs/track_h/analysis/competition_score.csv`.
 
 ### clean 무해성 (do-no-harm parity) `[본문·근거]` ● 3-seed
 
@@ -241,9 +250,9 @@ tags: [flirds, results, downstream]
 ### 점수원 경쟁 — mnist {dir1, iid} `[부록]` ● 216/216 + 기준 arm 18/18 완주
 
 > **세팅**: LeNet5 · mnist · N=100 · 10/100 · R=120 · 절대 test acc. cifar10 주무대와 **동일 세팅, 데이터셋만 mnist**. 2026-07-26 점수원·관측자 **216/216**(실패 0) + 2026-07-27 기준 arm **18/18**(G14, 실패 0) → **cifar10 주무대와 같은 구성이 갖춰졌다**.
-> ✅ **G14로 천장·통제가 열렸다**: `oracle_excl`(천장)·`random_excl`(통제)은 `track_g/rundirs_cnn/*_g_seed*`가 낳는데 그 그리드에 mnist가 없어 종전엔 **recovery를 못 냈다**. G14(mnist × {iid,dir1} × 오염3 × 3seed = 18런)가 그 구멍을 메웠고, 아래 **recovery 표가 새로 산출**된다. clean 셀은 오염 클라가 0이라 두 arm이 정의되지 않는다(`–`).
+> ✅ **G14로 천장·통제 arm이 열렸다**: `oracle_excl`(천장)·`random_excl`(통제)은 `track_g/rundirs_cnn/*_g_seed*`가 낳는데 그 그리드에 mnist가 없어 종전엔 두 행이 통째로 비어 있었다. G14(mnist × {iid,dir1} × 오염3 × 3seed = 18런)가 그 구멍을 메웠고, **아래 4표의 천장·바닥 행이 절대 acc로 채워졌다** — cifar10 주무대와 같은 형식이 됐다. clean 셀은 오염 클라가 0이라 두 arm이 정의되지 않는다(`–`).
 > ✅ **무결성 확인**: 같은 셀의 `vanilla`(G14 산출)와 `observer`(track_h 산출) `final_acc`가 **18쌍 전부 bit-identical(diff 0.000000)** — fmnist 선례(36쌍 0.000000)와 같다. 두 루트를 한 무대로 합치는 전제가 측정으로 확인됐다.
-> `= vanilla(무발화)` = 그 점수원의 누적 φ가 전 클라 양수라 kept=전원 → 재학습이 vanilla와 동일해지는 칸(`skipped=equals_vanilla`). 값이 없는 게 아니라 **개입이 성립하지 않은 것**이고, recovery는 정의상 **0.000**이다.
+> `= vanilla(무발화)` = 그 점수원의 누적 φ가 전 클라 양수라 kept=전원 → 재학습이 vanilla와 동일해지는 칸(`skipped=equals_vanilla`). 값이 없는 게 아니라 **개입이 성립하지 않은 것**이다(Δacc = 0).
 
 **mnist / dir1 — online (P1)** (● 3-seed)
 
@@ -309,37 +318,12 @@ tags: [flirds, results, downstream]
 | ComFedSV | 0.9809±0.0014 | 0.9742±0.0023 | <u>0.9807±0.0007</u> | **0.9809±0.0014** | 0.9786 |
 | ShapleyFL | 0.9804±0.0012 | 0.9741±0.0012 | <u>0.9807±0.0007</u> | **0.9809±0.0014** | 0.9786 |
 
-> ‡ dir1 retrain의 Flirds-1st·FedIF는 grad-noise 3 seed **전부** `= vanilla(무발화)`(kept=100/100)라 값이 vanilla와 정확히 같다 — 분석기가 `skipped=equals_vanilla` 칸을 vanilla로 채운 결과이고, recovery는 3 seed 모두 **0.000**이다. § iid retrain의 같은 두 칸은 **seed{0,1}만 무발화**이고 seed2는 1명을 배제했다가 오히려 손해를 봤다(kept=99, recovery **−0.172**) → 평균 recovery가 **−0.057**로 음수다.
+> ‡ dir1 retrain의 Flirds-1st·FedIF는 grad-noise 3 seed **전부** `= vanilla(무발화)`(kept=100/100)라 값이 vanilla와 정확히 같다 — 분석기가 `skipped=equals_vanilla` 칸을 vanilla로 채운 결과이고, **Δacc = 0.0000**이다. § iid retrain의 같은 두 칸은 **seed{0,1}만 무발화**이고 seed2는 1명을 배제했다가 **오히려 손해를 봤다**(kept=99 · acc 0.9015 vs 그 seed의 vanilla 0.9130 = **−1.15pt**).
 
-**recovery — mnist/dir1** (`(arm − vanilla) / (oracle_excl − vanilla)` · ● 3-seed · 1.000 = 천장 도달)
-
-| 점수원 | online frzero | online grad-noise | online lf@0.70 | **online 평균** | retrain frzero | retrain grad-noise | retrain lf@0.70 | **retrain 평균** |
-|---|---|---|---|---|---|---|---|---|
-| Flirds | +0.266±0.836 | +0.995±0.035 | +0.942±0.109 | +0.734 | +1.148±0.210 | +0.976±0.024 | +1.023±0.033 | **+1.049** |
-| Flirds-1st | +1.221±0.225 | +0.142±0.148 | +0.922±0.017 | <u>+0.762</u> | +1.080±0.113 | +0.000±0.000 | +1.000±0.000 | +0.693 |
-| loss-heur | +1.089±0.162 | +1.000±0.026 | +0.837±0.075 | **+0.975** | +1.203±0.195 | +0.655±0.100 | +1.023±0.033 | <u>+0.960</u> |
-| FedIF | +1.116±0.104 | +0.146±0.122 | +0.819±0.132 | +0.694 | +1.104±0.101 | +0.000±0.000 | +1.000±0.000 | +0.701 |
-| GTG | −3.217±1.047 | +1.007±0.016 | +0.963±0.009 | −0.416 | +0.013±0.053 | +1.003±0.004 | +1.017±0.038 | +0.678 |
-| FedSV | −5.857±0.647 | +0.998±0.023 | +0.910±0.044 | −1.316 | −0.517±0.337 | +1.003±0.004 | +1.017±0.038 | +0.501 |
-| ComFedSV | −6.272±0.897 | +1.004±0.013 | +0.892±0.036 | −1.458 | −0.502±0.358 | +1.003±0.004 | +1.017±0.038 | +0.506 |
-| ShapleyFL | −6.996±0.703 | +1.025±0.028 | +0.959±0.003 | −1.671 | −0.517±0.398 | +1.003±0.004 | +1.017±0.038 | +0.501 |
-
-**recovery — mnist/iid** (● 3-seed)
-
-| 점수원 | online frzero | online grad-noise | online lf@0.70 | **online 평균** | retrain frzero | retrain grad-noise | retrain lf@0.70 | **retrain 평균** |
-|---|---|---|---|---|---|---|---|---|
-| Flirds | +0.859±0.160 | +0.951±0.050 | +0.924±0.076 | <u>+0.911</u> | +0.951±0.073 | +1.004±0.011 | +1.000±0.000 | **+0.985** |
-| Flirds-1st | +0.585±0.474 | −0.144±0.219 | +1.003±0.025 | +0.481 | +1.000±0.000 | −0.057±0.081 | +1.000±0.000 | +0.648 |
-| loss-heur | +0.920±0.131 | +0.988±0.032 | +0.974±0.009 | **+0.961** | +0.948±0.047 | +0.547±0.066 | +1.000±0.000 | <u>+0.832</u> |
-| FedIF | +0.924±0.006 | −0.144±0.219 | +0.985±0.032 | +0.588 | +1.000±0.000 | −0.057±0.081 | +1.000±0.000 | +0.648 |
-| GTG | −0.423±0.389 | +0.991±0.027 | +0.922±0.034 | +0.497 | +0.420±0.122 | +1.000±0.000 | +1.000±0.000 | +0.807 |
-| FedSV | −1.469±0.897 | +0.995±0.015 | +0.989±0.022 | +0.172 | +0.032±0.158 | +1.000±0.000 | +1.000±0.000 | +0.677 |
-| ComFedSV | −1.469±0.897 | +0.995±0.015 | +0.989±0.022 | +0.172 | +0.032±0.158 | +1.000±0.000 | +1.000±0.000 | +0.677 |
-| ShapleyFL | −1.393±0.509 | +0.992±0.014 | +1.006±0.037 | +0.202 | −0.000±0.016 | +1.000±0.000 | +1.000±0.000 | +0.667 |
-
-> **읽기**: ① **retrain에서 Flirds가 두 파티션 모두 1위**(dir1 **+1.049** = 천장 초과 · iid **+0.985**)이고, 2위는 loss-heur(0.960 / 0.832)다. dir1 1.049는 오차가 아니라 **오염 클라 배제 외에 clean 클라 한둘까지 걸러 천장보다 좋아진 칸**이다(kept 54~58/100, frzero recovery +1.148). ② **online frzero에서 renorm 4종이 크게 음수**(dir1 GTG **−3.217** · FedSV −5.857 · ComFedSV −6.272 · ShapleyFL **−6.996** / iid −0.423~−1.469) — free-rider를 못 짚고 **clean을 오배제**해서 vanilla보다 나빠진다. 절대 acc로는 1~5pt 차이지만 **recovery 축에서는 부호가 뒤집혀 크기가 드러난다**(분모 = 천장−바닥 = frzero 0.0063 dir1로 매우 좁다). 같은 이유로 **Flirds의 dir1 online frzero(+0.266±0.836)는 분산이 크다** — 좁은 분모가 seed 노이즈를 증폭한 칸이라 단독 인용 금지. ③ **grad-noise는 1차 계열의 실명 칸**: Flirds-1st·FedIF가 online +0.142~+0.146(dir1) / **−0.144**(iid), retrain은 **0.000**(dir1 무발화) / **−0.057**(iid) — 같은 칸 Flirds는 0.951~1.004다. ④ **retrain에서는 renorm도 회복한다**(0.501~0.807) — 최종부호로 한 번에 거르면 frzero 오배제가 완화된다. online↔retrain 격차가 renorm에서 가장 크다(GTG dir1 −0.416 → +0.678).
+> **recovery는 수록하지 않는다** — G14가 연 `oracle_excl`(천장)·`random_excl`(통제)은 **모든 위협 칸이 (a)류 재학습 arm**이라, 그걸 분모로 쓰는 recovery는 논문 지표가 아니다(§정책 축 각주 참조: 좁은 분모가 서열을 뒤집는다). 기준 arm의 값은 위 표에 **절대 acc 그대로** 남겨 천장·바닥을 읽을 수 있게 했고, `recovery` 열 자체는 `cnn_competition.csv`에 계산돼 있다.
 >
-> **읽기(절대 acc)**: mnist는 **fmnist와 같은 "쉬운 과제" 무대**다 — clean/lf@0.70 전 arm 0.976~0.982 대역에 몰려 위협 간 폭이 거의 없다. 유일하게 갈리는 칸이 **grad-noise**이고, 거기서 dir1 결론이 그대로 재현된다: **1차-계열 실명**(Flirds-1st·FedIF online .9091~.9144 ≈ vanilla .8964/.9221) vs **Flirds .9755~.9809**. frzero에서도 **renorm 붕괴**(GTG .9516~.9768 · FedSV/ComFedSV .9319~.9742 · ShapleyFL .9275~.9741 vs exact-0 계열 .9727~.9807)가 재현되나 절대 폭이 1~5pt로 cifar10(9~12pt)보다 훨씬 작다. **retrain grad-noise에서 renorm 4종이 Flirds와 동급(.9778~.9807)** 인 점은 cifar10/iid의 retrain 패턴과 같다. **출처**: `runs/track_h/analysis/cnn_competition.csv`(dataset=mnist; `final_acc`·`recovery` 열).
+
+> **읽기(절대 acc)**: mnist는 **fmnist와 같은 "쉬운 과제" 무대**다 — clean/lf@0.70 전 arm 0.976~0.982 대역에 몰려 위협 간 폭이 거의 없다. 유일하게 갈리는 칸이 **grad-noise**이고, 거기서 dir1 결론이 그대로 재현된다: **1차-계열 실명**(Flirds-1st·FedIF online .9091~.9144 ≈ vanilla .8964/.9221) vs **Flirds .9755~.9809**. frzero에서도 **renorm 붕괴**(GTG .9516~.9768 · FedSV/ComFedSV .9319~.9742 · ShapleyFL .9275~.9741 vs exact-0 계열 .9727~.9807)가 재현되나 절대 폭이 1~5pt로 cifar10(9~12pt)보다 훨씬 작다. **retrain grad-noise에서 renorm 4종이 Flirds와 동급(.9778~.9807)** 인 점은 cifar10/iid의 retrain 패턴과 같다. **renorm의 clean 오배제는 acc로도 직접 보인다** — online frzero에서 GTG .9516 · FedSV .9344 · ComFedSV .9319 · ShapleyFL .9275로 **vanilla .9713보다 낮다**(dir1). 오염 평균으로도 renorm 4종(.9617~.9693)이 exact-0 계열(.9551~.9773) 아래다. **출처**: `runs/track_h/analysis/cnn_competition.csv`(dataset=mnist; `final_acc`·`recovery` 열).
 
 ### fmnist·iid 8점수원 경쟁 확장 `[후보]` ◐ seed0 파일럿
 
@@ -371,7 +355,7 @@ tags: [flirds, results, downstream]
 | ComFedSV | 0.8574 | 0.7957 | 0.8004 | 0.8504 |  |
 | ShapleyFL | 0.8569 | 0.7929 | 0.7909 | 0.8504 |  |
 
-**오염 셀 평균 recovery** (같은 데이터, 참고용)
+**오염 셀 평균 recovery** (같은 데이터 · **비수록 지표**, 참고용 — 수록은 위 절대 acc 표)
 
 | timing | Flirds | Flirds-1st | loss-heur | FedIF | GTG | FedSV | ComFedSV | ShapleyFL |
 |---|---|---|---|---|---|---|---|---|
@@ -382,7 +366,7 @@ tags: [flirds, results, downstream]
 
 ### 강한-주류 label-flip(strmain) 무대 경쟁 `[후보]` ● 3-seed
 
-> **세팅**: cifar10/dir1 + **lf-strmain**(오염 클라가 주류 클래스로 강하게 뒤집는 변종) 3셀. 8점수원 × P1~P4. 지표 = 오염 평균 recovery.
+> **세팅**: cifar10/dir1 + **lf-strmain**(오염 클라가 주류 클래스로 강하게 뒤집는 변종) 3셀. 8점수원 × P1~P4. 지표 = 오염 평균 recovery — **비수록 지표**다(수록 시 절대 acc로 재기술 필요; §정책 축 각주 참조).
 
 **online** (● 3-seed · n_corrupt_cells=3)
 
@@ -657,6 +641,6 @@ tags: [flirds, results, downstream]
 - **⬚ 미실행**: 확장 파티션 중 cifar10{qskew,shard}·fmnist/dir1의 **비-flirds 점수원 7종** · R4 online Flirds-1st **seed1·2** · R4 clean 열 seed1·2 · R4 frrand·strmain 열 · **mnist 무대의 `oracle_excl`·`random_excl` 기준 arm 18런**(G14 — YH 배분 완료).
 - **✅ 2026-07-26 착지**: **cifar10/iid 8점수원 경쟁 96/96**(G3 종료 — P1·P1w 동반 3-seed) · **mnist {dir1,iid} 216/216 완주**(G10 종료) · R4 online Flirds-1st seed0 3셀.
 - **스코프 아웃(수록 안 함)**: R4 개입 표의 renorm 4종(L4)·online 비-Flirds 계열(L11 중 loss-heur·FedIF·renorm 4종) — 07-25 arm 축소 결정. LLM 스케일의 이들 비교는 fidelity 축(R4-L2)이 담당한다.
-- ✅ **mnist {dir1,iid} 8점수원 = 정본 승격**(2026-07-27): 점수원·관측자 216/216 + 기준 arm 18/18(G14) → **절대 acc·recovery 둘 다 산출**. `vanilla`↔`observer` 18쌍 bit-identical.
+- ✅ **mnist {dir1,iid} 8점수원 = 정본 승격**(2026-07-27): 점수원·관측자 216/216 + 기준 arm 18/18(G14) → **cifar10 주무대와 같은 4-arm 절대 acc 표**. `vanilla`↔`observer` 18쌍 bit-identical. (recovery는 계산되지만 **비수록**.)
 - **◐ 정본 아님**: **fmnist/iid 8점수원(비-flirds seed0 단독)** · std50k5 mixed(arm별 seed 1~3 불균형) · fmnist/iid lf-strmain(rundir 존재, 집계기 위협 파싱 밖).
 - 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §3.2 = git 이력)

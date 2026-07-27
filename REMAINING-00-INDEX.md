@@ -24,12 +24,13 @@
 
 > **[07-26] G10 완주** — mnist downstream **216/216**(실패 0). 잔여 0.
 
-> **[07-27] 착지 4건 — 잔여가 ~117 → ~51런으로 줄었다.**
+> **[07-27] 착지 4건 + 실행 취소 2건 — 잔여가 ~117 → ~24런으로 줄었다.**
 > - ✅ **G14 종료** (YH `3111ca1`, 18/18 · 실패 0 · ~5 GPU-h). mnist `recovery` 열이 열렸다(`cnn_competition.csv` mnist 997/1330행). **무료 검증 통과**: `vanilla`(G14) vs `observer`(G10) 18쌍 `|Δ|=0.000000`.
 > - ✅ **G2 종료** — c1 축 그리드 **cifar10 24/24**(YH `c539f4d` 9/9 · JW 레그). 본문 1B-CNN vs (a) 서열 확보 = **본문 CNN 공백 소멸**.
 > - ◐ **G9 17/24** — mnist seed1·seed2 착지(JB `176864b` 16/16 · 실패 0). **잔여 7셀은 전부 seed0이고 이미 제출돼 있다**: JW `--array=9-13`(5셀) · HJ `1883603` `--array=14-15`(2셀). **추가 배분 불필요.**
 > - ✅ **G8도 종료** (`bac5cff`, 24/24 · 실측 9.32 GPU-h) — c2fid 144 → **168셀**. 부록 mnist fidelity·detection 레그 확보.
-> - **남은 무게중심**: ① **G1(LLM 주무대 (b) 오라클)** = **유일한 본문 공백** ② G12 23 · G5 4 · G6 6~9 · G9 7(제출됨). 잔여 총 **~51런**.
+> - ⛔ **G5(4) · G12(23) 실행 취소** (2026-07-27 Yonghee) — 해당 표는 **논문 미수록**(T12 LLM 2차항 레그 · A10 LLM lever 레그).
+> - **남은 무게중심**: ① **G1(LLM 주무대 (b) 오라클)** = **유일한 본문 공백** ② G6 6~9 · G9 7(제출됨) · G4. 잔여 총 **~24런**.
 > - 결과 반영처 = `research-wiki/survey/flirds-results-{fidelity,detection,downstream,ablation,cost}.md` · `flirds-paper-tables.md`(T4 ● 승급) · `flirds-paper-experiment-plan.md` §4.
 
 **0″. 오염-집합 규약이 무대별로 **셋**이다 — 확정 사항 + 논문에 **2문장 추가 필요**.
@@ -265,7 +266,7 @@ bash <repo>/runs/track_h/run_b200_batch.sh
 
 | 파일 | 담당 |
 |---|---|
-| `REMAINING-b200.md` | G1 · L1 clean 보강 · G5 · G12 |
+| `REMAINING-b200.md` | G1 · L1 clean 보강 · ~~G5 · G12~~(⛔ 07-27 취소) |
 | `REMAINING-slurm-YH.md` | 코드 C-a·C-b · G3 · G8 · G10 · G6 |
 | `REMAINING-slurm-JW.md` | G2·G9 seed0·1 |
 | `REMAINING-slurm-JB.md` | G2·G9 seed2 (LLM→CNN 전환) |

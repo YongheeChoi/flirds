@@ -76,7 +76,10 @@ tags: [flirds, results, ablation]
 
 ## 4-LLM
 
-### 2차항(HVP)의 기여 — LLM 레그 `[본문 §5.6①]` ● 3-seed(경량)
+### 2차항(HVP)의 기여 — LLM 레그 `[제외 — 미수록]` ⛔ (2026-07-27)
+
+> ⛔ **G5(r32·r64 seed{1,2} 4런) 실행 취소 → 논문 미수록**(Yonghee 2026-07-27). **2차항 논지는 CNN 레그(위 절)만으로** 간다 — 그쪽은 ● 3-seed이고, C1 축 그리드 전원참여 레그(cifar10 24/24)까지 붙어 두 무대를 가진다.
+> **되살릴 여지**: `r=16` 열은 이미 3-seed라, rank-sweep을 버리고 **r16 단일 열**로 축소하면 추가 실행 0으로 수록할 수 있다. 아래 내용은 이력으로 남긴다.
 
 > **세팅**: Llama-3.2-1B · **std50k5 부분참여(N=50, 5/50 = 클라당 참여 희박)** · (b) per-round 대비 Spearman · LoRA rank {16,32,64} 3점 = 용량 lever와의 교차 확인. seed0 파일럿(rank16만 3-seed). *↔ CNN 짝*
 
@@ -94,7 +97,9 @@ tags: [flirds, results, ablation]
 
 > 부분참여 5/50에서 **same-game 계열(Flirds·Flirds-1st·loss-heur·Fed-LOO)만 ≥0.999 유지**하고 **uniform-subset(ComFedSV·ShapleyFL)과 FedIF는 −0.04~−0.13으로 부호까지 뒤집힌다** — 참여가 희박하면 subset-샘플링 추정량이 붕괴한다는 뜻. GTG/FedSV는 0.90~0.98로 중간. **rank를 4배 키워도 서열 불변** = 붕괴 원인은 용량이 아니라 참여 구조. LLM은 R=200이라 클라당 참여 횟수가 충분해 **Flirds-1st도 버틴다**(CNN R=10 짧은 지평선에서 1차항이 붕괴하는 것과 대비 — 위 §4-CNN k-sweep). **출처**: `runs/probe_signal/figures/llm_probe_summary.csv`.
 
-### A축 용량 lever probe — LLM `[본문 §5.6②]` ● 핵심축 3-seed(나머지 seed0)
+### A축 용량 lever probe — LLM `[제외 — 미수록]` ⛔ (2026-07-27)
+
+> ⛔ **G12(23런) 실행 취소 → 논문 미수록**(Yonghee 2026-07-27; HJ 큐에서도 07-26에 이미 취소됨). lever 논지는 **CNN 레그(위 절, ● 3-seed)만으로** 간다. 아래는 이력.
 
 > **세팅**: 1B anchor5(N=5 · IID · clean) · lever = LoRA rank{16,32,64} × lr{1e-3,2e-3,3e-3} × local steps{10,20,30}. **묻는 것**: "용량/학습률을 키우면 클라 간 신호가 커지나, 그리고 Taylor 근사가 깨지나". *↔ CNN 짝*
 
@@ -317,6 +322,6 @@ tags: [flirds, results, ablation]
 - Taylor: `runs/measured_2026-07/taylor/llama1b_r10_seed{0,1,2}/summary.json`(pooled resid1/resid2).
 - **φ 부호 감사 (LLM 레그)**: `runs/track_g/audit/sign_table.csv` → `variant=="canon"` 필터 후 (scale, regime, threat, method, corrupt)별 `contribution` 부호 집계(양수 / exact-0 / 음수). β: `runs/rerun_beta03`. TF32: `runs/measured_2026-07/tf32_ab`.
 - **φ 부호 감사 (CNN 레그, 신규)**: `python runs/track_c/c1/make_analysis.py` → `analysis/sign_audit.csv`(`n_neg_clean` · `n_exact_zero_corrupt` · `n_neg_corrupt` · `phi_gap_norm`).
-- **◐ seed0만**: LLM lever의 lr·steps 셀(rank16·lr1e-3·10st만 3-seed) · std50k5 rank32/64.
+- **⛔ 미수록(seed 보강 취소)**: LLM lever의 lr·steps 셀(rank16·lr1e-3·10st만 3-seed, **G12 취소**) · std50k5 rank32/64(**G5 취소**). 두 LLM 레그는 논문에 싣지 않는다 — CNN 짝으로 대체.
 - **◐ 진행 중**: CNN 부호 감사 레그 = C1 오염축 정렬 그리드 **41/48셀** — cifar10 24/24 완주(● 인용 가능) · mnist 17/24(mnist/dir1 clean은 2 seed). **G9 잔여 7셀(mnist seed0)** 착지 후 mnist 행 3-seed 재산출.
 - 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §4·§5 = git 이력)
