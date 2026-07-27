@@ -59,7 +59,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **본문** | Fidelity   | 1A-CNN 대규모 교차-디바이스 부분참여 — cifar10 {dir1, iid}                                                 | ● 완료                                                                  |
 | **본문** | Fidelity   | 1A-LLM 주무대 정확도-무대 충실도 (R4)                                                                    | ⬚ **미실행**                                                             |
 | **본문** | Fidelity   | 1A-LLM 표준 부분참여 충실도 (1B·3B·7B)                                                                 | ● 완료 (clean-IID 전용 무대)                                                |
-| **본문** | Fidelity   | 1B-CNN vs (a) — cifar10 {dir1, iid}                                                           | ◐ **9/24셀**(축 그리드 착지 개시 07-26)                                        |
+| **본문** | Fidelity   | 1B-CNN vs (a) — cifar10 {dir1, iid}                                                           | ● **24/24 완주**(07-27) — 본문 인용 가능                                        |
 | **부록** | Fidelity   | 1B-LLM 소형 앵커 듀얼오라클 vs (a) — **부록 강등**(07-25)                                                  | ● 완료(1B) (clean-IID 참조·폴백)                                            |
 | **본문** | Fidelity   | 1B-LLM 교차-사일로 (a)-leg 듀얼오라클 — silo5 3위협                                                       | ● 완료 · **본문 수록 확정**(07-25, §2.1 권고 채택)                                |
 | **본문** | Downstream | 2-CNN P1 부호-게이트 online/retrain — cifar10 {dir1, iid}                                          | **● 완료**(07-26 iid 96/96 착지 = G3 종료)                                  |
@@ -70,12 +70,12 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **본문** | Ablation   | 2차항(HVP)의 기여 — LLM 레그                                                                         | ◐ **seed 부족**                                                         |
 | **본문** | Ablation   | Removal-curve — CNN                                                                           | ◐ **오염축 불일치**                                                         |
 | **본문** | Ablation   | Removal-curve — LLM                                                                           | ● 완료                                                                  |
-| **부록** | Fidelity   | 1A-CNN mnist {dir1, iid}                                                                      | ⬚ **전량 미실행**(c2fid가 mnist 미지원)                                        |
+| **부록** | Fidelity   | 1A-CNN mnist {dir1, iid}                                                                      | ● **24/24 완주**(07-27 · G8 종료)                                              |
 | **부록** | Fidelity   | 1A-LLM 교차-사일로 (b)-leg                                                                         | ● 완료                                                                  |
 | **부록** | Fidelity   | 1A-LLM 대규모 교차-디바이스 앵커                                                                         | ● 완료                                                                  |
-| **부록** | Fidelity   | 1B-CNN mnist {dir1, iid} vs (a)                                                               | ◐ **8/24셀**(seed1 착지 07-26)                                           |
+| **부록** | Fidelity   | 1B-CNN mnist {dir1, iid} vs (a)                                                               | ◐ **17/24셀**(seed{1,2} 착지 · 잔여 seed0 7)                                           |
 | **부록** | Fidelity   | 1C 재현성·안정성                                                                                    | ⟐ **재산출**(스코프 축소분)                                                    |
-| **부록** | Downstream | 2-CNN mnist {dir1, iid} P1 online/retrain                                                     | ● **216/216 완주**(07-26) · 기준 arm ⬚                                      |
+| **부록** | Downstream | 2-CNN mnist {dir1, iid} P1 online/retrain                                                     | ● **216/216 + 기준 arm 18/18 완주**(07-26~27) — recovery 산출 가능           |
 | **부록** | Downstream | 2-CNN P1w — cifar10/mnist {dir1, iid}                                                         | cifar10 {dir1, iid} ● / mnist ◐(동반 산출)                                |
 | **부록** | Downstream | 2-LLM 표준 개입 무해성 (vanilla·Flirds 가중/선택만)                                                       | ● 완료                                                                  |
 | **부록** | Cost       | 5-LLM runtime — silo5 · anchor5 · std20                                                       | ● 완료                                                                  |
@@ -85,7 +85,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **부록** | Ablation   | **φ 부호 감사 — 게이팅의 작동 전제**                                                                      | LLM 레그 ● / **CNN 레그 ◐**(C1 축 그리드 파생)                                  |
 | **부록** | Detection  | 본문/부록 무대에서 발췌                                                                                 | 무대 상태에 종속(§3.5)                                                       |
 
-> **결손의 무게중심**(2026-07-26 착지 반영): ① **LLM 주무대 (b) 오라클(R4-L2)** — 본문 fidelity·부록 detection이 동시에 걸려 있다. **불변** ② **1B-CNN 축 그리드 3-seed** — 17/48만 착지해 본문 fidelity vs (a) 서열을 아직 못 세운다(신규 무게중심) ③ **mnist는 절반만** — downstream은 216/216 완주했지만 **`oracle_excl`(천장)·`random_excl`(통제) arm이 통째로 없고**(recovery 불가) fidelity/detection(c2fid mnist)은 무대 자체가 0셀 그대로. ~~cifar10/iid 비-flirds 점수원 7종~~ → **07-26 해소**(G3 종료).
+> **결손의 무게중심**(2026-07-26 착지 반영): ① **LLM 주무대 (b) 오라클(R4-L2)** — 본문 fidelity·부록 detection이 동시에 걸려 있다. **불변** ② ~~**1B-CNN 축 그리드 3-seed**~~ — **cifar10 24/24 종료(07-27)**로 본문 fidelity vs (a) 서열 확보. mnist만 17/24 남았다 ③ ~~**mnist는 절반만**~~ — **07-27 해소**: downstream 216/216 + 기준 arm 18/18, c2fid 24/24 완주. 종전 문장은 다음과 같았다 — **`oracle_excl`(천장)·`random_excl`(통제) arm이 통째로 없고**(recovery 불가) fidelity/detection(c2fid mnist)은 무대 자체가 0셀 그대로. ~~cifar10/iid 비-flirds 점수원 7종~~ → **07-26 해소**(G3 종료).
 
 ---
 
@@ -98,7 +98,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **1A-CNN 대규모 교차-디바이스 부분참여** | FedSVCNN · cifar10 {dir1, iid} · N=100 · 10/100 · R=120 · (b) per-round | lf@0.70 ● · frzero ● · gn ● (+clean ●) | **● 완료** | 없음. 기존 표에서 qskew·shard·fmnist 파티션 및 축 밖 위협 열 삭제만 |
 | **1A-LLM 주무대 정확도-무대 충실도 (R4)** | Llama-3.2-1B · gsm50k5 N=50 · 5/50 · R=200 · (b) per-round · GSM8K | swap@0.7 ⬚ · frzero ⬚ | **⬚ 미실행** | **G1** — 6 셀(+clean 3) |
 | **1A-LLM 표준 부분참여 충실도 (1B·3B·7B)** | alpaca IID · N=20 · 2/round · R=200 · (b) per-round | 오염 없음(clean-IID 전용) | **● 완료** | **없음.** 표 캡션에 "clean-IID 전용 무대" 명시만 |
-| **1B-CNN 소형 교차-사일로 vs (a)** | LeNet5/FedSVCNN · N=10 · full · R=10 · (a) 2¹⁰ + (b) 2¹⁰. **오염축 정렬 축 그리드로 재실행 중**(레거시 5-시나리오 그리드는 교체 대상) | cifar10 lf@0.70 ◐ · frzero ◐ · gn ◐ (+clean ◐) — **오염축 4/4 정렬 완료** | **◐ 9/24셀**(cifar10) | **G2(잔여)** — cifar10 seed{0,1} **15 셀**. 러너 확장은 **완료**(`C1_PARTITION`·`free_rider`·`grad_noise` 반영된 rundir 존재) |
+| **1B-CNN 소형 교차-사일로 vs (a)** | LeNet5/FedSVCNN · N=10 · full · R=10 · (a) 2¹⁰ + (b) 2¹⁰. **오염축 정렬 축 그리드로 재실행 중**(레거시 5-시나리오 그리드는 교체 대상) | cifar10 lf@0.70 ◐ · frzero ◐ · gn ◐ (+clean ◐) — **오염축 4/4 정렬 완료** | **● 24/24 완주**(07-27) | **G2 종료** — 실패 0. 8칸 전부 3-seed |
 | **1B-LLM 소형 앵커 듀얼오라클 vs (a)** | Llama-3.2-1B · anchor5 N=5 · full · R=30 · (a) 2⁵ | 오염 없음(clean-IID 전용) | **● 완료(1B)** | **부록 강등(07-25)** — 본문 자리는 silo5 (a)-leg가 대체. 3B/7B (a)는 ⬚(수록 대상 아님) |
 | **1B-LLM 교차-사일로 (a)-leg** | Llama-3.2-1B · silo5 N=5 5도메인 비IID · full · R=10 · (a) 2⁵ = 32 재학습 | swap ● · frzero ● (+clean ●) — **오염축 3/3 정렬** | **● 3-seed** | **본문 수록 확정(07-25 — 권고 채택)**. 남은 일 = 값 전사(전 방법 확장의 ComFedSV clean 열 ⬚) |
 
@@ -145,10 +145,10 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 
 | 실험 | 무대·세팅 | 상태 | 남은 일 |
 |---|---|---|---|
-| **1A-CNN mnist {dir1, iid}** | 1A-CNN(cifar10)과 **동일 세팅**, 데이터셋만 mnist | **⬚ 전량 미실행** — c2fid는 cifar10·fmnist만 지원 | **G8** — 러너에 mnist 추가 + 24 셀. ⚠ **track_h(downstream) mnist는 07-26에 착지했지만 c2fid(fidelity·detection)는 별개 러너라 여전히 0셀** |
+| **1A-CNN mnist {dir1, iid}** | 1A-CNN(cifar10)과 **동일 세팅**, 데이터셋만 mnist | **● 24/24 완주**(07-27) | ~~**G8**~~ **종료**(`bac5cff` · 실측 9.32 GPU-h). ⚠ 종전 캐비엇은 해소됐다 — **track_h(downstream)와 c2fid(fidelity·detection)는 별개 러너**라 07-26 downstream 착지 시점에는 0셀** |
 | **1A-LLM 교차-사일로 도메인 충실도 ((b)-leg)** | 1B · silo5 N=5 5도메인 · full · R=10 · (b) 2⁵ | **● 완료**(swap·frzero 3-seed) | clean·frrand 행 정리 |
 | **1A-LLM 대규모 교차-디바이스 앵커 충실도** | 1B · N=100 α=0.5 · (b) per-round | **● 완료** | frrand 행 삭제 |
-| **1B-CNN mnist {dir1, iid} vs (a)** | 1B-CNN 축 그리드와 동일, mnist | **◐ 8/24셀**(seed1 전량 착지 07-26) | **G9(잔여)** — mnist seed{0,2} **16 셀**. 러너 확장은 **완료** |
+| **1B-CNN mnist {dir1, iid} vs (a)** | 1B-CNN 축 그리드와 동일, mnist | **◐ 17/24셀**(seed{1,2} 착지 07-26~27) | **G9(잔여)** — mnist **seed0 7셀**(dir1 4 + iid 3; iid clean seed0은 착지). 러너 확장은 **완료** |
 | **1B-LLM 소형 앵커 vs (a)** (본문→부록 강등 07-25) | anchor5 N=5 full R=30 · (a) 2⁵ | **● 3-seed(1B)** | 없음 — IID-clean 참조·천장(두 참값 일치도 0.933) 전표 |
 | **1C 재현성·안정성** | (CNN) 방법 cross-seed 안정성 · (LLM) (b) 타깃 자기-안정성 | **⟐ 재산출** | 스코프 축소(iid5·std20 3B/7B·poison 행 제거) + R4·신규 CNN 무대 행 추가 → **G1·G2·G8 착지 후** |
 
@@ -156,7 +156,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 
 | 실험 | 무대·세팅 | 상태 | 남은 일 |
 |---|---|---|---|
-| **2-CNN P1 — mnist {dir1, iid}** | 1A-CNN mnist와 동일 무대 · 8점수원 × online/retrain | **● 216/216 완주**(07-26) · **기준 arm ⬚** | **G10 종료**. 남은 건 **G14 = `oracle_excl`·`random_excl` 기준 arm 18런**뿐(§4.4) |
+| **2-CNN P1 — mnist {dir1, iid}** | 1A-CNN mnist와 동일 무대 · 8점수원 × online/retrain | **● 216/216 + 기준 arm 18/18 완주**(07-26~27) | **G10·G14 모두 종료**. recovery 산출 가능 |
 | **2-CNN P1w — cifar10/mnist {dir1, iid}** | 위와 같은 rundir의 `gatew_v2`/`t2_signw` arm | cifar10 {dir1, iid} **●** · mnist ◐(G10 종속) | **추가 런 0** — G3·G10 rundir에 **동반 산출**(§7.2). cifar10/iid 분은 07-26 착지 완료 |
 | **2-LLM 표준 개입 무해성 (clean do-no-harm)** | std20 clean-IID · 1B/3B/7B · **vanilla + Flirds 가중 + Flirds 선택만** | **● 완료** | ShapleyFL 가중·FedIF 가중 행 삭제(3행 표로 축소) |
 
@@ -190,8 +190,8 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | 후보 | 출처 무대 | 왜 뽑나 | 상태 |
 |---|---|---|---|
 | **CNN 부분참여 φ-AUROC — cifar10 {dir1, iid}** | 1A-CNN과 **같은 rundir** | ① frzero/frrand서 renorm 완전 붕괴(0.00~0.29) ② grad-noise서 Flirds-1st 실명(0.49) = 2차항 논지의 탐지축 재현 ③ Flirds의 (b)-동행(Δ≤0.05) | **● 완료** |
-| **CNN 부분참여 φ-AUROC — mnist {dir1, iid}** | 1A-CNN mnist | 데이터셋 강건성 | **⬚**(G8 동반 — track_h mnist 착지와 무관) |
-| **CNN 소형 전원참여 φ-AUROC — 오염축 정렬** | 1B-CNN 축 그리드와 **같은 rundir** | frzero서 ShapleyFL 반전(0.000)·grad-noise서 Flirds-1st 실명(0.083) = 부분참여 무대 결론의 전원참여 재현 | **◐ 17/48**(신규 07-26) |
+| **CNN 부분참여 φ-AUROC — mnist {dir1, iid}** | 1A-CNN mnist | 데이터셋 강건성 · **Flirds 오라클-동행 재현**(iid Δ=+0.002) | **● 24/24**(G8 종료 07-27) |
+| **CNN 소형 전원참여 φ-AUROC — 오염축 정렬** | 1B-CNN 축 그리드와 **같은 rundir** | frzero서 ShapleyFL 반전(0.000)·grad-noise서 Flirds-1st 실명(0.083) = 부분참여 무대 결론의 전원참여 재현 | **● cifar10 24/24 · ◐ mnist 17/24**(07-27) |
 | **LLM 주무대 탐지 (R4)** | 1A-LLM R4-L2와 **같은 rundir** | §2 약속 이행 + LLM 규모의 (b)-동행 판정 | **⬚**(G1 동반) |
 | **LLM 교차-디바이스 α-sweep 탐지** | 부록 fidelity device100 | frzero는 전 α 1.000(배경 무관) / noisy는 α 비단조 0.57~0.77 — **(b)도 0.604** = "기여도≠탐지"의 정직한 근거 | **● 완료** |
 | *(제외 권고)* LLM 교차-사일로 탐지 | silo5 | φ 9종 전부 1.000(N=5 coarse 천장) → 탐지기가 빠지면 **변별력 0인 표만 남는다** | ● 완료지만 무정보 |
@@ -203,9 +203,9 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 > **런 단위 규약**: CNN track_h는 `<ds>_<part>_<threat>_<source>_seed<N>` 한 rundir가 **온라인 4정책 arm**(P1 `gate_v2` · P1w `gatew_v2` · P3 `mult` · P4 `zgate_v2`)을 함께 낳고, 관측자 rundir `..._obs(f)_seed<N>` 하나가 **vanilla + 전 점수원의 retrain T2 arm**(`t2_sign_*` · `t2_signw_*`)을 낳는다. 그래서 아래 "필요 런"은 **arm 수가 아니라 rundir 수**다. 상세 §7.2.
 > **2026-07-26 착지분의 결손 판정** (rundir 전수 재대조 · 분석기 재산출 후):
 > - **닫힘 1건**: **G3 종료** — cifar10/iid 점수원 84 + 관측자 12 = **96/96** 착지, P1·P1w 8점수원 3-seed 완주.
-> - **부분 진행 4건**: **G2** 9/24(러너 확장은 **완료**) · **G9** 8/24(〃) · **G10** **216/216 종료**(+ **기준 arm 결손 G14 신규 등재**) · **G4** online Flirds-1st seed0 3셀 — **G4·G10 잔여는 전부 이미 큐에 있었고, 유일한 미배분이던 G14도 07-26 **YH 전량 18셀**로 배분 확정**(§4.4).
-> - **미변 7건**: **G1**(`phase2_matrix` gsm50k5 rundir **여전히 0개**) · **G5** · **G6** · **G7** · **G8**(c2fid rundir는 cifar10 96 + fmnist 48뿐, mnist 0) · **G12** · **G13**.
-> - **신규 결손 1건**: **G14** — mnist 무대의 `oracle_excl`·`random_excl` 앵커가 통째로 없다(§4.4).
+> - **부분 진행 4건**: ~~**G2** 9/24~~ → **24/24 종료(07-27)** · **G9** 17/24(잔여 seed0 7) · **G10** **216/216 종료** · **G4** online Flirds-1st seed0 3셀 — **G4·G10 잔여는 전부 이미 큐에 있었고, 유일한 미배분이던 G14도 07-26 **YH 전량 18셀**로 배분 확정**(§4.4).
+> - **미변 6건**: **G1**(`phase2_matrix` gsm50k5 rundir **여전히 0개**) · **G5** · **G6** · **G7** · **G12** · **G13**. ~~**G8**~~ → **24/24 종료(07-27, `bac5cff`)**: c2fid rundir 144 → **168**(mnist dir1·iid × 4위협 × 3seed).
+> - ~~**신규 결손 1건**: **G14**~~ → **18/18 종료(07-27, 실패 0)**. `vanilla`↔`observer` 18쌍 bit-identical로 두 루트 병합 전제도 확인됐다(§4.4).
 > - 코드 상태 정정 2건: `track_c1.py`에 `C1_PARTITION`·`C1_THREAT`(clean|label_flip|free_rider|grad_noise)·고정 dose가 **이미 들어가 있고**(레거시 `C1_SCENARIO` 경로는 비트동일 보존), `track_c2.py:157` `MODEL_FN`에 **`"mnist": LeNet5`도 이미 있다**. 즉 **G2·G8·G9·G10의 "코드 변경 필요"는 전부 해소**됐고 남은 건 셀 수뿐이다.
 
 | ID | 작업 | 무대·러너 | 필요 런(잔여) | 코드 변경 | 산출 축 | 우선도 |
@@ -213,12 +213,12 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | **G1** | **R4-L2: 주무대 (b) 오라클 부착** | `phase2_matrix.py` `REGIME=gsm50k5` (1B · N=50 · 5/50 · R=200) | **6** (=2위협 × 3seed) **+clean 3** | **불필요**(regime 구현 완료) | 본문 fidelity **+** 부록 detection | **P0** |
 | ~~**G3**~~ | ~~cifar10/iid 비-flirds 점수원 7종~~ | ~~`track_c2.py`+track_h arm~~ | **0 — 2026-07-26 종료** (96/96 착지) | – | – | ✅ |
 | **G4** | R4 개입 — **arm 축소판(07-25)**: online Flirds-1st + clean 열(vanilla·Flirds·Flirds-1st) 3-seed화 | track_h `rundirs_llm`·`rundirs_llm_hj` (gsm50k5) | online 1st **4**(2위협 × seed{1,2}) + clean **~6** ≈ **~10** *(seed0 3셀 착지 완료; 구안 renorm 4종+online 7종 ~111런은 스코프 아웃)* | 불필요 | 본문 downstream | **P0** |
-| **G2** | 1B-CNN (a)-오라클 오염축 정렬 — **cifar10 완주** | `track_c1.py` (N=10 full · (a) 2¹⁰ + (b) 2¹⁰) | **15** (=cifar10 24셀 − 착지 9) | **불필요**(확장 반영 완료) | 본문 fidelity | **P1** |
+| ~~**G2**~~ | ~~1B-CNN (a)-오라클 오염축 정렬 — cifar10~~ | ~~`track_c1.py`~~ | **0 — 2026-07-27 종료** (24/24 · 실패 0) | – | – | ✅ |
 | **G5** | 2차항 LLM 레그 seed 보강 | `probe_signal` std50k5 rank sweep | **4** (r32·r64 × seed{1,2}) | 불필요 | 본문 ablation | **P1** |
 | **G6** | Removal-curve CNN 오염축 정렬 | `removal_dose` CNN | **6**(frzero·gn × 3seed) **+3**(lf@0.70 재실행 시) | 불필요(G2 확장 공유·완료) | 본문 ablation | **P1** |
 | **G14** | **(신규) mnist downstream 기준 arm** — `oracle_excl`(천장)·`random_excl`(통제) | **`runs/track_g/sbatch_cnn_mnist_anchor.sh`**(신규 · `track_c2.py` 호출) | **18** (=2파티션 × **오염 3위협** × 3seed; clean은 오염 클라 0이라 두 arm이 정의되지 않는다) | 불필요 | 부록 downstream(**recovery 산출의 전제**) | **P2 · 배분 완료**(YH 전량 0-17, §4.4) |
-| **G8** | 1A-CNN mnist 무대 신설 (fidelity·detection) | `track_c2_fid.py` (`C2_DATASET=mnist`) | **24** (=2파티션 × 4위협(clean 포함) × 3seed) | **불필요**(`track_c2.py:157`에 mnist 이미 존재) | 부록 fidelity **+** 부록 detection | **P2** |
-| **G9** | 1B-CNN mnist vs (a) — **mnist 완주** | `track_c1.py` | **16** (=mnist 24셀 − 착지 8) | **불필요** | 부록 fidelity | **P2** |
+| ~~**G8**~~ | ~~1A-CNN mnist 무대 신설 (fidelity·detection)~~ | ~~`track_c2_fid.py`~~ | **0 — 2026-07-27 종료** (24/24 · 실측 9.32 GPU-h · `bac5cff`) | – | 부록 fidelity **+** 부록 detection | **P2** |
+| **G9** | 1B-CNN mnist vs (a) — **mnist 완주** | `track_c1.py` | **7** (=mnist 24셀 − 착지 17; 전부 **seed0**: dir1 {clean, lf@0.70, frzero, gn} + iid {lf@0.70, frzero, gn}) | **불필요** | 부록 fidelity | **P2** |
 | ~~**G10**~~ | ~~2-CNN mnist downstream~~ | ~~track_h CNN~~ | **0 — 2026-07-26 종료** (216/216 · 실패 0) — 남은 건 **G14 18**뿐 | – | – | ✅ |
 | **G12** | A축 lever probe LLM seed 보강 | `probe_signal/rundirs`·`noise_probe` | **23** | 불필요 | 부록 ablation | **P2** |
 | **G7** | op-count를 N·R·K 파라메트릭으로 재작성 | `runs/measured_2026-07/op_counts.py` | **0**(실행 없음) | 출력 포맷만 | 본문 cost | **P0(문서)** |
@@ -244,12 +244,12 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 | 그룹 | 잔여 런 수 (2026-07-26 기준) | 코드 변경 |
 |---|---|---|
 | **P0 (본문 필수)** | G1 6~9 · ~~G3 96 → **0(종료)**~~ · G4 0(큐에 있음) = **~8** | 없음 |
-| **P1 (본문 필수)** | G2 15 · G5 4 · G6 6~9 = **~28** | 없음(확장 완료) |
-| **P2 (부록)** | G8 24 · G9 16 · ~~G10 2 → **0(종료)**~~ · **G14 18** · G12 23 = **~81** | 없음(확장 완료) |
+| **P1 (본문 필수)** | ~~G2 15 → **0(종료)**~~ · G5 4 · G6 6~9 = **~13** | 없음(확장 완료) |
+| **P2 (부록)** | ~~G8 24 → **0(종료)**~~ · ~~G9 16 → **7**~~ · ~~G10 2 → **0(종료)**~~ · ~~**G14 18** → **0(종료)**~~ · G12 23 = **~30** | 없음(확장 완료) |
 | **문서 전용** | G7 = **0** | 없음 |
 
-> **07-25 대비 잔여가 ~435 → ~117로 줄었다** — 줄어든 몫의 대부분은 **G3 96런 종료**와 **G10 216런 완주**(07-26 216/216)다.
-> **남은 무게중심 두 곳**: ① **mnist fidelity/detection(G8 24)** — downstream만 착지했고 c2fid 무대는 아직 0셀이라 부록 fidelity·detection 항목이 그대로 비어 있다 ② **축 그리드 3-seed(G2 15 + G9 16 = 31)** — 본문 1B-CNN vs (a) 서열의 전제. **코드 변경은 이제 한 건도 남지 않았고 전부 셀 수 문제다.**
+> **07-25 대비 잔여가 ~435 → ~51로 줄었다** — 줄어든 몫은 **G3 96런 종료**, **G10 216런 완주**, 그리고 07-27 착지 4건(**G2 15 · G8 24 · G14 18 · G9 9**)이다.
+> **남은 무게중심은 한 곳뿐이다**: **LLM 주무대 (b) 오라클(G1)** — 본문 LLM fidelity가 통째로 비어 있는 **유일한 본문 공백**이고, 부록 detection의 R4 칸도 같이 막고 있다. **CNN 쪽은 07-26~27로 전부 채워졌다**(G3·G2·G8·G14 종료; 잔여는 G9 mnist seed0 7셀뿐이고 이미 제출돼 있다). **코드 변경은 한 건도 남지 않았고 전부 셀 수 문제다.**
 
 ### 4.3 clean 대조가 없고, 채울 계획도 없는 무대
 
@@ -265,7 +265,9 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 > **그 외 수록 무대는 clean 대조가 있다**: 1A-CNN(c2fid clean 3-seed) · 1A-LLM silo5 (b)-leg · 1B-LLM silo5 (a)-leg · 2-CNN cifar10 {dir1, iid}. 결손 목록도 clean을 명시적으로 포함한다 — G1 **+clean 3** · G2·G9의 잔여 셀에 clean 포함 · G8의 4위협에 clean 포함 · G10·G14의 4위협에 clean 포함.
 > **iid(저-이질성) 축은 결손 없다**: CNN은 전 무대가 {dir1, iid} 쌍으로 계획돼 있고(G8·G9·G10·G14; **cifar10 downstream은 07-26에 쌍 완성**), LLM은 **본문 주무대 R4(gsm50k5)가 N=50 IID**이고 부록 silo5가 비IID라 IID↔비IID 대조가 수록분만으로 성립한다(제외된 iid5 진단 매트릭스 없이도).
 
-### 4.4 신규 결손 G14 — mnist downstream의 천장·통제 **기준 arm** 부재 (2026-07-26 발견)
+### 4.4 ~~신규 결손~~ **G14 — mnist downstream 천장·통제 기준 arm** ✅ 2026-07-27 종료 (18/18 · 실패 0)
+
+> ✅ **종료(2026-07-27)**: YH가 `--array=0-17%8` 18셀을 전량 완주(실패 0). `runs/track_g/rundirs_cnn/mnist_*_g_seed*` 18 rundir 생성 → `runs/track_h/analysis/cnn_competition.csv`의 mnist `recovery` 열이 열렸다. **무료 검증도 통과**: 같은 셀 `vanilla`(G14) vs `observer`(track_h) `final_acc`가 18쌍 전부 diff **0.000000**(fmnist 36쌍 선례와 동일) → 두 루트를 한 무대로 합치는 전제가 측정으로 확인됨. 결과 = [[flirds-results-downstream]] §mnist. 아래 명세는 이력으로 남긴다.
 
 **증상**: mnist track_h rundir 209개는 arm으로 `observer`(=vanilla)와 8점수원의 online/retrain만 낳는다. **`oracle_excl`(오라클 배제 = 천장)·`random_excl`(무작위 동수 배제 = 통제)이 한 셀도 없다.**
 
@@ -351,7 +353,7 @@ tags: [flirds, paper, experiment-plan, scope, gap-analysis]
 
 | 무대 | 러너 | 핵심 env |
 |---|---|---|
-| CNN 부분참여 fidelity/detection (1A-CNN) | `codes/experiments/track_c2_fid.py` | `C2_DATASET`(cifar10\|fmnist) · `C2_PARTITION`(iid\|dir1\|shard\|qskew) · `C2_THREAT`(clean\|label_flip\|free_rider\|frrand\|grad_noise) · `C2_FLIP_RATE` · `C2_SEED` |
+| CNN 부분참여 fidelity/detection (1A-CNN) | `codes/experiments/track_c2_fid.py` | `C2_DATASET`(cifar10\|fmnist\|**mnist**) · `C2_PARTITION`(iid\|dir1\|shard\|qskew) · `C2_THREAT`(clean\|label_flip\|free_rider\|frrand\|grad_noise) · `C2_FLIP_RATE` · `C2_SEED` |
 | CNN 부분참여 downstream (2-CNN) | `codes/experiments/track_c2.py` (+ track_h arm env) | 위와 동일 + arm 지정 |
 | CNN vs (a) (1B-CNN) | `codes/experiments/track_c1.py` | **축 그리드**: `C1_DATASET`(mnist\|cifar10) · `C1_PARTITION`(iid\|dir1) · `C1_THREAT`(clean\|label_flip\|free_rider\|grad_noise) · `C1_FLIP_RATE`(기본 0.70) · `C1_SEED` · `C1_MODE`. **레거시**: `C1_SCENARIO`(iid\|label_skew\|quantity_skew\|label_flip\|feature_noise) — 둘 다 미설정 시 레거시 경로가 비트동일 유지 |
 | LLM 매트릭스 fidelity/detection | `codes/experiments/phase2_matrix.py` | `REGIME`(silo5\|iid5\|device100\|gsm50k5\|gsm5) · `THREAT` · `SEED` · `NOISY_RATE` · `ORACLE_B` · `COALITION` |

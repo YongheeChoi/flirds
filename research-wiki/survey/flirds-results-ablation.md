@@ -253,52 +253,54 @@ tags: [flirds, results, ablation]
 > ⚠ **위 두 표는 LLM 레그다** — `track_g/audit` 스냅샷의 CNN 슬라이스(`scale=cnn`)는 재편성 전 C1 시나리오 집합(iid·label_flip·feature_noise·label_skew·quantity_skew)이라 **free-rider-zero·gradient-noise 칸이 없었다**. 그 공백을 아래 CNN 레그가 (부분적으로) 메운다.
 > **출처**: `runs/track_g/audit/sign_table.csv`(`variant==canon` 필터 → `contribution` 부호 집계) · `SIGN_AUDIT.md`.
 
-#### CNN 레그 (C1 오염축 정렬 축 그리드) ◐ 17/48셀 · 2026-07-26 착지
+#### CNN 레그 (C1 오염축 정렬 축 그리드) ● cifar10 24/24 · ◐ mnist 17/24 · 2026-07-27 재산출
 
 > **무엇**: 위 LLM 감사와 **같은 질문을 CNN에서**. `runs/track_c/c1`의 오염축 정렬 그리드(N=10 full · R=10 · (a)+(b) 동시 산출)에서 클라별 φ 부호를 셌다. **방향 규약 통일**: 기여 = **−φ**(방법들; φ는 val-loss 방향) · **+φ_a**((a)oracle; U=−val_loss). 이 정규화를 빼면 (a)와 방법들의 부호가 반대로 집계된다.
-> ⚠ **◐**: (i)의 분모 10 = **clean 셀 1개 × 클라 10명**(landed clean 셀이 (데이터셋,파티션)마다 1 seed뿐) · (ii)의 분모 20 = **frzero 셀 5개 × 오염 클라 4명**. 3-seed 완주 전 인용 금지. **(a)oracle 행이 있는 것이 LLM 레그와의 차이**다 — CNN에서만 재학습 참값의 부호를 직접 볼 수 있다.
+> **분모 = 착지한 셀 수 × 클라 수**라 칸마다 다르다: (i) cifar10 dir1·iid와 mnist/iid는 clean 3셀×10 = **30**, mnist/dir1은 2셀×10 = **20**. (ii) frzero 10셀 × 오염 4클라 = **40**.
+> ✅ cifar10은 24/24 완주라 **cifar10 행 인용 가능**. ◐ mnist는 17/24(seed0 7셀 미착지 = G9) → **mnist 행은 3-seed 전 인용 금지**. **(a)oracle 행이 있는 것이 LLM 레그와의 차이**다 — CNN에서만 재학습 참값의 부호를 직접 볼 수 있다.
 
-**표 A-CNN — clean 셀에서 기여가 음수인 클라 수 / 전 클라 슬롯** (오배제 위험, `0/10`이 정상)
+**표 A-CNN — clean 셀에서 기여가 음수인 클라 수 / 전 클라 슬롯** (오배제 위험, `0/N`이 정상)
 
 | 데이터셋 | 파티션 | (a)oracle | (b)oracle | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| cifar10 | dir1 | 2/10 | 1/10 | **0/10** | **0/10** | 1/10 | 2/10 | 2/10 | 2/10 | **0/10** | **0/10** |
-| cifar10 | iid | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** | 2/10 | 3/10 | **0/10** | **0/10** |
-| mnist | dir1 | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** | 2/10 | 1/10 | **0/10** | **0/10** |
-| mnist | iid | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** | **0/10** |
+| cifar10 | dir1 | 3/30 | 2/30 | 1/30 | 1/30 | 3/30 | 8/30 | 7/30 | 11/30 | **0/30** | **0/30** |
+| cifar10 | iid | **0/30** | **0/30** | **0/30** | **0/30** | **0/30** | **0/30** | 5/30 | 9/30 | **0/30** | **0/30** |
+| mnist | dir1 | **0/20** | **0/20** | **0/20** | **0/20** | **0/20** | 1/20 | 3/20 | 3/20 | **0/20** | **0/20** |
+| mnist | iid | **0/30** | **0/30** | **0/30** | **0/30** | **0/30** | **0/30** | **0/30** | **0/30** | **0/30** | **0/30** |
 
-**표 B-CNN — free-rider(zero) 오염 클라: exact-0 / 기여 음수** (분모 20 = 5셀 × 4 오염클라)
+**표 B-CNN — free-rider(zero) 오염 클라: exact-0 / 기여 음수** (분모 40 = 10셀 × 4 오염클라)
 
 | 방법 | exact-0 ↑ | 기여 음수 |
 |---|---|---|
-| (a)oracle | 0/20 | 8/20 |
-| **(b)oracle** | **20/20** | 0/20 |
-| Flirds | **20/20** | 0/20 |
-| Flirds-1st | **20/20** | 0/20 |
-| loss-heur | **20/20** | 0/20 |
-| FedIF | 12/20 | 0/20 |
-| GTG | 0/20 | 13/20 |
-| FedSV | 0/20 | 8/20 |
-| ComFedSV | 0/20 | 9/20 |
-| ShapleyFL | 0/20 | 0/20 |
+| (a)oracle | 0/40 | 19/40 |
+| **(b)oracle** | **40/40** | 0/40 |
+| Flirds | **40/40** | 0/40 |
+| Flirds-1st | **40/40** | 0/40 |
+| loss-heur | **40/40** | 0/40 |
+| FedIF | 20/40 | 0/40 |
+| GTG | 0/40 | 25/40 |
+| FedSV | 0/40 | 17/40 |
+| ComFedSV | 0/40 | 18/40 |
+| ShapleyFL | 0/40 | 0/40 |
 
-**표 C-CNN — 분리도** `[mean 기여(정직) − mean 기여(오염)] / span` (무차원 · 양수 = 오염을 낮게 매김)
+**표 C-CNN — 분리도** `[mean 기여(정직) − mean 기여(오염)] / span` (무차원 · 양수 = 오염을 낮게 매김 · 평균 행의 볼드/밑줄은 **오라클 2열 제외** 순위)
 
 | 데이터셋 | 위협 | (a)oracle | (b)oracle | Flirds | Flirds-1st | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| cifar10 | frzero | 0.612 | 0.829 | **0.829** | 0.819 | 0.793 | 0.491 | 0.135 | 0.118 | **−0.659** | 0.772 |
-| cifar10 | grad-noise | 0.642 | 0.795 | 0.817 | **−0.250** | 0.759 | 0.795 | 0.768 | 0.384 | 0.908 | 0.895 |
-| cifar10 | lf@0.70 | 0.545 | 0.874 | 0.876 | 0.883 | 0.879 | 0.706 | 0.677 | 0.508 | 0.771 | 0.916 |
-| cifar10 | **평균(오염3)** | 0.600 | 0.833 | <u>0.841</u> | 0.484 | 0.810 | 0.664 | 0.526 | 0.337 | 0.340 | **0.861** |
-| mnist | frzero | 0.948 | 0.849 | 0.855 | 0.856 | 0.851 | 0.846 | 0.764 | 0.750 | **−0.270** | 0.765 |
-| mnist | grad-noise | 0.862 | 0.682 | 0.670 | **0.250** | 0.691 | 0.803 | 0.686 | 0.734 | 0.875 | 0.807 |
-| mnist | lf@0.70 | 0.921 | 0.873 | 0.877 | 0.881 | 0.877 | 0.872 | 0.813 | 0.784 | 0.950 | 0.941 |
-| mnist | **평균(오염3)** | 0.910 | 0.801 | 0.801 | 0.663 | 0.806 | <u>0.840</u> | 0.754 | 0.756 | 0.518 | **0.838** |
+| cifar10 | frzero | 0.647 | 0.717 | 0.718 | 0.714 | 0.689 | 0.419 | 0.101 | 0.080 | −0.586 | 0.635 |
+| cifar10 | grad-noise | 0.741 | 0.738 | 0.766 | −0.224 | 0.714 | 0.836 | 0.808 | 0.538 | 0.870 | 0.859 |
+| cifar10 | lf@0.70 | 0.631 | 0.843 | 0.842 | 0.845 | 0.841 | 0.723 | 0.694 | 0.620 | 0.742 | 0.901 |
+| cifar10 | **평균(오염3)** | 0.673 | 0.766 | <u>0.776</u> | 0.445 | 0.748 | 0.659 | 0.534 | 0.413 | 0.342 | **0.798** |
+| mnist | frzero | 0.938 | 0.861 | 0.865 | 0.863 | 0.861 | 0.842 | 0.758 | 0.690 | −0.150 | 0.756 |
+| mnist | grad-noise | 0.798 | 0.722 | 0.722 | 0.063 | 0.671 | 0.801 | 0.714 | 0.591 | 0.844 | 0.844 |
+| mnist | lf@0.70 | 0.916 | 0.881 | 0.885 | 0.885 | 0.879 | 0.873 | 0.828 | 0.729 | 0.955 | 0.954 |
+| mnist | **평균(오염3)** | 0.884 | 0.821 | 0.824 | 0.603 | 0.803 | <u>0.839</u> | 0.767 | 0.670 | 0.550 | **0.851** |
 
-> **CNN에서 확인되는 것 세 가지**.
-> ① **frzero exact-0 공리는 CNN에서도 성립**: (b)·Flirds·Flirds-1st·loss-heur가 **20/20 bit-exact 0** — LLM 표 B의 100%와 같다. **FedIF만 12/20**(LLM에선 100%)로 갈리는데, 남은 8슬롯은 exact-0이 아니라 양수다. renorm 4종은 exact-0이 0/20이고 대신 음수(GTG 13·ComFedSV 9·FedSV 8)나 양수(ShapleyFL 0/20 음수 = 전부 양수 = **발화 자체를 안 함**)로 흩어진다 → 표 C의 ShapleyFL frzero **−0.659(cifar10) / −0.270(mnist)** = **free-rider를 정직 클라보다 높게 매긴 반전**이고, downstream frzero에서 ShapleyFL이 최하위인 것과 정확히 대응한다.
-> ② **(a) 재학습 오라클은 frzero에서 exact-0이 아니다**(0/20, 음수 8/20). 이건 오류가 아니라 **게임 정의 차이** — 고정가중 (b)에선 Δ=0이 곧 φ=0이지만 (a)는 그 클라를 평균 분모에 남겨 step을 희석시킨다([[flirds-results-fidelity]] §1B-CNN 축 그리드).
-> ③ **grad-noise에서 Flirds-1st만 분리도가 음수/저조**(cifar10 **−0.250** · mnist 0.250 vs Flirds 0.817/0.670) = 2차항 논지가 **부호 감사 축에서도** 재현된다. clean 오배제(표 A-CNN)는 same-game 3종·FedIF·ShapleyFL이 전 파티션 0~1/10으로 안전하고, **FedSV(2/10)·ComFedSV(2~3/10)만 위험**하다 — LLM device100의 FedSV 5.1%·ComFedSV 51.4%와 같은 방향.
+> **CNN에서 확인되는 것 네 가지**.
+> ① **frzero exact-0 공리는 CNN에서도 성립**: (b)·Flirds·Flirds-1st·loss-heur가 **40/40 bit-exact 0** — LLM 표 B의 100%와 같다. **FedIF만 20/40**(LLM에선 100%)로 갈리는데, 남은 20슬롯은 exact-0이 아니라 양수다. renorm 4종은 exact-0이 0/40이고 대신 음수(GTG 25·ComFedSV 18·FedSV 17)나 양수(ShapleyFL 0/40 음수 = 전부 양수 = **발화 자체를 안 함**)로 흩어진다 → 표 C의 ShapleyFL frzero **−0.586(cifar10) / −0.150(mnist)** = **free-rider를 정직 클라보다 높게 매긴 반전**이고, downstream frzero에서 ShapleyFL이 최하위인 것과 정확히 대응한다.
+> ② **(a) 재학습 오라클은 frzero에서 exact-0이 아니다**(0/40, 음수 19/40). 이건 오류가 아니라 **게임 정의 차이** — 고정가중 (b)에선 Δ=0이 곧 φ=0이지만 (a)는 그 클라를 평균 분모에 남겨 step을 희석시킨다([[flirds-results-fidelity]] §1B-CNN 축 그리드).
+> ③ **grad-noise에서 Flirds-1st만 분리도가 음수/저조**(cifar10 **−0.224** · mnist **0.063** vs Flirds 0.766/0.722) = 2차항 논지가 **부호 감사 축에서도** 재현된다. mnist 0.063은 3-seed 산출 시(G9) 부호가 뒤집힐 수 있는 크기다.
+> ④ **clean 오배제(표 A-CNN)는 cifar10/dir1에서만 난다** — 비IID·오염0 칸에서 (a)oracle 자신이 3/30이므로 **일부는 오배제가 아니라 실제로 해로운 클라**다. 그 안에서도 등급이 갈린다: same-game 3종 1~3/30 · **(a)/(b) 오라클 2~3/30과 같은 대역**인 반면 **GTG 8/30 · FedSV 7/30 · ComFedSV 11/30**은 오라클의 3~4배다. ShapleyFL·FedIF는 0/30인데 이건 안전이 아니라 **clean 칸에서 아무도 음수로 안 매긴다**는 뜻이고, 같은 성질이 frzero에서 ShapleyFL 반전(①)으로 나타난다. cifar10/iid·mnist는 거의 전부 0이다 — LLM device100의 FedSV 5.1%·ComFedSV 51.4%와 같은 방향(ComFedSV가 최악).
 > **출처**: `runs/track_c/c1/analysis/sign_audit.csv` + `README.md` §phi 부호 감사(`python runs/track_c/c1/make_analysis.py`).
 
 ### β 통일 재실행 provenance `[각주]` ⟐ 파생/폐기
@@ -316,5 +318,5 @@ tags: [flirds, results, ablation]
 - **φ 부호 감사 (LLM 레그)**: `runs/track_g/audit/sign_table.csv` → `variant=="canon"` 필터 후 (scale, regime, threat, method, corrupt)별 `contribution` 부호 집계(양수 / exact-0 / 음수). β: `runs/rerun_beta03`. TF32: `runs/measured_2026-07/tf32_ab`.
 - **φ 부호 감사 (CNN 레그, 신규)**: `python runs/track_c/c1/make_analysis.py` → `analysis/sign_audit.csv`(`n_neg_clean` · `n_exact_zero_corrupt` · `n_neg_corrupt` · `phi_gap_norm`).
 - **◐ seed0만**: LLM lever의 lr·steps 셀(rank16·lr1e-3·10st만 3-seed) · std50k5 rank32/64.
-- **◐ 진행 중**: CNN 부호 감사 레그 = C1 오염축 정렬 그리드 **17/48셀**(clean 셀은 (데이터셋,파티션)당 1 seed). G2·G9 완주 후 3-seed 재산출.
+- **◐ 진행 중**: CNN 부호 감사 레그 = C1 오염축 정렬 그리드 **41/48셀** — cifar10 24/24 완주(● 인용 가능) · mnist 17/24(mnist/dir1 clean은 2 seed). **G9 잔여 7셀(mnist seed0)** 착지 후 mnist 행 3-seed 재산출.
 - 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §4·§5 = git 이력)

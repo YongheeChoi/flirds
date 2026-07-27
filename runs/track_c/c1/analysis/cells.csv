@@ -2,32 +2,41 @@ cell,dataset,partition,threat,seed,mode,final_acc,traj_time,t_a,n_retrains,n_cli
 cifar10_dir1_clean_seed0,cifar10,dir1,clean,0,full,0.635875,106.18043716903776,47873.15389090404,1024,10,0,[],False,True
 cifar10_dir1_clean_seed1,cifar10,dir1,clean,1,full,0.639375,101.59583357186057,45301.855456988094,1024,10,0,[],False,True
 cifar10_dir1_clean_seed2,cifar10,dir1,clean,2,full,0.63825,118.62590512796305,51861.80312823411,1024,10,0,[],False,True
-cifar10_dir1_free-rider_seed0,cifar10,dir1,free_rider,0,full,0.55775,102.40872901165858,46109.83915200899,1024,10,4,"[np.int64(1), np.int64(4), np.int64(6), np.int64(7)]",True,True
-cifar10_dir1_free-rider_seed1,cifar10,dir1,free_rider,1,full,0.52675,101.4169013290084,45050.488217804,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",True,True
-cifar10_dir1_free-rider_seed2,cifar10,dir1,free_rider,2,full,0.54975,117.18318947101943,51555.918014847906,1024,10,4,"[np.int64(3), np.int64(4), np.int64(6), np.int64(9)]",True,True
-cifar10_dir1_grad-noise_seed0,cifar10,dir1,grad_noise,0,full,0.43675,106.91381295770407,47732.94332555588,1024,10,4,"[np.int64(1), np.int64(4), np.int64(6), np.int64(7)]",True,True
-cifar10_dir1_grad-noise_seed1,cifar10,dir1,grad_noise,1,full,0.4255,132.24031349108554,56182.96215600404,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",True,True
-cifar10_dir1_grad-noise_seed2,cifar10,dir1,grad_noise,2,full,0.466,120.26410149014555,52926.50125524402,1024,10,4,"[np.int64(3), np.int64(4), np.int64(6), np.int64(9)]",True,True
-cifar10_dir1_label-flip_fr0.70_seed0,cifar10,dir1,label_flip,0,full,0.5905,104.13977940334007,47020.797173900064,1024,10,4,"[np.int64(1), np.int64(4), np.int64(6), np.int64(7)]",False,True
-cifar10_dir1_label-flip_fr0.70_seed1,cifar10,dir1,label_flip,1,full,0.57825,104.34065671218559,45287.965899626026,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",False,True
-cifar10_dir1_label-flip_fr0.70_seed2,cifar10,dir1,label_flip,2,full,0.579375,115.83750941907056,50982.89779099007,1024,10,4,"[np.int64(3), np.int64(4), np.int64(6), np.int64(9)]",False,True
+cifar10_dir1_free-rider_seed0,cifar10,dir1,free_rider,0,full,0.55775,102.40872901165858,46109.83915200899,1024,10,4,"[1, 4, 6, 7]",True,True
+cifar10_dir1_free-rider_seed1,cifar10,dir1,free_rider,1,full,0.52675,101.4169013290084,45050.488217804,1024,10,4,"[0, 4, 6, 7]",True,True
+cifar10_dir1_free-rider_seed2,cifar10,dir1,free_rider,2,full,0.54975,117.18318947101943,51555.918014847906,1024,10,4,"[3, 4, 6, 9]",True,True
+cifar10_dir1_grad-noise_seed0,cifar10,dir1,grad_noise,0,full,0.43675,106.91381295770407,47732.94332555588,1024,10,4,"[1, 4, 6, 7]",True,True
+cifar10_dir1_grad-noise_seed1,cifar10,dir1,grad_noise,1,full,0.4255,132.24031349108554,56182.96215600404,1024,10,4,"[0, 4, 6, 7]",True,True
+cifar10_dir1_grad-noise_seed2,cifar10,dir1,grad_noise,2,full,0.466,120.26410149014555,52926.50125524402,1024,10,4,"[3, 4, 6, 9]",True,True
+cifar10_dir1_label-flip_fr0.70_seed0,cifar10,dir1,label_flip,0,full,0.5905,104.13977940334007,47020.797173900064,1024,10,4,"[1, 4, 6, 7]",False,True
+cifar10_dir1_label-flip_fr0.70_seed1,cifar10,dir1,label_flip,1,full,0.57825,104.34065671218559,45287.965899626026,1024,10,4,"[0, 4, 6, 7]",False,True
+cifar10_dir1_label-flip_fr0.70_seed2,cifar10,dir1,label_flip,2,full,0.579375,115.83750941907056,50982.89779099007,1024,10,4,"[3, 4, 6, 9]",False,True
 cifar10_iid_clean_seed0,cifar10,iid,clean,0,full,0.653875,104.3719128560042,47135.76963259402,1024,10,0,[],False,True
+cifar10_iid_clean_seed1,cifar10,iid,clean,1,full,0.64325,104.16315599501831,46465.11576402298,1024,10,0,[],False,True
 cifar10_iid_clean_seed2,cifar10,iid,clean,2,full,0.651125,119.64024219987914,52831.64643826522,1024,10,0,[],False,True
-cifar10_iid_free-rider_seed0,cifar10,iid,free_rider,0,full,0.592625,102.06035455397796,46209.224543220014,1024,10,4,"[np.int64(1), np.int64(4), np.int64(6), np.int64(7)]",True,True
-cifar10_iid_free-rider_seed1,cifar10,iid,free_rider,1,full,0.591875,115.9258042240981,51771.83517479501,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",True,True
-cifar10_iid_free-rider_seed2,cifar10,iid,free_rider,2,full,0.5985,116.71270107780583,51775.10306453821,1024,10,4,"[np.int64(3), np.int64(4), np.int64(6), np.int64(9)]",True,True
-cifar10_iid_grad-noise_seed0,cifar10,iid,grad_noise,0,full,0.444625,105.45319847436622,48645.217844756786,1024,10,4,"[np.int64(1), np.int64(4), np.int64(6), np.int64(7)]",True,True
-cifar10_iid_grad-noise_seed1,cifar10,iid,grad_noise,1,full,0.44825,121.56393822701648,53404.84295952297,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",True,True
-cifar10_iid_grad-noise_seed2,cifar10,iid,grad_noise,2,full,0.483375,119.85967361205257,52764.30068939482,1024,10,4,"[np.int64(3), np.int64(4), np.int64(6), np.int64(9)]",True,True
-cifar10_iid_label-flip_fr0.70_seed0,cifar10,iid,label_flip,0,full,0.601125,106.62176298256963,48308.46966484212,1024,10,4,"[np.int64(1), np.int64(4), np.int64(6), np.int64(7)]",False,True
-cifar10_iid_label-flip_fr0.70_seed1,cifar10,iid,label_flip,1,full,0.60175,115.6013565089088,51148.723308116896,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",False,True
-cifar10_iid_label-flip_fr0.70_seed2,cifar10,iid,label_flip,2,full,0.605,119.82269968511537,52691.29085471993,1024,10,4,"[np.int64(3), np.int64(4), np.int64(6), np.int64(9)]",False,True
+cifar10_iid_free-rider_seed0,cifar10,iid,free_rider,0,full,0.592625,102.06035455397796,46209.224543220014,1024,10,4,"[1, 4, 6, 7]",True,True
+cifar10_iid_free-rider_seed1,cifar10,iid,free_rider,1,full,0.591875,115.9258042240981,51771.83517479501,1024,10,4,"[0, 4, 6, 7]",True,True
+cifar10_iid_free-rider_seed2,cifar10,iid,free_rider,2,full,0.5985,116.71270107780583,51775.10306453821,1024,10,4,"[3, 4, 6, 9]",True,True
+cifar10_iid_grad-noise_seed0,cifar10,iid,grad_noise,0,full,0.444625,105.45319847436622,48645.217844756786,1024,10,4,"[1, 4, 6, 7]",True,True
+cifar10_iid_grad-noise_seed1,cifar10,iid,grad_noise,1,full,0.44825,121.56393822701648,53404.84295952297,1024,10,4,"[0, 4, 6, 7]",True,True
+cifar10_iid_grad-noise_seed2,cifar10,iid,grad_noise,2,full,0.483375,119.85967361205257,52764.30068939482,1024,10,4,"[3, 4, 6, 9]",True,True
+cifar10_iid_label-flip_fr0.70_seed0,cifar10,iid,label_flip,0,full,0.601125,106.62176298256963,48308.46966484212,1024,10,4,"[1, 4, 6, 7]",False,True
+cifar10_iid_label-flip_fr0.70_seed1,cifar10,iid,label_flip,1,full,0.60175,115.6013565089088,51148.723308116896,1024,10,4,"[0, 4, 6, 7]",False,True
+cifar10_iid_label-flip_fr0.70_seed2,cifar10,iid,label_flip,2,full,0.605,119.82269968511537,52691.29085471993,1024,10,4,"[3, 4, 6, 9]",False,True
 mnist_dir1_clean_seed1,mnist,dir1,clean,1,full,0.978625,130.8788668671623,61599.81424159906,1024,10,0,[],False,True
-mnist_dir1_free-rider_seed1,mnist,dir1,free_rider,1,full,0.976375,131.13337982725352,63042.132759997854,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",True,True
-mnist_dir1_grad-noise_seed1,mnist,dir1,grad_noise,1,full,0.954125,133.26234128326178,61834.7289725719,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",True,True
-mnist_dir1_label-flip_fr0.70_seed1,mnist,dir1,label_flip,1,full,0.973875,135.24607212794945,63181.242810355034,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",False,True
+mnist_dir1_clean_seed2,mnist,dir1,clean,2,full,0.97425,136.4635426980094,63219.413650017,1024,10,0,[],False,True
+mnist_dir1_free-rider_seed1,mnist,dir1,free_rider,1,full,0.976375,131.13337982725352,63042.132759997854,1024,10,4,"[0, 4, 6, 7]",True,True
+mnist_dir1_free-rider_seed2,mnist,dir1,free_rider,2,full,0.963125,135.72755753668025,63533.758027406875,1024,10,4,"[3, 4, 6, 9]",True,True
+mnist_dir1_grad-noise_seed1,mnist,dir1,grad_noise,1,full,0.954125,133.26234128326178,61834.7289725719,1024,10,4,"[0, 4, 6, 7]",True,True
+mnist_dir1_grad-noise_seed2,mnist,dir1,grad_noise,2,full,0.823125,138.88954533822834,63000.080754445866,1024,10,4,"[3, 4, 6, 9]",True,True
+mnist_dir1_label-flip_fr0.70_seed1,mnist,dir1,label_flip,1,full,0.973875,135.24607212794945,63181.242810355034,1024,10,4,"[0, 4, 6, 7]",False,True
+mnist_dir1_label-flip_fr0.70_seed2,mnist,dir1,label_flip,2,full,0.9625,131.06433043815196,61050.06619501207,1024,10,4,"[3, 4, 6, 9]",False,True
 mnist_iid_clean_seed0,mnist,iid,clean,0,full,0.981,140.42990457708947,64794.82975307503,1024,10,0,[],False,True
 mnist_iid_clean_seed1,mnist,iid,clean,1,full,0.98075,133.59471819875762,64708.02003286616,1024,10,0,[],False,True
-mnist_iid_free-rider_seed1,mnist,iid,free_rider,1,full,0.976,134.506068054121,63327.31338484911,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",True,True
-mnist_iid_grad-noise_seed1,mnist,iid,grad_noise,1,full,0.9325,132.08948871679604,62688.595430243295,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",True,True
-mnist_iid_label-flip_fr0.70_seed1,mnist,iid,label_flip,1,full,0.96975,131.39116892497987,62445.67826029204,1024,10,4,"[np.int64(0), np.int64(4), np.int64(6), np.int64(7)]",False,True
+mnist_iid_clean_seed2,mnist,iid,clean,2,full,0.9785,134.32249407004565,63465.36659536185,1024,10,0,[],False,True
+mnist_iid_free-rider_seed1,mnist,iid,free_rider,1,full,0.976,134.506068054121,63327.31338484911,1024,10,4,"[0, 4, 6, 7]",True,True
+mnist_iid_free-rider_seed2,mnist,iid,free_rider,2,full,0.969,135.49621287127957,63447.70451544318,1024,10,4,"[3, 4, 6, 9]",True,True
+mnist_iid_grad-noise_seed1,mnist,iid,grad_noise,1,full,0.9325,132.08948871679604,62688.595430243295,1024,10,4,"[0, 4, 6, 7]",True,True
+mnist_iid_grad-noise_seed2,mnist,iid,grad_noise,2,full,0.917,131.2912724209018,61799.64372629998,1024,10,4,"[3, 4, 6, 9]",True,True
+mnist_iid_label-flip_fr0.70_seed1,mnist,iid,label_flip,1,full,0.96975,131.39116892497987,62445.67826029204,1024,10,4,"[0, 4, 6, 7]",False,True
+mnist_iid_label-flip_fr0.70_seed2,mnist,iid,label_flip,2,full,0.96775,133.72729526786134,62474.35478824796,1024,10,4,"[3, 4, 6, 9]",False,True
