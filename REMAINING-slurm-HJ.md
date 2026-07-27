@@ -354,7 +354,25 @@ sbatch --qos=base_qos --output="$REPO/runs/track_c/c1/_logs/%x_%A_%a.out" \
 2. **스택 캐비엇**: A6000(torch 2.11) vs canonical(B200 torch 2.12) — fidelity·recovery 는 stack-robust(mean|Δ|≤0.006)라 recovery 정규화로 병치. **`timing.json` 은 §5.5 cost 표에 쓰지 않는다.**
 3. **완료 판정**: 로그 `TRACK G DONE` + rundir mtime.
 
-## 3e. 담당 ④ — L11 flirds1st seed1·2 (B200 이관, 07-26 19:45) — 🟢 실행 중 `1885728`
+## 3e. 담당 ④ — L11 flirds1st seed1·2 (B200 이관, 07-26 19:45) — ✅ **완주 6/6, 실패 0** (07-27 05:30)
+
+> **착지**: `runs/track_h/rundirs_llm_hj/` 6셀, 로그 6개 전부 `EXIT=0`, 각 `phi_rounds` = **200라운드 × 참여 1000**. 총 **46.5 GPU-h**(셀당 7.48–7.92 = seed0 실측 7.53–8.00 과 동일 대역). 커밋 `19f80d7`·`593eb88`·`9e30f40`·`38aabc4`·`28c046b`.
+> **집계 반영**: `make_analysis.py` → `llm_competition.csv` 312→**318행**(CNN 5073·observer 650 무변). 커밋 `eccde71`.
+>
+> **3-seed 결과 — seed0 패턴이 그대로 재현됐다**
+>
+> | 위협 | gate P (s0/s1/s2) | gate R (s0/s1/s2) | recovery(val-loss) |
+> |---|---|---|---|
+> | frzero | 0.963 / 0.958 / 0.953 | 0.945 / 0.952 / 0.939 | 1.009 / 1.060 / 1.000 |
+> | noisy | 0.859 / 0.853 / 0.859 | **0.045 / 0.050 / 0.042** | 0.599 / 0.716 / 0.859 |
+> | clean | 0(정의상 축퇴) | None | — (아래 캐비엇) |
+>
+> - **§2.1 예측 3-seed 확증**: noisy 리콜이 셋 다 **4–5%** = 부호-게이트에 noisy 작동영역이 없다(0-교차가 `nr∈(0,1]` 밖). frzero 는 반대로 P·R 모두 0.94↑ 로 프리라이더를 회수한다.
+> - **clean 오발화**(`false_excl_pairs`, 1000 pair 중) = 103 / 166 / 188 — 3-seed 모두 라운드당 ~1건. 무해성이 완전하지는 않다.
+>
+> **⚠ 읽을 때 주의 2건**
+> 1. **`train_runtime` 카운트가 1000 미만이어도 정상**이다. frzero 는 `fr_mode=zero` 프리라이더가 학습을 건너뛰어 로그상 920/921 로 찍힌다. 절단 여부는 로그가 아니라 **`phi_rounds.parquet` 의 `participated` 합 = 1000** 으로 판정할 것.
+> 2. **clean 열의 `delta`·`recovery` 는 seed1·2 가 `NaN` 이다** — 결손이 아니라 **베이스라인(`observer` clean)이 seed0 만 있기 때문**(`make_analysis.py:108` 이 `vanilla`→`observer` 순으로 앵커를 찾는다). noisy·frzero 는 `observer`·`oracle_excl`·`random_excl` 가 3-seed 완비라 정상 계산된다. **이 공백은 이미 B200 담당** = `REMAINING-b200.md:83` "L1 clean seed1·2 (4셀)". **HJ 가 채울 것 없음.**
 
 > ### ⚠ **첫 제출 `1885698` 은 6셀 전부 8–10초 만에 사망했다** (07-26 19:51) — B200 은 이 job ID 를 무시할 것
 >

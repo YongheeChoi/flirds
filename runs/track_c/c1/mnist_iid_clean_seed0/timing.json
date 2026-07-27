@@ -1,0 +1,24 @@
+{
+  "phases": {
+    "oracle-a-retrain": {
+      "s": 64794.83,
+      "peak_gib": 0.0
+    },
+    "client-training": {
+      "s": 140.43,
+      "peak_gib": 0.0
+    },
+    "valuation": {
+      "s": 152.556,
+      "peak_gib": 0.492
+    },
+    "ripple-own-trajectory": {
+      "s": 1994.16,
+      "peak_gib": 1.509
+    }
+  },
+  "total_s": 67081.975,
+  "gpu_hours": 18.633882,
+  "n_gpus": 1,
+  "peak_gib": 1.509
+}
