@@ -52,15 +52,19 @@ GPU 를 4장 못 받으면 `up 2` `up 4` 처럼 **레인2·4 만** 띄운다(아
 
 ### 5) 잔여 작업 (07-27 19:20 기준)
 
-| 우선 | 셀 | 레인 | 단가 | 없으면 |
-|---|---|---|---|---|
-| **1** | `G1_L2_frzero_s0` · `G1_L2_frzero_s2` | **4 · 2** | 9.4h | **G1 frzero 가 1-seed → §5.2 fidelity·§5.4 탐지 표에서 frzero 행을 못 쓴다** |
-| 2 | `1B_anchor5_sflb03_seed{0,1,2}` (B) | 1 | 2.4h | 본문 [F4] ShapleyFL 행이 "β=.5 잠정" 으로 남음 |
-| 3 | `1B_silo5_clean_removal_seed{0,1,2}` (R-clean) | 3 | 2.5h | 부록 T13 removal 의 clean 대조 부재 = 위협-특이성 미증명 |
-| — | `L1_clean_obs_s2` | 3(진행 중) | 6.0h | clean observer 가 2-seed 로 남음 |
+> **갱신 07-27 19:45** — `L1_clean_obs_s2` 착지로 **L1 clean 열 4/4 완결**(observer 3-seed +
+> online 3-seed). 남은 것은 아래 3블록 8셀뿐이고 **전부 07-27 18:58~19:42 에 조기 착수했다**(§0′.5b).
 
-**이미 끝난 것**: G1 7/9(`clean_s{0,1,2}` · `noisy_s{0,1,2}` · `frzero_s1`) · L1 clean online 3/3 ·
-observer 2/3 · L11 9셀(HJ). **`frzero_s0` 은 07-27 04:06 에 `std_dagmm` 크래시로 전손 → 재실행분이다.**
+| 우선 | 셀 | 레인 | 단가 | 상태 | 없으면 |
+|---|---|---|---|---|---|
+| **1** | `G1_L2_frzero_s0` | **4** | 9.4h | ▶ 18:58~ | **G1 frzero 가 1-seed → §5.2 fidelity·§5.4 탐지 표에서 frzero 행을 못 쓴다** |
+| **1** | `G1_L2_frzero_s2` | **2** | 9.4h | ▶ 19:00~ | 〃 |
+| 2 | `1B_anchor5_sflb03_seed{0,1,2}` (B) | 1 | 2.4h | ▶ seed0 19:14~ | 본문 [F4] ShapleyFL 행이 "β=.5 잠정" 으로 남음 |
+| 3 | `1B_silo5_clean_removal_seed{0,1,2}` (R-clean) | 3 | 2.5h | ▶ seed0 19:42~ | 부록 T13 removal 의 clean 대조 부재 = 위협-특이성 미증명 |
+
+**이미 끝난 것**: G1 **7/9**(`clean_s{0,1,2}` · `noisy_s{0,1,2}` · `frzero_s1`) ·
+**L1 clean 4/4**(observer s0·s1·s2 + online s0·s1·s2 — §5.3 clean 열 완결) · L11 9셀(HJ).
+**`frzero_s0` 은 07-27 04:06 에 `std_dagmm` cholesky non-PSD 로 30h 돌고 전손 → 이건 재실행분이다.**
 
 **마감 역산**(07-28 24:00): 4장이면 **14:24**, 2장이면 **07:00**, G1 만 2장이면 **14:24**,
 G1 만 1장이면 **04:48** 까지 시작하면 된다. 1장으로 전량은 불가(33.9 GPU-h).
