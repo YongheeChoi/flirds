@@ -19,6 +19,11 @@
 \newtheorem{corollary}{Corollary}
 \renewcommand{\qedsymbol}{$\blacksquare$}
 
+% 본문과 별도 컴파일이라 표 카운터가 각자 1 부터 시작한다. 부록 표는 S 접두를 붙여
+% 본문 Table 1--4 와 번호가 겹치지 않게 한다(내부 \ref 는 자동으로 S1, S2, ... 로
+% 렌더링되고, 본문 표를 가리키는 "Table~N of the main paper" 는 리터럴이라 불변).
+\renewcommand{\thetable}{S\arabic{table}}
+
 \newcommand{\lval}{\ell_{\mathrm{val}}}
 
 \pdfinfo{
