@@ -285,7 +285,21 @@ and 5 epochs at batch 64 for the CNN track. The LLM track trains and
 exchanges only LoRA ($r{=}16$, $\alpha{=}32$) factors rather than the full
 weights. The maximum sequence length is 512 in the GSM8K main setting and the
 alpaca setting and 768 in the five-domain non-IID setting, and a warmup of 2
-rounds is used in the five-domain setting only. The CNN models are FedSVCNN
+rounds is used in the five-domain setting only. Among the baselines,
+ShapleyFL smooths its per-round contributions with an exponential moving
+average whose coefficient is $\beta{=}0.3$. ComFedSV is defined for partial
+participation: the entries of the utility matrix it observes in round $r$ are
+the coalitions contained in that round's participant set $P_r$, and the
+entries left unobserved, those involving clients who did not participate, are
+what its low-rank completion fills in
+\citep{fan2022improving}. Under full participation, $P_r$ is
+every client, so each coalition the estimator visits is observed directly,
+the completion has no entry to fill, and the step that distinguishes the
+method from its parent does not run. ComFedSV is therefore scored on the
+partial-participation settings ($N{=}100$ with 10 of 100 participating, the
+cross-device setting, and the GSM8K main setting) and is not scored on the
+full-participation ones ($N{=}10$ grid, five-domain non-IID, small anchor).
+The CNN models are FedSVCNN
 for CIFAR-10, the CNN of the FedSV lineage with two $5{\times}5$
 convolutions of 32 and 64 channels followed by one 512-unit dense layer,
 and LeNet5 for MNIST. Two settings whose scale is not written in
@@ -536,8 +550,8 @@ FedIF & $0.355\pm0.011$ & $5.05\pm0.072$ & $0.993\pm0.053$ \\
 \subsection{The CNN $N{=}10$ Grid}
 \label{app:cnn-grid}
 
-Tables~\ref{tab:grid-retrain}--\ref{tab:grid-kendall} give all methods on the
-stage where both Shapley values are computed exhaustively over $2^{10}$
+Tables~\ref{tab:grid-retrain}--\ref{tab:grid-kendall} give the methods scored
+on the stage where both Shapley values are computed exhaustively over $2^{10}$
 subsets. The CIFAR-10 Dirichlet rows of Table~\ref{tab:grid-retrain} are
 omitted because Table~1 of the main paper already reports them. The first
 column is not a method but the value of the in-run Shapley itself against the
@@ -566,30 +580,30 @@ $N{=}10$ grid (full participation, $R{=}10$, 4/10 corrupted; both Shapley
 values computed exhaustively over $2^{10}$ subsets), 3-seed mean$\pm$std. The
 first column is not a method but the value of the in-run Shapley itself.}
 \label{tab:grid-retrain}
-\begin{tabular}{lcccccccc}
+\begin{tabular}{lccccccc}
 \hline
-Threat & in-run SV \emph{(anchor)} & Flirds & Flirds-1st & GTG-Shapley & FedSV & ComFedSV & ShapleyFL & FedIF \\
+Threat & in-run SV \emph{(anchor)} & Flirds & Flirds-1st & GTG-Shapley & FedSV & ShapleyFL & FedIF \\
 \hline
-\multicolumn{9}{l}{\emph{CIFAR-10 / IID}} \\
-clean & $-0.273\pm0.252$ & $-0.232\pm0.220$ & $-0.131\pm0.316$ & $-0.196\pm0.217$ & $-0.176\pm0.503$ & $+0.297\pm0.140$ & $+0.063\pm0.476$ & $+0.067\pm0.164$ \\
-zero-update & $+0.625\pm0.145$ & $+0.579\pm0.159$ & $+0.759\pm0.043$ & $+0.638\pm0.084$ & $+0.286\pm0.197$ & $+0.385\pm0.233$ & $-0.562\pm0.122$ & $+0.713\pm0.228$ \\
-gradient noise & $+0.653\pm0.118$ & $+0.644\pm0.133$ & $-0.204\pm0.305$ & $+0.705\pm0.039$ & $+0.661\pm0.063$ & $+0.661\pm0.314$ & $+0.657\pm0.050$ & $+0.745\pm0.092$ \\
-label-flip & $+0.705\pm0.031$ & $+0.709\pm0.032$ & $+0.689\pm0.091$ & $+0.709\pm0.061$ & $+0.701\pm0.079$ & $+0.855\pm0.012$ & $+0.717\pm0.102$ & $+0.701\pm0.035$ \\
-corruption mean & $+0.661\pm0.007$ & $+0.644\pm0.004$ & $+0.415\pm0.120$ & $+0.684\pm0.041$ & $+0.549\pm0.076$ & $+0.633\pm0.034$ & $+0.270\pm0.068$ & $+0.720\pm0.045$ \\
+\multicolumn{8}{l}{\emph{CIFAR-10 / IID}} \\
+clean & $-0.273\pm0.252$ & $-0.232\pm0.220$ & $-0.131\pm0.316$ & $-0.196\pm0.217$ & $-0.176\pm0.503$ & $+0.063\pm0.476$ & $+0.067\pm0.164$ \\
+zero-update & $+0.625\pm0.145$ & $+0.579\pm0.159$ & $+0.759\pm0.043$ & $+0.638\pm0.084$ & $+0.286\pm0.197$ & $-0.562\pm0.122$ & $+0.713\pm0.228$ \\
+gradient noise & $+0.653\pm0.118$ & $+0.644\pm0.133$ & $-0.204\pm0.305$ & $+0.705\pm0.039$ & $+0.661\pm0.063$ & $+0.657\pm0.050$ & $+0.745\pm0.092$ \\
+label-flip & $+0.705\pm0.031$ & $+0.709\pm0.032$ & $+0.689\pm0.091$ & $+0.709\pm0.061$ & $+0.701\pm0.079$ & $+0.717\pm0.102$ & $+0.701\pm0.035$ \\
+corruption mean & $+0.661\pm0.007$ & $+0.644\pm0.004$ & $+0.415\pm0.120$ & $+0.684\pm0.041$ & $+0.549\pm0.076$ & $+0.270\pm0.068$ & $+0.720\pm0.045$ \\
 \hline
-\multicolumn{9}{l}{\emph{MNIST / Dir(1)}} \\
-clean & $+0.632\pm0.334$ & $+0.600\pm0.378$ & $+0.620\pm0.396$ & $+0.838\pm0.060$ & $+0.798\pm0.110$ & $+0.758\pm0.143$ & $+0.491\pm0.176$ & $+0.285\pm0.242$ \\
-zero-update & $+0.915\pm0.072$ & $+0.915\pm0.072$ & $+0.907\pm0.066$ & $+0.968\pm0.025$ & $+0.952\pm0.021$ & $+0.871\pm0.019$ & $-0.115\pm0.431$ & $+0.861\pm0.051$ \\
-gradient noise & $+0.903\pm0.036$ & $+0.879\pm0.024$ & $+0.301\pm0.353$ & $+0.851\pm0.077$ & $+0.903\pm0.117$ & $+0.725\pm0.037$ & $+0.867\pm0.061$ & $+0.681\pm0.062$ \\
-label-flip & $+0.960\pm0.070$ & $+0.960\pm0.070$ & $+0.960\pm0.070$ & $+0.960\pm0.039$ & $+0.931\pm0.043$ & $+0.802\pm0.025$ & $+0.851\pm0.138$ & $+0.564\pm0.138$ \\
-corruption mean & $+0.926\pm0.049$ & $+0.918\pm0.055$ & $+0.722\pm0.150$ & $+0.926\pm0.006$ & $+0.929\pm0.022$ & $+0.799\pm0.019$ & $+0.534\pm0.180$ & $+0.702\pm0.064$ \\
+\multicolumn{8}{l}{\emph{MNIST / Dir(1)}} \\
+clean & $+0.632\pm0.334$ & $+0.600\pm0.378$ & $+0.620\pm0.396$ & $+0.838\pm0.060$ & $+0.798\pm0.110$ & $+0.491\pm0.176$ & $+0.285\pm0.242$ \\
+zero-update & $+0.915\pm0.072$ & $+0.915\pm0.072$ & $+0.907\pm0.066$ & $+0.968\pm0.025$ & $+0.952\pm0.021$ & $-0.115\pm0.431$ & $+0.861\pm0.051$ \\
+gradient noise & $+0.903\pm0.036$ & $+0.879\pm0.024$ & $+0.301\pm0.353$ & $+0.851\pm0.077$ & $+0.903\pm0.117$ & $+0.867\pm0.061$ & $+0.681\pm0.062$ \\
+label-flip & $+0.960\pm0.070$ & $+0.960\pm0.070$ & $+0.960\pm0.070$ & $+0.960\pm0.039$ & $+0.931\pm0.043$ & $+0.851\pm0.138$ & $+0.564\pm0.138$ \\
+corruption mean & $+0.926\pm0.049$ & $+0.918\pm0.055$ & $+0.722\pm0.150$ & $+0.926\pm0.006$ & $+0.929\pm0.022$ & $+0.534\pm0.180$ & $+0.702\pm0.064$ \\
 \hline
-\multicolumn{9}{l}{\emph{MNIST / IID}} \\
-clean & $+0.438\pm0.102$ & $+0.358\pm0.099$ & $+0.519\pm0.335$ & $+0.192\pm0.286$ & $-0.111\pm0.452$ & $-0.095\pm0.206$ & $+0.624\pm0.231$ & $+0.741\pm0.150$ \\
-zero-update & $+0.717\pm0.140$ & $+0.667\pm0.095$ & $+0.675\pm0.101$ & $+0.754\pm0.068$ & $+0.721\pm0.145$ & $+0.626\pm0.058$ & $+0.452\pm0.198$ & $+0.813\pm0.157$ \\
-gradient noise & $+0.754\pm0.091$ & $+0.745\pm0.044$ & $+0.337\pm0.398$ & $+0.729\pm0.031$ & $+0.669\pm0.043$ & $+0.580\pm0.102$ & $+0.810\pm0.115$ & $+0.770\pm0.063$ \\
-label-flip & $+0.762\pm0.086$ & $+0.762\pm0.086$ & $+0.745\pm0.087$ & $+0.669\pm0.061$ & $+0.697\pm0.087$ & $+0.697\pm0.032$ & $+0.867\pm0.053$ & $+0.842\pm0.021$ \\
-corruption mean & $+0.744\pm0.009$ & $+0.725\pm0.014$ & $+0.586\pm0.123$ & $+0.717\pm0.049$ & $+0.696\pm0.058$ & $+0.634\pm0.032$ & $+0.710\pm0.054$ & $+0.808\pm0.070$ \\
+\multicolumn{8}{l}{\emph{MNIST / IID}} \\
+clean & $+0.438\pm0.102$ & $+0.358\pm0.099$ & $+0.519\pm0.335$ & $+0.192\pm0.286$ & $-0.111\pm0.452$ & $+0.624\pm0.231$ & $+0.741\pm0.150$ \\
+zero-update & $+0.717\pm0.140$ & $+0.667\pm0.095$ & $+0.675\pm0.101$ & $+0.754\pm0.068$ & $+0.721\pm0.145$ & $+0.452\pm0.198$ & $+0.813\pm0.157$ \\
+gradient noise & $+0.754\pm0.091$ & $+0.745\pm0.044$ & $+0.337\pm0.398$ & $+0.729\pm0.031$ & $+0.669\pm0.043$ & $+0.810\pm0.115$ & $+0.770\pm0.063$ \\
+label-flip & $+0.762\pm0.086$ & $+0.762\pm0.086$ & $+0.745\pm0.087$ & $+0.669\pm0.061$ & $+0.697\pm0.087$ & $+0.867\pm0.053$ & $+0.842\pm0.021$ \\
+corruption mean & $+0.744\pm0.009$ & $+0.725\pm0.014$ & $+0.586\pm0.123$ & $+0.717\pm0.049$ & $+0.696\pm0.058$ & $+0.710\pm0.054$ & $+0.808\pm0.070$ \\
 \hline
 \end{tabular}
 \end{table*}
@@ -601,37 +615,37 @@ corruption mean & $+0.744\pm0.009$ & $+0.725\pm0.014$ & $+0.586\pm0.123$ & $+0.7
 \caption{Spearman's $\rho$ against the in-run Shapley in the same grid,
 3-seed mean$\pm$std.}
 \label{tab:grid-inrun}
-\begin{tabular}{lccccccc}
+\begin{tabular}{lcccccc}
 \hline
-Threat & Flirds & Flirds-1st & GTG-Shapley & FedSV & ComFedSV & ShapleyFL & FedIF \\
+Threat & Flirds & Flirds-1st & GTG-Shapley & FedSV & ShapleyFL & FedIF \\
 \hline
-\multicolumn{8}{l}{\emph{CIFAR-10 / Dir(1)}} \\
-clean & $+0.992\pm0.007$ & $+0.931\pm0.037$ & $+0.749\pm0.134$ & $+0.713\pm0.250$ & $+0.515\pm0.370$ & $+0.661\pm0.200$ & $+0.754\pm0.158$ \\
-zero-update & $+1.000\pm0.000$ & $+0.987\pm0.022$ & $+0.459\pm0.067$ & $+0.038\pm0.101$ & $+0.206\pm0.239$ & $-0.329\pm0.225$ & $+0.768\pm0.156$ \\
-gradient noise & $+0.915\pm0.064$ & $-0.188\pm0.280$ & $+0.871\pm0.073$ & $+0.822\pm0.079$ & $+0.604\pm0.323$ & $+0.830\pm0.032$ & $+0.653\pm0.031$ \\
-label-flip & $+0.996\pm0.007$ & $+0.980\pm0.025$ & $+0.919\pm0.019$ & $+0.911\pm0.039$ & $+0.810\pm0.091$ & $+0.859\pm0.049$ & $+0.721\pm0.133$ \\
-corruption mean & $+0.970\pm0.024$ & $+0.593\pm0.103$ & $+0.749\pm0.046$ & $+0.590\pm0.066$ & $+0.540\pm0.053$ & $+0.453\pm0.067$ & $+0.714\pm0.017$ \\
+\multicolumn{7}{l}{\emph{CIFAR-10 / Dir(1)}} \\
+clean & $+0.992\pm0.007$ & $+0.931\pm0.037$ & $+0.749\pm0.134$ & $+0.713\pm0.250$ & $+0.661\pm0.200$ & $+0.754\pm0.158$ \\
+zero-update & $+1.000\pm0.000$ & $+0.987\pm0.022$ & $+0.459\pm0.067$ & $+0.038\pm0.101$ & $-0.329\pm0.225$ & $+0.768\pm0.156$ \\
+gradient noise & $+0.915\pm0.064$ & $-0.188\pm0.280$ & $+0.871\pm0.073$ & $+0.822\pm0.079$ & $+0.830\pm0.032$ & $+0.653\pm0.031$ \\
+label-flip & $+0.996\pm0.007$ & $+0.980\pm0.025$ & $+0.919\pm0.019$ & $+0.911\pm0.039$ & $+0.859\pm0.049$ & $+0.721\pm0.133$ \\
+corruption mean & $+0.970\pm0.024$ & $+0.593\pm0.103$ & $+0.749\pm0.046$ & $+0.590\pm0.066$ & $+0.453\pm0.067$ & $+0.714\pm0.017$ \\
 \hline
-\multicolumn{8}{l}{\emph{CIFAR-10 / IID}} \\
-clean & $+0.952\pm0.012$ & $+0.535\pm0.196$ & $+0.208\pm0.480$ & $+0.216\pm0.602$ & $+0.115\pm0.149$ & $+0.143\pm0.623$ & $+0.455\pm0.192$ \\
-zero-update & $+0.978\pm0.015$ & $+0.901\pm0.049$ & $+0.819\pm0.022$ & $+0.473\pm0.329$ & $+0.582\pm0.168$ & $-0.738\pm0.066$ & $+0.884\pm0.052$ \\
-gradient noise & $+0.968\pm0.019$ & $+0.139\pm0.116$ & $+0.685\pm0.128$ & $+0.762\pm0.037$ & $+0.479\pm0.515$ & $+0.883\pm0.088$ & $+0.859\pm0.133$ \\
-label-flip & $+0.996\pm0.007$ & $+0.952\pm0.032$ & $+0.745\pm0.084$ & $+0.713\pm0.025$ & $+0.725\pm0.158$ & $+0.842\pm0.053$ & $+0.931\pm0.007$ \\
-corruption mean & $+0.981\pm0.010$ & $+0.664\pm0.034$ & $+0.750\pm0.057$ & $+0.649\pm0.119$ & $+0.595\pm0.276$ & $+0.329\pm0.052$ & $+0.891\pm0.045$ \\
+\multicolumn{7}{l}{\emph{CIFAR-10 / IID}} \\
+clean & $+0.952\pm0.012$ & $+0.535\pm0.196$ & $+0.208\pm0.480$ & $+0.216\pm0.602$ & $+0.143\pm0.623$ & $+0.455\pm0.192$ \\
+zero-update & $+0.978\pm0.015$ & $+0.901\pm0.049$ & $+0.819\pm0.022$ & $+0.473\pm0.329$ & $-0.738\pm0.066$ & $+0.884\pm0.052$ \\
+gradient noise & $+0.968\pm0.019$ & $+0.139\pm0.116$ & $+0.685\pm0.128$ & $+0.762\pm0.037$ & $+0.883\pm0.088$ & $+0.859\pm0.133$ \\
+label-flip & $+0.996\pm0.007$ & $+0.952\pm0.032$ & $+0.745\pm0.084$ & $+0.713\pm0.025$ & $+0.842\pm0.053$ & $+0.931\pm0.007$ \\
+corruption mean & $+0.981\pm0.010$ & $+0.664\pm0.034$ & $+0.750\pm0.057$ & $+0.649\pm0.119$ & $+0.329\pm0.052$ & $+0.891\pm0.045$ \\
 \hline
-\multicolumn{8}{l}{\emph{MNIST / Dir(1)}} \\
-clean & $+0.976\pm0.012$ & $+0.947\pm0.039$ & $+0.806\pm0.231$ & $+0.661\pm0.210$ & $+0.689\pm0.194$ & $+0.370\pm0.204$ & $+0.216\pm0.079$ \\
-zero-update & $+1.000\pm0.000$ & $+0.996\pm0.007$ & $+0.953\pm0.014$ & $+0.953\pm0.007$ & $+0.919\pm0.043$ & $-0.131\pm0.459$ & $+0.905\pm0.084$ \\
-gradient noise & $+0.972\pm0.019$ & $+0.269\pm0.355$ & $+0.867\pm0.095$ & $+0.851\pm0.057$ & $+0.721\pm0.064$ & $+0.802\pm0.049$ & $+0.673\pm0.012$ \\
-label-flip & $+1.000\pm0.000$ & $+1.000\pm0.000$ & $+0.964\pm0.032$ & $+0.964\pm0.032$ & $+0.842\pm0.067$ & $+0.830\pm0.116$ & $+0.539\pm0.096$ \\
-corruption mean & $+0.991\pm0.006$ & $+0.755\pm0.116$ & $+0.928\pm0.019$ & $+0.922\pm0.024$ & $+0.828\pm0.055$ & $+0.500\pm0.182$ & $+0.706\pm0.063$ \\
+\multicolumn{7}{l}{\emph{MNIST / Dir(1)}} \\
+clean & $+0.976\pm0.012$ & $+0.947\pm0.039$ & $+0.806\pm0.231$ & $+0.661\pm0.210$ & $+0.370\pm0.204$ & $+0.216\pm0.079$ \\
+zero-update & $+1.000\pm0.000$ & $+0.996\pm0.007$ & $+0.953\pm0.014$ & $+0.953\pm0.007$ & $-0.131\pm0.459$ & $+0.905\pm0.084$ \\
+gradient noise & $+0.972\pm0.019$ & $+0.269\pm0.355$ & $+0.867\pm0.095$ & $+0.851\pm0.057$ & $+0.802\pm0.049$ & $+0.673\pm0.012$ \\
+label-flip & $+1.000\pm0.000$ & $+1.000\pm0.000$ & $+0.964\pm0.032$ & $+0.964\pm0.032$ & $+0.830\pm0.116$ & $+0.539\pm0.096$ \\
+corruption mean & $+0.991\pm0.006$ & $+0.755\pm0.116$ & $+0.928\pm0.019$ & $+0.922\pm0.024$ & $+0.500\pm0.182$ & $+0.706\pm0.063$ \\
 \hline
-\multicolumn{8}{l}{\emph{MNIST / IID}} \\
-clean & $+0.814\pm0.165$ & $+0.778\pm0.110$ & $+0.475\pm0.311$ & $+0.042\pm0.405$ & $+0.099\pm0.370$ & $+0.479\pm0.338$ & $+0.725\pm0.081$ \\
-zero-update & $+0.966\pm0.049$ & $+0.931\pm0.061$ & $+0.669\pm0.082$ & $+0.719\pm0.033$ & $+0.802\pm0.047$ & $+0.701\pm0.133$ & $+0.901\pm0.065$ \\
-gradient noise & $+0.903\pm0.067$ & $+0.430\pm0.352$ & $+0.737\pm0.115$ & $+0.721\pm0.195$ & $+0.725\pm0.153$ & $+0.721\pm0.087$ & $+0.822\pm0.078$ \\
-label-flip & $+1.000\pm0.000$ & $+0.976\pm0.021$ & $+0.677\pm0.083$ & $+0.689\pm0.101$ & $+0.717\pm0.060$ & $+0.863\pm0.070$ & $+0.903\pm0.104$ \\
-corruption mean & $+0.956\pm0.037$ & $+0.779\pm0.138$ & $+0.694\pm0.042$ & $+0.710\pm0.077$ & $+0.748\pm0.081$ & $+0.762\pm0.077$ & $+0.875\pm0.055$ \\
+\multicolumn{7}{l}{\emph{MNIST / IID}} \\
+clean & $+0.814\pm0.165$ & $+0.778\pm0.110$ & $+0.475\pm0.311$ & $+0.042\pm0.405$ & $+0.479\pm0.338$ & $+0.725\pm0.081$ \\
+zero-update & $+0.966\pm0.049$ & $+0.931\pm0.061$ & $+0.669\pm0.082$ & $+0.719\pm0.033$ & $+0.701\pm0.133$ & $+0.901\pm0.065$ \\
+gradient noise & $+0.903\pm0.067$ & $+0.430\pm0.352$ & $+0.737\pm0.115$ & $+0.721\pm0.195$ & $+0.721\pm0.087$ & $+0.822\pm0.078$ \\
+label-flip & $+1.000\pm0.000$ & $+0.976\pm0.021$ & $+0.677\pm0.083$ & $+0.689\pm0.101$ & $+0.863\pm0.070$ & $+0.903\pm0.104$ \\
+corruption mean & $+0.956\pm0.037$ & $+0.779\pm0.138$ & $+0.694\pm0.042$ & $+0.710\pm0.077$ & $+0.762\pm0.077$ & $+0.875\pm0.055$ \\
 \hline
 \end{tabular}
 \end{table*}
@@ -654,7 +668,6 @@ Flirds & $+0.725\pm0.098$ & $+0.936\pm0.037$ & $0.0302\pm0.0053$ & $0.33\pm0.073
 Flirds-1st & $+0.443\pm0.143$ & $+0.623\pm0.099$ & $0.355\pm0.0066$ & $1.27\pm0.072$ & $0.811\pm0.08$ \\
 GTG-Shapley & $+0.644\pm0.093$ & $+0.628\pm0.046$ & $0.126\pm0.061$ & $0.59\pm0.085$ & $0.359\pm0.051$ \\
 FedSV & $+0.506\pm0.089$ & $+0.496\pm0.069$ & $0.23\pm0.047$ & $29.5\pm3.1$ & $13.8\pm0.99$ \\
-ComFedSV & $+0.467\pm0.026$ & $+0.395\pm0.035$ & $0.3\pm0.14$ & $35\pm11$ & $21.9\pm9.4$ \\
 ShapleyFL & $+0.414\pm0.053$ & $+0.394\pm0.019$ & $0.354\pm0.019$ & $1.82\pm0.08$ & $0.863\pm0.058$ \\
 FedIF & $+0.462\pm0.002$ & $+0.535\pm0.029$ & $0.223\pm0.024$ & $1.38\pm0.14$ & $0.768\pm0.068$ \\
 \hline
@@ -664,7 +677,6 @@ Flirds & $+0.453\pm0.005$ & $+0.938\pm0.031$ & $0.0236\pm0.0036$ & $0.228\pm0.02
 Flirds-1st & $+0.290\pm0.117$ & $+0.606\pm0.030$ & $0.305\pm0.0081$ & $1.02\pm0.052$ & $0.541\pm0.047$ \\
 GTG-Shapley & $+0.471\pm0.076$ & $+0.565\pm0.075$ & $0.0242\pm0.0065$ & $0.475\pm0.076$ & $0.249\pm0.059$ \\
 FedSV & $+0.371\pm0.068$ & $+0.495\pm0.074$ & $0.0947\pm0.034$ & $29.1\pm2.6$ & $13.2\pm1.4$ \\
-ComFedSV & $+0.500\pm0.052$ & $+0.438\pm0.241$ & $0.234\pm0.16$ & $35.5\pm10$ & $22.4\pm8.9$ \\
 ShapleyFL & $+0.174\pm0.085$ & $+0.288\pm0.062$ & $0.377\pm0.021$ & $1.83\pm0.033$ & $0.839\pm0.052$ \\
 FedIF & $+0.537\pm0.048$ & $+0.762\pm0.061$ & $0.161\pm0.0084$ & $1.36\pm0.055$ & $0.652\pm0.069$ \\
 \hline
@@ -674,7 +686,6 @@ Flirds & $+0.811\pm0.105$ & $+0.970\pm0.015$ & $0.0564\pm0.051$ & $0.34\pm0.18$ 
 Flirds-1st & $+0.663\pm0.145$ & $+0.772\pm0.044$ & $0.163\pm0.096$ & $0.748\pm0.36$ & $0.513\pm0.26$ \\
 GTG-Shapley & $+0.837\pm0.015$ & $+0.832\pm0.031$ & $0.0947\pm0.036$ & $0.645\pm0.06$ & $0.383\pm0.03$ \\
 FedSV & $+0.837\pm0.026$ & $+0.827\pm0.039$ & $0.115\pm0.039$ & $14.5\pm1.3$ & $7.06\pm0.8$ \\
-ComFedSV & $+0.615\pm0.039$ & $+0.678\pm0.084$ & $0.184\pm0.015$ & $16.1\pm5$ & $9.87\pm4.5$ \\
 ShapleyFL & $+0.455\pm0.179$ & $+0.400\pm0.154$ & $0.228\pm0.015$ & $1.53\pm0.095$ & $0.735\pm0.093$ \\
 FedIF & $+0.488\pm0.087$ & $+0.512\pm0.120$ & $0.113\pm0.017$ & $0.993\pm0.033$ & $0.592\pm0.12$ \\
 \hline
@@ -684,70 +695,14 @@ Flirds & $+0.543\pm0.005$ & $+0.897\pm0.071$ & $0.104\pm0.036$ & $0.334\pm0.019$
 Flirds-1st & $+0.440\pm0.080$ & $+0.722\pm0.144$ & $0.104\pm0.019$ & $0.525\pm0.064$ & $0.284\pm0.041$ \\
 GTG-Shapley & $+0.526\pm0.087$ & $+0.503\pm0.045$ & $0.111\pm0.015$ & $0.651\pm0.028$ & $0.36\pm0.049$ \\
 FedSV & $+0.501\pm0.074$ & $+0.528\pm0.099$ & $0.149\pm0.021$ & $14.2\pm2$ & $6.91\pm1.1$ \\
-ComFedSV & $+0.436\pm0.056$ & $+0.600\pm0.069$ & $0.197\pm0.038$ & $16.6\pm5.9$ & $10.1\pm5.3$ \\
 ShapleyFL & $+0.570\pm0.044$ & $+0.603\pm0.082$ & $0.123\pm0.016$ & $1.29\pm0.11$ & $0.539\pm0.037$ \\
 FedIF & $+0.637\pm0.087$ & $+0.754\pm0.097$ & $0.048\pm0.0086$ & $1.06\pm0.037$ & $0.465\pm0.0093$ \\
 \hline
 \end{tabular}
 \end{table*}
 
-\subsection{LLM Full Table}
+\subsection{The LLM Retraining Leg}
 \label{app:llm-fidelity}
-
-Table~\ref{tab:llm-fidelity} scores all methods against the in-run Shapley in
-the two LLM settings that Figure~2(b) of the main paper does not cover. In
-both settings Flirds and Flirds-1st reach $\rho = 1.000$, and what parts
-company is the rest of the field. On the cross-device anchor, where each
-client participates sparsely (10 of 100), ComFedSV reverses sign to $-0.023$
-and $-0.051$ and ShapleyFL falls to $+0.582$. Estimators that lean on subset
-sampling or on gradient similarity are the first to break down. These stages
-do, however, keep both Taylor variants at the ceiling, so they do not
-discriminate between the two. The reason absolute correlation is not used as
-grounds for discrimination is in Supplementary Section~\ref{app:signal}.
-
-One provenance caveat applies to the ShapleyFL column of
-Table~\ref{tab:llm-fidelity}. ShapleyFL smooths its per-round shares with an
-exponential moving average over rounds, and the runs behind the cross-device
-anchor and the 1B and 7B small anchors predate the unification of that
-coefficient at $\beta{=}0.3$ that holds for every other ShapleyFL score in
-the paper; these cells ran at $\beta{=}0.5$, and the 3B small anchor row is
-$\beta{=}0.3$. A 3-seed rerun of the 1B small anchor at $\beta{=}0.3$ scores
-$0.933\pm0.115$ against the in-run Shapley of its own rerun trajectory, two
-seeds improving and one degrading, but the stored trajectory does not
-reproduce exactly under the current code, so the rerun cannot be joined to
-the cells of this table and the two scorings are not mixed.
-
-\begin{table*}[t]
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\caption{Spearman's $\rho$ and Pearson's $r$ against the in-run Shapley in
-the LLM settings, 3-seed mean$\pm$std.}
-\label{tab:llm-fidelity}
-\begin{tabular}{lccccccc}
-\hline
-Threat (metric) & Flirds & Flirds-1st & GTG-Shapley & FedSV & ComFedSV & ShapleyFL & FedIF \\
-\hline
-\multicolumn{8}{l}{\emph{cross-device anchor ($N{=}100$, 10/100, $R{=}30$)}} \\
-answer-swap ($\rho$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.784\pm0.025$ & $0.752\pm0.024$ & $-0.023\pm0.156$ & $0.582\pm0.092$ & $0.721\pm0.032$ \\
-answer-swap ($r$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.892\pm0.028$ & $0.854\pm0.045$ & $-0.044\pm0.234$ & $0.605\pm0.095$ & $0.735\pm0.045$ \\
-zero-update ($\rho$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.843\pm0.032$ & $0.814\pm0.022$ & $-0.051\pm0.174$ & $0.681\pm0.060$ & $0.824\pm0.021$ \\
-zero-update ($r$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.895\pm0.030$ & $0.861\pm0.043$ & $-0.070\pm0.234$ & $0.676\pm0.073$ & $0.808\pm0.027$ \\
-\hline
-\multicolumn{8}{l}{\emph{small anchor, 1B ($N{=}5$, full participation, $R{=}30$), clean}} \\
-clean ($\rho$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.700\pm0.200$ & $0.500\pm0.529$ & $0.700\pm0.346$ & $0.067\pm0.651$ \\
-clean ($r$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.824\pm0.142$ & $0.563\pm0.436$ & $0.764\pm0.316$ & $-0.068\pm0.766$ \\
-\hline
-\multicolumn{8}{l}{\emph{small anchor, 3B, clean}} \\
-clean ($\rho$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.967\pm0.058$ & $0.667\pm0.252$ & $0.600\pm0.400$ & $0.167\pm0.115$ & $0.200\pm0.458$ \\
-clean ($r$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.999\pm0.001$ & $0.881\pm0.066$ & $0.451\pm0.365$ & $0.280\pm0.607$ & $0.356\pm0.570$ \\
-\hline
-\multicolumn{8}{l}{\emph{small anchor, 7B, clean}} \\
-clean ($\rho$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.933\pm0.058$ & $0.600\pm0.265$ & $0.833\pm0.153$ & $0.200\pm0.755$ \\
-clean ($r$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.961\pm0.029$ & $0.588\pm0.314$ & $0.903\pm0.082$ & $0.368\pm0.624$ \\
-\hline
-\end{tabular}
-\end{table*}
 
 The retraining-based Shapley is computed on two stages of the LLM track. The
 first is the five-domain non-IID stage ($N{=}5$, full participation,
@@ -760,11 +715,10 @@ in-run Shapley (Table~\ref{tab:silo-retrain}); this is the one measured case
 in which the classical, method-neutral value directly endorses the in-run
 standard used throughout the paper. The second stage is the small anchor,
 and on that stage the agreement between the two Shapley values, Spearman
-$0.933\pm0.058$ and Pearson $0.933\pm0.066$, forms a ceiling. No method on
-that stage can rise above it, so the $1.000$ that the Flirds variants record
-against the in-run Shapley in the small anchor rows of
-Table~\ref{tab:llm-fidelity} becomes this ceiling value once the standard is
-moved to the retraining-based Shapley. What separates the two stages is the
+$0.933\pm0.058$ and Pearson $0.933\pm0.066$, forms a ceiling that no method
+can rise above: a method that reproduces the in-run Shapley exactly there, as
+both Flirds variants do, scores $0.933$ once the standard is moved to the
+retraining-based Shapley. What separates the two stages is the
 diagnosis of Supplementary Section~\ref{app:signal}: the anchor stage is IID
 and clean, so the cross-seed reproducibility of the in-run Shapley itself is
 $-0.367$ (Table~\ref{tab:target-stability}), whereas the five-domain stage
@@ -780,16 +734,15 @@ retraining-based value computed exhaustively over $2^5$ subsets), 3-seed
 mean$\pm$std. The first column is not a method but the in-run Shapley
 itself; because the two Shapley values order the clients identically, every
 column also equals that method's score against the in-run Shapley. The
-answer-swap ratio on this stage is $1.0$ (the main setting uses $0.7$), and
-the ComFedSV clean cell is absent from the archived artifact.}
+answer-swap ratio on this stage is $1.0$ (the main setting uses $0.7$).}
 \label{tab:silo-retrain}
-\begin{tabular}{lcccccccc}
+\begin{tabular}{lccccccc}
 \hline
-Threat & in-run SV \emph{(anchor)} & Flirds & Flirds-1st & GTG-Shapley & FedSV & ComFedSV & ShapleyFL & FedIF \\
+Threat & in-run SV \emph{(anchor)} & Flirds & Flirds-1st & GTG-Shapley & FedSV & ShapleyFL & FedIF \\
 \hline
-clean & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.933\pm0.058$ & --- & $1.000\pm0.000$ & $0.867\pm0.115$ \\
-answer-swap & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.833\pm0.208$ & $1.000\pm0.000$ & $0.933\pm0.058$ \\
-zero-update & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.933\pm0.058$ & $0.867\pm0.153$ & $1.000\pm0.000$ & $0.900\pm0.100$ \\
+clean & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.933\pm0.058$ & $1.000\pm0.000$ & $0.867\pm0.115$ \\
+answer-swap & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.933\pm0.058$ \\
+zero-update & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.933\pm0.058$ & $1.000\pm0.000$ & $0.900\pm0.100$ \\
 \hline
 \end{tabular}
 \end{table*}
@@ -906,14 +859,10 @@ client in turn every 5 rounds so that exclusion does not become an absorbing
 state. Rounds in which the candidate pool would be empty revert to full
 participation.
 
-The bottom arm of the tables is a separate run without any intervention,
-configured identically to the observer run that supplies the scores. On
-CIFAR-10 the two runs ride different random streams and part company in the
-third decimal place, so the bottom arm was unified to the observer run in
-order to read it and the cells where the gate excludes nobody, and where
-retraining therefore coincides with training without intervention, off the
-same run. On MNIST the final accuracies of the two runs are bit-identical in
-all 18 pairs.
+The no-intervention arm at the bottom of the tables is the run that supplies
+the contribution scores, taken without any intervention applied. The cells in
+which the gate excludes nobody, and in which retraining therefore coincides
+with training without intervention, are read off that same run.
 
 \subsection{The Online Point}
 \label{app:online}
@@ -1146,7 +1095,6 @@ Flirds & $-0.33\pm0.69$ & $+21.76\pm0.30$ & $+24.45\pm2.31$ & $+13.84\pm0.37$ & 
 Flirds-1st & $+0.03\pm0.35$ & $+21.89\pm0.26$ & $-1.89\pm4.76$ & $+14.31\pm0.66$ & $+11.44\pm1.44$ \\
 GTG-Shapley & $+0.10\pm0.82$ & $+21.68\pm0.68$ & $+23.60\pm2.34$ & $+14.09\pm0.68$ & $+19.79\pm0.69$ \\
 FedSV & $+0.14\pm0.24$ & $+10.50\pm10.06$ & $+23.78\pm1.87$ & $+14.80\pm1.21$ & $+16.36\pm4.33$ \\
-ComFedSV & $+1.66\pm0.40$ & $+3.85\pm0.83$ & $+19.63\pm9.17$ & $+14.87\pm1.32$ & $+12.78\pm3.61$ \\
 ShapleyFL & $-0.20\pm0.93$ & $-16.26\pm9.45$ & $+24.62\pm2.47$ & $+14.51\pm0.64$ & $+7.62\pm3.35$ \\
 FedIF & $-0.41\pm0.30$ & $+21.95\pm0.32$ & $+24.22\pm1.99$ & $+14.61\pm0.37$ & $+20.26\pm0.46$ \\
 \hline
