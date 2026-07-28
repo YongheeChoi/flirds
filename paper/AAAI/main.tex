@@ -262,7 +262,8 @@ round game.
 \textbf{Data contribution evaluation in centralized training.}
 In centralized training, the training party has direct access to individual
 samples and their derivative information, and sample-level attribution has
-developed on that premise: DataInf, EK-FAC, TRAK, and LoGra estimate
+developed on that premise, beginning with influence functions
+\citep{koh2017understanding}: DataInf, EK-FAC, TRAK, and LoGra estimate
 influence and attribution from gradient or curvature information
 \citep{kwon2024datainf,grosse2023studying,park2023trak,choe2026your}, and
 LESS, MATES, and DsDm use such signals for targeted data selection
@@ -629,16 +630,20 @@ and both tracks share the same configuration: partial-participation FL with
 corrupted clients mixed in. The LLM track evaluates Llama-family models
 \citep{grattafiori2024llama,touvron2023llama} on GSM8K
 \citep{cobbe2021training}, Alpaca-GPT4 \citep{peng2023instruction}, and a
-five-domain dataset we constructed, and the CNN track evaluates FedSVCNN and
-LeNet5 \citep{lecun1998gradient} on CIFAR-10 \citep{krizhevsky2009learning}
+five-domain dataset we constructed from public per-domain corpora
+(composition in Appendix~B); the clients train and exchange only LoRA
+factors \citep{hu2022lora}.
+The CNN track evaluates FedSVCNN, the CNN used in the FedSV
+lineage \citep{wang2020principled,fan2022improving}, and LeNet5
+\citep{lecun1998gradient} on CIFAR-10 \citep{krizhevsky2009learning}
 and MNIST. The clients of the CNN
 track are partitioned in two ways, a uniform IID split and a non-IID
-Dirichlet($\alpha{=}1$) split, the latter abbreviated Dir(1) in the figures
-and tables. The corruption axis has five
+Dirichlet($\alpha{=}1$) split \citep{hsu2019measuring}, the latter
+abbreviated Dir(1) in the figures and tables. The corruption axis has five
 entries: \emph{clean} (the uncorrupted control anchor), \emph{answer-swap}
 (data that is well formed but whose question--response correspondence is
 broken by a permutation; LLM), \emph{zero-update free-rider} (submitting a
-zero update without local training), \emph{gradient noise} (Gaussian noise
+zero update without local training; \citealp{lin2019free}), \emph{gradient noise} (Gaussian noise
 injected into the update after normal training; CNN), and \emph{label-flip}
 (labels replaced at random; CNN).
 
@@ -678,9 +683,9 @@ Pearson's $r$.
 Only the Flirds variants, which estimate that same game, are scored against
 the in-run Shapley. The other baselines take a different game as their
 estimation target from the outset, so scoring them here would not be a fair
-comparison. Seeing all of the compared methods in one place therefore
-requires changing the standard they are scored against, and the scoring
-against the retraining-based Shapley that follows is that place. That value
+comparison. Comparing all methods on one scale therefore requires a
+different standard, and the rest of this section scores every method
+against the retraining-based Shapley. That value
 is the Shapley value of the classical definition, obtained by retraining from
 scratch on a subset alone; it is the estimation target of no method, yet the
 same yardstick applies to all of them, which is what makes it a common
@@ -805,7 +810,7 @@ selection-random & --- & $58.38\pm1.65$ & $25.90\pm1.70$ & $50.18\pm4.97$ & --- 
 Flirds & $62.77\pm0.96$ & $60.63\pm0.72$ & $60.65\pm0.33$ & $61.92\pm0.80$ & $61.49$ \\
 Flirds-1st & $63.86\pm0.53$ & $62.52\pm0.24$ & $24.36\pm2.22$ & $62.36\pm0.31$ & $53.28$ \\
 FedIF & $64.17\pm0.31$ & $62.52\pm0.24$ & $24.36\pm2.22$ & $62.17\pm0.58$ & $53.31$ \\
-GTG & $62.65\pm0.86$ & $51.58\pm0.47$ & $62.03\pm0.28$ & $59.91\pm1.47$ & $59.04$ \\
+GTG-Shapley & $62.65\pm0.86$ & $51.58\pm0.47$ & $62.03\pm0.28$ & $59.91\pm1.47$ & $59.04$ \\
 FedSV & $61.66\pm0.96$ & $51.40\pm0.81$ & $62.03\pm0.28$ & $59.04\pm1.01$ & $58.53$ \\
 ComFedSV & $62.32\pm1.22$ & $52.00\pm1.53$ & $62.03\pm0.28$ & $59.21\pm1.02$ & $58.89$ \\
 ShapleyFL & $62.23\pm1.18$ & $51.13\pm1.64$ & $62.03\pm0.28$ & $60.28\pm0.68$ & $58.92$ \\
@@ -897,8 +902,8 @@ are predicted as a function of the number of participants in a round.
 \caption{Dominant operations per round and the time they actually took. The
 counts are analytic ($K$ = participants in a round, $N$ = total clients,
 $c$ = truncation constant, $M = \max(10, \lceil N \ln N\rceil)$); the
-wall-clock setting is $N{=}100$, 10/100 participation, $R{=}30$,
-Llama-3.2-1B.}
+wall-clock column is the total valuation time over the whole run, measured
+at $N{=}100$, 10/100 participation, $R{=}30$, Llama-3.2-1B.}
 \label{tab:cost}
 \begin{tabular}{lcc}
 \hline
@@ -928,7 +933,9 @@ the measurements from a setting with 10 participants per round next to the
 counts.
 
 Flirds costs $1/159$ of the in-run Shapley, which agrees with the prediction
-of the operation-count model ($2^{10}/6.5 \approx 158$). ShapleyFL,
+of the operation-count model: the in-run Shapley spends $2^{10}$ forward
+passes per round, the measured per-round time of Flirds equals $6.5$
+validation forward passes, and $2^{10}/6.5 \approx 158$. ShapleyFL,
 GTG-Shapley, and FedSV pay costs of the same order of magnitude because they
 too reconstruct coalition models in every round, and truncation that reduces
 the number of samples only lowers the constant without changing the order of
@@ -993,6 +1000,6 @@ evaluation.
 
 % Check whether the conference requires a reproducibility checklist to be included in the paper.
 % If so, you can uncomment the following line and ajust the path to include it.
-% \input{ReproducibilityChecklist.tex}
+\input{ReproducibilityChecklist.tex}
 
 \end{document}

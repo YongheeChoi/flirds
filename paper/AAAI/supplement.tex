@@ -286,12 +286,15 @@ exchanges only LoRA ($r{=}16$, $\alpha{=}32$) factors rather than the full
 weights. The maximum sequence length is 512 in the GSM8K main setting and the
 alpaca setting and 768 in the five-domain non-IID setting, and a warmup of 2
 rounds is used in the five-domain setting only. The CNN models are FedSVCNN
-for CIFAR-10 and LeNet5 for MNIST. Two settings whose scale is not written in
+for CIFAR-10, the CNN of the FedSV lineage with two $5{\times}5$
+convolutions of 32 and 64 channels followed by one 512-unit dense layer,
+and LeNet5 for MNIST. Two settings whose scale is not written in
 a results-table caption are the five-domain non-IID setting ($N{=}5$, full
 participation, $R{=}10$) and the alpaca anchor ($N{=}5$, full participation,
-$R{=}30$). Every setting is trained and scored in fp32, and the original
-configuration values of each cell are kept in the config of the corresponding
-artifact.
+$R{=}30$). Every setting is trained and scored in fp32 on NVIDIA B200 GPUs
+under PyTorch, and the original configuration values and the library
+versions of each cell are kept in the config and metadata of the
+corresponding artifact.
 
 \subsection{Implementation of the Threats}
 \label{app:threats}
@@ -310,8 +313,9 @@ five-domain non-IID setting.
 
 \textbf{zero-update free-rider} submits $\Delta = 0$ without local training.
 
-\textbf{gradient noise} (CNN) adds Gaussian noise to the submitted update
-after normal local training.
+\textbf{gradient noise} (CNN) adds i.i.d.\ Gaussian noise
+$\mathcal{N}(0, 0.1^2)$ to every entry of the submitted update after normal
+local training.
 
 \textbf{label-flip} (CNN) replaces a fraction $0.7$ of the labels held by a
 corrupted client with random labels. The set of corrupted clients is drawn
@@ -332,7 +336,12 @@ separation between training and evaluation data is the official split, and
 the validation and evaluation sets are drawn from the same test pool, so they
 share a distribution and do not overlap in questions. In the five-domain
 non-IID setting one client holds one domain, with 200 training, 20
-validation, and 40 test examples per domain. The alpaca setting splits
+validation, and 40 test examples per domain; the five domains are medical
+flashcards (Medical Meadow), legal QA, finance QA (FiQA), math word
+problems with rationales (AQUA-RAT), and general instruction following
+(Dolly), all public corpora cast into one free-form
+instruction--response format so that the shared validation loss is
+comparable across domains. The alpaca setting splits
 alpaca-gpt4 20k IID and holds out 200 validation and 1{,}000 test examples.
 
 The CNN track uses two partitions. The \texttt{iid} partition is a uniform

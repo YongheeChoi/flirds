@@ -10,7 +10,7 @@ Three figures.  The body one first, then the two appendix ones:
                         once).  No shading, no direct labels.        (8 cells)
       (b) LLM track   : 2 settings x 6 cells (GSM8K threats + alpaca scale),
                         paired bars anchored at the ZOOMED axis start (.992;
-                        explicit author call, % ticks disclose the baseline);
+                        explicit author call, the .992 tick discloses the baseline);
                         ink tick = Pearson r.
                         Cross-device & 5-domain (all exactly 1.0) -> appendix.
                         No single-seed marking (07-28; n_seeds in the CSV).
@@ -135,7 +135,7 @@ def save(fig, name: str, dpi: int) -> None:
 AXIS_THREATS = ["clean", "free_rider", "grad_noise", "label_flip"]
 THREAT_LABEL = {
     "clean": "clean",
-    "free_rider": "free-rider",
+    "free_rider": "zero-update",   # 07-28 terminology: match the tables ("zero-update")
     "grad_noise": "gradient\nnoise",
     "label_flip": "label-flip",
     "frrand": "random-\nupdate FR",
@@ -211,7 +211,7 @@ def load_llm_inrun() -> pd.DataFrame:
     g = "GSM8K|$N$=50, 5/50"
     for label, stem, tkey in [("clean", "1B_gsm50k5_clean_nr0.7_s{}", "clean"),
                               ("answer-swap", "1B_gsm50k5_noisy_nr0.7_s{}", "noisy"),
-                              ("free-rider", "1B_gsm50k5_frzero_nr0.7_s{}", "freerider_zero")]:
+                              ("zero-update", "1B_gsm50k5_frzero_nr0.7_s{}", "freerider_zero")]:
         for seed in (0, 1, 2):
             drain(g, label, P2 / stem.format(seed), tkey, seed_override=seed)
 
@@ -219,7 +219,7 @@ def load_llm_inrun() -> pd.DataFrame:
     g = "5-domain|$N$=5, full"
     for label, stem, tkey in [("clean", "1B_silo5_clean", "clean"),
                               ("answer-swap", "1B_silo5_noisy", "noisy"),
-                              ("free-rider", "1B_silo5_frzero", "freerider_zero")]:
+                              ("zero-update", "1B_silo5_frzero", "freerider_zero")]:
         drain(g, label, P2 / stem, tkey)
 
     # 3. alpaca IID scale leg (1B / 3B / 7B) -- derived emitter CSV
@@ -235,7 +235,7 @@ def load_llm_inrun() -> pd.DataFrame:
     # 4. cross-device anchor (exact per-round oracle attached to the anchor cells)
     g = "cross-dev.|$N$=100"
     for label, stem, tkey in [("answer-swap", "1B_device100-a0.5_noisy_anchor", "noisy"),
-                              ("free-rider", "1B_device100-a0.5_frzero_anchor", "freerider_zero")]:
+                              ("zero-update", "1B_device100-a0.5_frzero_anchor", "freerider_zero")]:
         drain(g, label, P2 / stem, tkey)
 
     return pd.DataFrame(rows)
@@ -549,7 +549,7 @@ def panel_diagonal(ax, cnn: pd.DataFrame, llm: pd.DataFrame) -> pd.DataFrame:
                markeredgecolor=SURFACE, markeredgewidth=0.4, label="LLM  $N$=5 (12)"),
         Line2D([], [], marker="o", ls="", markersize=4.0, markerfacecolor=SURFACE,
                markeredgecolor=MUTED, markeredgewidth=0.9, label="clean (hollow)"),
-        Line2D([], [], marker="^", ls="", markersize=4.0, color=MUTED, label="free-rider"),
+        Line2D([], [], marker="^", ls="", markersize=4.0, color=MUTED, label="zero-update"),
         Line2D([], [], marker="s", ls="", markersize=4.0, color=MUTED, label="gradient noise"),
         Line2D([], [], marker="D", ls="", markersize=3.6, color=MUTED, label="label-flip"),
         Line2D([], [], marker="v", ls="", markersize=4.0, color=MUTED, label="answer-swap"),
@@ -619,7 +619,7 @@ def fig_retrain(dpi: int) -> None:
 #       gradient-noise Dir(1) Flirds-1st, left of the baseline; no connector   #
 #       -- row position assigns it).  No shading, no direct value labels.      #
 #   (b) LLM 2 settings x 6 cells as paired bars anchored at the ZOOMED axis    #
-#       start (explicit Yonghee 07-28 call; the 99.2% tick label discloses     #
+#       start (explicit Yonghee 07-28 call; the 0.992 tick label discloses     #
 #       the baseline); ink tick = Pearson r.  Cross-device & 5-domain stay     #
 #       in the appendix.                                                       #
 # Zoom is legitimate for position marks (dots); bars in (a) keep their zero    #
@@ -682,7 +682,8 @@ def panel_body_cnn(ax, tag: str) -> pd.DataFrame:
     ax.set_ylim(y - 0.46 + 0.44, -0.44)
     ax.set_xlim(*CNN_XLIM)
     ax.set_xticks(CNN_XTICKS)
-    ax.set_xticklabels(["0", "25", "50", "75", "100%"])
+    # decimal ticks (07-28): match the tables' decimal correlations, not %
+    ax.set_xticklabels(["0", "0.25", "0.50", "0.75", "1"])
     ax.grid(True, axis="x", lw=0.6, zorder=0.5)
     ax.set_axisbelow(True)
     ax.set_title(tag, loc="center", pad=5)
@@ -693,8 +694,8 @@ def panel_body_cnn(ax, tag: str) -> pd.DataFrame:
 def panel_body_llm(ax) -> pd.DataFrame:
     """The LLM sweep as paired bars, zoomed so the method gap is visible.
 
-    The bars are anchored at the zoomed axis start (99.2%), an explicit
-    author decision of 07-28; the percent tick labels disclose the baseline.
+    The bars are anchored at the zoomed axis start (0.992), an explicit
+    author decision of 07-28; the 0.992 tick label discloses the baseline.
     The axis start is chosen from the data on a .004 grid so the midpoint
     tick lands exactly.  Rows are dodged like the CNN panel's pairs.
     """
@@ -733,7 +734,7 @@ def panel_body_llm(ax) -> pd.DataFrame:
                 yy = y + off
                 # paired bars anchored at the zoomed axis start (explicit
                 # Yonghee 07-28 call -- the leaders already read as bars; the
-                # 99.2% tick label is what discloses the zoomed baseline)
+                # 0.992 tick label is what discloses the zoomed baseline)
                 ax.barh(yy, rec.rho - x0, left=x0, height=0.30, color=color,
                         lw=0, zorder=3)
                 _ink_tick(ax, rec.r, yy, half=0.24, lw=0.9)
@@ -748,7 +749,8 @@ def panel_body_llm(ax) -> pd.DataFrame:
         y += 0.42
     pts = pd.DataFrame(rows)
 
-    fmt = lambda v: "100%" if v >= 0.9999999 else f"{v * 100:.1f}"
+    # decimal ticks (07-28): match the tables' decimal correlations, not %
+    fmt = lambda v: "1" if v >= 0.9999999 else f"{v:.3f}"
     ax.set_xlim(x0, 1.0 + (1.0 - x0) * 0.05)
     xticks = [x0, (x0 + 1.0) / 2, 1.0]
     ax.set_xticks(xticks)
