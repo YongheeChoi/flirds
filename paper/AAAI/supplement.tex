@@ -705,6 +705,18 @@ do, however, keep both Taylor variants at the ceiling, so they do not
 discriminate between the two. The reason absolute correlation is not used as
 grounds for discrimination is in Supplementary Section~\ref{app:signal}.
 
+One provenance caveat applies to the ShapleyFL column of
+Table~\ref{tab:llm-fidelity}. ShapleyFL smooths its per-round shares with an
+exponential moving average over rounds, and the runs behind the cross-device
+anchor and the 1B and 7B small anchors predate the unification of that
+coefficient at $\beta{=}0.3$ that holds for every other ShapleyFL score in
+the paper; these cells ran at $\beta{=}0.5$, and the 3B small anchor row is
+$\beta{=}0.3$. A 3-seed rerun of the 1B small anchor at $\beta{=}0.3$ scores
+$0.933\pm0.115$ against the in-run Shapley of its own rerun trajectory, two
+seeds improving and one degrading, but the stored trajectory does not
+reproduce exactly under the current code, so the rerun cannot be joined to
+the cells of this table and the two scorings are not mixed.
+
 \begin{table*}[t]
 \centering
 \small
@@ -737,15 +749,50 @@ clean ($r$) & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.961\pm0.0
 \end{tabular}
 \end{table*}
 
-The retraining leg of the LLM track is the small anchor stage, and on that
-stage the agreement between the two Shapley values, Spearman
+The retraining-based Shapley is computed on two stages of the LLM track. The
+first is the five-domain non-IID stage ($N{=}5$, full participation,
+$R{=}10$), where the classical value is enumerated exhaustively by $2^5$
+retrainings from scratch on the same trajectory as the in-run enumeration.
+There the two Shapley values agree exactly, Spearman $1.000\pm0.000$ and
+Pearson $1.000\pm0.000$ under all three threats, so every method's score
+against the retraining-based Shapley coincides with its score against the
+in-run Shapley (Table~\ref{tab:silo-retrain}); this is the one measured case
+in which the classical, method-neutral value directly endorses the in-run
+standard used throughout the paper. The second stage is the small anchor,
+and on that stage the agreement between the two Shapley values, Spearman
 $0.933\pm0.058$ and Pearson $0.933\pm0.066$, forms a ceiling. No method on
 that stage can rise above it, so the $1.000$ that the Flirds variants record
 against the in-run Shapley in the small anchor rows of
 Table~\ref{tab:llm-fidelity} becomes this ceiling value once the standard is
-moved to the retraining-based Shapley. The source of that ceiling is that
-the stage is IID and clean, so the cross-seed reproducibility of the in-run
-Shapley itself is $-0.367$ (Table~\ref{tab:target-stability}).
+moved to the retraining-based Shapley. What separates the two stages is the
+diagnosis of Supplementary Section~\ref{app:signal}: the anchor stage is IID
+and clean, so the cross-seed reproducibility of the in-run Shapley itself is
+$-0.367$ (Table~\ref{tab:target-stability}), whereas the five-domain stage
+reproduces at $+0.87$ to $+0.93$.
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{Spearman's $\rho$ against the retraining-based Shapley on the
+five-domain non-IID stage ($N{=}5$, full participation, $R{=}10$; the
+retraining-based value computed exhaustively over $2^5$ subsets), 3-seed
+mean$\pm$std. The first column is not a method but the in-run Shapley
+itself; because the two Shapley values order the clients identically, every
+column also equals that method's score against the in-run Shapley. The
+answer-swap ratio on this stage is $1.0$ (the main setting uses $0.7$), and
+the ComFedSV clean cell is absent from the archived artifact.}
+\label{tab:silo-retrain}
+\begin{tabular}{lcccccccc}
+\hline
+Threat & in-run SV \emph{(anchor)} & Flirds & Flirds-1st & GTG-Shapley & FedSV & ComFedSV & ShapleyFL & FedIF \\
+\hline
+clean & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.933\pm0.058$ & --- & $1.000\pm0.000$ & $0.867\pm0.115$ \\
+answer-swap & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.833\pm0.208$ & $1.000\pm0.000$ & $0.933\pm0.058$ \\
+zero-update & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $1.000\pm0.000$ & $0.933\pm0.058$ & $0.867\pm0.153$ & $1.000\pm0.000$ & $0.900\pm0.100$ \\
+\hline
+\end{tabular}
+\end{table*}
 
 % ===================================================================== D
 \section{Reproducibility of the Target Signal}
@@ -784,6 +831,11 @@ Stage & mean $\rho$ & min $\rho$ \\
 3B & $-0.243$ & $-0.447$ \\
 7B & $+0.164$ & $-0.036$ \\
 \hline
+\multicolumn{3}{l}{\emph{GSM8K main setting ($N{=}50$, 5/50, IID)}} \\
+clean & $-0.026$ & $-0.177$ \\
+answer-swap & $+0.696$ & $+0.658$ \\
+zero-update & $+0.748$ & $+0.716$ \\
+\hline
 \multicolumn{3}{l}{\emph{$N{=}5$, full participation, 1B}} \\
 IID five-way split, clean & $+0.133$ & $-0.300$ \\
 five-domain non-IID, clean & $+0.867$ & $+0.800$ \\
@@ -802,7 +854,11 @@ corruption axis and the heterogeneity axis. In the clean cell, which carries
 no corruption at all, the IID stage reproduces at $0.133$ while the
 five-domain non-IID stage reaches $0.867$. Domain heterogeneity alone
 therefore creates a signal that reproduces, and turning corruption on lifts
-the IID stage to $0.60$ to $0.70$ as well. The signal is made by real
+the IID stage to $0.60$ to $0.70$ as well. The GSM8K main setting follows
+the same rule at $N{=}50$, 5/50: its clean cell sits at $-0.026$, inside the
+IID-clean band, and corruption lifts it to $+0.696$ and $+0.748$
+(Table~\ref{tab:target-stability}), computed over 50 clients per seed pair
+rather than five. The signal is made by real
 differences between clients, whether heterogeneity or corruption, and the
 IID-clean cell, which has neither, is a regime with no ranking to reproduce.
 This is why the clean cell is not counted as evidence of superiority and why
@@ -1056,7 +1112,22 @@ renormalizing family collapses in the free-rider cell (ShapleyFL at
 $-16.26$~points). In the clean cell every method sits near zero, so the
 removal order does not change performance, which is the same fact as the
 absence of signal diagnosed in Supplementary Section~\ref{app:signal}.
-Table~\ref{tab:removal-llm} repeats the same judgment on the LLM track.
+
+Table~\ref{tab:removal-llm} repeats the same judgment on the LLM track, with
+the clean cell kept as a control. All three threats preserve the sign:
+removing from the lowest rank up lowers the validation loss, and removing
+from the highest rank down raises it. The clean control separates by almost
+the same margin as answer-swap ($+0.0073$ against $+0.0076$), which fixes
+what this curve measures: not corruption detection, but whether the ranking
+is causally aligned with the validation loss, on a stage where domain
+heterogeneity alone already makes the ranking meaningful. What does vary
+with the threat is the highest-rank-first side ($-0.0049$, $-0.0084$,
+$-0.0016$): leaving the corrupted clients in place for longest costs the
+most under answer-swap. The methods are not separated on this leg, because
+every method reaches $\rho = 1.00$ against the in-run Shapley on these runs
+and the curves coincide, with one exception, FedIF under zero-update
+($+0.0038\pm0.0049$), which cannot order the exactly-zero clients; the
+method comparison is carried by Table~\ref{tab:removal-cnn}.
 
 \begin{table*}[t]
 \centering
@@ -1094,6 +1165,7 @@ lowers the loss.}
 \hline
 Threat & lowest rank first & highest rank first \\
 \hline
+clean & $+0.0073\pm0.0003$ & $-0.0049\pm0.0001$ \\
 answer-swap & $+0.0076\pm0.0003$ & $-0.0084\pm0.0016$ \\
 zero-update & $+0.0067\pm0.0007$ & $-0.0016\pm0.0006$ \\
 \hline
