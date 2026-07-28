@@ -1,0 +1,26 @@
+{
+  "seed1": {
+    "spearman": {
+      "ShapleyFL": 0.9999999999999999
+    },
+    "kendall": {
+      "ShapleyFL": 0.9999999999999999
+    },
+    "pearson": {
+      "ShapleyFL": 0.6761888215193188
+    },
+    "cosine_d": {
+      "ShapleyFL": 0.38992993969878675
+    },
+    "euclid_d": {
+      "ShapleyFL": 0.9977573796477918
+    },
+    "max_diff": {
+      "ShapleyFL": 0.9834372890925939
+    },
+    "runtime": {
+      "(b)oracle": 3437.6445324360393,
+      "ShapleyFL": 3422.048017252004
+    }
+  }
+}
