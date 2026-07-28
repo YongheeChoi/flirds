@@ -30,9 +30,9 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 축 | CNN 주무대 | LLM 주무대 |
 |---|---|---|
-| **1. Fidelity** | 부분참여 충실도 ● | 정확도-무대 충실도 ◐ 6/9 |
+| **1. Fidelity** | 부분참여 충실도 ● | 정확도-무대 충실도 ◐ 7/9 |
 | **2. Downstream** | 점수원 경쟁 ● | 정확도 개입(GSM8K) ● |
-| **3. Detection** | 부분참여 φ-AUROC ●(=fidelity와 같은 rundir) | 주무대 탐지 ◐ 6/9 |
+| **3. Detection** | 부분참여 φ-AUROC ●(=fidelity와 같은 rundir) | 주무대 탐지 ◐ 7/9 |
 | **4. Ablation** | 2차항·lever·removal (CNN 레그) ● | removal (LLM 레그) ● · **2차항·lever LLM 레그 ⛔ 미수록**(G5·G12 취소) |
 | **5. 비용·규모** | op-count·runtime ● | 지수-비용 스케일링 ● |
 
@@ -56,7 +56,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험                           | 무엇을 보여주나 · 세팅                                                                           | 데이터      | 위치                        | 출처                                             |
 | ---------------------------- | --------------------------------------------------------------------------------------- | -------- | ------------------------- | ---------------------------------------------- |
-| **주무대 정확도-무대 충실도**           | R4 GSM8K(N=50, 5/50)에 exact (b) per-round 부착. **R4 개입·탐지의 유일 fidelity 대조축**             | ◐ 6/9셀(07-27 착지 개시; noisy만 3-seed)    | `[본문·주무대]` (§5.2 R4-L2)   | `runs/phase2_matrix`(gsm50k5)                  |
+| **주무대 정확도-무대 충실도**           | R4 GSM8K(N=50, 5/50)에 exact (b) per-round 부착. **R4 개입·탐지의 유일 fidelity 대조축**             | ◐ 7/9셀(clean·noisy 3-seed; 잔여 frzero 2)    | `[본문·주무대]` (§5.2 R4-L2)   | `runs/phase2_matrix`(gsm50k5)                  |
 | **교차-사일로 도메인 충실도 ((b)-leg)** | N=5 5도메인(의료·법률·금융·수리·일반) 비IID에서 (b) 2⁵ 대비. (a)-leg는 §1B                                 | ● 3-seed | `[본문·보조]`                 | `runs/phase2_matrix`(1B_silo5)                 |
 | **교차-사일로 스케일 레그 (3B)**       | 위 무대에 3B. near-additive 포화 재확인 + poison서 1B(0.60)보다 더 붕괴(0.00)                          | ◐ 1-seed | `[보류]`                    | `runs/phase2_matrix`(3B_silo5)                 |
 | **표준 부분참여 충실도 (1B·3B·7B)**   | N=20(2/round) alpaca, (b) per-round 대비. "스케일 무관 ρ≥0.999" 근거였음                           | ● 3-seed | `[제외]` (07-23 삭제; 되살림 후보) | `runs/track_d`(std20)                          |
@@ -71,14 +71,14 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
 | **소형 교차-사일로 시나리오별 vs (a)** — *레거시 시나리오* | 전원참여 N=10에서 재학습(a) 2¹⁰ 대비 순위·값. mnist·cifar10 × 시나리오(feature-noise/label-flip/quantity-skew/iid). (b)-leg·cross-seed 안정성도 같은 셀서 산출. **확정 오염축과 한 칸도 안 겹침** | ● 3-seed | `[교체 대상]` (아래 축 그리드가 자리 승계) | `runs/track_c/c1`(레거시)+`c1_oracle` |
-| **오염축 정렬 축 그리드 vs (a)** | 같은 무대를 **{clean, frzero, grad-noise, lf@0.70} × {dir1, iid} × {cifar10, mnist}** 로 정렬해 재실행. (a) 2¹⁰ + (b) 2¹⁰ + 9방법 φ + 탐지 AUROC + φ 부호 감사가 **한 rundir**에서 나온다 | ● **cifar10 24/24 완주** · ◐ mnist 17/24(잔여 = seed0 7셀) | `[본문(cifar10) / 부록(mnist)]` (G2 종료 · G9 잔여) | `runs/track_c/c1`(축 그리드) + `c1/make_analysis.py` |
+| **오염축 정렬 축 그리드 vs (a)** | 같은 무대를 **{clean, frzero, grad-noise, lf@0.70} × {dir1, iid} × {cifar10, mnist}** 로 정렬해 재실행. (a) 2¹⁰ + (b) 2¹⁰ + 9방법 φ + 탐지 AUROC + φ 부호 감사가 **한 rundir**에서 나온다 | ● **48/48 전량 완주**(cifar10 24/24 · mnist 24/24) | `[본문(cifar10) / 부록(mnist)]` (G2·G9 종료) | `runs/track_c/c1`(축 그리드) + `c1/make_analysis.py` |
 
 #### 1B-LLM
 
-| 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
-|---|---|---|---|---|
+| 실험                     | 무엇을 보여주나 · 세팅                                                                                           | 데이터                          | 위치                   | 출처                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------- | -------------------- | ----------------------------------------------------------- |
 | **교차-사일로 도메인 (a)-leg** | silo5(비IID) 재학습(a) 오라클. 실재 cross-seed 신호를 갖는 **유일 (a)-무대** — 듀얼오라클 일치도 **1.000**(anchor5의 0.933 천장을 넘김) | ● 3-seed (clean·swap·frzero) | `[본문·보조]` (§5.2 sub) | `runs/phase2_matrix`(1B_silo5_*_aonly + `merge_silo5_a.py`) |
-| **소형 앵커 듀얼오라클 vs (a)** | N=5 전원, (a) 2⁵ retrain 대비 전 방법. (b)-leg도 있으나 near-additive라 무정보 → 폴백 참조 | ● 3-seed(1B; 3B/7B (a)⬚) | `[보류·폴백]` | `runs/track_d`(anchor5) |
+| **소형 앵커 듀얼오라클 vs (a)** | N=5 전원, (a) 2⁵ retrain 대비 전 방법. (b)-leg도 있으나 near-additive라 무정보 → 폴백 참조                                 | ● 3-seed(1B; 3B/7B (a)⬚)     | `[보류·폴백]`            | `runs/track_d`(anchor5)                                     |
 
 ### 1C. 재현성·안정성 (fidelity의 짝 — 순위의 seed 재현성)
 
@@ -125,7 +125,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 |---|---|---|---|---|
 | **부분참여 φ-AUROC (파티션 강건성)** | c2fid rundir로 φ-AUROC. dir1/iid/shard/qskew × 위협, (b)-동행. **fidelity(1A-CNN)와 같은 rundir** | ● 3-seed | `[본문·주무대]` (§5.4) | `runs/track_c/c2fid` |
 | **교차-사일로 φ-AUROC** — *레거시 dose 사다리* | C1 레거시 셀의 오염 클라 탐지 AUROC + ρ vs 오염강도 (arm-수준 주석) | ● 3-seed | `[주석]` | `runs/track_c/c1`(레거시) |
-| **소형 전원참여 φ-AUROC — 오염축 정렬** | 위 1B-CNN 축 그리드와 **같은 rundir**. 이진 오염 4/10 · frzero·grad-noise·lf@0.70 | ● cifar10 24/24 · ◐ mnist 17/24 | `[본문(cifar10)/부록(mnist)]` | `runs/track_c/c1`(축 그리드) |
+| **소형 전원참여 φ-AUROC — 오염축 정렬** | 위 1B-CNN 축 그리드와 **같은 rundir**. 이진 오염 4/10 · frzero·grad-noise·lf@0.70 | ● **48/48 완주**(cifar10 24/24 · mnist 24/24) | `[본문(cifar10)/부록(mnist)]` | `runs/track_c/c1`(축 그리드) |
 
 ### 3-LLM
 
@@ -136,7 +136,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | **IID 소형 무대 탐지 (매트릭스 탐지 레그)** | iid5 3위협 φ-AUROC + 전용탐지기 4종. silo5와 짝 — φ는 양쪽 다 1.000이고 전용탐지기만 갈림(FLDetector IID noisy 0.000) | ● 3-seed | `[제외·진단]` | `runs/phase2_matrix`(1B_iid5) |
 | **delta-재활용 free-rider 한계** | frdelta서 (b)와 **동일하게 실패**(0.33) = "기여도≠탐지"의 정직한 한계(게임 공통) | ● 3-seed | `[제외]` (§6 한계 1문장 후보) | `runs/phase2_matrix`(frdelta) |
 | **3B 탐지** | 3B silo5 탐지(스케일) | ◐ 1-seed | `[보류]` | `runs/phase2_matrix`(3B_silo5) |
-| **주무대 탐지 (R4 φ + 4탐지기)** | gsm50k5서 φ-AUROC + 전용 4종(§2 약속 이행) | ◐ 6/9셀(noisy φ 1.000 3-seed) | `[본문·주무대]` (§5.4 L2) | `runs/phase2_matrix`(gsm50k5) |
+| **주무대 탐지 (R4 φ + 4탐지기)** | gsm50k5서 φ-AUROC + 전용 4종(§2 약속 이행) | ◐ 7/9셀(noisy φ 1.000 3-seed; 잔여 frzero 2) | `[본문·주무대]` (§5.4 L2) | `runs/phase2_matrix`(gsm50k5) |
 | **첫 clean-run 탐지 (foundational)** | 첫 clean run의 noisy/free-rider AUROC + selection. lr 의존 반전 | ● 3-seed | `[기록·부록]` | `runs/phase1` |
 
 ---
@@ -151,7 +151,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 |---|---|---|---|---|
 | **2차항(HVP)의 기여 — CNN 레그** | 부분참여 k-sweep(Flirds 0.891 vs 1차만 0.305)·grad-noise 개입서 1차계열 실명 vs Flirds만 회복. *↔ LLM 짝* | ● 3-seed | `[본문]` (§5.6①) | `probe_signal/cnn_c1` + `track_h`·`c2fid` GN |
 | **A축 용량 lever probe — CNN** | 폭×참여 스윕: lever가 cross-seed 신호를 못 만들고 fidelity는 전반 1.000(Taylor tradeoff 없음). *↔ LLM 짝* | ● 3-seed | `[본문]` (§5.6②) | `runs/probe_signal/cnn_c1`·`cnn_c2` |
-| **Removal-curve — CNN** | worst-first 제거가 acc 분리(+0.045=(b)동급)·저순위 방법 ≈0 = 순위→성능 인과. *↔ LLM 짝* | ● 3-seed | `[본문]` (§5.6③) | `runs/removal_dose/rundirs_cnn` |
+| **Removal-curve — CNN** | worst-first 제거가 acc 분리·저순위 방법 ≈0 = 순위→성능 인과. *↔ LLM 짝* | ● 3-seed — **오염축 정렬 9셀 완주**(cifar10/iid × lf@0.70·frzero·gn); 결과 페이지는 아직 레거시 시나리오(label_flip·feature_noise) 표 = **전사 대기** | `[본문]` (§5.6③) | `runs/removal_dose/rundirs_cnn/cifar10_iid-*` |
 | **정밀도(TF32) A/B** | cuDNN conv TF32 on/off가 CNN 결론(final_acc·φ 순위)을 안 바꿈 실측 | ● seed0 | `[검증-전용]` | `runs/measured_2026-07/tf32_ab` |
 
 ### 4-LLM
@@ -170,7 +170,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
 | **φ 부호 감사 (게이팅 전제) — LLM 레그** | 309 rundir 전수 φ 부호 감사(73,288행). clean 클라 φ≤0 비율(오배제 위험) · 오염 클라 φ≤0 + exact-0 비율(게이트 발화) 2표. **오염축 정렬 전 스냅샷이라 CNN 슬라이스엔 frzero·grad-noise가 없다** | ⟐ 파생 | `[부록]` | `runs/track_g/audit` |
-| **φ 부호 감사 — CNN 레그** | 위 공백을 C1 오염축 정렬 그리드로 메운다. **(a)oracle 행까지 있는 유일 감사**(재학습 참값의 부호를 직접 관측) | ⟐ 파생 · ● cifar10 24/24 · ◐ mnist 17/24 | `[부록]` | `runs/track_c/c1/analysis/sign_audit.csv` |
+| **φ 부호 감사 — CNN 레그** | 위 공백을 C1 오염축 정렬 그리드로 메운다. **(a)oracle 행까지 있는 유일 감사**(재학습 참값의 부호를 직접 관측) | ⟐ 파생 · ● **48/48 완주** | `[부록]` | `runs/track_c/c1/analysis/sign_audit.csv` |
 | **β 통일 재실행 provenance** | ShapleyFL EMA β 0.5→0.3 통일 재실행·대조. **현재 폐기**(수록 대상 전부 제외됨) | ⟐ 파생/폐기 | `[각주]` | `runs/rerun_beta03` |
 
 ---
@@ -196,7 +196,7 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 실험 | 무엇을 보여주나 · 세팅 | 데이터 | 위치 | 출처 |
 |---|---|---|---|---|
-| **CNN 실측 runtime — 무대별 전 방법** | N=100 부분참여(9방법 × cifar10 dir1/iid) + N=10 전원참여(9방법 × mnist/cifar10) + 참조 행(학습 궤적 · (a) 2¹⁰ 재학습). **추가 실험 0** — c2fid `runtime_s` 열과 C1 `metrics.json`에 3-seed 실측이 이미 있음 | ● 3-seed | `[부록]` | `runs/track_c/c2fid/analysis/fidelity.csv`(runtime_s) · `runs/track_c/{c1,c1_oracle}` |
+| **CNN 실측 runtime — 무대별 전 방법** | N=100 부분참여(9방법 × cifar10 dir1/iid) + N=10 전원참여(9방법 × mnist/cifar10) + 참조 행(학습 궤적 · (a) 2¹⁰ 재학습). **추가 실험 0** — c2fid·C1 `metrics.json`의 `methods.<m>.runtime`에 3-seed 실측이 이미 있음 | ● 3-seed | `[부록]` | `runs/track_c/c2fid/rundirs/*/metrics.json` · `runs/track_c/{c1,c1_oracle}` |
 | **자기-궤적 재실행 비용 (제외 baseline)** | 제외 비교군의 자기-궤적 재실행 비용을 별도 위상으로 분리 실측 | ● seed0 | `[검증-전용]` | `runs/measured_2026-07/e3_cost_smoke` |
 
 ---
@@ -216,13 +216,13 @@ tags: [flirds, experiments, axis-map, paper-selection, fidelity, downstream, det
 
 | 축 | CNN | LLM |
 |---|---|---|
-| **Fidelity** | 부분참여 충실도(in-run) ● · (retrain)오염축 정렬 축 그리드 vs (a) **● cifar10 24/24 · ◐ mnist 19/24** | 정확도-무대 충실도(in-run) **◐ 6/9**(noisy 3-seed) · (retrain)silo5 (a)-leg ● |
-| **Downstream** | 점수원 경쟁 dir1 ● · **iid ●**(07-26) · mnist ◐ | 정확도 개입(GSM8K) ●(online 레그 6/6 완주 07-27) · (근거)무해성 ● |
-| **Detection** | 부분참여 φ-AUROC ● (mnist 무대는 c2fid 미지원 ⬚) | 주무대 탐지 **◐ 6/9** |
-| **Ablation** | 2차항·lever·removal (CNN 레그) ● · φ 부호 감사 CNN 레그 ◐ | removal (LLM 레그) ● · **2차항·lever LLM 레그 ⛔ 미수록** |
+| **Fidelity** | 부분참여 충실도(in-run) ● · (retrain)오염축 정렬 축 그리드 vs (a) **● 48/48 완주** | 정확도-무대 충실도(in-run) **◐ 7/9**(clean·noisy 3-seed) · (retrain)silo5 (a)-leg ● |
+| **Downstream** | 점수원 경쟁 dir1 ● · **iid ●** · **mnist ●**(기준 arm 포함) | 정확도 개입(GSM8K) **●**(9칸 3-seed) · (근거)무해성 ● |
+| **Detection** | 부분참여 φ-AUROC ● (**mnist 무대 ● 24/24**) | 주무대 탐지 **◐ 7/9** |
+| **Ablation** | 2차항·lever·removal (CNN 레그) ● · **φ 부호 감사 CNN 레그 ●**(48/48) | removal (LLM 레그) ● · **2차항·lever LLM 레그 ⛔ 미수록** |
 | **비용·규모** | op-count·microbench·runtime ● | 지수-스케일링 ●/◐ · 위상분리 ● |
 
-> **선택 관점 힌트**(2026-07-27 오후 갱신): LLM 쪽 fidelity·detection 주무대(R4-L2)가 **착지 개시 — 9셀 중 6**(noisy 3-seed로 Flirds ρ 0.999·φ-AUROC 1.000 확보). 본문 LLM in-run fidelity가 더는 빈 칸이 아니지만 **3셀(clean s2·frzero s0·s2)이 완주를 막는 단일 최우선 항목**이다. CNN 쪽은 07-26~27에 세 구멍이 닫혔다: **G3 종료**(본문 downstream 두 파티션) · **G2 종료**(1B-CNN 축 그리드 cifar10 24/24 = 본문 vs (a) 서열 확보) · **G14 종료**(mnist 기준 arm → downstream recovery 산출 가능). **G8 종료**(mnist c2fid 24/24 = 부록 fidelity·detection의 mnist 레그 확보)까지 더해 남은 CNN 구멍은 하나다: **mnist 축 그리드 19/24**(seed0 5셀 = G9)라 부록 vs (a) mnist 행이 아직 부분이다 — 이미 제출된 상태라 추가 배분도 없다. 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".
+> **선택 관점 힌트**(2026-07-28 갱신): **CNN 쪽 구멍이 전부 닫혔다** — 축 그리드 48/48 전수 · mnist downstream(기준 arm 포함) 정본 · c2fid mnist 24/24 · **removal-curve CNN 오염축 정렬 9셀 완주**(G6 종료). LLM 쪽도 R4 개입이 9칸 3-seed다. **남은 실험은 G1 frzero 2셀 하나뿐**(R4-L2 완주를 막는 유일한 P0 — clean·noisy는 이미 3-seed로 Flirds ρ 0.999~1.000·φ-AUROC 1.000 확보). 그 외는 전부 표 정리·문서 재작성이다. 제외군(std20 fidelity·silo5 탐지 표·Track G 게이팅 표)은 "되살릴 수 있는 예비 카드".
 
 ## 상호 링크
 - **수록 확정·결손 정본**: [[flirds-paper-experiment-plan]] (본문/부록 목록 + 실험 설계 세션 입력)
