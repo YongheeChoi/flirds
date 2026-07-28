@@ -67,6 +67,10 @@ tags: [flirds, paper, tables, mirror]
 |---|---|---|---|---|
 | clean *(대조)* | **1.000±0.000** | **1.000±0.000** | 0.999±0.000 | 1.000±0.000 |
 | noisy (answer-swap@0.7) | **0.999±0.000** | **1.000±0.000** | 0.995±0.002 | 0.998±0.000 |
+| free-rider-zero | **1.000±0.000** | **1.000±0.000** | 1.000±0.000 | 1.000±0.000 |
+| **평균(오염2)** | **1.000** | **1.000** | 0.997 | 0.999 |
+
+> 이 무대의 **(b) 타깃 자체의 cross-seed 재현성**은 clean −0.026 · noisy +0.696 · frzero +0.748 (A6) — clean 열의 1.000은 seed-불안정한 오라클과의 일치다.
 
 ## T3 · 1A-LLM 표준 부분참여 충실도 (1B·3B·7B)
 
@@ -328,8 +332,12 @@ tags: [flirds, paper, tables, mirror]
 
 | 위협 | Flirds ρ(vs b) | worst-first Δval-loss | best-first Δval-loss |
 |---|---|---|---|
-| noisy | +1.00 | **+0.0076** | −0.0084 |
-| frzero | +1.00 | +0.0067 | −0.0016 |
+| clean *(대조)* | +1.00±0.00 | +0.0073±0.0003 | −0.0049±0.0001 |
+| noisy (answer-swap) | +1.00±0.00 | **+0.0076±0.0002** | −0.0084±0.0013 |
+| free-rider-zero | +1.00±0.00 | +0.0067±0.0005 | −0.0016±0.0005 |
+
+> clean 대조에서도 worst-first 분리가 **+0.0073**으로 noisy와 사실상 같다 — 이 표가 재는 것은 오염 탐지가 아니라 **φ 순위와 val-loss의 인과 정렬**이다. 위협별로 갈리는 쪽은 best-first다.
+> LLM 레그는 9방법 전부 (b)와 ρ=1.00이라 곡선이 동일해 방법 간 변별이 없다(예외: frzero의 FedIF +0.0038±0.0040). 방법 비교는 위 CNN 표가 담당한다.
 
 ---
 
@@ -344,13 +352,15 @@ tags: [flirds, paper, tables, mirror]
 | **A3**  | Fidelity   | 1A-LLM 대규모 교차-디바이스 앵커                             | 3위협 전부 **+1.000**                                                                                                             | 〃                                    |
 | **A4**  | Fidelity   | 1B-CNN mnist 축 그리드 vs (a)                         | vs (b) 평균(오염3) loss-heur dir1 **+0.996** / Flirds iid **+0.956**                                                              | 〃 §1B-CNN(mnist 행)                   |
 | **A5**  | Fidelity   | 1A-CNN 부분참여 mnist {dir1, iid} vs (b)              | Flirds ρ 평균 dir1 **0.976** / iid 0.969 · Flirds-1st grad-noise 0.264/0.362(Pearson dir1 **−0.027**)                           | 〃 §1A-CNN(mnist 행)                   |
-| **A6**  | Fidelity   | 1C 재현성·안정성                                        | (b) 타깃 cross-seed: 비IID silo5 **+0.87~+0.93** · IID-clean **−0.37~+0.16**                                                     | 〃 §1C                                |
+| **A6**  | Fidelity   | 1C 재현성·안정성                                        | (b) 타깃 cross-seed: 비IID silo5 **+0.87~+0.93** · **주무대 R4 clean −0.026 / noisy +0.696 / frzero +0.748** · IID-clean **−0.37~+0.16**   | 〃 §1C                                |
 | **A7**  | Downstream | 2-CNN mnist {dir1, iid} 점수원 경쟁                    | retrain 오염평균 절대 acc Flirds dir1 **.9777** / iid **.9807**(천장 .9780/.9808) · online frzero renorm .9275~.9516 vs vanilla .9713 | [[flirds-results-downstream]] §mnist |
 | **A8**  | Downstream | 2-CNN P1w (부호+크기 가중) — cifar10/mnist              | FedIF grad-noise **.6321**(P1 .2619)                                                                                          | 〃 §P1w                               |
 | **A9**  | Downstream | 2-LLM 표준 개입 무해성 (clean do-no-harm)                | 전 스케일 \|ΔMMLU\|≤0.0013 · \|ΔROUGE\|≤0.0015                                                                                    | 〃 §무해성                               |
 | **A10** | Cost       | 5-LLM runtime silo5·anchor5·std20 · 5-CNN runtime | (a) 재학습 = Flirds의 **292×**(silo5) / **28,177×**(CNN N=10)                                                                     | [[flirds-results-cost]]              |
 | **A11** | Ablation   | A축 용량 lever probe — CNN                           | 폭 0.5→4× 전 구간 cross-seed ρ −0.29~+0.52                                                                                        | [[flirds-results-ablation]] §lever   |
 | **A12** | Ablation   | φ 부호 감사 (게이팅 전제) — LLM/CNN                        | frzero **exact-0 100%**(same-game) vs renorm 0%                                                                               | 〃 §4-공통                              |
+
+> ⚠ **A1(anchor5)의 ShapleyFL 행만 β=0.5**다 — 그 rundir가 β 변경 이전 산출이고, β=0.3 재산출(3-seed, 2026-07-28)은 **저장 궤적이 재현되지 않아**((b) 카나리아 max\|Δφ\| 2.67~5.34%) (a)와 조인할 수 없었다. 재산출본은 신규 궤적의 자체 (b)로 채점되며 ShapleyFL vs (b) Spearman이 **0.700±0.283 → 0.933±0.094**(seed별 2 up / 1 down)로 이동한다 — 값은 [[flirds-results-ablation]] §β0.3 anchor5 재산출. **두 채점을 한 표에 섞지 않는다.** 다른 모든 표의 ShapleyFL은 β=0.3이다.
 
 ---
 

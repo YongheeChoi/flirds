@@ -2,7 +2,7 @@
 type: survey
 title: "Flirds 결과 — Ablation (구성요소·검증)"
 created: 2026-07-25
-updated: 2026-07-26
+updated: 2026-07-28
 tags: [flirds, results, ablation]
 ---
 
@@ -147,15 +147,19 @@ tags: [flirds, results, ablation]
 
 ### Removal-curve — LLM `[본문 §5.6③]` ● 3-seed
 
-> **세팅**: silo5 N=5, worst-first vs best-first 제거 후 val-loss. *↔ CNN 짝*
+> **세팅**: Llama-3.2-1B · silo5 N=5 · φ 순위대로 worst-first(나쁜 클라부터) vs best-first 제거 후 **재학습**(재학습 318~405 s/회) → val-loss. *↔ CNN 짝*
+> **지표** = `L(k=0) − L(k=4)`, 즉 4개 제거 후의 val-loss **감소량**(양수 = loss 내려감 = 제거가 이득).
+> ● **clean 대조 3-seed 완주**(2026-07-28 `bf5bd0d`) — CNN 짝(`cifar10_iid_seed{0,1,2}`)과 대칭 회복.
 
 | 위협 | Flirds ρ(vs b) | worst-first Δval-loss | best-first Δval-loss | 판정 |
 |---|---|---|---|---|
-| noisy | +1.00 | **+0.0076** | −0.0084 | ✅ worst-first 제거가 loss 내림 |
-| frrand | +1.00 | +0.0071 | −0.0015 | ✅ |
-| frzero | +1.00 | +0.0067 | −0.0016 | ✅ |
+| clean *(대조)* | +1.00±0.00 | +0.0073±0.0003 | −0.0049±0.0001 | 오염 0인데도 분리가 난다 |
+| noisy(answer-swap) | +1.00±0.00 | **+0.0076±0.0002** | −0.0084±0.0013 | ✅ worst-first 제거가 loss 내림 |
+| free-rider(frzero) | +1.00±0.00 | +0.0067±0.0005 | −0.0016±0.0005 | ✅ |
 
-> **출처**: `runs/removal_dose/rundirs`(A2).
+> **읽기**: ① **세 위협 전부 부호가 맞다** — worst-first는 loss를 내리고(+) best-first는 올린다(−). 순위→성능 인과가 게임-무관 심판에서 성립한다. ② ⚠ **clean 대조가 답한 것**: "worst-first 제거는 원래 늘 이득 아니냐"는 반론에 대해 **그렇다**가 정직한 답이다 — 오염이 0인 clean에서도 분리가 **+0.0073**으로 noisy(+0.0076)와 사실상 같은 크기다. 즉 이 실험이 재는 건 *오염 탐지*가 아니라 **φ 순위가 val-loss와 인과적으로 정렬돼 있는가**이고, silo5는 도메인 이질성만으로 이미 순위가 유의미한 무대다. 위협별로 갈리는 쪽은 **best-first**다(clean −0.0049 · noisy −0.0084 · frzero −0.0016): 오염 클라를 먼저 남겨두면 noisy에서 가장 크게 손해 본다. ③ **방법 간 변별이 없다** — 9방법 전부 (b)와 ρ=1.00이라 상·하위 4명 순서가 같고, 따라서 곡선이 소수점까지 동일하다. 유일한 예외가 **frzero의 FedIF(+0.0038±0.0040)** 로, exact-0 클라들의 순서를 못 정해 곡선이 흔들린다. 방법-간 비교는 CNN 레그(위)가 담당한다.
+> 축 밖 위협 **frrand**(랜덤-델타 free-rider, §0.1 컷)도 3-seed 실측이 있다: worst +0.0071±0.0002 · best −0.0015±0.0003 (rundir 존속, 표에서만 제외).
+> **출처**: `runs/removal_dose/rundirs/1B_silo5_{clean,noisy,frzero}_removal_seed{0,1,2}/metrics.json`의 `removal_curve`.
 
 ### Dose-response · AdamW 브리지 · Taylor 물리잔차
 
@@ -326,13 +330,30 @@ tags: [flirds, results, ablation]
 
 > ShapleyFL EMA β 0.5→0.3 통일 재실행·대조. **현재 폐기**(수록 대상 전부 제외). CNN 120셀 = β0.5-era 산출(β-불변 canon 미확보 실측). β는 config에 미기록 → mtime·커밋이 유일 근거. **출처**: `runs/rerun_beta03/figures/{beta_provenance,beta_contrast_3b}.csv`.
 
+### β0.3 anchor5 재산출 (ShapleyFL) `[각주]` ● 3-seed
+
+> **왜**: 부록 anchor5 표(§1B-LLM, [[flirds-results-fidelity]])의 **ShapleyFL 행만 β=0.5**로 굳어 있었다(rundir SHA `39a0a97` < β 변경 `e89af94`). 비교군 규약(§0.2)은 β=0.3이라 그 한 행만 재산출한 3-seed 캠페인. 무대는 anchor5(1B · N=5 · full · R=30)로 동일하고 `ORACLE_A=0`.
+> ● **3/3 완주**(2026-07-28 `ee6c01c`), 셀당 실측 2.5~2.6 h.
+
+| 지표 (ShapleyFL vs (b)oracle) | β=0.5 (구 rundir) | β=0.3 (재산출) | seed별 (β0.5 → β0.3) |
+|---|---|---|---|
+| Spearman | 0.700±0.283 | **0.933±0.094** | 0.9→1.0 · 0.3→1.0 · **0.9→0.8** |
+| Kendall | 0.600±0.283 | **0.867±0.189** | 0.8→1.0 · 0.2→1.0 · 0.8→0.6 |
+| Pearson | ⬚ (구 러너 미산출) | 0.869±0.136 | — |
+| valuation runtime(s) | 3512.7±82.9 | 3532.0±85.7 | β는 비용에 영향 없음 |
+
+> **읽기**: **평균은 오르지만 방향이 seed마다 갈린다**(2 up / 1 down). seed1의 0.300→1.000이 평균을 끌어올렸고 seed2는 0.900→0.800으로 유일하게 나빠졌다. "β0.3이 ShapleyFL을 개선한다"고 단정할 수 있는 3-seed 근거는 **없다** — 정확한 서술은 *평균 +0.700 → +0.933, 분산 큼*이다.
+> ⚠ **오라클 기준이 다르다 (조인 불가)**: 원래 설계는 "저장된 궤적·(a)를 재사용하고 ShapleyFL만 재채점"이었으나, **(b)oracle 카나리아가 실패**했다 — 구 rundir(`39a0a97`) 대비 max\|Δφ\|가 값 스케일의 **2.67~5.34%**이고 seed0은 Spearman +0.900으로 순위까지 어긋난다. 즉 **06-15 rundir은 현 HEAD에서 재현되지 않는다**(재현성 정정 H1과 같은 계통). 그래서 이 행은 **신규 런 자체의 (b)로 채점**했고(결정 ⓒ), anchor5 표의 다른 방법 행(구 궤적·vs (a))과 **같은 표에 섞어 읽으면 안 된다**. vs (a) 채점은 (a) 재학습 없이는 불가라 anchor5 vs-(a) 표의 ShapleyFL 행은 β=0.5로 남는다.
+> **출처**: `runs/track_d/rundirs_beta03/1B_anchor5_sflb03_seed{0,1,2}/metrics.json` vs `runs/track_d/rundirs/1B_anchor5_seed{0,1,2}/metrics.json`.
+
 ---
 
 ## 출처·재생성
 
 - 2차항: `runs/track_c/c2fid`(grad-noise) · `runs/probe_signal/cnn_c1`(k-sweep) · `runs/probe_signal/figures/llm_probe_summary.csv`(std50k5 rank sweep).
 - lever: `runs/probe_signal/figures/{cnn_c1_realness,llm_probe_summary}.csv`.
-- removal·dose·AdamW: `runs/removal_dose/{rundirs,rundirs_cnn,rundirs_trackd}`.
+- removal·dose·AdamW: `runs/removal_dose/{rundirs,rundirs_cnn,rundirs_trackd}`. LLM removal 지표는 각 `metrics.json`의 `removal_curve.<method>.{worst_first,best_first}` 끝점 차 `L(k=0)−L(k=4)`.
+- β0.3 anchor5 재산출: `runs/track_d/rundirs_beta03/1B_anchor5_sflb03_seed{0,1,2}`.
 - Taylor: `runs/measured_2026-07/taylor/llama1b_r10_seed{0,1,2}/summary.json`(pooled resid1/resid2).
 - **φ 부호 감사 (LLM 레그)**: `runs/track_g/audit/sign_table.csv` → `variant=="canon"` 필터 후 (scale, regime, threat, method, corrupt)별 `contribution` 부호 집계(양수 / exact-0 / 음수). β: `runs/rerun_beta03`. TF32: `runs/measured_2026-07/tf32_ab`.
 - **φ 부호 감사 (CNN 레그, 신규)**: `python runs/track_c/c1/make_analysis.py` → `analysis/sign_audit.csv`(`n_neg_clean` · `n_exact_zero_corrupt` · `n_neg_corrupt` · `phi_gap_norm`).

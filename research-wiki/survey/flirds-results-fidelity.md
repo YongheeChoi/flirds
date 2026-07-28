@@ -2,7 +2,7 @@
 type: survey
 title: "Flirds 결과 — Fidelity (기여도 측정 정확도)"
 created: 2026-07-25
-updated: 2026-07-26
+updated: 2026-07-28
 tags: [flirds, results, fidelity]
 ---
 
@@ -154,28 +154,29 @@ tags: [flirds, results, fidelity]
 
 ### 1A-LLM
 
-#### 주무대 정확도-무대 충실도 (R4) `[본문·주무대]` — ◐ **7/9셀** (G1 잔여 2셀)
+#### 주무대 정확도-무대 충실도 (R4) `[본문·주무대]` ● **9/9셀 3-seed 완결**
 
 > **세팅**: Llama-3.2-1B-Instruct LoRA r16/α32 · N=50 · 5/50 · R=200 · (b) per-round oracle · GSM8K · seed{0,1,2}. **R4 개입(§downstream)·탐지(§detection)의 유일 fidelity 대조축.** L2 큐(`runs/phase2_matrix` REGIME=gsm50k5).
-> ◐ **2026-07-27 착지 7/9**(`4f2f007` seed0 3셀 → `304e05c` seed1 3셀 → `0ee3737` clean seed2): 착지 셀 = clean s{0,1,2} · noisy s{0,1,2} · frzero s{1}. **clean·noisy가 3-seed로 완결**됐고 잔여는 **frzero s{0,2} 2셀**뿐 → §0.3에 따라 **본문 인용은 9/9 완주 후**.
-> ⚠ **seed0와 seed1·2는 채점 방법 수가 다르다** — `MIN_METHODS`(커밋 `2058ee0`)로 seed1·2는 **(b)+Flirds+Flirds-1st만** 산출한다(9방법 대비 3.2× 절감, 실측 9.37~9.88 h/셀). 그래서 아래 두 열은 3-seed까지 갈 수 있지만 **나머지 6방법은 seed0 한 점에 묶인다**.
+> ● **9/9 완주**(2026-07-28 `7b300ee`로 종료): {clean, noisy, frzero} × seed{0,1,2}. 셀 단가 9.06~30.87 GPU-h(방법 수에 따라), 무대 합계 128.4 GPU-h — [[flirds-results-cost]].
+> ⚠ **채점 방법 수가 셀마다 다르다** — `MIN_METHODS`(커밋 `2058ee0`)로 **clean s0 · noisy s0만 9방법**이고 **나머지 7셀은 (b)+Flirds+Flirds-1st만** 산출한다(3.2× 절감). frzero는 3-seed 전부 축소판이다. (b)/Flirds/Flirds-1st의 φ는 early-return이 계산 이후라 축소판에서도 비트동일 → **아래 두 방법의 3-seed 행은 유효**하고, **나머지 6방법은 seed0 한 점에 묶인다**.
 
 | 위협 | Flirds ρ | Flirds-1st ρ | Flirds r | Flirds-1st r |
 |---|---|---|---|---|
 | clean | **1.000±0.000** | <u>0.999±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
 | noisy(answer-swap@0.7) | **0.999±0.000** | <u>0.995±0.002</u> | **1.000±0.000** | <u>0.998±0.000</u> |
-| free-rider(frzero) ⟨s1⟩ | **1.000** | <u>1.000</u> | **1.000** | <u>1.000</u> |
-| frrand |  |  |  |  |
-| strmain |  |  |  |  |
+| free-rider(frzero) | **1.000±0.000** | <u>1.000±0.000</u> | **1.000±0.000** | <u>1.000±0.000</u> |
+| **평균(오염2)** | **1.000** | <u>0.997</u> | **1.000** | <u>0.999</u> |
 
-**seed0 단독 — 나머지 6방법** (◐ 인용 금지 · `MIN_METHODS` 때문에 seed1·2에는 없음)
+**seed0 단독 — 나머지 6방법** (◐ 인용 금지 · `MIN_METHODS` 때문에 다른 셀에는 없음)
 
 | 위협 | loss-heur | GTG | FedSV | ComFedSV | ShapleyFL | FedIF |
 |---|---|---|---|---|---|---|
 | clean ρ | **+0.999** | <u>+0.988</u> | +0.917 | −0.101 | −0.018 | −0.055 |
 | noisy ρ | **+0.997** | <u>+0.985</u> | +0.948 | −0.022 | +0.678 | +0.651 |
 
-> **첫 신호**: N=50 부분참여(5/50)에서 **Flirds ρ 0.9993~1.0000**로 (b)를 재현하고 Flirds-1st도 0.9946~1.0000이다 — silo5(N=5)의 1.000이 **N=50 무대에서도 유지**된다는 첫 실측(둘의 격차는 noisy에서만 벌어진다: ρ 0.999 vs 0.995). 갈리는 건 renorm 쪽이다: **ComFedSV가 clean −0.101 / noisy −0.022로 붕괴**하고 ShapleyFL·FedIF는 clean(−0.018/−0.055)에서 무너졌다가 noisy(+0.678/+0.651)에서만 부분 회복한다 = §4-LLM의 "부분참여에서 1차·renorm 계열 붕괴"와 같은 방향. **출처**: `runs/phase2_matrix/rundirs/1B_gsm50k5_*/metrics.json`.
+> **읽기**: N=50 부분참여(5/50)에서 **Flirds ρ 0.9991~1.0000**로 (b)를 재현하고 Flirds-1st도 0.9920~1.0000이다 — silo5(N=5)의 1.000이 **N=50 무대에서도 유지**된다(둘의 격차는 noisy에서만 벌어진다: ρ 0.999 vs 0.995). **frzero는 두 방법 다 3-seed 전부 ρ≥0.9999**로 exact-0 클라를 정확히 바닥에 놓는다. 갈리는 건 renorm 쪽이다: **ComFedSV가 clean −0.101 / noisy −0.022로 붕괴**하고 ShapleyFL·FedIF는 clean(−0.018/−0.055)에서 무너졌다가 noisy(+0.678/+0.651)에서만 부분 회복한다 = §4-LLM의 "부분참여에서 1차·renorm 계열 붕괴"와 같은 방향.
+> ⚠ **해석 조건**: 이 무대의 **(b) 타깃 자체는 clean에서 seed-불안정**(xseed ρ −0.026)이고 오염 칸에서만 안정(noisy +0.696 · frzero +0.748) — §1C. clean 열의 +1.000은 *불안정한 GT를 정확히 좇은 값*이다.
+> **출처**: `runs/phase2_matrix/rundirs/1B_gsm50k5_*/metrics.json`.
 
 #### 교차-사일로 도메인 충실도 ((b)-leg) `[본문·보조]`
 
@@ -473,6 +474,9 @@ tags: [flirds, results, fidelity]
 | IID-clean · 부분참여 | 1B std20 (N=20) | −0.114 | 불안정 |
 | IID-clean · 부분참여 | 3B std20 | −0.243 | 불안정 |
 | IID-clean · 부분참여 | 7B std20 | +0.164 | 저-신호 |
+| **주무대 R4 · IID 부분참여** | **1B gsm50k5 clean** (N=50, 5/50) | **−0.026** | **불안정** — 오염 0 |
+| **주무대 R4 · IID 부분참여** | **1B gsm50k5 noisy** | **+0.696** | 오염이 신호 생성 |
+| **주무대 R4 · IID 부분참여** | **1B gsm50k5 frzero** | **+0.748** | 〃 |
 | IID · 매트릭스 | iid5 clean | +0.133 | 저-신호 |
 | IID · 매트릭스 | iid5 noisy | +0.600 | 오염이 신호 생성 |
 | IID · 매트릭스 | iid5 frzero | +0.700 | 〃 |
@@ -489,6 +493,7 @@ tags: [flirds, results, fidelity]
 | ⬚ | 3B silo5 (4셀) | — | n_seeds=1 → 산출 불가 |
 
 > **서열**: 비IID silo5(0.87~1.00) ≫ IID+오염(0.60~0.80) ≫ IID-clean 소형·부분참여(−0.37~+0.16) ≈ device100 per-round(−0.04~+0.12). **주무대를 비IID·오염 쪽에 두는 근거**이자, IID-clean·device100 셀의 +1.000을 fidelity 헤드라인으로 쓰면 안 되는 근거. 7B anchor5만 IID-clean인데도 +0.733 — 스케일이 커지면 클라 간 차이가 seed 잡음을 넘기 시작.
+> **R4(주무대)도 같은 규칙을 따른다**(2026-07-28 산출): clean −0.026으로 IID-clean 밴드에 정확히 들어가고, 오염이 들어오면 +0.696/+0.748로 "IID+오염" 밴드로 올라간다. 즉 **§1A-LLM R4 표의 clean 열 +1.000은 불안정한 GT 위의 값**이고, 인용 가치가 있는 건 오염 두 열이다. N=50이라 seed쌍당 n=50 클라로 계산돼 소형 무대(n=5)보다 추정이 훨씬 조밀하다.
 
 ---
 
@@ -499,7 +504,7 @@ tags: [flirds, results, fidelity]
 - CNN vs (a) — **오염축 정렬 축 그리드(신규)**: `python runs/track_c/c1/make_analysis.py` → `runs/track_c/c1/analysis/*.csv` + `README.md`. rundir = `runs/track_c/c1/{ds}_{part}_{threat}_seed{N}`(각 셀 안에 (a) 2¹⁰ + (b) 2¹⁰ + 9방법 φ).
 - LLM: `runs/track_d/rundirs/1B_anchor5_seed{0,1,2}/phi.parquet`(vs (a) 직접 계산) · `runs/phase2_matrix/rundirs/1B_silo5_*/phi.parquet`(vs (b)) · `runs/track_d/fidelity.csv`(std20).
 - LLM silo5 (a)-leg: `python runs/phase2_matrix/merge_silo5_a.py` → `silo5_a_fidelity_1B.csv`(rundir `1B_silo5_{threat}_aonly_s{0,1,2}` × canonical `1B_silo5_{threat}`).
-- 안정성: `runs/track_c/RESULTS.txt` · `runs/track_d/target_stability.csv`.
-- **⬚ 미실행**: R4-L2(gsm50k5 (b)) — 착지 시 위 표 빈 칸을 mean±std로 교체.
+- 안정성: `runs/track_c/RESULTS.txt` · `runs/track_d/target_stability.csv` · `runs/phase2_matrix/target_stability.csv`(gitignored 파생 — `python runs/track_d/make_target_stability.py runs/phase2_matrix/rundirs runs/phase2_matrix/target_stability.csv`로 재생성; R4는 `_s{N}` 접미사라 셀 병합 정규식에 `_s\d+`를 추가해야 잡힌다).
+- **● 완주**: R4-L2(gsm50k5 (b)) **9/9 3-seed**(2026-07-28 `7b300ee`) — §1A-LLM R4 표와 위 §1C R4 3행이 그 산출이다.
 - **● 완주**: 1B-CNN 오염축 정렬 축 그리드 **48/48셀**(cifar10 24/24 · mnist 24/24) — **G9 종료**(2026-07-27 `d0b8f16`), 16칸 전부 3-seed·전 행 인용 가능.
 - 축 지도: [[flirds-experiment-axis-map]] (전량 카탈로그는 git 이력)

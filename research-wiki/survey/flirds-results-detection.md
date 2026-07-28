@@ -2,7 +2,7 @@
 type: survey
 title: "Flirds 결과 — Detection (오염 클라 탐지)"
 created: 2026-07-25
-updated: 2026-07-26
+updated: 2026-07-28
 tags: [flirds, results, detection]
 ---
 
@@ -247,24 +247,25 @@ tags: [flirds, results, detection]
 
 ## 3-LLM
 
-### 주무대 탐지 (R4 φ + 전용탐지기 4종) `[본문·주무대]` — ◐ **7/9셀** (G1 잔여 2셀)
+### 주무대 탐지 (R4 φ + 전용탐지기 4종) `[제외 — 탐지 축 전량]` ● **9/9셀 3-seed 완결**
 
-> **세팅**: Llama-3.2-1B-Instruct LoRA · N=50 · 5/50 · R=200 · GSM8K · φ-AUROC + FLDetector/FLTrust/STD-DAGMM/FedDQC(§2 약속) · seed{0,1,2}. L2 큐(`runs/phase2_matrix` gsm50k5).
-> ◐ **2026-07-27 착지 7/9**(`4f2f007`·`304e05c`·`0ee3737`): noisy s{0,1,2} · frzero s{1} · clean s{0,1,2}(clean은 오염 0이라 AUROC 정의 안 됨 — 이 표엔 안 들어온다). **AUROC가 정의되는 두 위협 중 noisy만 3-seed**, frzero는 1-seed(잔여 s{0,2} 2셀) → **본문 인용은 9/9 완주 후**.
-> ⚠ **seed1·2는 `MIN_METHODS`**(커밋 `2058ee0`)로 **(b)+Flirds+Flirds-1st만** 산출한다 — 나머지 6방법과 전용탐지기 4종은 **seed0 한 점뿐**이다.
+> **세팅**: Llama-3.2-1B-Instruct LoRA · N=50 · 5/50 · R=200 · GSM8K · φ-AUROC + FLDetector/FLTrust/STD-DAGMM/FedDQC · seed{0,1,2}. L2 큐(`runs/phase2_matrix` gsm50k5).
+> ● **9/9 완주**(2026-07-28 `7b300ee`): {clean, noisy, frzero} × seed{0,1,2}. clean은 오염 클라가 0이라 AUROC가 정의되지 않아 이 표엔 안 들어온다 → **AUROC가 정의되는 두 위협 모두 3-seed**.
+> ⚠ **탐지 축 자체가 논문에서 빠진다**(2026-07-28) — 아래는 rundir 정본 기록이다.
+> ⚠ **clean s0 · noisy s0만 9방법**이고 나머지 7셀은 `MIN_METHODS`(커밋 `2058ee0`)로 **(b)+Flirds+Flirds-1st만** 산출한다 — 나머지 6방법과 전용탐지기 4종은 **seed0 한 점뿐**이다.
 
-| 방법 | noisy(swap@0.7) | frzero | frrand | strmain | 평균 |
-|---|---|---|---|---|---|
-| **(b)oracle** | 1.000±0.000 | 1.000 ⟨s1⟩ |  |  |  |
-| Flirds | **1.000±0.000** | **1.000** ⟨s1⟩ |  |  |  |
-| Flirds-1st | **1.000±0.000** | **1.000** ⟨s1⟩ |  |  |  |
-| loss-heur | **1.000** ⟨s0⟩ |  |  |  |  |
-| _FLDetector_ | _0.483_ ⟨s0⟩ |  |  |  |  |
-| _FLTrust_ | _1.000_ ⟨s0⟩ |  |  |  |  |
-| _STD-DAGMM_ | _0.682_ ⟨s0⟩ |  |  |  |  |
-| _FedDQC_ | _1.000_ ⟨s0⟩ |  |  |  |  |
+| 방법 | noisy(swap@0.7) | frzero | 평균 |
+|---|---|---|---|
+| **(b)oracle** | 1.000±0.000 | 1.000±0.000 | 1.000 |
+| Flirds | **1.000±0.000** | **1.000±0.000** | **1.000** |
+| Flirds-1st | **1.000±0.000** | **1.000±0.000** | **1.000** |
+| loss-heur | **1.000** ⟨s0⟩ | – | – |
+| _FLDetector_ | _0.483_ ⟨s0⟩ | – | – |
+| _FLTrust_ | _1.000_ ⟨s0⟩ | – | – |
+| _STD-DAGMM_ | _0.682_ ⟨s0⟩ | – | – |
+| _FedDQC_ | _1.000_ ⟨s0⟩ | – | – |
 
-> seed0 단독인 나머지 5방법(noisy): GTG·FedSV·ShapleyFL·FedIF **1.000** · **ComFedSV 0.583**(유일한 붕괴). 전용탐지기 4종(_기울임_)은 §0.2에 따라 **논문 표에서는 빠지고**, 위 값은 착지 확인용 기록이다 — 그 대조에서 **FLDetector 0.483 = 무작위 이하**이고 φ 계열(1.000)이 앞선다.
+> seed0 단독인 나머지 5방법(noisy): GTG·FedSV·ShapleyFL·FedIF **1.000** · **ComFedSV 0.583**(유일한 붕괴). frzero 셀은 3-seed 전부 `MIN_METHODS`라 same-game 2종 + (b) 외에는 값 자체가 없다. 전용탐지기 4종(_기울임_)은 착지 확인용 기록 — 그 대조에서 **FLDetector 0.483 = 무작위 이하**이고 φ 계열(1.000)이 앞선다.
 
 ### 교차-사일로 탐지 + 전용탐지기 4종 `[제외 표]`
 
@@ -407,6 +408,6 @@ tags: [flirds, results, detection]
 - LLM: `runs/phase2_matrix/rundirs/{1B_silo5_*, 1B_iid5_*, 1B_device100-a*, 3B_silo5_*}/metrics.json` → `<threat>_seed<N>.auroc`.
   ⚠ **iid5·clean 셀은 `make_analysis.py`가 설계상 건너뛴다**(taxonomy가 이 셀보다 먼저 생성 — 소스 §load_cells) → iid5 표는 rundir 직접 산출.
 - LLM foundational: `runs/phase1/rundirs`. frdelta: `runs/phase2_matrix/rundirs_2026-07/1B_silo5_frdelta`.
-- **⬚ 미실행**: R4(gsm50k5 L2) — 착지 시 위 빈 표를 mean±std로 교체. device100 비-앵커 α의 GTG·FedSV·ShapleyFL 열. **CNN 부분참여 mnist 무대(c2fid)** — track_h downstream용 mnist는 착지했으나 c2fid(φ-AUROC·fidelity)는 여전히 {cifar10, fmnist}뿐이라 §3-CNN 파티션 표엔 mnist 행이 없다.
-- **● 완주**: C1 오염축 정렬 축 그리드 **48/48셀**(cifar10 24/24 · mnist 24/24) — **G9 종료**(2026-07-27 `d0b8f16`), 12칸 전부 3-seed·인용 가능.
+- **⬚ 미실행**: device100 비-앵커 α의 GTG·FedSV·ShapleyFL 열. **CNN 부분참여 mnist 무대(c2fid)** — track_h downstream용 mnist는 착지했으나 c2fid(φ-AUROC·fidelity)는 여전히 {cifar10, fmnist}뿐이라 §3-CNN 파티션 표엔 mnist 행이 없다.
+- **● 완주**: C1 오염축 정렬 축 그리드 **48/48셀**(cifar10 24/24 · mnist 24/24) — **G9 종료**(2026-07-27 `d0b8f16`), 12칸 전부 3-seed·인용 가능. **R4(gsm50k5 L2) 9/9 3-seed** — 2026-07-28 `7b300ee`.
 - 축 지도: [[flirds-experiment-axis-map]] (구 카탈로그 §3.3 = git 이력)

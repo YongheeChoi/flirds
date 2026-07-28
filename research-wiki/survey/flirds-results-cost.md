@@ -2,7 +2,7 @@
 type: survey
 title: "Flirds 결과 — 비용·규모 (Cost / Scalability)"
 created: 2026-07-25
-updated: 2026-07-26
+updated: 2026-07-28
 tags: [flirds, results, cost]
 ---
 
@@ -40,6 +40,28 @@ tags: [flirds, results, cost]
 ## 5-LLM · 실측 runtime — 무대별 전 방법 `[본문]`
 
 > **세팅**: valuation-only wall-clock(초). 학습 시간은 별도(위상분리 절). **낮을수록 좋음** → 최저=볼드·2위=<u>밑줄</u>. 전용 탐지기 4종은 _기울임_(가치평가가 아니라 탐지 전용이라 서열 비교 대상 밖이지만 같은 무대 비용으로 병기). 무대마다 별도 표.
+
+**주무대 R4 gsm50k5 (N=50 · 5/50 · R=200 · 1B · GSM8K)** (● 3-seed = (b)·Flirds·Flirds-1st · noisy 셀)
+
+| 방법 | runtime(s) |
+|---|---|
+| Flirds | 3940.2±101.4 |
+| **Flirds-1st** | <u>1282.4±32.0</u> |
+| loss-heur | 3462.8 ⟨s0⟩ |
+| FedIF | **1251.0** ⟨s0⟩ |
+| GTG | 18675.2 ⟨s0⟩ |
+| FedSV | 18550.7 ⟨s0⟩ |
+| ComFedSV | 4242.6 ⟨s0⟩ |
+| ShapleyFL | 18520.3 ⟨s0⟩ |
+| **(b)oracle (per-round exact)** | 19255.0±537.1 |
+| _FLDetector_ | _5928.9_ ⟨s0⟩ |
+| _FLTrust_ | _1262.4_ ⟨s0⟩ |
+| _STD-DAGMM_ | _4791.0_ ⟨s0⟩ |
+| _FedDQC_ | _259.4_ ⟨s0⟩ |
+
+> **본문 주무대의 가격표**: cohort=5에서 **(b) exact 19,255 s vs Flirds 3,940 s = 4.89× · Flirds-1st 1,282 s = 15.0×**. 세 위협 셀이 서로 1% 안쪽으로 같다(clean 4.88×/15.01× · noisy 4.89×/15.02× · **frzero 4.89×/14.99×**) — 비용은 오염 종류에 무관하다. ⟨s0⟩ 표시 6방법+탐지기 4종은 `MIN_METHODS`로 seed0 한 점뿐이다(3-seed 아님 → 논문 표 대상 아님).
+> **셀 단가**(rundir `timing.json`): 9방법을 다 돌린 두 셀(clean s0 · noisy s0)이 **30.6 / 30.9 GPU-h**, `MIN_METHODS` 7셀이 **9.06~9.86 GPU-h** — 무대 합계 **128.4 GPU-h**. 방법 6종을 빼면 셀값이 3.2× 싸진다는 게 여기서 실측으로 보인다.
+> **출처**: `runs/phase2_matrix/rundirs/1B_gsm50k5_*/{metrics.json,timing.json}`.
 
 **교차-사일로 silo5 (N=5 · full · R=10 · 1B)** (● 3-seed · noisy 셀)
 
@@ -130,13 +152,16 @@ tags: [flirds, results, cost]
 | device100 anchor (per-round) | 24,975 s | 157 s | **1/159** | ● 3-seed |
 | anchor5 (a) 재학습 2⁵ | 30,817 s | 707 s | **1/44** | ● 3-seed |
 | silo5 (a) 재학습 2⁵ | 31,137 s | 107 s | **1/292** | ● 3-seed |
+| **R4 gsm50k5 (b) per-round (cohort=5)** | 19,255 s | 3,940 s | **1/4.9** | ● 3-seed |
 | std20 (b) per-round (cohort=2) | 2,917 s | 4,697 s | 1.61× (역전) | ● 3-seed |
 
 > N=10 셀 전체 runtime: (b) 117,648.9 · Flirds 732.8 · Flirds-1st 239.8 · loss-heur 1,239.7 · Fed-LOO 1,372.7 s. **cohort가 커질수록 배율이 커지는 단조 구조**(cohort 2 → 1.61× 손해 · cohort 5 → 5.0× 이득 · cohort 10 → 159~160× 이득). **출처**: `runs/track_d/rundirs_e5_n10/1B_anchor10_seed0/metrics.json` · `runs/phase2_matrix/analysis/04_device100_anchor/csv/runtime_table.csv` + op-count 모델.
 
 ## 5-LLM · 학습↔가치평가 위상분리 `[본문/부록]`
 
-> device100 clean: client-training **2,249 s** vs valuation **2,704 s**(peak 33.5/99.1 GiB). 3-seed 셀 = client-training 6,811~7,277 s + valuation 8,397~8,990 s = **셀당 4.2~4.5 GPU-h**. **출처**: `runs/measured_2026-07/timing_device100/` · rundir `timing.json`(`flirds/timing.py`).
+> device100 clean: client-training **2,249 s** vs valuation **2,704 s**(peak 33.5/99.1 GiB). 3-seed 셀 = client-training 6,811~7,277 s + valuation 8,397~8,990 s = **셀당 4.2~4.5 GPU-h**.
+> **주무대 R4 gsm50k5**(● 9셀 전량 `timing.json`): client-training **9,035~10,853 s**(peak 30.4~31.1 GiB) vs valuation **23,530~100,529 s**(peak **95.5~106.5 GiB**). `MIN_METHODS` 7셀에서 **가치평가가 학습의 2.3~2.7배**, 9방법 셀(clean s0·noisy s0)에서는 **9.4배**다. 메모리 상한도 가치평가가 정한다 — **2차항 HVP가 B200급을 요구하는 지점**(학습은 31 GiB로 충분). 셀당 9.06~30.87 GPU-h, 9셀 합계 **128.4 GPU-h**.
+> **출처**: `runs/measured_2026-07/timing_device100/` · rundir `timing.json`(`flirds/timing.py`).
 
 ---
 

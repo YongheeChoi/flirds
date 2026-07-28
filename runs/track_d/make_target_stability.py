@@ -32,7 +32,7 @@ import pandas as pd
 from scipy.stats import spearmanr
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_SEED_SUFFIX = re.compile(r"_seed\d+$")
+_SEED_SUFFIX = re.compile(r"_(?:seed|s)\d+$")   # _seed0 (track_d) and _s0 (phase2_matrix R4/aonly)
 
 
 def cell_stability(root, method="(b)oracle"):
