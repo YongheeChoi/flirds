@@ -37,6 +37,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from functools import partial
 
 import numpy as np
 import torch
@@ -76,9 +77,43 @@ os.environ.setdefault("C1_PERSIST", "0")        # we own persistence, not track_
 import track_c1 as c1                                                    # noqa: E402
 from flirds.backends.cnn import make_cnn_loss                            # noqa: E402
 from flirds.fl.server import fedavg                                      # noqa: E402
+from flirds.models.cnn import FedSVCNN, LeNet5                           # noqa: E402
 from flirds.repro import seed_everything                                 # noqa: E402
 from flirds.run_logger import RunLogger                                  # noqa: E402
 from taylor_core import measure_round, pool                              # noqa: E402
+
+
+# ---- smooth-activation attribution control (TAYLOR_SMOOTH=1) ----------------------
+# Same architecture, ReLU -> GELU and max-pool -> avg-pool, so the network becomes
+# C^infinity.  Appendix A.4's remainder bound is conditional on a C^3 assumption that
+# the paper's ReLU + max-pool models violate; if the measured order recovers the
+# predicted 3 here but not on the paper's models, the sub-cubic rate is attributable
+# to that non-smoothness rather than to the Taylor radius or the measurement.
+# This is a CONTROL, not one of the paper's models -- never report it as a result.
+class _SmoothLeNet5(LeNet5):
+    def forward(self, x):
+        import torch.nn.functional as FF
+        x = FF.avg_pool2d(FF.gelu(self.conv1(x)), 2)
+        x = FF.avg_pool2d(FF.gelu(self.conv2(x)), 2)
+        x = x.flatten(1)
+        x = FF.gelu(self.fc1(x))
+        x = FF.gelu(self.fc2(x))
+        return self.fc3(x)
+
+
+class _SmoothFedSVCNN(FedSVCNN):
+    def forward(self, x):
+        import torch.nn.functional as FF
+        x = FF.avg_pool2d(FF.gelu(self.conv1(x)), 2)
+        x = FF.avg_pool2d(FF.gelu(self.conv2(x)), 2)
+        x = x.flatten(1)
+        x = FF.gelu(self.fc1(x))
+        return self.fc2(x)
+
+
+SMOOTH = os.environ.get("TAYLOR_SMOOTH", "0") == "1"
+_SMOOTH_CLS = {"mnist": _SmoothLeNet5, "fmnist": _SmoothLeNet5, "cifar10": _SmoothFedSVCNN}
+MODEL_FN = (partial(_SMOOTH_CLS[DATASET], width=c1.WIDTH) if SMOOTH else c1.MODEL_FN)
 
 # repo root is three levels up (.../flirds/codes/experiments/<this>), same as track_c1;
 # runs/ has a single root at the repo top -- codes/runs was retired 2026-06-15.
@@ -114,7 +149,7 @@ def main():
         torch.cuda.synchronize()
     t0 = time.perf_counter()
     logs = []
-    fedavg(c1.MODEL_FN, loaders, test_loader, R, E, lr, sample_frac=c1.KFRAC, device=device,
+    fedavg(MODEL_FN, loaders, test_loader, R, E, lr, sample_frac=c1.KFRAC, device=device,
            seed=SEED, on_round=lambda r, gb, dm: logs.append((gb, dm)),
            delta_transform=delta_transform)
     if device == "cuda":
@@ -123,7 +158,7 @@ def main():
     print(f"[fl] {len(logs)} rounds in {t_fl:.1f}s (full participation, K={len(logs[0][1])})",
           flush=True)
 
-    loss_fn, pkeys = make_cnn_loss(c1.MODEL_FN, vx, vy, device)
+    loss_fn, pkeys = make_cnn_loss(MODEL_FN, vx, vy, device)
 
     # ---- per-round measurement ----
     want = _measure_rounds(len(logs))
@@ -164,11 +199,12 @@ def main():
         print("TAYLOR-CNN OK (no persist)", flush=True)
         return
 
-    name = f"{DATASET}_{PARTITION}_{_THREATS[THREAT]}_taylor_seed{SEED}"
+    name = (f"{DATASET}_{PARTITION}_{_THREATS[THREAT]}_taylor"
+            f"{'_smoothctl' if SMOOTH else ''}_seed{SEED}")
     rl = RunLogger(RUN_ROOT, name,
                    dict(track="cnn", table="tab:retrain-fidelity", dataset=DATASET,
                         partition=PARTITION, threat=_THREATS[THREAT], threat_label=THREAT,
-                        seed=SEED, cfg=cfg, kfrac=c1.KFRAC, corrupt=corrupt, rates=rates,
+                        seed=SEED, cfg=cfg, kfrac=c1.KFRAC, smooth_control=SMOOTH, corrupt=corrupt, rates=rates,
                         flip_rate=c1.FLIP_RATE, mal_frac=c1.MAL_FRAC,
                         grad_noise_std=c1.GRAD_NOISE_STD,
                         renorm=RENORM, rounds_measured=want, smoke=SMOKE),

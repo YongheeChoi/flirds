@@ -21,82 +21,115 @@ Two claims in the paper currently rest on a measurement that cannot support them
    supported only by the empirical results". Nothing measures the remainder there,
    even though Table 1, Table 2, and Figure 2(a) are all CNN.
 
-The CNN track fixes the first problem and speaks to the second. Its round
-displacement is two orders of magnitude larger than the LLM's — 5 local epochs on
-all parameters, versus 10 steps on LoRA factors — so the remainder clears the same
-fp32 floor by **four to five orders of magnitude** and the order becomes
-measurable. A pilot (N=5, R=3, seed 0) gave:
+The CNN track escapes the floor. Its round displacement is two orders of
+magnitude larger than the LLM's — 5 local epochs on all parameters, versus 10
+steps on LoRA factors — so the remainder clears the fp32 floor by three to five
+orders of magnitude there. Whether that makes the *order* measurable is a
+separate question, answered below: it does not.
 
-| stage | ‖Δ_r‖ | resid2 median | resid2 / fp32 floor | slope₂ |
-|---|---|---|---|---|
-| LLM, C.5 as published (3 seeds) | 0.0041 | 5.1e-7 | **2.1×** | 1.5–1.6 |
-| CIFAR-10 / FedSVCNN (ReLU) | 0.45–0.60 | 6.5e-3 | **32,605×** | 1.98–2.75 |
-| MNIST / LeNet5 (ReLU) | 0.53–1.13 | 1.4e-2 | **60,303×** | 2.26–2.64 |
-| CIFAR-10, smooth control (GELU + avg-pool, ‖Δ‖ matched) | 0.41–0.59 | 6.9e-3 | 28,923× | **3.26 / 3.36** |
+## Result (21 result cells + 3 controls, 2026-07-31)
 
-The first-order residual fits at **2.00–2.12** in every one of those runs, against
-a predicted 2 — an internal check that the measurement itself is sound. The
-second-order residual is sub-cubic on the ReLU models and recovers the predicted
-3 only in the smooth control at matched displacement. That is exactly what A.4's
-$C^3$ caveat anticipates, which turns the exclusion from a bare caveat into a
-measured distinction.
+CNN = Table 1's grid (CIFAR-10/Dir(1), N=10, full, R=10, 4 conditions x 3 seeds,
+49.7 min local). LLM = the five-domain counterpart (N=5, full, R=10, 3 conditions
+x 3 seeds, 31.5 min/cell on a B200). Plus a 3-seed smooth-activation control.
+0 failures. Regenerate everything with `python make_analysis.py`.
 
-Numbers above are a **pilot, not a result**: single seed, N=5, R=3, and the ReLU
-slope is band-dependent there (1.98 ↔ 2.75 depending on the ‖Δ‖ range probed), so
-it should not be quoted as a single exponent. The pilot's one lasting contribution
-is the **smooth-activation control**, which the Table 1 grid does not include. For
-the real numbers see *CNN result* immediately below, which supersedes the two ReLU
-rows here.
+### What is solid — none of it depends on a slope fit or on the floor
 
-## CNN result (12/12 cells, 2026-07-30)
+| | LLM (silo5) | CNN (Table 1) |
+|---|---|---|
+| remainder / attributed quantity, 1st order | 0.097 % | 12.9 % |
+| **remainder / attributed quantity, 2nd order** | **0.032 %** | **1.59 %** |
+| **curvature term shrinks the remainder by** | **3.0x** | **8.1x** |
+| 2nd order at least as accurate, per coalition | 82.2 % | 97.7 % |
 
-Table 1's grid is complete — CIFAR-10 / Dir(1), N=10, full, R=10, 4 conditions ×
-3 seeds, 0 failures, 49.7 min total on one RTX 4070 SUPER. Regenerate every number
-below with `python make_analysis.py`; nothing here is hand-copied.
+1. **C.5 reproduces exactly**, on a different stack and GPU: resid2 = 0.031 % of
+   the attributed quantity (published 0.03 %), frac 0.831 (published 0.801),
+   coalition slope2 1.35 (published 1.5-1.6), closed-form vs Shapley 6.7e-11
+   (published 6.3e-10). The harness is validated end to end, which is what makes
+   the CNN numbers from the same code trustworthy.
+2. **C.5 extends from 1 condition to 3**, and answer-swap and zero-update behave
+   like clean — the floor limitation is structural to the LLM track, not an
+   artifact of the clean condition.
+3. **The curvature term earns its cost**, independently of the fidelity tables.
+4. **gradient noise explains a Table 1 outlier.** It is the one condition whose
+   first-order remainder exceeds 100 % of the attributed quantity (277 %, at
+   ||D_r|| = 32.3, fifty to eighty times every other condition), and the one where
+   Table 1's Flirds-1st inverts to rho = -0.184. The curvature term pulls it to
+   71 % and Flirds holds at 0.883.
 
-| condition | mean ‖Δ_r‖ | resid2 median | **resid2 / fp32 floor** | slope₁ sweep (pred 2) | slope₂ sweep (pred 3) | slope₁ coal (pred 2) | slope₂ coal (pred 3) |
-|---|---|---|---|---|---|---|---|
-| clean | 0.604 | 1.61e-3 | **1.23e4** | **2.04 ± 0.04** | 2.31 ± 0.05 | 1.18 ± 0.01 | 3.33 ± 0.30 |
-| zero-update | 0.387 | 9.09e-4 | **6.35e3** | **2.09 ± 0.11** | 2.36 ± 0.06 | 1.20 ± 0.05 | 2.79 ± 0.31 |
-| label-flip | 0.427 | 2.50e-3 | **1.74e4** | **2.03 ± 0.07** | 2.26 ± 0.08 | 1.11 ± 0.10 | 1.91 ± 0.12 |
-| gradient noise | **32.3** | 9.85e-2 | 6.55e5 | 1.06 ± 0.13 | 0.47 ± 0.17 | 0.48 ± 0.02 | 0.66 ± 0.03 |
+### What is NOT established — the order, on either track
 
-Three things this establishes, and two traps.
+We could not measure the remainder's order anywhere, and the reason is worth
+recording so nobody re-runs this expecting a different answer.
 
-**1. The floor is escaped, by 6.4e3–7.4e5× across every cell.** C.5's LLM
-measurement sits at 2.1×. This is the robust result: on the CNN track the
-remainder is measurable, so the order question is answerable there.
+**Two estimators, neither of which passes its own control.** The predicted orders
+are 2 for the first-order remainder and 3 for the second.
 
-**2. Use the scale sweep, not the coalition spread.** The sweep recovers the
-first-order remainder's predicted order 2 to within 0.09 in all three
-well-behaved conditions, with a cross-seed std ≤ 0.11 — it passes its own control.
-The coalition-spread estimator returns **1.11–1.20 for that same known-order-2
-quantity**, so it fails the control and its second-order values (1.91–3.33, std up
-to 0.31) must not be quoted. This is why the sweep was added; C.5's published
-1.5–1.6 slope comes from the coalition estimator alone.
+| estimator | slope1 (pred 2) | slope2 (pred 3) | why it fails |
+|---|---|---|---|
+| coalition spread | LLM 1.82, CNN 1.19 | LLM 1.36, CNN 3.34 | varies ||D_S|| by changing *which* clients are in S, so norm and direction are confounded |
+| scale sweep | LLM n/a, CNN 1.90-2.03 | LLM n/a, CNN 1.80-1.97 | direction is fixed, but the ladder is contaminated at both ends (below) |
 
-**3. The second-order remainder is sub-cubic: 2.26–2.36, against a predicted 3.**
-Tight across conditions and seeds (std ≤ 0.08) and measured far above the floor, so
-this is not a resolution artifact. It is what A.4's $C^3$ caveat anticipates for a
-ReLU + max-pool network, and the smooth-activation control in the pilot (GELU +
-avg-pool at matched ‖Δ‖ → 3.26 / 3.36) points the same way.
+The sweep's slope1 = 2 is a harness sanity check, not a result: resid1(t) =
+1/2 t^2 <D, H D> + O(t^3) is forced to scale as t^2 for any twice-differentiable
+loss, so hitting 2 only confirms the Hessian term is nonzero.
 
-**Trap 1 — gradient noise is not order evidence.** Its displacement is
-‖Δ_r‖ = 32.3, fifty to eighty times every other condition, because σ=0.1 Gaussian
-noise is injected straight into the update. That is far outside any Taylor radius,
-and the surrogate has simply broken down: slopes collapse to 0.47–1.06 and
-`closed vs Shapley(u2)` inflates ~100× (2.0e-5 vs 4.6e-8–3.0e-7 elsewhere, still
-only 1.7e-4 relative to $|u_r(P_r)|$). Exclude this condition from any order claim.
-Separately, it *is* a finding worth one sentence: the estimator's Taylor basis
-degrades under large-norm update attacks, which bears on why Flirds-1st scores
-−0.184 in Table 1's gradient-noise column.
+**The sweep is contaminated at both ends.** Per-round local slopes on the smooth
+control, seed 0 round 7:
 
-**Trap 2 — do not quote the pooled row.** `remainder_pooled.csv` averages all four
-conditions, so gradient noise drags it to slope₂ 2.17 (coal) / 1.85 (sweep). The
-per-condition table is the honest view.
+| t | resid2 | local slope |
+|---|---|---|
+| 1 -> 0.5 | 2.46e-4 | 2.94 |
+| 0.5 -> 0.25 | 2.00e-5 | 3.62 |
+| 0.25 -> 0.125 | 8.37e-6 | 1.25 |
+| 0.125 -> 0.0625 | 1.32e-5 | **-0.66** |
+| 0.0625 -> 0.031 | 2.27e-5 | **-0.78** |
 
-Cost: 248.6 s per cell (78.6–86.0 s trajectory + 160.9–172.9 s measurement, 32 %
-training), 6.1 MB of rundirs for the whole grid.
+resid2 stops falling and starts rising below t = 0.125 — cancellation noise in
+u = l(w+tD) - l(w). At the top, t = 1 is the realized displacement, already
+outside the Taylor radius. A least-squares fit over the whole ladder averages a
+non-asymptotic region against a noise-dominated one and returns a number with no
+meaning. Fitting only the middle gives ~3 on some rounds and ~1.3 on others.
+
+**The evaluation floor is worse than ulp(base).** `ulp_base` is an analytic
+estimate — one ulp of the round's base loss — not a measurement. Empirically, the
+level at which resid2 stops decreasing is **26-61x** ulp on CNN (the validation
+loss is a mean over 2,000 examples and carries accumulation error), and 540x under
+gradient noise. Against that empirical floor the CNN margin is **62-764x**, not
+the 6.4e3-7.4e5x that ulp implies. On the LLM the coalition data puts resid2 at
+**1.0-3.6x ulp** across the whole coalition range — the smallest coalitions sit
+exactly at the floor, so C.5's second-order residual is partly floor-contaminated.
+That does not weaken C.5's claim: a remainder at the noise floor is an *upper
+bound*, which is what "bound the magnitude" needs. State it as "at most".
+
+**The smooth-activation control shows no effect.** A pilot (N=5, R=3, seed 0)
+suggested GELU + avg-pool recovered order 3 while ReLU + max-pool did not. At
+Table 1 scale with 3 seeds it does not replicate:
+
+| model (clean, 3 seeds) | ||dW|| | slope1 coal | slope2 coal | slope1 sweep | slope2 sweep |
+|---|---|---|---|---|---|
+| ReLU + max-pool (paper) | 0.604 | 1.18 | 3.33 | 2.00 | 1.93 |
+| smooth (GELU + avg-pool) | 0.586 | 0.81 | 3.36 | 2.03 | 2.07 |
+
+The two are indistinguishable. So A.4's exclusion of the CNN track remains a
+mathematical caveat; this measurement does not supply empirical backing for it,
+and the earlier "ReLU non-smoothness causes a sub-cubic rate" reading is retracted.
+
+### Consequences for the paper
+
+- Report **magnitude only**, which is what C.5 already does. Do not report any
+  measured order, and do not put the scale sweep in the paper — it was added to
+  improve on C.5's narrow coalition spread and it did not work. It stays in the
+  code as a diagnostic.
+- Main Section 4's "measure the remainder itself" should become "bound its
+  magnitude", scoped to say the order is not resolvable at fp32 on either track.
+- The strongest available sentence is the curvature benefit: retaining the
+  second-order term shrinks the remainder 3x on the LLM track and 8x on the CNN
+  track, leaving it at most 0.03 % and 1.6 % of the quantity being attributed.
+
+Cost: CNN 248.6 s/cell (32 % trajectory), LLM 1,890 s/cell (39 % trajectory).
+Rundirs 6.1 MB (CNN) + LLM.
 
 ## Setting
 

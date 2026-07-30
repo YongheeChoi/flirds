@@ -1,0 +1,50 @@
+track: cnn
+table: tab:retrain-fidelity
+dataset: cifar10
+partition: dir1
+threat: clean
+threat_label: clean
+seed: 1
+cfg:
+  n_clients: 10
+  n_per: null
+  rounds: 10
+  epochs: 5
+  lr: 0.01
+  batch: 64
+  n_val: 2000
+  n_test: 8000
+  ripple:
+    k: 20
+    m: 50
+    R: 20
+kfrac: 1.0
+smooth_control: true
+corrupt: []
+rates:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+flip_rate: 0.7
+mal_frac: 0.4
+grad_noise_std: 0.1
+renorm: false
+rounds_measured:
+- 0
+- 1
+- 2
+- 3
+- 4
+- 5
+- 6
+- 7
+- 8
+- 9
+smoke: false

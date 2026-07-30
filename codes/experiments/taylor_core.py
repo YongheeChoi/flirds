@@ -94,22 +94,33 @@ def _bind_buffers(loss_fn, buffers):
     return vloss
 
 
+SWEEP_FRACTIONS = (1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125)
+
+
 def scale_sweep(params, dW, g, hd, base, loss_fn, buffers, pkeys, norm_dW,
-                targets=(1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125)):
-    """Order test along the realized direction: D -> t*D at fixed ABSOLUTE ||t*D||.
+                mode="relative", targets=SWEEP_FRACTIONS):
+    """Order test along the realized direction: D -> t*D.
 
     C.5's log-log slope is fit over the coalition spread alone, which spans barely
     a factor of ~K in ||D_S|| — too narrow to separate order 2 from order 3.  This
-    sweep spans a decided range (default 32x) and, because the targets are absolute
-    rather than relative to ||D||, it makes runs with different displacements (e.g.
-    a ReLU model vs a smooth control) directly comparable at equal ||D||.
+    sweep spans a decided range (32x by default).
+
+    mode="relative" (default): t IS the fraction, so the ladder always brackets the
+      realized displacement (1x down to 1/32x).  This is the only mode that is safe
+      across tracks — the two tracks' displacements differ by two orders of
+      magnitude (CNN ~0.4, LLM ~0.004), so any fixed absolute ladder is a gross
+      extrapolation for one of them.
+    mode="absolute": `targets` are absolute ||t*D|| values.  Use ONLY to compare two
+      runs at equal displacement (e.g. a ReLU model against a smooth control), and
+      only after checking the targets bracket both runs' ||D|| — otherwise the sweep
+      measures the loss surface somewhere the estimator never operates.
     """
     gd = _dot(g, dW, pkeys)
     dHd = _dot(dW, hd, pkeys)
     out = []
     with torch.no_grad():
         for target in targets:
-            t = target / norm_dW if norm_dW > 0 else 0.0
+            t = target if mode == "relative" else (target / norm_dW if norm_dW > 0 else 0.0)
             pert = {n: params[n] + t * dW[n] for n in pkeys}
             exact = float(loss_fn(pert, buffers)) - base
             del pert
@@ -121,7 +132,7 @@ def scale_sweep(params, dW, g, hd, base, loss_fn, buffers, pkeys, norm_dW,
 
 
 def measure_round(r, w_r, dm, loss_fn, pkeys, device, loss_chunks=None,
-                  renorm=False, sweep=True):
+                  renorm=False, sweep=True, sweep_mode="relative"):
     """Measure round r.  Returns (coalition rows, per-round phi dicts, round summary)."""
     players = sorted(dm.keys())
     K = len(players)
@@ -207,7 +218,8 @@ def measure_round(r, w_r, dm, loss_fn, pkeys, device, loss_chunks=None,
     if sweep:
         dW = {n: sum(a[k][n] for k in players) for n in pkeys}
         hd = {n: sum(h[k][n] for k in players) for n in pkeys}
-        sw = scale_sweep(params, dW, g, hd, base, loss_fn, buffers, pkeys, norm_dW)
+        sw = scale_sweep(params, dW, g, hd, base, loss_fn, buffers, pkeys, norm_dW,
+                         mode=sweep_mode)
         del dW, hd
 
     summ = dict(
@@ -237,6 +249,14 @@ def measure_round(r, w_r, dm, loss_fn, pkeys, device, loss_chunks=None,
     )
     if sw is not None:
         summ["sweep"] = sw
+        # Range the ladder actually probed, as a multiple of the realized displacement.
+        # A sweep that never comes near 1x is measuring the loss surface somewhere the
+        # estimator does not operate, and its slope is not evidence about the remainder.
+        fr = [s["norm"] / norm_dW for s in sw] if norm_dW > 0 else []
+        summ["sweep_mode"] = sweep_mode
+        summ["sweep_frac_min"] = min(fr) if fr else None
+        summ["sweep_frac_max"] = max(fr) if fr else None
+        summ["sweep_brackets_operating_point"] = bool(fr and min(fr) < 1.5 and max(fr) > 0.5)
         summ["sweep_slope_r1"] = _loglog_slope([s["norm"] for s in sw],
                                                [s["resid1"] for s in sw])
         summ["sweep_slope_r2"] = _loglog_slope([s["norm"] for s in sw],
@@ -258,9 +278,14 @@ def pool(round_summaries, all_rows):
     r2 = [w["resid2"] for w in all_rows]
     nrm = [w["norm_dS"] for w in all_rows]
     s2 = _stats(r2)
-    sw2 = [s["sweep_slope_r2_above_floor"] for s in round_summaries
+    # Only pool sweep slopes from rounds whose ladder actually bracketed the realized
+    # displacement; an out-of-range ladder yields a number, but not one about the
+    # remainder at the operating point.
+    ok_rounds = [s for s in round_summaries
+                 if s.get("sweep_brackets_operating_point", True)]
+    sw2 = [s["sweep_slope_r2_above_floor"] for s in ok_rounds
            if s.get("sweep_slope_r2_above_floor") is not None]
-    sw1 = [s["sweep_slope_r1"] for s in round_summaries if s.get("sweep_slope_r1") is not None]
+    sw1 = [s["sweep_slope_r1"] for s in ok_rounds if s.get("sweep_slope_r1") is not None]
     return dict(
         resid1=_stats(r1), resid2=s2, ulp=ulp,
         resid2_median_over_ulp=s2["median"] / ulp if s2 else None,
@@ -269,6 +294,7 @@ def pool(round_summaries, all_rows):
         loglog_slope_r2=_loglog_slope(nrm, r2),
         sweep_slope_r1=float(np.mean(sw1)) if sw1 else None,
         sweep_slope_r2_above_floor=float(np.mean(sw2)) if sw2 else None,
+        sweep_valid_rounds=len(ok_rounds), sweep_total_rounds=len(round_summaries),
         mean_abs_u_grand=float(np.mean([abs(s["u_grand"]) for s in round_summaries])),
         max_phi_t2_vs_closed=max(s["max_abs_phi_t2_vs_closed"] for s in round_summaries),
     )

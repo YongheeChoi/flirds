@@ -45,10 +45,22 @@ def _load(rundir):
     if cfg.get("smoke"):
         return None                                  # wiring runs are not results
     P = summ["pooled"]
+    # A sweep whose ladder never approached the realized displacement measured the loss
+    # surface somewhere the estimator never operates; its slope is not evidence.  Older
+    # rundirs predate the flag, so recompute it from the stored sweep.
+    fr = []
+    for r in summ["rounds"]:
+        if r.get("sweep") and r.get("norm_dW"):
+            fr += [s["norm"] / r["norm_dW"] for s in r["sweep"]]
+    sweep_ok = bool(fr) and min(fr) < 1.5 and max(fr) > 0.5
     return dict(
         rundir=os.path.basename(rundir),
         track=cfg.get("track"),
-        stage=cfg.get("regime") or f"{cfg.get('dataset')}/{cfg.get('partition')}",
+        # The smooth-activation run is an attribution CONTROL, not one of the paper's
+        # models; keep it in its own stage so it never pools with a result row.
+        stage=(cfg.get("regime")
+               or f"{cfg.get('dataset')}/{cfg.get('partition')}"
+                  + ("/smooth-ctl" if cfg.get("smooth_control") else "")),
         condition=cfg.get("threat"),
         seed=cfg.get("seed"),
         n_rounds=len(summ["rounds"]),
@@ -60,8 +72,12 @@ def _load(rundir):
         frac_t2_le_t1=P["frac_t2_le_t1"],
         slope1_coalition=P["loglog_slope_r1"],
         slope2_coalition=P["loglog_slope_r2"],
-        slope1_sweep=P["sweep_slope_r1"],
-        slope2_sweep=P["sweep_slope_r2_above_floor"],
+        sweep_ok=sweep_ok,
+        sweep_frac_min=min(fr) if fr else None,
+        sweep_frac_max=max(fr) if fr else None,
+        # Blank the slopes rather than print a number nobody should read.
+        slope1_sweep=P["sweep_slope_r1"] if sweep_ok else None,
+        slope2_sweep=P["sweep_slope_r2_above_floor"] if sweep_ok else None,
         mean_abs_u_grand=P["mean_abs_u_grand"],
         closed_vs_shapley=P["max_phi_t2_vs_closed"],
         fl_train_s=timing.get("fl_train_s"),
@@ -118,8 +134,9 @@ def main():
             "frac(resid2<=resid1)": _ms(g, "frac_t2_le_t1"),
             "slope1 coal (pred 2)": _ms(g, "slope1_coalition"),
             "slope2 coal (pred 3)": _ms(g, "slope2_coalition"),
-            "slope1 sweep (pred 2)": _ms(g, "slope1_sweep"),
-            "slope2 sweep (pred 3)": _ms(g, "slope2_sweep"),
+            "slope1 sweep (pred 2)": _ms(g, "slope1_sweep") or "-- out of range",
+            "slope2 sweep (pred 3)": _ms(g, "slope2_sweep") or "-- out of range",
+            "sweep range (x||dW||)": f"{g['sweep_frac_min'].mean():.3g}-{g['sweep_frac_max'].mean():.3g}",
         })
     by_cond = pd.DataFrame(agg)
     by_cond.to_csv(os.path.join(args.out, "remainder_by_condition.csv"), index=False)
