@@ -42,8 +42,61 @@ $C^3$ caveat anticipates, which turns the exclusion from a bare caveat into a
 measured distinction.
 
 Numbers above are a **pilot, not a result**: single seed, N=5, R=3, and the ReLU
-slope is band-dependent (1.98 ↔ 2.75 depending on the ‖Δ‖ range probed), so it
-should not be quoted as a single exponent. This directory runs the grid properly.
+slope is band-dependent there (1.98 ↔ 2.75 depending on the ‖Δ‖ range probed), so
+it should not be quoted as a single exponent. The pilot's one lasting contribution
+is the **smooth-activation control**, which the Table 1 grid does not include. For
+the real numbers see *CNN result* immediately below, which supersedes the two ReLU
+rows here.
+
+## CNN result (12/12 cells, 2026-07-30)
+
+Table 1's grid is complete — CIFAR-10 / Dir(1), N=10, full, R=10, 4 conditions ×
+3 seeds, 0 failures, 49.7 min total on one RTX 4070 SUPER. Regenerate every number
+below with `python make_analysis.py`; nothing here is hand-copied.
+
+| condition | mean ‖Δ_r‖ | resid2 median | **resid2 / fp32 floor** | slope₁ sweep (pred 2) | slope₂ sweep (pred 3) | slope₁ coal (pred 2) | slope₂ coal (pred 3) |
+|---|---|---|---|---|---|---|---|
+| clean | 0.604 | 1.61e-3 | **1.23e4** | **2.04 ± 0.04** | 2.31 ± 0.05 | 1.18 ± 0.01 | 3.33 ± 0.30 |
+| zero-update | 0.387 | 9.09e-4 | **6.35e3** | **2.09 ± 0.11** | 2.36 ± 0.06 | 1.20 ± 0.05 | 2.79 ± 0.31 |
+| label-flip | 0.427 | 2.50e-3 | **1.74e4** | **2.03 ± 0.07** | 2.26 ± 0.08 | 1.11 ± 0.10 | 1.91 ± 0.12 |
+| gradient noise | **32.3** | 9.85e-2 | 6.55e5 | 1.06 ± 0.13 | 0.47 ± 0.17 | 0.48 ± 0.02 | 0.66 ± 0.03 |
+
+Three things this establishes, and two traps.
+
+**1. The floor is escaped, by 6.4e3–7.4e5× across every cell.** C.5's LLM
+measurement sits at 2.1×. This is the robust result: on the CNN track the
+remainder is measurable, so the order question is answerable there.
+
+**2. Use the scale sweep, not the coalition spread.** The sweep recovers the
+first-order remainder's predicted order 2 to within 0.09 in all three
+well-behaved conditions, with a cross-seed std ≤ 0.11 — it passes its own control.
+The coalition-spread estimator returns **1.11–1.20 for that same known-order-2
+quantity**, so it fails the control and its second-order values (1.91–3.33, std up
+to 0.31) must not be quoted. This is why the sweep was added; C.5's published
+1.5–1.6 slope comes from the coalition estimator alone.
+
+**3. The second-order remainder is sub-cubic: 2.26–2.36, against a predicted 3.**
+Tight across conditions and seeds (std ≤ 0.08) and measured far above the floor, so
+this is not a resolution artifact. It is what A.4's $C^3$ caveat anticipates for a
+ReLU + max-pool network, and the smooth-activation control in the pilot (GELU +
+avg-pool at matched ‖Δ‖ → 3.26 / 3.36) points the same way.
+
+**Trap 1 — gradient noise is not order evidence.** Its displacement is
+‖Δ_r‖ = 32.3, fifty to eighty times every other condition, because σ=0.1 Gaussian
+noise is injected straight into the update. That is far outside any Taylor radius,
+and the surrogate has simply broken down: slopes collapse to 0.47–1.06 and
+`closed vs Shapley(u2)` inflates ~100× (2.0e-5 vs 4.6e-8–3.0e-7 elsewhere, still
+only 1.7e-4 relative to $|u_r(P_r)|$). Exclude this condition from any order claim.
+Separately, it *is* a finding worth one sentence: the estimator's Taylor basis
+degrades under large-norm update attacks, which bears on why Flirds-1st scores
+−0.184 in Table 1's gradient-noise column.
+
+**Trap 2 — do not quote the pooled row.** `remainder_pooled.csv` averages all four
+conditions, so gradient noise drags it to slope₂ 2.17 (coal) / 1.85 (sweep). The
+per-condition table is the honest view.
+
+Cost: 248.6 s per cell (78.6–86.0 s trajectory + 160.9–172.9 s measurement, 32 %
+training), 6.1 MB of rundirs for the whole grid.
 
 ## Setting
 

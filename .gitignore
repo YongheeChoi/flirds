@@ -48,6 +48,9 @@ runs/probe_signal/_logs/
 runs/probe_signal/_nohup.out
 # corruption x non-IID matrix (2026-07-02): driver+README tracked; logs transient (cells -> phase2_matrix/rundirs):
 runs/matrix_cxni/_logs/
+# Taylor-remainder measurement (2026-07-30): rundirs/ ARE tracked; the analysis tables are
+# derived (make_analysis.py rebuilds all of them from the rundirs alone):
+runs/taylor_remainder/analysis/
 runs/matrix_cxni/_nohup.out
 # Track G/H (2026-07): execution logs + smoke outputs are transient; rundirs*/ + analysis/ + audit/ ARE tracked:
 runs/track_g/_logs/

@@ -93,7 +93,9 @@ for k in ("rounds", "max_steps", "train", "val", "n_clients"):
     if os.environ.get(k.upper()):
         RCFG[k] = int(os.environ[k.upper()])
 
-_REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# repo root is three levels up (.../flirds/codes/experiments/<this>), same as track_c1;
+# runs/ has a single root at the repo top -- codes/runs was retired 2026-06-15.
+_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RUN_ROOT = os.environ.get("TAYLOR_RUN_ROOT",
                           os.path.join(_REPO, "runs", "taylor_remainder", "rundirs"))
 

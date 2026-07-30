@@ -80,7 +80,9 @@ from flirds.repro import seed_everything                                 # noqa:
 from flirds.run_logger import RunLogger                                  # noqa: E402
 from taylor_core import measure_round, pool                              # noqa: E402
 
-_REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# repo root is three levels up (.../flirds/codes/experiments/<this>), same as track_c1;
+# runs/ has a single root at the repo top -- codes/runs was retired 2026-06-15.
+_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RUN_ROOT = os.environ.get("TAYLOR_RUN_ROOT",
                           os.path.join(_REPO, "runs", "taylor_remainder", "rundirs"))
 
