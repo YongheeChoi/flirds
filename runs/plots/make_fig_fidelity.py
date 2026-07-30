@@ -3,17 +3,19 @@
 
 Three figures.  The body one first, then the two appendix ones:
 
-  fig_fidelity_body     the SS5.2 body figure (2026-07-28), \textwidth x 2.45in
+  fig_fidelity_body     the SS5.2 body figure (2026-07-28; whiskers 07-29), \textwidth x 2.45in
       (a) CNN track   : ONE panel, 4 threats x {Dir(1), IID} x 2 methods as
-                        THIN horizontal bars = Spearman rho; ink tick = the
-                        cell's Pearson r (no connector; it goes negative
-                        once).  No shading, no direct labels.        (8 cells)
-      (b) LLM track   : 2 settings x 6 cells (GSM8K threats + alpaca scale),
-                        paired bars anchored at the ZOOMED axis start (.992;
-                        explicit author call, the .992 tick discloses the baseline);
-                        ink tick = Pearson r.
+                        THIN horizontal bars = Spearman rho + a +-1 std seed
+                        whisker (ddof=1, matching the tables); Pearson tick =
+                        the cell's Pearson r, in the method's DARKER ramp step
+                        (07-29: the one negative r must be attributable without
+                        a bar next to it).  No shading, no direct labels. (8 cells)
+      (b) LLM track   : 2 settings x 6 cells (GSM8K threats + Alpaca-GPT4
+                        scale), paired bars anchored at the ZOOMED axis start
+                        (explicit author call, the axis-start tick label
+                        discloses the baseline; start is whisker-aware);
+                        colored tick = Pearson r; +-1 std whiskers.
                         Cross-device & 5-domain (all exactly 1.0) -> appendix.
-                        No single-seed marking (07-28; n_seeds in the CSV).
       The retraining leg is a TABLE in the body (CIFAR-10 Dir(1), from
       track_c/c1); its figure form stays below as fig_fidelity_retrain.
 
@@ -39,8 +41,9 @@ dual axes, surface ring on markers, legend always present for >=2 series,
 selective direct labels.  Identity is carried redundantly by shape/fill so the
 figures survive grayscale print and full CVD.
 
-Aggregation: seed mean; whiskers = seed min..max (n is printed in the points CSV).
-A cell with n < 3 seeds is drawn HOLLOW so an incomplete cell looks incomplete.
+Aggregation: seed mean; the body figure adds +-1 std whiskers (ddof=1, the
+tables' convention).  In the appendix figures a cell with n < 3 seeds is drawn
+HOLLOW so an incomplete cell looks incomplete (n is in every points CSV).
 
 Usage:
     python runs/plots/make_fig_fidelity.py                 # both -> runs/plots/figs/
@@ -51,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -59,12 +63,14 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.legend_handler import HandlerTuple
 from matplotlib.lines import Line2D
 from scipy.stats import spearmanr
 
 HERE = Path(__file__).resolve().parent          # runs/plots
 ROOT = HERE.parent.parent                       # repo root
 FIG = HERE / "figs"
+PAPER_FIG = ROOT / "paper" / "AAAI" / "Figures"  # body figure lands here too
 
 # --------------------------------------------------------------------------- #
 # palette (dataviz reference instance, slots 1-2 + chrome ink)                 #
@@ -73,6 +79,11 @@ C_FLIRDS = "#2a78d6"      # categorical slot 1
 C_FIRST = "#eb6834"       # categorical slot 2
 C_LLM = "#eb6834"         # slot 2 doubles as the LLM track in fig B
 C_CNN = "#2a78d6"
+# Pearson-tick colors: the darker step of the SAME hue (blue ramp step 650;
+# the orange mirrors that 450->650 darkening) so an off-bar tick still names
+# its method while staying redundant with row position -- not new series hues
+T_FLIRDS = "#104281"
+T_FIRST = "#a34413"
 INK = "#0b0b0b"
 INK2 = "#52514e"
 MUTED = "#898781"
@@ -87,8 +98,14 @@ def style() -> None:
         "savefig.dpi": 160,
         "savefig.bbox": "tight",
         "savefig.pad_inches": 0.02,
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
+        # Times-family serif to match the AAAI body text; STIX math to match;
+        # fonttype 42 keeps the PDFs free of Type-3 fonts (camera-ready rule)
+        "font.family": "serif",
+        "font.serif": ["Times New Roman", "Times", "Nimbus Roman",
+                       "STIX Two Text", "DejaVu Serif"],
+        "mathtext.fontset": "stix",
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
         "font.size": 7.4,
         "axes.titlesize": 7.8,
         "axes.labelsize": 7.4,
@@ -222,8 +239,9 @@ def load_llm_inrun() -> pd.DataFrame:
                               ("zero-update", "1B_silo5_frzero", "freerider_zero")]:
         drain(g, label, P2 / stem, tkey)
 
-    # 3. alpaca IID scale leg (1B / 3B / 7B) -- derived emitter CSV
-    g = "alpaca|$N$=20, 2/20, clean"
+    # 3. Alpaca-GPT4 IID scale leg (1B / 3B / 7B) -- derived emitter CSV
+    #    (07-29: label matches the body text's "Alpaca-GPT4", not "alpaca")
+    g = "Alpaca-GPT4|$N$=20, 2/20, clean"
     fid = pd.read_csv(ROOT / "runs/track_d/fidelity.csv")
     for scale in ("1B", "3B", "7B"):
         sub = fid[(fid["cell"].str.startswith(f"{scale}_std20")) &
@@ -456,8 +474,10 @@ def panel_llm_sweep(ax) -> pd.DataFrame:
     ax.annotate(f"every stage $\\geq$ {lo:.3f}", xy=(0.5, 0.885), xycoords="axes fraction",
                 ha="center", fontsize=6.5, color=INK2)
     trans = ax.get_xaxis_transform()
-    for s, e, g in bounds:
-        ax.annotate(g.replace("|", "\n"), xy=((s + e) / 2, -0.36), xycoords=trans,
+    for gi, (s, e, g) in enumerate(bounds):
+        # alternate depths so adjacent stage labels cannot collide
+        ax.annotate(g.replace("|", "\n"), xy=((s + e) / 2, -0.36 - 0.12 * (gi % 2)),
+                    xycoords=trans,
                     ha="center", va="top", fontsize=5.9, color=MUTED, linespacing=1.3)
     return pts
 
@@ -483,9 +503,11 @@ def fig_inrun(dpi: int, dose: bool) -> None:
                markeredgecolor=SURFACE, markeredgewidth=0.45, label="Flirds-1st"),
         Line2D([], [], marker="o", ls="", markersize=4.4, color=MUTED,
                markeredgecolor=INK, markeredgewidth=0.7, label="CIFAR-10 / Dir(1) = main text"),
-        Line2D([], [], marker="o", ls="", markersize=4.2, markerfacecolor=SURFACE,
-               markeredgecolor=MUTED, markeredgewidth=0.9, label="* fewer than 3 seeds"),
     ]
+    if bool((p_b["n_seeds"] < 3).any() or (p_c["n_seeds"] < 3).any()):
+        handles.append(
+            Line2D([], [], marker="o", ls="", markersize=4.2, markerfacecolor=SURFACE,
+                   markeredgecolor=MUTED, markeredgewidth=0.9, label="* fewer than 3 seeds"))
     axes[2].legend(handles=handles, loc="center left", handletextpad=0.35,
                    borderpad=0.2, labelspacing=0.42, labelcolor=INK2,
                    bbox_to_anchor=(0.02, 0.36))
@@ -614,14 +636,17 @@ def fig_retrain(dpi: int) -> None:
 # figure C -- the SS5.2 body figure: one \textwidth row                        #
 #                                                                              #
 #   (a) CNN in ONE panel: 4 threats (major rows) x {Dir(1), IID} (minor rows)  #
-#       x {Flirds, Flirds-1st} as THIN horizontal bars from 0; the ink tick    #
-#       across each bar = the same cell's Pearson r (it goes negative once:    #
-#       gradient-noise Dir(1) Flirds-1st, left of the baseline; no connector   #
-#       -- row position assigns it).  No shading, no direct value labels.      #
+#       x {Flirds, Flirds-1st} as THIN horizontal bars from 0 + a +-1 std      #
+#       seed whisker (07-29); the method-colored tick across each bar = the    #
+#       same cell's Pearson r (it goes negative once: gradient-noise Dir(1)    #
+#       Flirds-1st, left of the baseline; no connector -- row position         #
+#       assigns it, the darker method color re-states it).  No shading, no     #
+#       direct value labels.                                                   #
 #   (b) LLM 2 settings x 6 cells as paired bars anchored at the ZOOMED axis    #
-#       start (explicit Yonghee 07-28 call; the 0.992 tick label discloses     #
-#       the baseline); ink tick = Pearson r.  Cross-device & 5-domain stay     #
-#       in the appendix.                                                       #
+#       start (explicit Yonghee 07-28 call; the axis-start tick label          #
+#       discloses the baseline; start is whisker-aware); colored tick =        #
+#       Pearson r; +-1 std whiskers.  Cross-device & 5-domain stay in the      #
+#       appendix.                                                              #
 # Zoom is legitimate for position marks (dots); bars in (a) keep their zero    #
 # baseline.  Every plotted value lands in the points CSVs.                     #
 # --------------------------------------------------------------------------- #
@@ -630,20 +655,69 @@ CNN_XLIM = (-0.15, 1.045)     # negative margin: the -.05 Pearson tick must sit
 CNN_XTICKS = (0.0, 0.25, 0.50, 0.75, 1.0)
 
 
-def _ink_tick(ax, x, y, half, lw=1.0):
-    """Pearson mark: a short vertical ink tick at x, crossing the bar/dot."""
+def _pearson_tick(ax, x, y, half, lw=1.0, color=INK):
+    """Pearson mark: a short vertical tick at x, crossing the bar/dot.
+
+    Method-colored (darker ramp step) with a surface halo, so the tick reads
+    on top of its own bar and an off-bar tick (the one negative r) still
+    names its method (07-29).
+    """
     if x is None or np.isnan(x):
         return
-    ax.plot([x, x], [y - half, y + half], color=INK, lw=lw, zorder=5,
+    ax.plot([x, x], [y - half, y + half], color=SURFACE, lw=lw + 1.1, zorder=5,
+            solid_capstyle="butt")
+    ax.plot([x, x], [y - half, y + half], color=color, lw=lw, zorder=5,
             solid_capstyle="butt")
 
 
-def panel_body_cnn(ax, tag: str) -> pd.DataFrame:
+def _std_whisker(ax, x, y, sd, lw=0.8):
+    """Seed whisker: mean +- 1 std (ddof=1), capless so it cannot be mistaken
+    for a Pearson tick.  Clipped to the rho bound: past +-1 there is no
+    attainable value, so drawing there would only invite a "rho > 1?"
+    misreading (07-29).  n=1 cells (sd = NaN) simply draw nothing."""
+    if sd is None or np.isnan(sd) or sd == 0:
+        return
+    ax.plot([max(-1.0, x - sd), min(1.0, x + sd)], [y, y], color=INK2, lw=lw,
+            zorder=4, solid_capstyle="butt")
+
+
+def _rho_dot(ax, x, y, sd, color, min_arrow):
+    """Dot-variant rho mark: a point on the seed mean plus a double-headed
+    arrow spanning +-1 std (clipped like the whisker).  A +-std too narrow to
+    carry two arrowheads (span < min_arrow, data units) falls back to a bare
+    segment -- the dot alone then carries the cell."""
+    if not (sd is None or np.isnan(sd) or sd == 0):
+        lo, hi = max(-1.0, x - sd), min(1.0, x + sd)
+        if hi - lo >= min_arrow:
+            ax.annotate("", xy=(lo, y), xytext=(hi, y), zorder=4,
+                        arrowprops=dict(arrowstyle="<|-|>", color=INK2, lw=0.8,
+                                        shrinkA=0, shrinkB=0, mutation_scale=5.5))
+        else:
+            ax.plot([lo, hi], [y, y], color=INK2, lw=0.8, zorder=4,
+                    solid_capstyle="butt")
+    ax.scatter([x], [y], s=18, facecolor=color, edgecolor=SURFACE,
+               linewidth=0.5, zorder=6)
+
+
+def _r_band(ax, r, rsd, y, half, color):
+    """Dot-variant Pearson spread: +-1 std (clipped) as a translucent band
+    behind the tick -- same uncertainty, quieter than a second whisker, and
+    it cannot be confused with the rho arrow."""
+    if r is None or np.isnan(r) or np.isnan(rsd) or rsd == 0:
+        return
+    ax.fill_betweenx([y - half, y + half], max(-1.0, r - rsd),
+                     min(1.0, r + rsd), color=color, alpha=0.20, lw=0,
+                     zorder=2.5)
+
+
+def panel_body_cnn(ax, tag: str, variant: str = "bar",
+                   show_std: bool = True) -> pd.DataFrame:
     """The CNN track in one panel: threat (major) x partition (minor) rows."""
     df = load_cnn_inrun()
     df = df[(df["dataset"] == "cifar10") & df["partition"].isin(("dir1", "iid"))]
     agg = (df.groupby(["partition", "threat", "method"])
-             .agg(rho=("spearman_b", "mean"), r=("pearson_b", "mean"),
+             .agg(rho=("spearman_b", "mean"), rho_sd=("spearman_b", "std"),
+                  r=("pearson_b", "mean"), r_sd=("pearson_b", "std"),
                   n=("spearman_b", "size"))
              .reset_index())
     get = lambda p, t, m: agg[(agg["partition"] == p) & (agg["threat"] == t)
@@ -654,16 +728,28 @@ def panel_body_cnn(ax, tag: str) -> pd.DataFrame:
     for t in AXIS_THREATS:
         g0 = y - 0.33                    # group extent, for the threat label
         for part, plab in (("dir1", "Dir(1)"), ("iid", "IID")):
-            for mi, (meth, color) in enumerate((("Flirds", C_FLIRDS),
-                                                ("Flirds1st", C_FIRST))):
+            for mi, (meth, color, tick) in enumerate((("Flirds", C_FLIRDS, T_FLIRDS),
+                                                      ("Flirds1st", C_FIRST, T_FIRST))):
                 rec = get(part, t, meth)
                 yy = y + (mi - 0.5) * (h + 0.05)
-                ax.barh(yy, rec["rho"], height=h, color=color, lw=0, zorder=3)
-                # no rho->r connector (07-28): the tick's row position alone
-                # says which bar it belongs to, incl. the one negative r
-                _ink_tick(ax, rec["r"], yy, half=0.145)
+                if variant == "bar":
+                    ax.barh(yy, rec["rho"], height=h, color=color, lw=0, zorder=3)
+                    if show_std:
+                        _std_whisker(ax, rec["rho"], yy, rec["rho_sd"])
+                else:
+                    _rho_dot(ax, rec["rho"], yy,
+                             rec["rho_sd"] if show_std else np.nan, color,
+                             min_arrow=0.09)
+                    if show_std:
+                        _r_band(ax, rec["r"], rec["r_sd"], yy, half=0.145,
+                                color=tick)
+                # no rho->r connector (07-28): row position assigns the tick,
+                # and its darker method color re-states it (07-29) -- incl.
+                # the one negative r
+                _pearson_tick(ax, rec["r"], yy, half=0.145, color=tick)
                 rows.append(dict(partition=part, threat=t, method=meth,
-                                 spearman=rec["rho"], pearson=rec["r"],
+                                 spearman=rec["rho"], spearman_std=rec["rho_sd"],
+                                 pearson=rec["r"], pearson_std=rec["r_sd"],
                                  n_seeds=int(rec["n"])))
             yt.append(y)
             ytl.append(plab)
@@ -679,8 +765,15 @@ def panel_body_cnn(ax, tag: str) -> pd.DataFrame:
     ax.set_yticks(yt)
     ax.set_yticklabels(ytl, fontsize=7.0)
     ax.tick_params(axis="y", length=0, pad=2.0)
-    ax.set_ylim(y - 0.46 + 0.44, -0.44)
-    ax.set_xlim(*CNN_XLIM)
+    # bottom margin mirrors the top one; the loop's trailing sub + group gap
+    # used to leave a dead half-row under the last group (07-29 centering fix)
+    ax.set_ylim(y - 0.46 - sub + 0.44, -0.44)
+    xlo = CNN_XLIM[0]
+    if variant == "dot" and show_std:
+        # the Pearson band can reach further left than the -.05 tick does
+        lo_r = float(np.nanmin((agg["r"] - agg["r_sd"].fillna(0)).to_numpy()))
+        xlo = min(xlo, lo_r - 0.03)
+    ax.set_xlim(xlo, CNN_XLIM[1])
     ax.set_xticks(CNN_XTICKS)
     # decimal ticks (07-28): match the tables' decimal correlations, not %
     ax.set_xticklabels(["0", "0.25", "0.50", "0.75", "1"])
@@ -691,26 +784,35 @@ def panel_body_cnn(ax, tag: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def panel_body_llm(ax) -> pd.DataFrame:
+def panel_body_llm(ax, variant: str = "bar",
+                   show_std: bool = True) -> pd.DataFrame:
     """The LLM sweep as paired bars, zoomed so the method gap is visible.
 
     The bars are anchored at the zoomed axis start (0.992), an explicit
     author decision of 07-28; the 0.992 tick label discloses the baseline.
     The axis start is chosen from the data on a .004 grid so the midpoint
     tick lands exactly.  Rows are dodged like the CNN panel's pairs.
+    The "dot" variant swaps bars for mean dots with +-1 std arrows -- pure
+    position marks, for which the zoom needs no baseline disclosure at all.
     """
     df = load_llm_inrun()
     # cross-device (07-28) and 5-domain (07-28: every cell exactly 1.0000, no
     # difference to show) stay in the appendix, not the body panel
     df = df[~df["group"].str.startswith(("cross-dev", "5-domain"))].copy()
     agg = (df.groupby(["group", "label", "method"])
-             .agg(rho=("spearman_b", "mean"), r=("pearson_b", "mean"),
+             .agg(rho=("spearman_b", "mean"), rho_sd=("spearman_b", "std"),
+                  r=("pearson_b", "mean"), r_sd=("pearson_b", "std"),
                   n=("spearman_b", "size"))
              .reset_index())
     get = lambda g, lab, m: next(iter(agg[(agg["group"] == g) & (agg["label"] == lab)
                                           & (agg["method"] == m)].itertuples()), None)
-    lo = float(np.nanmin(agg[["rho", "r"]].to_numpy()))
-    x0 = np.floor((lo - 0.0008) * 250) / 250          # zoom start, .004 grid
+    # zoom start on the .004 grid, low enough for every whisker tip, tick,
+    # and (dot variant) Pearson band edge; means only in the no-std set
+    sd_or_0 = (lambda c: agg[c].fillna(0)) if show_std else (lambda c: 0.0)
+    lo = float(np.nanmin(np.concatenate([
+        (agg["rho"] - sd_or_0("rho_sd")).to_numpy(),
+        (agg["r"] - sd_or_0("r_sd")).to_numpy()])))
+    x0 = np.floor((lo - 0.0002) * 250) / 250
 
     rows, yt, ytl = [], [], []
     y, dy = 0.0, 0.20
@@ -726,24 +828,35 @@ def panel_body_llm(ax) -> pd.DataFrame:
             a, b = get(g, lab, "Flirds"), get(g, lab, "Flirds1st")
             if a is None:
                 continue
-            # incomplete cells draw like the rest (Yonghee 07-28: no single-seed
-            # marking; remaining seeds land soon -- n_seeds stays in the CSV)
-            for rec, color, off in ((b, C_FIRST, +dy), (a, C_FLIRDS, -dy)):
+            for rec, color, tick, off in ((b, C_FIRST, T_FIRST, +dy),
+                                          (a, C_FLIRDS, T_FLIRDS, -dy)):
                 if rec is None:
                     continue
                 yy = y + off
-                # paired bars anchored at the zoomed axis start (explicit
-                # Yonghee 07-28 call -- the leaders already read as bars; the
-                # 0.992 tick label is what discloses the zoomed baseline)
-                ax.barh(yy, rec.rho - x0, left=x0, height=0.30, color=color,
-                        lw=0, zorder=3)
-                _ink_tick(ax, rec.r, yy, half=0.24, lw=0.9)
+                if variant == "bar":
+                    # paired bars anchored at the zoomed axis start (explicit
+                    # Yonghee 07-28 call -- the leaders already read as bars;
+                    # the axis-start tick label discloses the zoomed baseline)
+                    ax.barh(yy, rec.rho - x0, left=x0, height=0.30, color=color,
+                            lw=0, zorder=3)
+                    if show_std:
+                        _std_whisker(ax, rec.rho, yy, rec.rho_sd)
+                else:
+                    _rho_dot(ax, rec.rho, yy,
+                             rec.rho_sd if show_std else np.nan, color,
+                             min_arrow=0.0007)
+                    if show_std:
+                        _r_band(ax, rec.r, rec.r_sd, yy, half=0.24, color=tick)
+                _pearson_tick(ax, rec.r, yy, half=0.24, lw=0.9, color=tick)
             yt.append(y)
             ytl.append(lab)
             rows.append(dict(group=g.replace("|", " "), label=lab,
-                             flirds_rho=a.rho, flirds_r=a.r,
+                             flirds_rho=a.rho, flirds_rho_std=a.rho_sd,
+                             flirds_r=a.r, flirds_r_std=a.r_sd,
                              first_rho=b.rho if b is not None else np.nan,
+                             first_rho_std=b.rho_sd if b is not None else np.nan,
                              first_r=b.r if b is not None else np.nan,
+                             first_r_std=b.r_sd if b is not None else np.nan,
                              n_seeds=int(a.n)))
             y += 1.0
         y += 0.42
@@ -751,7 +864,8 @@ def panel_body_llm(ax) -> pd.DataFrame:
 
     # decimal ticks (07-28): match the tables' decimal correlations, not %
     fmt = lambda v: "1" if v >= 0.9999999 else f"{v:.3f}"
-    ax.set_xlim(x0, 1.0 + (1.0 - x0) * 0.05)
+    # whiskers/arrows are clipped at rho = 1, so the axis ends just past it
+    ax.set_xlim(x0, 1.0 + (1.0 - x0) * 0.03)
     xticks = [x0, (x0 + 1.0) / 2, 1.0]
     ax.set_xticks(xticks)
     ax.set_xticklabels([fmt(v) for v in xticks])
@@ -775,41 +889,93 @@ BODY_FONTS = {"font.size": 8.2, "axes.titlesize": 8.8, "xtick.labelsize": 7.7,
 
 def fig_body(dpi: int) -> None:
     with plt.rc_context(BODY_FONTS):
-        _fig_body_inner(dpi)
+        _fig_body_inner(dpi, variant="bar")
+        _fig_body_inner(dpi, variant="dot")
+        _fig_body_inner(dpi, variant="bar", show_std=False)
+        _fig_body_inner(dpi, variant="dot", show_std=False)
 
 
-def _fig_body_inner(dpi: int) -> None:
-    """SS5.2 body figure: CNN thin bars (one panel) + LLM zoomed dots."""
+def _fig_body_inner(dpi: int, variant: str, show_std: bool = True) -> None:
+    """SS5.2 body figure: CNN one panel + LLM zoomed panel.
+
+    variant "bar" + show_std is the paper figure (thin bars + std whiskers).
+    variant "dot" is the 07-29 alternative on the same layout: a dot on the
+    seed mean with a double-headed +-1 std arrow, and the Pearson tick
+    backed by a +-1 std band.  show_std=False re-renders either variant
+    with means only (the "_nostd" set, Yonghee 07-29).  Everything except
+    the (bar, std) paper version lands in figs/ only, for comparison.
+    """
+    name = ("fig_fidelity_body" if variant == "bar" else "fig_fidelity_body_dot") \
+        + ("" if show_std else "_nostd")
     fig = plt.figure(figsize=(7.05, 2.60))
     gs = fig.add_gridspec(1, 3, width_ratios=[1.02, 0.34, 1.06], wspace=0.10)
     ax_a = fig.add_subplot(gs[0])
     ax_b = fig.add_subplot(gs[2])          # gs[1] is a spacer for (b)'s labels
 
-    p_cnn = panel_body_cnn(ax_a, "(a)  CNN · CIFAR-10")
-    p_llm = panel_body_llm(ax_b)
+    p_cnn = panel_body_cnn(ax_a, "(a)  CNN · CIFAR-10", variant, show_std)
+    p_llm = panel_body_llm(ax_b, variant, show_std)
 
+    # legend keys mirror the actual mark: the rho mark with the method's
+    # Pearson tick through it (HandlerTuple ndivide=None overlays the two)
+    mk = dict(marker="s", ms=5.0) if variant == "bar" else dict(marker="o", ms=4.6)
     handles = [
-        Line2D([], [], marker="s", ls="", ms=5.0, color=C_FLIRDS, label="Flirds"),
-        Line2D([], [], marker="s", ls="", ms=5.0, color=C_FIRST, label="Flirds-1st"),
+        (Line2D([], [], ls="", color=C_FLIRDS, **mk),
+         Line2D([], [], marker="|", ls="", ms=7.5, mew=1.1, color=T_FLIRDS)),
+        (Line2D([], [], ls="", color=C_FIRST, **mk),
+         Line2D([], [], marker="|", ls="", ms=7.5, mew=1.1, color=T_FIRST)),
     ]
-    fig.legend(handles=handles, loc="upper center", ncol=2, fontsize=7.5,
+    fig.legend(handles=handles, labels=["Flirds", "Flirds-1st"],
+               handler_map={tuple: HandlerTuple(ndivide=None)},
+               loc="upper center", ncol=2, fontsize=7.5,
                columnspacing=1.5, handletextpad=0.4, borderpad=0.2,
                labelcolor=INK2, bbox_to_anchor=(0.5, 1.05))
-    fig.text(0.5, -0.03, r"Spearman $\rho$ (bars)  ·  Pearson $r$ (ink ticks)"
-             r"  ·  vs in-run Shapley",
-             ha="center", va="top", fontsize=7.6, color=INK2)
-    save(fig, "fig_fidelity_body", dpi)
+
+    # encoding key: the marks themselves, not words (Yonghee 07-29) -- a
+    # neutral-ink glyph names each encoding, the top legend maps the colors
+    if variant == "bar":
+        h_rho = Line2D([], [], ls="-", lw=4.6, color=MUTED, solid_capstyle="butt")
+        h_r = Line2D([], [], marker="|", ls="", ms=7.5, mew=1.2, color=INK)
+    else:
+        h_rho = Line2D([], [], marker="o", ls="", ms=4.6, color=MUTED,
+                       markeredgecolor=SURFACE, markeredgewidth=0.5)
+        h_r = (Line2D([], [], ls="-", lw=5.4, color=INK, alpha=0.18,
+                      solid_capstyle="butt"),
+               Line2D([], [], marker="|", ls="", ms=7.5, mew=1.2, color=INK))
+    if variant == "dot" and not show_std:
+        h_r = h_r[1]                       # no band in the no-std set
+    enc_handles = [h_rho, Line2D([], [], ls="-", lw=0.9, color=INK2), h_r]
+    enc_labels = ["Spearman $\\rho$", "$\\pm$1 std",
+                  "Pearson $r$   ·   vs in-run Shapley"]
+    if not show_std:
+        del enc_handles[1], enc_labels[1]
+    fig.legend(handles=enc_handles, labels=enc_labels,
+               handler_map={tuple: HandlerTuple(ndivide=None)},
+               loc="upper center", ncol=len(enc_handles), fontsize=7.6,
+               columnspacing=1.3, handletextpad=0.5, handlelength=1.6,
+               borderpad=0.1, labelcolor=INK2, bbox_to_anchor=(0.5, -0.015))
+    save(fig, name, dpi)
     plt.close(fig)
+
+    # the paper folder tracks every body-figure variant (Yonghee 07-29:
+    # "원본 다 Figures에").  main.tex includes only fig_fidelity_body; the
+    # other three sit beside it for the pick.  PDFs matter: pdflatex prefers
+    # .pdf, so a stale one would silently shadow the .png.
+    if PAPER_FIG.is_dir():
+        for ext in ("pdf", "png"):
+            shutil.copyfile(FIG / f"{name}.{ext}", PAPER_FIG / f"{name}.{ext}")
+        print(f"    copied {name}.pdf/.png -> {PAPER_FIG}")
+
+    if variant != "bar" or not show_std:
+        return
 
     # prose-check numbers: what SS5.2 cites must be reproducible from here
     fl = p_cnn[p_cnn["method"] == "Flirds"]
     print(f"    CNN Flirds:  min rho {fl['spearman'].min():.3f}   "
           f"min r {fl['pearson'].min():.3f}   (8 cells)")
-    raw = load_cnn_inrun()
-    raw = raw[(raw["dataset"] == "cifar10") & raw["partition"].isin(("dir1", "iid"))]
-    sd = raw.groupby(["partition", "threat", "method"])[["spearman_b", "pearson_b"]].std(ddof=1)
-    print(f"    CNN seed std (ddof=1):  max rho {sd['spearman_b'].max():.3f}   "
-          f"max r {sd['pearson_b'].max():.3f}")
+    print(f"    CNN whiskers (ddof=1):  max rho std {p_cnn['spearman_std'].max():.3f}   "
+          f"max r std {p_cnn['pearson_std'].max():.3f}")
+    print(f"    LLM whiskers (ddof=1):  max rho std "
+          f"{p_llm[['flirds_rho_std', 'first_rho_std']].to_numpy().max():.4f}")
     print("    LLM leg (ranges over cell means; cross-device & 5-domain excluded):")
     for gl, r in (p_llm.groupby("group", sort=False)[["flirds_rho", "first_rho",
                                                       "flirds_r", "first_r"]]

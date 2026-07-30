@@ -73,24 +73,48 @@ python runs/plots/make_fig_fidelity.py --which retrain --dpi 300
 python runs/plots/make_fig_fidelity.py --dose           # 축 밖 lf dose 사다리 + frrand 포함
 ```
 
-## `fig_fidelity_body` — §5.2 본문 그림 (2패널 1행, 7.05×2.45in)
+## `fig_fidelity_body` — §5.2 본문 그림 (2패널 1행, 7.05×2.60in)
 
-산출물은 `figs/`와 함께 **`paper/AAAI/Figures/`에도 복사**한다(Yonghee 07-28: 논문 그림
-폴더 계속 갱신). 두 패널 모두 막대 = Spearman ρ, **잉크 눈금 = 같은 셀의 Pearson r**
-(연결선 없음 — 눈금 소속은 행 위치가 결정). **축 눈금 라벨은 % 단위**(07-28;
-(a) 0–100%, (b) 99.2–100%).
+산출물(pdf+png)은 `figs/`와 함께 **`paper/AAAI/Figures/`에 스크립트가 자동 복사**한다
+(07-29 자동화; Yonghee 07-28: 논문 그림 폴더 계속 갱신. pdflatex는 `.pdf`를 우선하므로
+낡은 pdf가 새 png를 가리는 사고를 복사 자동화가 차단 — 논문에는 **벡터 pdf**가 들어간다).
+두 패널 모두 막대 = Spearman ρ(3-seed 평균) + **±1 std whisker**(ddof=1, 표와 동일 관행;
+INK2 무캡 가로선이라 Pearson 눈금과 혼동 없음 — 07-29 리뷰 반영), **세로 눈금 = 같은 셀의
+Pearson r, 방법색의 어두운 단계**(파랑 램프 650 `#104281` / 주황 동비율 `#a34413` + surface
+halo; 연결선 없음 — 행 위치가 소속을 정하고 색이 재진술한다. 막대 없이 0 왼쪽에 홀로 뜨는
+gn Dir(1) 1st r=−.05 눈금의 소속을 색이 밝히는 것이 목적, 07-29). 축 눈금 라벨은 소수
+(0.25 · 0.992 … — 표의 상관계수 표기와 동일). **폰트 = Times 계열 serif + STIX 수식,
+`pdf.fonttype 42`**(Type-3 없음; AAAI 본문 newtxtext와 통일, 07-29). 범례 글리프 = 막대
+견본+눈금 합성(HandlerTuple ndivide=None).
 
 | 패널 | 형태 | 인코딩 |
 |---|---|---|
-| (a) CNN CIFAR-10, 한 패널 | 얇은 가로 짝막대 | 행 = 위협(대) × {Dir(1), IID}(소); 막대 = ρ(0 기준; xlim −0.15로 음수 눈금 여백 확보), 눈금 = r(음수 1회: gn Dir(1) 1st −.05가 기준선 왼쪽); 직접 라벨·음영·연결선 없음 |
-| (b) LLM 2세팅 6셀 | 확대 짝막대 | 축 99.2–100%(시작점 = 데이터 최솟값에서 .004 격자 내림, 자동); **막대가 확대 축 시작(99.2%)에서 출발** — 잘린 baseline은 Yonghee 07-28 명시 결정이고 % 눈금 라벨이 공개한다. **cross-device 2셀·5-domain 3셀 제외**(전 셀 1.0000; 부록 존속). 1-seed 표시 없음(아래) |
+| (a) CNN CIFAR-10, 한 패널 | 얇은 가로 짝막대 | 행 = 위협(대) × {Dir(1), IID}(소); 막대 = ρ(0 기준; xlim −0.15로 음수 눈금 여백 확보) + ±std whisker, 눈금 = r(음수 1회: gn Dir(1) 1st −.05가 기준선 왼쪽); 직접 라벨·음영·연결선 없음 |
+| (b) LLM 2세팅 6셀 | 확대 짝막대 | 축 0.992–1(시작점 = min(mean−std, r)에서 .004 격자 내림 — 07-29 whisker-aware 자동); **막대가 확대 축 시작(0.992)에서 출발** — 잘린 baseline은 Yonghee 07-28 명시 결정이고 축 시작 눈금 라벨이 공개한다. 천장 셀의 mean+std는 1.0을 정직하게 넘을 수 있고 xlim이 수용. **cross-device 2셀·5-domain 3셀 제외**(전 셀 1.0000; 부록 존속). 그룹 라벨 = GSM8K / **Alpaca-GPT4**(본문 "Alpaca-GPT4" 표기와 일치, 07-29) |
 
-**이 그림만의 규약 예외(07-28 Yonghee)**: 3-seed 미만 속 빈 마커·`*` 미적용(GSM8K
-free-rider 현재 1-seed; 잔여 seed 착지 시 값만 갱신, n_seeds는 CSV에 존속), 그림 내
-"3-seed mean"·셀 개수 문구 없음(캡션이 보유).
+**이 그림만의 규약 예외(07-28 Yonghee)**: 그림 내 "3-seed mean"·셀 개수 문구 없음(캡션이
+보유). 3-seed 미만 마커 규약은 07-29 현재 해당 없음 — **전 셀 n=3 착지**(GSM8K free-rider
+잔여 seed 포함); n=1 셀이 다시 생기면 whisker가 그려지지 않는 것(std=NaN)이 표지가 된다.
 
-색 = 파랑 Flirds · 주황 Flirds-1st. 점(위치 부호화)의 확대는 정당, 막대(길이 부호화)는 0
-기준 유지 — baseline 절단 금기 준수.
+**07-29 2차(Yonghee 리뷰 왕복)**: ① **(a) 세로 중앙 정렬 수정** — ylim 계산이 마지막 행
+뒤의 sub(0.54)를 빼지 않아 하단에 한 행분 죽은 여백(막대 블록이 위로 치우침); 픽셀 측정으로
+쌍 간격(70.2px 균일)·라벨-쌍 정렬(±2px)은 정상 확인 후 `y − 0.46 − sub + 0.44`로 상하 여백
+대칭화. ② **whisker/화살표는 ρ=±1에서 클립** — 경계 밖은 도달 불가능한 값 영역이라 "ρ>1?"
+오독만 유발(캡션에 "clipped at the ρ=1 bound" 명시; 표의 ±std 숫자는 관행대로 비클립).
+③ 하단 인코딩 설명줄 = 단어("bars"/"ticks") 대신 **글리프 범례**(회색 막대/점 = ρ · 가는
+선 = ±1 std · 잉크 틱(+밴드) = r; 색↔방법 대응은 상단 범례가 담당). ④ **비교판
+`fig_fidelity_body_dot`** 동시 생성(figs/ 전용, 논문 복사는 bar판만): 막대 대신 mean 점 +
+±1 std 양방향 화살표(±std 폭이 화살촉 둘보다 좁으면 민짜 선 폴백), **Pearson도 틱 + ±1 std
+반투명 밴드**로 산포 표시 — 점은 위치 부호화라 (b) 확대에 baseline 공개조차 불필요. bar판에
+r 밴드를 안 넣는 이유 = 같은 색 막대 위에서 대비가 죽는다. 채택 전환 시
+`_fig_body_inner`의 복사 분기만 dot로 돌리면 된다. ⑤ `--which body`는 **4판을 한 번에**
+낸다: {bar, dot} × {±std, `_nostd`}(Yonghee 07-29 "std 뺀 세트" 요청; `_nostd`는 평균만
+그리고 범례의 ±1 std 항목도 빠진다). ⑥ **4판 전부 `paper/AAAI/Figures/`에 pdf+png 복사**
+(Yonghee 07-29 "원본 다 Figures에"; main.tex가 인클루드하는 건 여전히
+`fig_fidelity_body` 하나 — 나머지 3판은 선택용으로 옆에 둔다).
+
+색 = 파랑 Flirds · 주황 Flirds-1st(눈금은 같은 색상의 어두운 단계 — 새 계열 색 아님).
+점(위치 부호화)의 확대는 정당, 막대(길이 부호화)는 0 기준 유지 — baseline 절단 금기 준수.
 
 출처: (a) `track_c/c2fid/analysis/fidelity.csv`(cifar10 × {dir1,iid} × 오염축 4위협,
 label-flip @0.70), (b) `phase2_matrix/rundirs/*/metrics.json`(GSM8K·5-domain)
@@ -121,6 +145,12 @@ seed std ρ ≤ .076 · LLM min ρ .9946 / min r .9980 · zoom 시작 .992) · [
 `methods_long.csv` dir1 12셀 ddof=1 재집계(T4의 ddof=0 판과 동일 값) · 평균 열 = in-run SV
 +0.797±0.082 / Flirds +0.779±0.053 / 1st +0.478±0.114.
 
+값 검증(2026-07-29, whisker판): 재생성 stdout — CNN min ρ .847 / min r .937 · whisker 최대
+std: CNN ρ .076 / r .138, LLM ρ .0030 · zoom 시작 .992 유지(whisker-aware data min .9924) ·
+전 셀 n=3(GSM8K free-rider 3-seed 착지 확인). 본문 컴파일: pdflatex 9p exit 0, Figure 2가
+`Figures/fig_fidelity_body.pdf`(벡터, Type-3 폰트 없음)로 포함되는 것 로그로 확인. 캡션·
+Metrics 문단(±1 std whisker 문구, FedSVCNN 특정, Appendix C 포인터, Alpaca-GPT4) 동기화.
+
 ## 부록 그림 둘
 
 | 그림 | 패널 | 셀 수 | 출처 |
@@ -134,7 +164,11 @@ seed std ρ ≤ .076 · LLM min ρ .9946 / min r .9980 · zoom 시작 .992) · [
 ## 규약 (fidelity 그림 공통)
 
 - 점 = seed 평균(per-client 패널 제외). **3-seed 미만 셀은 속 빈 마커 + 눈금 `*`** — 미완주가
-  눈에 보이도록(§0.3). 현재 해당은 LLM 주 세팅 free-rider 1셀뿐이다.
+  눈에 보이도록(§0.3). 07-29 현재 해당 셀 없음(전 셀 3-seed 착지); 해당 셀이 있을 때만
+  범례 항목도 나타난다.
+- `fig_fidelity_inrun` (c) 하단 무대 라벨은 지그재그 2단 배치(07-29) — "Alpaca-GPT4" 등
+  긴 이름이 이웃 라벨과 가로로 충돌하지 않게. 부록 그림도 본문과 같은 Times serif를 쓴다
+  (전역 style()이 07-29 serif로 전환).
 - 위협 축은 확정 5종만. `--dose`를 줘야 lf@{0.15,0.35}·strmain·frrand가 들어온다(스코프 밖).
 - 패널 (b)/(c)는 **y축 공유**. LLM 무대가 천장에 붙는 것은 결과 자체이므로 y를 확대하지 않는다.
 - 색은 dataviz 레퍼런스 팔레트 slot 1·2(#2a78d6 / #eb6834) 그대로. 재스텝 없음 → 그 팔레트가
